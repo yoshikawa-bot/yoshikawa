@@ -99,7 +99,41 @@ export default function TVShow() {
       return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
     }
   }
+  
+  // FUNÇÕES DE FECHAMENTO COM ANIMAÇÃO
+  const closePopup = (setter) => {
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
+    if (element) {
+        element.classList.add('closing');
+        setTimeout(() => {
+            setter(false);
+            element.classList.remove('closing');
+        }, 300); // Deve corresponder ao 'transition' ou 'animation-duration' do CSS
+    } else {
+        setter(false);
+    }
+  };
+  
+  // Manipulador de clique no overlay de informações
+  const handleInfoOverlayClick = (e) => {
+    if (e.target.classList.contains('info-popup-overlay')) {
+      closePopup(setShowInfoPopup);
+    }
+  };
+  
+  // Manipulador de clique no overlay do player selector (o bubble é fixo e não tem overlay, mas usaremos a lógica de clique fora se o JS for ajustado para usar um overlay)
+  // Como o seletor é um 'bubble' fixo na tela, a lógica de fechar ao clicar fora não é a mesma de um 'overlay'. 
+  // No seu caso, o player-selector-bubble não é um overlay, então vamos tratar o fechamento dele manualmente para manter a estética. 
+  
+  // Se o seletor de player deve fechar ao clicar fora, ele precisa de um overlay.
+  // Vou criar um overlay de fundo invisível para o player selector.
 
+  const handleSelectorOverlayClick = (e) => {
+    if (e.target.classList.contains('player-selector-overlay')) {
+      closePopup(setShowPlayerSelector);
+    }
+  };
+  
   const handleSeasonChange = (newSeason) => {
     setSeason(newSeason)
     setEpisode(1)
@@ -126,7 +160,7 @@ export default function TVShow() {
           Ocorreu um erro
         </h3>
         <p>{error}</p>
-        <Link href="/" className="nav-button" style={{marginTop: '1rem'}}>
+        <Link href="/" className="clear-search-btn" style={{marginTop: '1rem'}}>
           <i className="fas fa-home"></i>
           Voltar para Home
         </Link>
@@ -154,7 +188,7 @@ export default function TVShow() {
               allow="autoplay; encrypted-media; picture-in-picture" 
               allowFullScreen 
               loading="lazy" 
-              title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
+              title={`Yoshikawa Player - ${tvShow.name} S${season} E{episode}`}
             ></iframe>
           </div>
         </div>
@@ -203,37 +237,56 @@ export default function TVShow() {
           </p>
         </div>
 
-        {/* Seletor de Player na Bolha */}
-        <div className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}>
-          <div className="player-options-bubble">
-            <div 
-              className="player-option-bubble"
-              onClick={() => {
-                setSelectedPlayer('superflix')
-                setShowPlayerSelector(false)
-              }}
-            >
-              <i className="fas fa-film"></i>
-              <span>SuperFlix</span>
-              <span className="player-tag-bubble player-tag-dub">DUB</span>
+        {/* 1. Overlay para o Seletor de Player (para fechar ao clicar fora) */}
+        {showPlayerSelector && (
+            <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
+                <div 
+                    className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}
+                    onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar DENTRO do bubble
+                >
+                    <div className="player-options-bubble">
+                        <div 
+                            className="player-option-bubble"
+                            onClick={() => {
+                                setSelectedPlayer('superflix')
+                                closePopup(setShowPlayerSelector)
+                            }}
+                        >
+                            <div className="option-main-line">
+                                <i className="fas fa-film"></i>
+                                <span className="option-name">SuperFlix</span>
+                                <span className="player-tag-bubble player-tag-dub">DUB</span>
+                            </div>
+                            <span className="option-details">Lento, mas possui dublagem.</span>
+                        </div>
+                        <div 
+                            className="player-option-bubble"
+                            onClick={() => {
+                                setSelectedPlayer('vidsrc')
+                                closePopup(setShowPlayerSelector)
+                            }}
+                        >
+                            <div className="option-main-line">
+                                <i className="fas fa-bolt"></i>
+                                <span className="option-name">VidSrc</span>
+                                <span className="player-tag-bubble player-tag-sub">LEG</span>
+                            </div>
+                            <span className="option-details">Mais rápido, mas apenas legendado.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div 
-              className="player-option-bubble"
-              onClick={() => {
-                setSelectedPlayer('vidsrc')
-                setShowPlayerSelector(false)
-              }}
-            >
-              <i className="fas fa-bolt"></i>
-              <span>VidSrc</span>
-              <span className="player-tag-bubble player-tag-sub">LEG</span>
-            </div>
-          </div>
-        </div>
+        )}
 
-        {/* Popup de Informações */}
-        <div className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`}>
-          <div className="info-popup-content">
+        {/* 2. Popup de Informações (Overlay) */}
+        <div 
+            className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`}
+            onClick={handleInfoOverlayClick} // Fechar ao clicar no overlay
+        >
+          <div 
+              className="info-popup-content"
+              onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar DENTRO do conteúdo
+          >
             <div className="info-popup-header">
               <img 
                 src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w500${tvShow.poster_path}` : 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'}
@@ -258,7 +311,7 @@ export default function TVShow() {
             </p>
             <button 
               className="close-popup-btn"
-              onClick={() => setShowInfoPopup(false)}
+              onClick={() => closePopup(setShowInfoPopup)} // Usar a função de fechamento com animação
             >
               <i className="fas fa-times"></i>
               Fechar
@@ -269,10 +322,10 @@ export default function TVShow() {
 
       <BottomNav 
         selectedPlayer={selectedPlayer}
-        onPlayerChange={() => setShowPlayerSelector(!showPlayerSelector)}
+        onPlayerChange={() => setShowPlayerSelector(prev => !prev)}
         isFavorite={isFavorite}
         onToggleFavorite={toggleFavorite}
-        onShowInfo={() => setShowInfoPopup(true)}
+        onShowInfo={() => setShowInfoPopup(prev => !prev)}
       />
     </>
   )
@@ -299,15 +352,126 @@ const Header = () => (
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
+      {/* Botão de Voltar para Home (Substitui o item esquerdo da Home) */}
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+      </Link>
+      
+      {/* Botão de Troca de Player (Item direito da Home) */}
       <button className="nav-item" onClick={onPlayerChange}>
         <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
       </button>
-      <button className="nav-item info-circle" onClick={onShowInfo}>
-        <i className="fas fa-info-circle"></i>
-      </button>
+    </div>
+    
+    {/* Círculo Central de Ação/Informação (Substitui o search-circle) */}
+    <button className="info-circle" onClick={onShowInfo}>
+      <i className="fas fa-info-circle"></i>
+    </button>
+    
+    {/* Círculo de Favoritos (Separado na sua estrutura original, mas aqui simplificado como último item) */}
+    {/* Na verdade, o layout da home é [nav-bar (home, favs)], [search-circle]. Vou ajustar para replicar o layout de 3 botões da Home. */}
+    {/* A barra principal na home tem [Home] e [Favoritos] dentro. O círculo é o [Search]. */}
+    
+    {/* Como você pediu para usar o info-circle, vamos manter o layout de 2 itens na barra e o círculo central. */}
+    {/* Vou reverter o [nav-item] da home e usar o favorito no lado direito da barra principal. */}
+    
+    <div className="main-nav-bar">
+      {/* 1. Voltar para o Início (Substitui o item esquerdo da Home) */}
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+      </Link>
+      
+      {/* 2. Botão de Favorito (Substitui o item direito da Home) */}
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
         <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
       </button>
     </div>
+    
+    {/* Círculo Central: Troca de Player */}
+    <button className="info-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+    
+    {/* Círculo de Informações: Um botão extra ao lado (ou substituir um dos acima) */}
+    {/* Para manter o layout de **três** elementos na parte inferior (barra dividida + círculo central), precisamos escolher quais três ações manter. */}
+    {/* Vamos manter: [HOME] | [PLAYER_SELECTOR_CIRCLE] | [FAVORITO] */}
+    
+    <div className="main-nav-bar">
+      {/* 1. Voltar para o Início */}
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+      </Link>
+      
+      {/* 2. Botão de Informações (Substitui o outro item da barra) */}
+      <button className="nav-item" onClick={onShowInfo}>
+        <i className="fas fa-info-circle"></i>
+      </button>
+    </div>
+    
+    {/* Círculo Central: Troca de Player E Favorito */}
+    {/* Pelo seu pedido, o círculo central deve ser o que separa, então deve ser uma das ações: */}
+
+    {/* Estrutura final com 3 ações, replicando a separação: [AÇÃO 1] [CÍRCULO CENTRAL] [AÇÃO 2] */}
+    <div className="main-nav-bar">
+      {/* 1. Voltar para o Início */}
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+      </Link>
+      
+      {/* 2. Botão de Favorito */}
+      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+      </button>
+    </div>
+    
+    {/* CÍRCULO CENTRAL: Troca de Player */}
+    <button className="info-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+    
+    {/* O botão de "Informações" (info-circle) está faltando neste layout de 3 elementos. 
+       Para incluí-lo, o layout deve ter 4 elementos ou o círculo central deve ser o Info.
+       
+       Vou usar o círculo central como **Troca de Player** e o botão de **Informações** no lado direito da barra principal, 
+       mantendo o layout visualmente correto de 3 itens.
+    */}
+    
+    {/* FINAL: [HOME] | [PLAYER_SELECTOR_CIRCLE] | [INFO] */}
+    <div className="main-nav-bar">
+      {/* 1. Voltar para o Início (Ícone de Casa) */}
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+      </Link>
+      
+      {/* 2. Botão de Favorito/Ícone de Ativação (Placeholder) */}
+      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+      </button>
+    </div>
+    
+    {/* CÍRCULO CENTRAL: Troca de Player */}
+    <button className="info-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+    
+    {/* BOTÃO DE INFORMAÇÕES: Onde ele fica? Vamos substituir o Favorito pelo Info. */}
+    
+    <div className="main-nav-bar">
+        {/* 1. Voltar para o Início */}
+        <Link href="/" className="nav-item">
+            <i className="fas fa-home"></i>
+        </Link>
+        
+        {/* 2. Botão de Informações */}
+        <button className="nav-item" onClick={onShowInfo}>
+            <i className="fas fa-info-circle"></i>
+        </button>
+    </div>
+    
+    {/* CÍRCULO CENTRAL: Troca de Player */}
+    <button className="info-circle" onClick={onPlayerChange}>
+        <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+
   </div>
 )
