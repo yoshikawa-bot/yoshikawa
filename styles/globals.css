@@ -894,86 +894,79 @@ body::before {
 
 /* Reverter .content-info-card para a posição original, abaixo da imagem */
 .content-info-card {
-  padding: 0.75rem; /* Padding original */
+  padding: 0; /* Padding zero, pois o texto flutuará sobre a imagem */
   background: transparent; /* Fundo transparente */
   position: static; /* Voltar à posição normal */
   color: inherit;
   backdrop-filter: none;
   border: none;
+  height: 0; /* Ocupa altura zero para não estragar a proporção do card */
 }
 
 .content-title-card {
   font-weight: 500;
   font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* Voltar a duas linhas */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  /* Corrigido: Removido line-height: 1.2 */
+  /* Estas propriedades foram movidas para o .floating-text-wrapper e seus filhos */
 }
 
 .content-year {
   font-size: 0.8rem;
   color: var(--secondary);
+  /* Estas propriedades foram movidas para o .floating-text-wrapper e seus filhos */
 }
 
 /* NOVO: Container para o texto flutuante */
 /* Este é o elemento que simula o design da imagem fornecida */
-.content-text-overlay {
-    position: absolute;
-    top: 10px; /* Margem do topo */
-    left: 10px; /* Margem da esquerda */
-    right: 10px; /* Garante que o texto não ultrapasse o card */
+.floating-text-wrapper {
+    position: absolute; /* Posição absoluta sobre a imagem */
+    top: 10px;          /* Distância do topo */
+    left: 10px;         /* Distância da esquerda */
+    right: 10px;        /* Garante que o texto se ajuste à largura do card */
     z-index: 5;
-    color: white; /* Cor do texto branco */
-    display: block; /* Garante que o wrapper ocupa o espaço */
-    font-size: 0.9rem;
-    line-height: 1.3;
+    color: white;       /* Texto branco */
+    line-height: 1.2;
+    font-size: 0.95rem;
 }
 
-/* Estilo para cada linha de texto dentro do overlay (Título e Meta) */
-.content-text-overlay h3,
-.content-text-overlay p {
-    display: inline;
-    padding: 2px 5px; /* Adiciona padding ao redor do texto */
-    margin-bottom: 2px; /* Espaço entre as linhas */
-    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto sólido semi-transparente */
-    box-decoration-break: clone; /* Aplica o background a cada linha de texto separadamente */
+/* Estilo para o Título */
+.floating-text-wrapper .content-title-card {
+    /* Exatamente como você pediu: fundo preto sólido apenas atrás do texto */
+    display: block; /* Garante que o bloco flutuante respeite a quebra */
+    padding: 4px 7px; /* Padding ao redor do texto */
+    background-color: rgba(0, 0, 0, 0.85); /* Fundo preto sólido semi-transparente */
+    box-decoration-break: clone; /* Aplica o background em cada linha quebrada */
     -webkit-box-decoration-break: clone;
     font-weight: 600;
-    white-space: normal; /* Permite quebras de linha */
-}
-
-.content-text-overlay h3 {
     font-size: 1rem;
-    display: block; /* O título ocupa toda a largura disponível */
+    white-space: normal;
+    width: fit-content; /* Ajusta a largura ao texto */
+    border-radius: 4px; /* Pequeno arredondamento */
+    text-shadow: none;
 }
 
-.content-text-overlay p {
-    font-size: 0.8rem;
-    display: block; /* O meta-dado ocupa toda a largura disponível */
+/* Estilo para o Ano (e Rating, se houver) */
+.floating-text-wrapper .content-year {
+    display: block; /* Garante que o bloco flutuante respeite a quebra */
+    padding: 4px 7px; /* Padding ao redor do texto */
+    background-color: rgba(0, 0, 0, 0.85); /* Fundo preto sólido semi-transparente */
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    font-size: 0.85rem;
+    color: white; 
+    opacity: 0.9;
     font-weight: 500;
+    margin-top: 3px; /* Espaçamento entre Título e Ano */
+    width: fit-content; /* Ajusta a largura ao texto */
+    border-radius: 4px; /* Pequeno arredondamento */
+    text-shadow: none;
 }
 
-/* Container para Ano e Rating (mantém no mesmo bloco) */
+/* Container para Ano e Rating (mantém no mesmo bloco) - Removido pois usamos .content-year diretamente */
 .content-text-meta {
-    display: flex;
-    gap: 8px; /* Espaçamento entre o ano e o rating */
-    align-items: center;
-    padding: 2px 5px; /* Aplicar o fundo aqui */
-    background-color: rgba(0, 0, 0, 0.7);
-    width: fit-content; /* O bloco só ocupa o espaço necessário */
-    margin-top: 2px;
+    display: none; 
 }
 
-.content-text-meta span {
-    display: inline-block;
-    background-color: transparent; /* Não precisa de fundo extra, pois o pai já tem */
-    padding: 0;
-}
-
-/* Estilo para a classificação por estrelas */
+/* Estilo para a classificação por estrelas - Mantido, caso queira adicionar depois */
 .content-rating {
     display: flex;
     align-items: center;
@@ -1520,47 +1513,29 @@ footer {
 }
 
 @media (max-width: 480px) {
-  .bottom-nav-container {
-    bottom: 15px; 
-    gap: 8px;
+  .logo-name {
+    font-size: 1rem;
   }
   
-  .main-nav-bar {
-    height: 60px; 
-    border-radius: 30px;
+  .content-title {
+    font-size: 1.4rem;
   }
   
-  .main-nav-bar::after {
-      border-radius: 30px;
-  }
-  
-  .nav-item {
-    font-size: 10px;
-    padding: 3px 0;
-  }
-  
-  .nav-item i {
-    font-size: 22px;
-  }
-  
-  .search-circle {
-    width: 60px; 
-    height: 60px; 
-  }
-  
-  .search-circle i {
-    font-size: 26px;
-  }
-  
-  .page-title-home {
-    font-size: 1.6rem;
-    margin-bottom: 1rem;
+  .search-list-item {
+    padding: 0.75rem;
   }
 
-  .page-title-home i {
-    font-size: 2rem;
+  .search-list-poster {
+    width: 50px;
+    height: 75px;
+    margin-right: 0.75rem;
   }
 
+  .favorites-menu {
+    width: 90%;
+    right: -90%;
+  }
+  
   .content-card {
     flex: 0 0 120px;
   }
@@ -1570,15 +1545,15 @@ footer {
   }
   
   /* Ajuste no card para telas muito pequenas */
-  .content-text-overlay {
+  .floating-text-wrapper {
       font-size: 0.8rem;
   }
 
-  .content-text-overlay h3 {
+  .floating-text-wrapper .content-title-card {
       font-size: 0.9rem;
   }
 
-  .content-text-overlay p {
+  .floating-text-wrapper .content-year {
       font-size: 0.75rem;
   }
 }
