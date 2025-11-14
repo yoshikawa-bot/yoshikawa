@@ -5,16 +5,18 @@ import Link from 'next/link'
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
-  const [calendar, setCalendar] = useState([])
+  const [favorites, setFavorites] = useState([])
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeSection, setActiveSection] = useState('releases') // releases, recommendations, favorites
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
 
   useEffect(() => {
     loadHomeContent()
+    loadFavorites()
   }, [])
 
   const loadHomeContent = async () => {
@@ -51,15 +53,21 @@ export default function Home() {
 
       setReleases(allReleases)
       setRecommendations(allPopular)
-      
-      // Calendário (usando séries populares como fallback)
-      setCalendar((tvData.results || []).slice(0, 15).map(item => ({
-        ...item,
-        media_type: 'tv'
-      })))
 
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error)
+    }
+  }
+
+  const loadFavorites = () => {
+    // Carregar favoritos do localStorage
+    try {
+      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites))
+      }
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error)
     }
   }
 
@@ -93,32 +101,64 @@ export default function Home() {
     }
   }
 
+  const getActiveItems = () => {
+    switch (activeSection) {
+      case 'releases':
+        return releases
+      case 'recommendations':
+        return recommendations
+      case 'favorites':
+        return favorites
+      default:
+        return releases
+    }
+  }
+
+  const getSectionTitle = () => {
+    switch (activeSection) {
+      case 'releases':
+        return 'Últimos Lançamentos'
+      case 'recommendations':
+        return 'Populares e Recomendações'
+      case 'favorites':
+        return 'Meus Favoritos'
+      default:
+        return 'Últimos Lançamentos'
+    }
+  }
+
   const ContentGrid = ({ items, title }) => (
     <section className="section">
       <div className="section-header">
         <h2 className="section-title">{title}</h2>
       </div>
       <div className="content-grid">
-        {items.map(item => (
-          <Link 
-            key={`${item.media_type}-${item.id}`}
-            href={`/${item.media_type}/${item.id}`}
-            className="content-card"
-          >
-            <img 
-              src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-              alt={item.title || item.name}
-              className="content-poster"
-            />
-            <div className="content-info-card">
-              <div className="content-title-card">{item.title || item.name}</div>
-              <div className="content-year">
-                {item.release_date ? new Date(item.release_date).getFullYear() : 
-                 item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+        {items.length > 0 ? (
+          items.map(item => (
+            <Link 
+              key={`${item.media_type}-${item.id}`}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+              />
+              <div className="content-info-card">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))
+        ) : (
+          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
+            {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
+          </div>
+        )}
       </div>
     </section>
   )
@@ -182,12 +222,37 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
-            <ContentGrid items={releases} title="Últimos Lançamentos" />
-            <ContentGrid items={recommendations} title="Populares e Recomendações" />
-            <ContentGrid items={calendar} title="Calendário de Lançamentos" />
+            <ContentGrid items={getActiveItems()} title={getSectionTitle()} />
           </div>
         )}
       </main>
+
+      {/* Container Flutuante de Navegação */}
+      {searchResults.length === 0 && (
+        <div className="floating-nav-container">
+          <button 
+            className={`nav-tab ${activeSection === 'releases' ? 'active' : ''}`}
+            onClick={() => setActiveSection('releases')}
+          >
+            <i className="fas fa-film"></i>
+            <span>Lançamentos</span>
+          </button>
+          <button 
+            className={`nav-tab ${activeSection === 'recommendations' ? 'active' : ''}`}
+            onClick={() => setActiveSection('recommendations')}
+          >
+            <i className="fas fa-fire"></i>
+            <span>Populares</span>
+          </button>
+          <button 
+            className={`nav-tab ${activeSection === 'favorites' ? 'active' : ''}`}
+            onClick={() => setActiveSection('favorites')}
+          >
+            <i className="fas fa-heart"></i>
+            <span>Favoritos</span>
+          </button>
+        </div>
+      )}
 
       <Footer />
     </>
