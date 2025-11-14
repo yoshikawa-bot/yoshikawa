@@ -290,7 +290,7 @@ body::before {
   margin-left: 0.5rem;
 }
 
-/* BOTÃO DE FAVORITOS NO HEADER - Design mais arredondado */
+/* BOTÃO DE FAVORITOS NO HEADER - CORRIGIDO */
 #headerFavoriteBtn {
   border-radius: 50%;
   width: 40px;
@@ -303,11 +303,12 @@ body::before {
   border: 1px solid var(--border);
   color: var(--text);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 #headerFavoriteBtn:hover {
   background: var(--primary);
-  transform: scale(1.1);
+  transform: scale(1.05);
   border-color: var(--primary);
 }
 
@@ -316,20 +317,20 @@ body::before {
   border-color: var(--primary);
 }
 
-/* Menu de Favoritos - NOVO DESIGN */
+/* Menu de Favoritos - CORRIGIDO */
 .favorites-menu {
   position: fixed;
   top: 0;
   right: -50%;
   width: 50%;
   height: 100%;
-  background: var(--overlay-bg);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(15px);
   z-index: 1000;
   transition: right 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
   display: flex;
   flex-direction: column;
-  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.4);
   overflow-y: auto;
 }
 
@@ -343,7 +344,7 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--header-bg);
+  background: rgba(0, 0, 0, 0.3);
   position: relative;
 }
 
@@ -351,8 +352,45 @@ body::before {
   content: '';
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(15px);
   z-index: -1;
+}
+
+.favorites-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.favorites-title i {
+  color: var(--primary);
+}
+
+/* Botão de fechar - CORRIGIDO para X */
+#closeFavoritesMenu {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+#closeFavoritesMenu:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transform: scale(1.05);
 }
 
 .favorites-actions {
@@ -361,10 +399,11 @@ body::before {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .favorites-action-btn {
-  background: var(--card-bg);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
   border-radius: 25px;
   padding: 0.6rem 1rem;
@@ -393,6 +432,7 @@ body::before {
   padding: 1rem;
   flex: 1;
   overflow-y: auto;
+  background: transparent;
 }
 
 .favorite-item {
@@ -403,23 +443,14 @@ body::before {
   margin-bottom: 0.75rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 1px solid transparent;
-  background: var(--card-bg);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
   position: relative;
 }
 
-.favorite-item::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  z-index: -1;
-}
-
 .favorite-item:hover {
-  background-color: rgba(255, 107, 107, 0.1);
+  background-color: rgba(255, 107, 107, 0.15);
   border-color: var(--primary);
   transform: translateX(5px);
 }
@@ -441,6 +472,7 @@ body::before {
   font-weight: 500;
   font-size: 0.95rem;
   margin-bottom: 0.25rem;
+  color: var(--text);
 }
 
 .favorite-meta {
@@ -456,10 +488,15 @@ body::before {
   padding: 0.5rem;
   border-radius: 50%;
   transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .remove-favorite:hover {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.15);
   transform: scale(1.1);
 }
 
