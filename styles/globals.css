@@ -865,18 +865,17 @@ body::before {
 /* ************************************************* */
 
 .content-card {
-  background-color: var(--card-bg); /* Voltou ao original */
+  background-color: var(--card-bg); 
   border-radius: 15px;
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid var(--border);
   flex: 0 0 160px;
-  position: relative;
+  position: relative; /* ESSENCIAL: ponto de referência para o absolute */
   text-decoration: none;
   color: inherit;
   backdrop-filter: blur(10px);
-  /* Altura removida para se ajustar ao conteúdo (Imagem + Novo Info) */
 }
 
 .content-card:hover {
@@ -892,72 +891,63 @@ body::before {
   display: block; 
 }
 
-/* Reverter .content-info-card para a posição original, abaixo da imagem */
+/* O content-info-card ORIGINAL foi zerado no index.js, mas mantemos o CSS para garantir que não ocupe espaço */
 .content-info-card {
-  padding: 0; /* Padding zero, pois o texto flutuará sobre a imagem */
-  background: transparent; /* Fundo transparente */
-  position: static; /* Voltar à posição normal */
+  padding: 0; 
+  background: transparent; 
+  position: static; 
   color: inherit;
   backdrop-filter: none;
   border: none;
-  height: 0; /* Ocupa altura zero para não estragar a proporção do card */
+  height: 0; 
+  display: none; /* Escondendo completamente para evitar conflitos */
 }
 
-.content-title-card {
-  font-weight: 500;
-  font-size: 0.9rem;
-  /* Estas propriedades foram movidas para o .floating-text-wrapper e seus filhos */
-}
-
-.content-year {
-  font-size: 0.8rem;
-  color: var(--secondary);
-  /* Estas propriedades foram movidas para o .floating-text-wrapper e seus filhos */
-}
-
-/* NOVO: Container para o texto flutuante */
-/* Este é o elemento que simula o design da imagem fornecida */
+/* NOVO: Container para o texto flutuante (AGORA NO RODAPÉ) */
 .floating-text-wrapper {
     position: absolute; /* Posição absoluta sobre a imagem */
-    top: 10px;          /* Distância do topo */
-    left: 10px;         /* Distância da esquerda */
-    right: 10px;        /* Garante que o texto se ajuste à largura do card */
+    bottom: 0;          /* CORRIGIDO: MOVIDO PARA O FUNDO */
+    left: 0;
+    right: 0;
+    width: 100%;        /* Ocupa toda a largura do card */
     z-index: 5;
     color: white;       /* Texto branco */
     line-height: 1.2;
     font-size: 0.95rem;
+    
+    /* Configuração do fundo para cobrir o rodapé inteiro */
+    background-color: rgba(0, 0, 0, 0.85); /* Fundo preto sólido semi-transparente */
+    padding: 8px 10px; /* Padding no rodapé inteiro */
+    display: block;
 }
 
-/* Estilo para o Título */
+/* Estilo para o Título (AJUSTADO PARA A NOVA ESTRUTURA DE RODAPÉ) */
 .floating-text-wrapper .content-title-card {
-    /* Exatamente como você pediu: fundo preto sólido apenas atrás do texto */
-    display: block; /* Garante que o bloco flutuante respeite a quebra */
-    padding: 4px 7px; /* Padding ao redor do texto */
-    background-color: rgba(0, 0, 0, 0.85); /* Fundo preto sólido semi-transparente */
-    box-decoration-break: clone; /* Aplica o background em cada linha quebrada */
-    -webkit-box-decoration-break: clone;
+    display: block; 
+    padding: 0; 
+    background-color: transparent; /* Transparente, o fundo vem do wrapper */
     font-weight: 600;
     font-size: 1rem;
-    white-space: normal;
-    width: fit-content; /* Ajusta a largura ao texto */
-    border-radius: 4px; /* Pequeno arredondamento */
+    white-space: nowrap; /* Garante que o título não quebre, usando ellipsis */
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    width: 100%;
+    border-radius: 0; 
     text-shadow: none;
 }
 
-/* Estilo para o Ano (e Rating, se houver) */
+/* Estilo para o Ano (AJUSTADO PARA A NOVA ESTRUTURA DE RODAPÉ) */
 .floating-text-wrapper .content-year {
-    display: block; /* Garante que o bloco flutuante respeite a quebra */
-    padding: 4px 7px; /* Padding ao redor do texto */
-    background-color: rgba(0, 0, 0, 0.85); /* Fundo preto sólido semi-transparente */
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    display: block; 
+    padding: 0; 
+    background-color: transparent; /* Transparente, o fundo vem do wrapper */
     font-size: 0.85rem;
-    color: white; 
-    opacity: 0.9;
+    color: var(--secondary); /* Usando cor secundária para o ano */
+    opacity: 1;
     font-weight: 500;
-    margin-top: 3px; /* Espaçamento entre Título e Ano */
-    width: fit-content; /* Ajusta a largura ao texto */
-    border-radius: 4px; /* Pequeno arredondamento */
+    margin-top: 2px; /* Espaçamento entre Título e Ano */
+    width: 100%;
+    border-radius: 0; 
     text-shadow: none;
 }
 
