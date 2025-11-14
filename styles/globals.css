@@ -860,9 +860,12 @@ body::before {
   scrollbar-color: var(--primary) transparent;
 }
 
-/* AJUSTES NO CARD DE CONTEÚDO */
+/* ************************************************* */
+/* ALTERAÇÕES APLICADAS AQUI PARA O CARD DO CONTEÚDO */
+/* ************************************************* */
+
 .content-card {
-  background-color: var(--card-bg);
+  background-color: transparent; /* Alterado para transparente, pois as informações ficarão por cima */
   border-radius: 15px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -872,10 +875,7 @@ body::before {
   position: relative;
   text-decoration: none;
   color: inherit;
-  backdrop-filter: blur(10px);
-  /* NOVO: Ajusta o contêiner para posicionamento absoluto da sobreposição */
-  display: flex; 
-  flex-direction: column; 
+  backdrop-filter: blur(10px); /* Mantido para o efeito geral, mas o overlay das infos será mais forte */
 }
 
 .content-card:hover {
@@ -888,28 +888,33 @@ body::before {
   width: 100%;
   height: 240px;
   object-fit: cover;
+  display: block; /* Garante que não haja espaço extra abaixo da imagem */
 }
 
-/* NOVO: Estilo para a sobreposição de informações */
-.card-overlay-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem;
-    /* Efeito de vidro para a sobreposição */
-    background: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
-    backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 5; /* Garante que fique acima da imagem */
+/* A info do card agora é um OVERLAY na parte inferior */
+.content-info-card {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 0.75rem; /* Ajustado para ser mais fino */
+  background: rgba(0, 0, 0, 0.5); /* Fundo mais escuro para melhor legibilidade */
+  backdrop-filter: blur(5px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  transition: background 0.3s ease;
+}
+
+.content-card:hover .content-info-card {
+    background: rgba(0, 0, 0, 0.7); /* Escurece no hover */
 }
 
 .content-title-card {
   font-weight: 600; /* Mais destaque para o título */
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-bottom: 0.25rem;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1; /* Apenas uma linha para economizar espaço */
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.2;
@@ -919,32 +924,31 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--secondary);
 }
 
 .content-year {
+  /* Mantido, mas parte de um flex container */
   color: var(--secondary);
-  font-weight: 500;
-  flex-shrink: 0;
 }
 
-/* NOVO: Estilo para o Rating (Estrelas) */
+/* NOVO: Estilo para a classificação por estrelas */
 .content-rating {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
     color: gold; /* Cor das estrelas */
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .content-rating i {
-    font-size: 0.9rem; /* Tamanho do ícone de estrela */
+    font-size: 0.85rem;
     color: gold;
 }
+/* FIM DAS ALTERAÇÕES NO CARD */
 
-/* REMOVIDO: .content-info-card, pois foi substituído por .card-overlay-info */
+/* ************************************************* */
 
 /* BOTÃO DE FAVORITAR NOS CARDS - Só colorido se estiver favoritado */
 .favorite-btn {
@@ -1476,35 +1480,62 @@ footer {
 }
 
 @media (max-width: 480px) {
-  .logo-name {
-    font-size: 1rem;
+  .bottom-nav-container {
+    bottom: 15px; 
+    gap: 8px;
   }
   
-  .content-title {
-    font-size: 1.4rem;
+  .main-nav-bar {
+    height: 60px; 
+    border-radius: 30px;
   }
   
-  .search-list-item {
-    padding: 0.75rem;
+  .main-nav-bar::after {
+      border-radius: 30px;
+  }
+  
+  .nav-item {
+    font-size: 10px;
+    padding: 3px 0;
+  }
+  
+  .nav-item i {
+    font-size: 22px;
+  }
+  
+  .search-circle {
+    width: 60px; 
+    height: 60px; 
+  }
+  
+  .search-circle i {
+    font-size: 26px;
+  }
+  
+  .page-title-home {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
   }
 
-  .search-list-poster {
-    width: 50px;
-    height: 75px;
-    margin-right: 0.75rem;
+  .page-title-home i {
+    font-size: 2rem;
   }
 
-  .favorites-menu {
-    width: 90%;
-    right: -90%;
-  }
-  
   .content-card {
     flex: 0 0 120px;
   }
 
   .content-poster {
     height: 180px;
+  }
+  
+  /* Ajuste no card para telas muito pequenas */
+  .content-title-card {
+      font-size: 0.85rem;
+  }
+
+  .content-meta-card {
+      font-size: 0.7rem;
   }
 }
 
