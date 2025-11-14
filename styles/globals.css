@@ -530,9 +530,7 @@ body::before {
 }
 
 .nav-item span {
-  display: block;
-  margin-top: 2px;
-  font-size: 11px;
+  display: none;
 }
 
 .nav-item i {
@@ -596,7 +594,7 @@ body::before {
   position: relative;
   opacity: 1;
   transform: scale(1);
-  z-index: 1;
+  z-index: 1; /* Garante que o ícone esteja acima dos pseudo-elementos */
 }
 
 .search-circle::after {
@@ -846,7 +844,7 @@ body::before {
   border-radius: 25px;
   padding: 0.5rem 1rem;
   color: var(--text);
-  width: 140px;
+  width: 140px; /* TAMANHO FIXO */
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   cursor: pointer;
@@ -872,13 +870,14 @@ body::before {
   align-items: center;
   padding: 1.5rem;
   backdrop-filter: blur(5px);
+  /* Novo: para animação de saída */
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .info-popup-overlay.active {
   display: flex;
-  opacity: 1;
+  opacity: 1; /* Novo: para animação de entrada */
 }
 
 @keyframes fadeIn {
@@ -898,10 +897,11 @@ body::before {
   padding: 2rem;
   max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 90vh; /* Aumentado para melhor uso da tela */
   overflow-y: auto;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  /* Usar a mesma animação de sobreposição */
   animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 
@@ -931,6 +931,7 @@ body::before {
         opacity: 0;
     }
 }
+
 
 .info-popup-header {
   display: flex;
@@ -991,7 +992,7 @@ body::before {
   transform: translateY(-2px);
 }
 
-/* Seletor de player na bolha */
+/* Seletor de player na bolha - Novo: Adicionado animação de saída e estrutura de detalhe */
 .player-selector-bubble {
   position: fixed;
   bottom: 100px;
@@ -1003,7 +1004,7 @@ body::before {
   padding: 1.5rem;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  z-index: 999;
+  z-index: 999; /* Z-index alto para ficar sobre a bolha de navegação */
   display: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -1031,7 +1032,7 @@ body::before {
   height: 0;
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
-  border-top: 10px solid rgba(255, 255, 255, 0.3);
+  border-top: 10px solid rgba(255, 255, 255, 0.3); /* Corrigido para corresponder à borda do popup */
 }
 
 .player-options-bubble {
@@ -1042,7 +1043,7 @@ body::before {
 
 .player-option-bubble {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Alterado para empilhar título e detalhes */
   align-items: flex-start;
   gap: 0.25rem;
   padding: 0.75rem 1rem;
@@ -1085,7 +1086,7 @@ body::before {
 .option-details {
     font-size: 0.8rem;
     color: var(--secondary);
-    margin-left: 27.5px;
+    margin-left: 27.5px; /* Alinha com o texto da opção, considerando o ícone (20px) + gap (7.5px) */
     text-align: left;
 }
 
@@ -1114,20 +1115,142 @@ body::before {
   color: white;
 }
 
-/* Overlay específico para o seletor de player */
-.player-selector-overlay {
+/* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL - Corrigido para refletir a estrutura da tela inicial */
+.bottom-nav-container.streaming-mode {
+  /* Mantém as propriedades de posicionamento */
   position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  max-width: 600px;
+  width: 90%;
+  gap: 15px;
+  z-index: 100;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar {
+  /* Propriedades do main-nav-bar da home */
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  border-radius: 40px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 70px;
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 0 10px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar::before {
+  /* Efeito glass */
+  content: '';
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: transparent;
-  z-index: 998;
-  display: none;
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  z-index: -1;
 }
 
-.player-selector-overlay.active {
-  display: block;
+.bottom-nav-container.streaming-mode .main-nav-bar::after {
+  /* Fundo escuro */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--header-bg);
+  border-radius: 40px;
+  z-index: -1;
+}
+
+.bottom-nav-container.streaming-mode .nav-item {
+  /* Propriedades dos itens de navegação */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+  height: 100%;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bottom-nav-container.streaming-mode .nav-item i {
+  /* Ícones visíveis e claros */
+  font-size: 26px;
+  margin-bottom: 0;
+  transition: color 0.3s ease, transform 0.3s ease;
+  color: var(--text); /* Cor clara para visibilidade */
+  z-index: 2; /* Garante que os ícones estejam acima de tudo */
+}
+
+.bottom-nav-container.streaming-mode .nav-item:hover i {
+  transform: scale(1.1);
+  color: var(--primary);
+}
+
+.bottom-nav-container.streaming-mode .nav-item.active i {
+  color: var(--primary);
+}
+
+/* Círculo de informações (substitui o de busca) - Ajustado para ser idêntico ao search-circle da home */
+.info-circle {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1; /* Z-index para o ícone aparecer corretamente */
+}
+
+.info-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--header-bg);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.info-circle:hover {
+  background-color: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.info-circle i {
+  font-size: 32px;
+  z-index: 2; /* Z-index maior para o ícone em si */
 }
 
 /* Mensagem de erro */
@@ -1393,42 +1516,6 @@ body::before {
   opacity: 1;
 }
 
-/* ===== PÁGINAS DE STREAMING - ATUALIZAÇÕES PARA MOBILE ===== */
-
-/* Ajustes para pop-ups em mobile - aparecerem mais altos */
-@media (max-width: 768px) {
-  .player-selector-bubble {
-    bottom: 120px;
-    max-width: 90%;
-  }
-  
-  .info-popup-overlay {
-    padding: 2rem 1rem;
-    align-items: flex-start;
-    padding-top: 20vh;
-  }
-  
-  .info-popup-content {
-    max-height: 70vh;
-    margin-top: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .player-selector-bubble {
-    bottom: 110px;
-    padding: 1rem;
-  }
-  
-  .info-popup-overlay {
-    padding-top: 15vh;
-  }
-  
-  .info-popup-content {
-    padding: 1.2rem;
-  }
-}
-
 /* ===== RESPONSIVIDADE GERAL ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
@@ -1456,13 +1543,22 @@ body::before {
     font-size: 24px;
   }
   
-  .search-circle {
+  .bottom-nav-container.streaming-mode .main-nav-bar {
+      height: 65px;
+      border: 1px solid var(--header-border); /* Ajustado para 1px em mobile */
+  }
+
+  .bottom-nav-container.streaming-mode .nav-item i {
+      font-size: 24px;
+  }
+
+  .info-circle {
     width: 65px;
     height: 65px;
     border: 1px solid var(--header-border);
   }
   
-  .search-circle i {
+  .info-circle i {
     font-size: 28px;
   }
   
@@ -1554,7 +1650,7 @@ body::before {
   }
   
   .selector-select-streaming {
-    width: 120px;
+    width: 120px; /* Tamanho fixo para mobile */
   }
 }
 
@@ -1639,13 +1735,14 @@ body::before {
   }
   
   .selector-select-streaming {
-    width: 110px;
+    width: 110px; /* Tamanho fixo para mobile pequeno */
     font-size: 0.85rem;
   }
   
   .option-details {
     font-size: 0.75rem;
   }
+  
 }
 
 a {
