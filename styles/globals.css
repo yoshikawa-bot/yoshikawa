@@ -865,7 +865,7 @@ body::before {
 /* ************************************************* */
 
 .content-card {
-  background-color: transparent; /* Alterado para transparente, pois as informações ficarão por cima */
+  background-color: var(--card-bg); /* Voltou ao original */
   border-radius: 15px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -875,7 +875,8 @@ body::before {
   position: relative;
   text-decoration: none;
   color: inherit;
-  backdrop-filter: blur(10px); /* Mantido para o efeito geral, mas o overlay das infos será mais forte */
+  backdrop-filter: blur(10px);
+  /* Altura removida para se ajustar ao conteúdo (Imagem + Novo Info) */
 }
 
 .content-card:hover {
@@ -888,52 +889,91 @@ body::before {
   width: 100%;
   height: 240px;
   object-fit: cover;
-  display: block; /* Garante que não haja espaço extra abaixo da imagem */
+  display: block; 
 }
 
-/* A info do card agora é um OVERLAY na parte inferior */
+/* Reverter .content-info-card para a posição original, abaixo da imagem */
 .content-info-card {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.5rem 0.75rem; /* Ajustado para ser mais fino */
-  background: rgba(0, 0, 0, 0.5); /* Fundo mais escuro para melhor legibilidade */
-  backdrop-filter: blur(5px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text);
-  transition: background 0.3s ease;
-}
-
-.content-card:hover .content-info-card {
-    background: rgba(0, 0, 0, 0.7); /* Escurece no hover */
+  padding: 0.75rem; /* Padding original */
+  background: transparent; /* Fundo transparente */
+  position: static; /* Voltar à posição normal */
+  color: inherit;
+  backdrop-filter: none;
+  border: none;
 }
 
 .content-title-card {
-  font-weight: 600; /* Mais destaque para o título */
+  font-weight: 500;
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
   display: -webkit-box;
-  -webkit-line-clamp: 1; /* Apenas uma linha para economizar espaço */
+  -webkit-line-clamp: 2; /* Voltar a duas linhas */
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.2;
-}
-
-.content-meta-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.75rem;
-    color: var(--secondary);
+  /* Corrigido: Removido line-height: 1.2 */
 }
 
 .content-year {
-  /* Mantido, mas parte de um flex container */
+  font-size: 0.8rem;
   color: var(--secondary);
 }
 
-/* NOVO: Estilo para a classificação por estrelas */
+/* NOVO: Container para o texto flutuante */
+/* Este é o elemento que simula o design da imagem fornecida */
+.content-text-overlay {
+    position: absolute;
+    top: 10px; /* Margem do topo */
+    left: 10px; /* Margem da esquerda */
+    right: 10px; /* Garante que o texto não ultrapasse o card */
+    z-index: 5;
+    color: white; /* Cor do texto branco */
+    display: block; /* Garante que o wrapper ocupa o espaço */
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+/* Estilo para cada linha de texto dentro do overlay (Título e Meta) */
+.content-text-overlay h3,
+.content-text-overlay p {
+    display: inline;
+    padding: 2px 5px; /* Adiciona padding ao redor do texto */
+    margin-bottom: 2px; /* Espaço entre as linhas */
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto sólido semi-transparente */
+    box-decoration-break: clone; /* Aplica o background a cada linha de texto separadamente */
+    -webkit-box-decoration-break: clone;
+    font-weight: 600;
+    white-space: normal; /* Permite quebras de linha */
+}
+
+.content-text-overlay h3 {
+    font-size: 1rem;
+    display: block; /* O título ocupa toda a largura disponível */
+}
+
+.content-text-overlay p {
+    font-size: 0.8rem;
+    display: block; /* O meta-dado ocupa toda a largura disponível */
+    font-weight: 500;
+}
+
+/* Container para Ano e Rating (mantém no mesmo bloco) */
+.content-text-meta {
+    display: flex;
+    gap: 8px; /* Espaçamento entre o ano e o rating */
+    align-items: center;
+    padding: 2px 5px; /* Aplicar o fundo aqui */
+    background-color: rgba(0, 0, 0, 0.7);
+    width: fit-content; /* O bloco só ocupa o espaço necessário */
+    margin-top: 2px;
+}
+
+.content-text-meta span {
+    display: inline-block;
+    background-color: transparent; /* Não precisa de fundo extra, pois o pai já tem */
+    padding: 0;
+}
+
+/* Estilo para a classificação por estrelas */
 .content-rating {
     display: flex;
     align-items: center;
@@ -943,7 +983,7 @@ body::before {
 }
 
 .content-rating i {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: gold;
 }
 /* FIM DAS ALTERAÇÕES NO CARD */
@@ -1530,12 +1570,16 @@ footer {
   }
   
   /* Ajuste no card para telas muito pequenas */
-  .content-title-card {
-      font-size: 0.85rem;
+  .content-text-overlay {
+      font-size: 0.8rem;
   }
 
-  .content-meta-card {
-      font-size: 0.7rem;
+  .content-text-overlay h3 {
+      font-size: 0.9rem;
+  }
+
+  .content-text-overlay p {
+      font-size: 0.75rem;
   }
 }
 
