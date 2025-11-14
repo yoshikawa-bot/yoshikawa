@@ -157,15 +157,15 @@ export default function Home() {
     }
   }
   
-  // NOVO: Função para definir o Título e o Ícone da seção ativa
+  // ALTERADO: Função para definir o Título e o Ícone da seção ativa (apenas uma palavra)
   const getActiveSectionDetails = () => {
     switch (activeSection) {
       case 'releases':
-        return { title: 'Últimos Lançamentos', icon: 'fas fa-film' }
+        return { title: 'Lançamentos', icon: 'fas fa-film' } // Alterado para "Lançamentos"
       case 'recommendations':
         return { title: 'Populares', icon: 'fas fa-fire' }
       case 'favorites':
-        return { title: 'Meus Favoritos', icon: 'fas fa-heart' }
+        return { title: 'Favoritos', icon: 'fas fa-heart' } // Alterado para "Favoritos"
       default:
         return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
@@ -334,14 +334,14 @@ export default function Home() {
             <button 
               className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
               onClick={() => setActiveSection('recommendations')}
-              >
+            >
               <i className="fas fa-fire"></i>
               <span>Populares</span>
             </button>
             <button 
               className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
               onClick={() => setActiveSection('favorites')}
-              >
+            >
               <i className="fas fa-heart"></i>
               <span>Favoritos</span>
             </button>
@@ -350,7 +350,7 @@ export default function Home() {
           <button 
             className="search-circle"
             onClick={() => setShowSearchOverlay(true)}
-            >
+          >
             <i className="fas fa-search"></i>
           </button>
         </div>
