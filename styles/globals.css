@@ -594,6 +594,7 @@ body::before {
   position: relative;
   opacity: 1;
   transform: scale(1);
+  z-index: 1; /* Garante que o ícone esteja acima dos pseudo-elementos */
 }
 
 .search-circle::after {
@@ -748,7 +749,7 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== PÁGINAS DE STREAMING - DESIGN CORRIGIDO ===== */
+/* ===== PÁGINAS DE STREAMING - DESIGN CORRIGIDO E ATUALIZADO ===== */
 
 /* Container principal das páginas de streaming */
 .streaming-container {
@@ -855,10 +856,8 @@ body::before {
   border-color: var(--primary);
 }
 
-/* ===== POPUPS CORRIGIDOS ===== */
-
-/* Overlay para ambos os popups */
-.popup-overlay {
+/* Popup de informações - Mudança: Agora é uma sobreposição centralizada */
+.info-popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -871,11 +870,14 @@ body::before {
   align-items: center;
   padding: 1.5rem;
   backdrop-filter: blur(5px);
+  /* Novo: para animação de saída */
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.popup-overlay.active {
+.info-popup-overlay.active {
   display: flex;
-  animation: fadeIn 0.3s ease;
+  opacity: 1; /* Novo: para animação de entrada */
 }
 
 @keyframes fadeIn {
@@ -883,7 +885,11 @@ body::before {
   to { opacity: 1; }
 }
 
-/* Popup de informações da mídia */
+/* Animação de saída */
+.info-popup-overlay.closing {
+    opacity: 0;
+}
+
 .info-popup-content {
   background: var(--popup-bg);
   border: 1px solid var(--popup-border);
@@ -891,12 +897,17 @@ body::before {
   padding: 2rem;
   max-width: 500px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 90vh; /* Aumentado para melhor uso da tela */
   overflow-y: auto;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  /* Usar a mesma animação de sobreposição */
   animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
-  position: relative;
+}
+
+/* Animação de saída do conteúdo */
+.info-popup-overlay.closing .info-popup-content {
+    animation: slideDownToBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86) forwards;
 }
 
 @keyframes slideUpFromBottom {
@@ -911,15 +922,16 @@ body::before {
 }
 
 @keyframes slideDownToBottom {
-  from { 
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to { 
-    transform: translateY(50px);
-    opacity: 0;
-  }
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(50px);
+        opacity: 0;
+    }
 }
+
 
 .info-popup-header {
   display: flex;
@@ -980,95 +992,117 @@ body::before {
   transform: translateY(-2px);
 }
 
-/* Popup de seleção de player melhorado */
-.player-selector-content {
+/* Seletor de player na bolha - Novo: Adicionado animação de saída e estrutura de detalhe */
+.player-selector-bubble {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--popup-bg);
   border: 1px solid var(--popup-border);
   border-radius: 20px;
-  padding: 2rem;
-  max-width: 500px;
-  width: 100%;
-  text-align: center;
+  padding: 1.5rem;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
-  position: relative;
+  z-index: 999; /* Z-index alto para ficar sobre a bolha de navegação */
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.player-selector-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 0.5rem;
+.player-selector-bubble.active {
+  display: block;
+  opacity: 1;
+  animation: slideUpFromBottom 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) forwards;
+}
+
+/* Animação de saída */
+.player-selector-bubble.closing {
+    opacity: 0;
+    animation: slideDownToBottom 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) forwards;
+}
+
+.player-selector-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid rgba(255, 255, 255, 0.3); /* Corrigido para corresponder à borda do popup */
+}
+
+.player-options-bubble {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-.player-selector-title i {
-  color: var(--primary);
-}
-
-.player-selector-subtitle {
-  color: var(--secondary);
-  margin-bottom: 2rem;
-  font-size: 1rem;
-}
-
-.player-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.player-option {
+.player-option-bubble {
+  display: flex;
+  flex-direction: column; /* Alterado para empilhar título e detalhes */
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
   background: var(--option-bg);
   border: 1px solid var(--border);
   border-radius: 15px;
-  padding: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.player-option:hover {
-  transform: translateY(-5px);
-  border-color: var(--primary);
-  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.2);
-}
-
-.player-option-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.player-option-header i {
-  font-size: 1.8rem;
-  color: var(--primary);
-}
-
-.player-option-header h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
   color: var(--text);
-  margin: 0;
+  text-decoration: none;
 }
 
-.player-tag {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  padding: 0.3rem 0.8rem;
-  border-radius: 15px;
-  font-size: 0.8rem;
+.player-option-bubble:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transform: translateX(5px);
+}
+
+.option-main-line {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.option-main-line i {
+  font-size: 1.2rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.option-name {
+    font-weight: 600;
+    font-size: 1rem;
+    flex-grow: 1;
+}
+
+.option-details {
+    font-size: 0.8rem;
+    color: var(--secondary);
+    margin-left: 27.5px; /* Alinha com o texto da opção, considerando o ícone (20px) + gap (7.5px) */
+    text-align: left;
+}
+
+.player-option-bubble:hover .option-details {
+    color: white;
+    opacity: 0.8;
+}
+
+.player-tag-bubble {
+  margin-left: auto;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .player-tag-dub {
@@ -1081,60 +1115,9 @@ body::before {
   color: white;
 }
 
-.player-option-info {
-  text-align: left;
-  margin-bottom: 1.5rem;
-}
-
-.player-option-info p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-
-.player-option-info i {
-  width: 16px;
-  color: var(--success);
-}
-
-.player-option-info i.fa-exclamation-triangle {
-  color: #f59e0b;
-}
-
-.player-option-info i.fa-clock {
-  color: var(--secondary);
-}
-
-.player-option-info i.fa-closed-captioning {
-  color: var(--accent);
-}
-
-.player-select-btn {
-  width: 100%;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: white;
-  border: none;
-  border-radius: 25px;
-  padding: 0.75rem 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.player-select-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-}
-
-/* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL */
+/* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL - Corrigido para refletir a estrutura da tela inicial */
 .bottom-nav-container.streaming-mode {
+  /* Mantém as propriedades de posicionamento */
   position: fixed;
   bottom: 25px;
   left: 50%;
@@ -1148,6 +1131,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar {
+  /* Propriedades do main-nav-bar da home */
   background-color: transparent;
   border: 2px solid var(--header-border);
   border-radius: 40px;
@@ -1160,9 +1144,11 @@ body::before {
   overflow: hidden;
   padding: 0 10px;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::before {
+  /* Efeito glass */
   content: '';
   position: absolute;
   top: 0;
@@ -1175,6 +1161,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::after {
+  /* Fundo escuro */
   content: '';
   position: absolute;
   top: 0;
@@ -1187,6 +1174,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .nav-item {
+  /* Propriedades dos itens de navegação */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1207,12 +1195,12 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
+  /* Ícones visíveis e claros */
   font-size: 26px;
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
-  color: var(--text);
-  z-index: 2;
-  position: relative;
+  color: var(--text); /* Cor clara para visibilidade */
+  z-index: 2; /* Garante que os ícones estejam acima de tudo */
 }
 
 .bottom-nav-container.streaming-mode .nav-item:hover i {
@@ -1224,8 +1212,8 @@ body::before {
   color: var(--primary);
 }
 
-/* Círculo de voltar para início (substitui o de busca) */
-.home-circle {
+/* Círculo de informações (substitui o de busca) - Ajustado para ser idêntico ao search-circle da home */
+.info-circle {
   background-color: transparent;
   border: 2px solid var(--header-border);
   backdrop-filter: blur(10px);
@@ -1242,9 +1230,10 @@ body::before {
   color: var(--text);
   transition: all 0.3s ease;
   position: relative;
+  z-index: 1; /* Z-index para o ícone aparecer corretamente */
 }
 
-.home-circle::after {
+.info-circle::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1253,15 +1242,15 @@ body::before {
   z-index: -1;
 }
 
-.home-circle:hover {
+.info-circle:hover {
   background-color: var(--primary);
   color: var(--text);
   border-color: var(--primary);
 }
 
-.home-circle i {
+.info-circle i {
   font-size: 32px;
-  z-index: 1;
+  z-index: 2; /* Z-index maior para o ícone em si */
 }
 
 /* Mensagem de erro */
@@ -1556,19 +1545,20 @@ body::before {
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
       height: 65px;
+      border: 1px solid var(--header-border); /* Ajustado para 1px em mobile */
   }
 
   .bottom-nav-container.streaming-mode .nav-item i {
       font-size: 24px;
   }
 
-  .home-circle {
+  .info-circle {
     width: 65px;
     height: 65px;
     border: 1px solid var(--header-border);
   }
   
-  .home-circle i {
+  .info-circle i {
     font-size: 28px;
   }
   
@@ -1627,7 +1617,7 @@ body::before {
     font-size: 1.2rem;
   }
   
-  .info-popup-content, .player-selector-content {
+  .info-popup-content {
     padding: 1.5rem;
     margin: 1rem;
   }
@@ -1643,9 +1633,10 @@ body::before {
     height: 150px;
   }
   
-  .player-options {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .player-selector-bubble {
+    bottom: 90px;
+    padding: 1rem;
+    max-width: 90%;
   }
   
   .episode-selector-streaming {
@@ -1726,7 +1717,7 @@ body::before {
     font-size: 0.9rem;
   }
   
-  .info-popup-content, .player-selector-content {
+  .info-popup-content {
     padding: 1rem;
   }
   
@@ -1734,23 +1725,24 @@ body::before {
     font-size: 1.2rem;
   }
   
-  .player-option {
-    padding: 1rem;
+  .player-selector-bubble {
+    padding: 0.75rem;
   }
   
-  .player-option-header {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .player-option-header h3 {
-    font-size: 1.1rem;
+  .player-option-bubble {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
   }
   
   .selector-select-streaming {
     width: 110px; /* Tamanho fixo para mobile pequeno */
     font-size: 0.85rem;
   }
+  
+  .option-details {
+    font-size: 0.75rem;
+  }
+  
 }
 
 a {
@@ -1777,4 +1769,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
