@@ -748,7 +748,7 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== PÁGINAS DE STREAMING - DESIGN TOTALMENTE REFEITO ===== */
+/* ===== PÁGINAS DE STREAMING - DESIGN CORRIGIDO ===== */
 
 /* Container principal das páginas de streaming */
 .streaming-container {
@@ -787,39 +787,7 @@ body::before {
   border: none;
 }
 
-/* Controles de streaming na bolha */
-.streaming-controls {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.streaming-control-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 25px;
-  padding: 0.75rem 1.5rem;
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  text-decoration: none;
-}
-
-.streaming-control-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-  transform: translateY(-2px);
-}
-
-/* Informações do conteúdo */
+/* Informações do conteúdo abaixo do embed */
 .content-info-streaming {
   background: var(--card-bg);
   border-radius: 15px;
@@ -830,26 +798,12 @@ body::before {
 }
 
 .content-title-streaming {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 1rem;
   color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.content-title-streaming i {
-  color: var(--primary);
-}
-
-.content-meta-streaming {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  color: var(--secondary);
-  font-size: 0.9rem;
+  line-height: 1.3;
+  word-wrap: break-word;
 }
 
 .content-description-streaming {
@@ -858,7 +812,7 @@ body::before {
   margin-bottom: 1rem;
 }
 
-/* Seletor de episódios para séries */
+/* Seletor de episódios para séries - TAMANHO FIXO */
 .episode-selector-streaming {
   display: none;
   gap: 1rem;
@@ -889,10 +843,11 @@ body::before {
   border-radius: 25px;
   padding: 0.5rem 1rem;
   color: var(--text);
-  min-width: 120px;
+  width: 140px; /* TAMANHO FIXO */
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .selector-select-streaming:focus {
@@ -921,6 +876,11 @@ body::before {
   animation: fadeIn 0.3s ease;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .info-popup-content {
   background: var(--popup-bg);
   border: 1px solid var(--popup-border);
@@ -933,6 +893,17 @@ body::before {
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+
+@keyframes slideUpFromBottom {
+  from { 
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .info-popup-header {
@@ -1080,32 +1051,133 @@ body::before {
   color: white;
 }
 
-/* Bolha de streaming com 3 ícones */
-.bottom-nav-container.streaming-mode .main-nav-bar {
-  justify-content: center;
-  padding: 0 15px;
-  flex-grow: 0;
-  width: auto;
-  max-width: fit-content;
+/* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL */
+.bottom-nav-container.streaming-mode {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  max-width: 600px;
+  width: 90%;
   gap: 15px;
+  z-index: 100;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  border-radius: 40px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 70px;
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 0 10px;
+  position: relative;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  z-index: -1;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--header-bg);
+  border-radius: 40px;
+  z-index: -1;
 }
 
 .bottom-nav-container.streaming-mode .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+  height: 100%;
   opacity: 1;
   transform: scale(1);
-  pointer-events: auto;
-  flex: none;
-  width: 45px;
 }
 
-.bottom-nav-container.streaming-mode .nav-item.hidden-on-streaming {
-  display: none;
+.bottom-nav-container.streaming-mode .nav-item i {
+  font-size: 26px;
+  margin-bottom: 0;
+  transition: color 0.3s ease, transform 0.3s ease;
+  color: var(--text);
 }
 
-.bottom-nav-container.streaming-mode .search-circle {
-  opacity: 0;
-  transform: scale(0);
-  pointer-events: none;
+.bottom-nav-container.streaming-mode .nav-item:hover i {
+  transform: scale(1.1);
+  color: var(--primary);
+}
+
+.bottom-nav-container.streaming-mode .nav-item.active i {
+  color: var(--primary);
+}
+
+/* Círculo de informações (substitui o de busca) */
+.info-circle {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.info-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--header-bg);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.info-circle:hover {
+  background-color: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.info-circle i {
+  font-size: 32px;
+  z-index: 1;
 }
 
 /* Mensagem de erro */
@@ -1400,20 +1472,19 @@ body::before {
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
       height: 65px;
-      gap: 10px;
   }
 
-  .bottom-nav-container.streaming-mode .nav-item {
-      width: 40px; 
+  .bottom-nav-container.streaming-mode .nav-item i {
+      font-size: 24px;
   }
 
-  .search-circle {
+  .info-circle {
     width: 65px;
     height: 65px;
     border: 1px solid var(--header-border);
   }
   
-  .search-circle i {
+  .info-circle i {
     font-size: 28px;
   }
   
@@ -1469,7 +1540,7 @@ body::before {
   }
   
   .content-title-streaming {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
   }
   
   .info-popup-content {
@@ -1494,16 +1565,6 @@ body::before {
     max-width: 90%;
   }
   
-  .streaming-controls {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .streaming-control-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  
   .episode-selector-streaming {
     flex-direction: column;
     align-items: flex-start;
@@ -1515,8 +1576,7 @@ body::before {
   }
   
   .selector-select-streaming {
-    flex: 1;
-    min-width: auto;
+    width: 120px; /* Tamanho fixo para mobile */
   }
 }
 
@@ -1576,11 +1636,11 @@ body::before {
 
   /* Responsividade mobile para páginas de streaming */
   .content-title-streaming {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
   
-  .content-meta-streaming {
-    font-size: 0.8rem;
+  .content-description-streaming {
+    font-size: 0.9rem;
   }
   
   .info-popup-content {
@@ -1598,6 +1658,11 @@ body::before {
   .player-option-bubble {
     padding: 0.6rem 0.8rem;
     font-size: 0.9rem;
+  }
+  
+  .selector-select-streaming {
+    width: 110px; /* Tamanho fixo para mobile pequeno */
+    font-size: 0.85rem;
   }
 }
 
@@ -1625,4 +1690,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+  }
