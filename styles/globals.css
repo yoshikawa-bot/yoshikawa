@@ -29,7 +29,7 @@
 
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: url('https://yoshikawa-bot.github.io/cache/images/ea6ceee5.jpg') no-repeat center/cover fixed;
+  background: url('https://yoshikawa-bot.github.io/cache/images/5061d566.jpg') no-repeat center/cover fixed;
   color: var(--text);
   line-height: 1.6;
   font-size: 16px;
@@ -175,7 +175,7 @@ body::before {
   gap: 1rem;
 }
 
-/* BARRA DE BUSCA MELHORADA - Design de vidro */
+/* BARRA DE BUSCA MELHORADA - Design de vidro (do Header) */
 .search-container {
   position: relative;
   max-width: 400px;
@@ -1194,7 +1194,10 @@ footer {
   display: none;
 }
 
-/* Container Flutuante de Navegação - NOVO FORMATO, MAIOR E COM EFEITO DE CABEÇALHO */
+/* ************************************************* */
+/* CONTAINER FLUTUANTE DE NAVEGAÇÃO / PESQUISA */
+/* ************************************************* */
+
 .bottom-nav-container {
   position: fixed;
   bottom: 25px; 
@@ -1204,8 +1207,10 @@ footer {
   align-items: center;
   max-width: 600px; 
   width: 90%; 
-  gap: 15px; 
+  gap: 0; /* Removido o gap, pois a lupa lateral foi removida */
   z-index: 100;
+  /* NOVO: Adiciona transição para a largura no modo pesquisa */
+  transition: width 0.3s ease, max-width 0.3s ease;
 }
 
 .main-nav-bar {
@@ -1222,32 +1227,33 @@ footer {
   overflow: hidden;
   padding: 0 10px; 
   position: relative;
+  transition: all 0.3s ease; /* Adiciona transição para mudanças de layout */
 }
 
-.main-nav-bar::before {
+/* Efeito de vidro (mantido) */
+.main-nav-bar::before,
+.main-nav-bar::after {
+    /* ... (Mantenha o código original de before/after) ... */
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: -1;
+    border-radius: 40px;
+}
+.main-nav-bar::before {
     backdrop-filter: blur(10px); 
     filter: saturate(120%) brightness(1.15); 
-    z-index: -1;
 }
-
 .main-nav-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: var(--header-bg); 
-    border-radius: 40px;
-    z-index: -1;
 }
 
+/* ------------------------------------------------ */
+/* ESTADO PADRÃO: NAVEGAÇÃO */
+/* ------------------------------------------------ */
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -1263,198 +1269,125 @@ footer {
   border: none;
   background: none;
   position: relative;
-  /* NOVO: Garante que o item ocupe a altura total para centralizar o ícone */
   height: 100%; 
   justify-content: center; 
+  /* NOVO: Controla a visibilidade e posição no modo busca */
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
 }
 
-/* NOVO: Oculta o título (span) e anula seu espaço */
+/* NOVO: Oculta o título (span) */
 .nav-item span {
   display: none; 
 }
 
-/* NOVO: Define a cor BRANCA (var(--text)) para o ícone por padrão (não ativo) */
+/* NOVO: Cor BRANCA para ícones inativos */
 .nav-item i {
   font-size: 26px; 
-  margin-bottom: 0; /* REMOVIDO: margin-bottom: 2px; para centralizar */
+  margin-bottom: 0; 
   transition: color 0.3s ease, transform 0.3s ease;
-  color: var(--text); /* Ícone BRANCO quando não ativo/hover */
+  color: var(--text); 
 }
 
 .nav-item:hover i {
     transform: scale(1.1);
-    color: var(--primary); /* Cor primária no hover */
-}
-
-/* ATUALIZADO: ÍCONE COLORIDO QUANDO ATIVO */
-.nav-item.active {
-  color: initial; /* Cor base do item irrelevante já que o span está oculto */
+    color: var(--primary); 
 }
 
 .nav-item.active i {
-  color: var(--primary); /* Ícone primário quando ativo */
-  transform: none; /* Remove o scale do hover se estiver ativo */
+  color: var(--primary); 
+  transform: none;
 }
 
-/* Ajuste do tamanho dos itens - REMOVIDO para que o flex-1 nos nav-item lide com o layout */
-.nav-item:nth-child(1), .nav-item:nth-child(4) {
-  flex-basis: initial;
-}
-.nav-item:nth-child(2), .nav-item:nth-child(3) {
-  flex-basis: initial;
-}
+/* REMOVIDO: search-circle (não precisamos mais dele) */
+/* .search-circle foi removido */
 
-/* Ícone de Pesquisa Separado - MAIOR E COM EFEITO DE CABEÇALHO */
-.search-circle {
-  /* Efeito idêntico ao cabeçalho (github-header) */
-  background-color: transparent;
-  border: 2px solid var(--header-border); 
-  backdrop-filter: blur(10px); 
-  filter: saturate(120%) brightness(1.15); 
-  border-radius: 50%;
-  width: 70px; 
-  height: 70px; 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
-  flex-shrink: 0;
-  cursor: pointer;
-  color: var(--text); /* ALTERADO para branco */
-  transition: all 0.3s ease;
-  position: relative;
-}
+/* ------------------------------------------------ */
+/* ESTADO ATIVO: PESQUISA FLUTUANTE */
+/* ------------------------------------------------ */
 
-.search-circle::after {
-    content: '';
+/* NOVO: Container de busca flutuante, visível apenas no modo busca */
+.floating-search-wrapper {
     position: absolute;
     inset: 0;
-    background: var(--header-bg);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    /* Começa oculto */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* NOVO: Campo de busca */
+.floating-search-input {
+    flex-grow: 1;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 25px;
+    padding: 0 1rem 0 1.5rem;
+    font-size: 1rem;
+    color: var(--text);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    outline: none;
+}
+
+.floating-search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.4);
+}
+
+/* NOVO: Botão Lupa/Fechar */
+.search-action-btn {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    z-index: -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
-.search-circle:hover {
-  background-color: var(--primary);
-  color: var(--text);
-  border-color: var(--primary);
+.search-action-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
-.search-circle i {
-  font-size: 32px; 
-  z-index: 1;
+/* CLASSE DE ATIVAÇÃO NO CONTÊINER PAI */
+.bottom-nav-container.search-active .main-nav-bar {
+    width: 100%; /* Ocupa a largura total definida no contêiner pai */
+    padding: 0 10px; /* Mantém o padding para o modo busca */
+    justify-content: center; /* Centraliza a barra de busca */
 }
 
-/* Overlay de Pesquisa */
-.search-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: none;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 20%;
-  backdrop-filter: blur(10px);
+/* NOVO: Esconde os itens de navegação quando a busca está ativa */
+.bottom-nav-container.search-active .nav-item {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+    position: absolute; /* Tira do fluxo para que a barra de busca ocupe o espaço */
 }
 
-.search-overlay.active {
-  display: flex;
+/* NOVO: Mostra a barra de busca quando a busca está ativa */
+.bottom-nav-container.search-active .floating-search-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
-.search-overlay-content {
-  background: var(--card-bg);
-  border: 2px solid var(--border);
-  border-radius: 25px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-}
-
-.search-overlay-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.search-overlay-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.close-search-overlay {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.close-search-overlay:hover {
-  background: var(--primary);
-  color: white;
-}
-
-.overlay-search-container {
-  position: relative;
-  width: 100%;
-}
-
-.overlay-search-input {
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid var(--border);
-  border-radius: 25px;
-  padding: 1rem 3rem 1rem 1.5rem;
-  font-size: 1rem;
-  color: var(--text);
-  width: 100%;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.overlay-search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
-}
-
-.overlay-search-button {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--primary);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.overlay-search-button:hover {
-  background: var(--primary-dark);
-  transform: translateY(-50%) scale(1.1);
-}
+/* ************************************************* */
+/* FIM CONTAINER FLUTUANTE DE NAVEGAÇÃO / PESQUISA */
+/* ************************************************* */
 
 /* Responsividade para o container flutuante */
 @media (max-width: 768px) {
@@ -1462,7 +1395,6 @@ footer {
     bottom: 20px; 
     max-width: 95%; 
     width: 95%;
-    gap: 10px;
   }
   
   .main-nav-bar {
@@ -1482,23 +1414,16 @@ footer {
   .nav-item i {
     font-size: 24px;
   }
-  
-  .search-circle {
-    width: 65px; 
-    height: 65px; 
-    border: 1px solid var(--header-border); 
+
+  /* Ajustes responsivos para a busca */
+  .floating-search-input {
+    height: 45px;
+    font-size: 0.9rem;
   }
-  
-  .search-circle i {
-    font-size: 28px;
-  }
-  
-  .search-overlay {
-    padding-top: 30%;
-  }
-  
-  .search-overlay-content {
-    padding: 1.5rem;
+
+  .search-action-btn {
+    width: 45px;
+    height: 45px;
   }
   
   .container {
