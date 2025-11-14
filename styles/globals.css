@@ -180,118 +180,7 @@ body::before {
   position: relative;
   max-width: 400px;
   width: 100%;
-}
-
-.search-input {
-  /* Efeitos de vidro do cabeçalho */
-  background: transparent;
-  border: 1px solid var(--header-border);
-  border-radius: 25px;
-  padding: 0.5rem 2.5rem 0.5rem 1rem;
-  font-size: 0.9rem;
-  color: var(--header-text);
-  width: 100%;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra interna sutil */
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.search-button {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent; /* Remove background */
-  border: none;
-  color: var(--secondary);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.search-button:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateY(-50%) scale(1.1);
-}
-
-/* Auto-complete Popup */
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--overlay-bg);
-  border: 1px solid var(--border);
-  border-radius: 0 0 15px 15px;
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 1000;
-  display: none;
-  backdrop-filter: blur(10px);
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: all 0.3s ease;
-}
-
-.search-result-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateX(3px);
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.search-result-poster {
-  width: 40px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-right: 1rem;
-  flex-shrink: 0;
-}
-
-.search-result-info {
-  flex: 1;
-}
-
-.search-result-title {
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.search-result-meta {
-  font-size: 0.8rem;
-  color: var(--secondary);
-}
-
-.search-result-type {
-  background: var(--primary);
-  color: white;
-  padding: 0.2rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  margin-left: 0.5rem;
+  display: none; /* Escondida pois a busca foi movida para o contêiner flutuante */
 }
 
 /* BOTÃO DE FAVORITOS NO HEADER - CORRIGIDO */
@@ -816,49 +705,21 @@ body::before {
   font-size: 1.2rem;
 }
 
-/* Grid de Conteúdo Horizontal - DUAS CARREIRAS */
+/* Grid de Conteúdo Horizontal - AGORA É UM GRID REAL */
 .content-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.content-row {
-  display: flex;
-  overflow-x: auto;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Ajusta para mobile e desktop */
+  gap: 1.5rem; /* Aumenta o espaçamento */
+  justify-content: center; /* Centraliza os cards */
   padding: 0.5rem 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
 }
 
-/* BARRA DE ROLAGEM HORIZONTAL - ESTILIZADA */
-.content-row::-webkit-scrollbar {
-  height: 6px;
-}
-
-.content-row::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  margin: 0 10px;
-}
-
-.content-row::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.content-row::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--primary-dark), var(--accent-dark));
-}
-
-/* Firefox */
 .content-row {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
+  /* REMOVIDO: propriedades de rolagem horizontal */
+  display: contents; /* Usado para manter os cards no grid principal */
 }
+
+/* BARRA DE ROLAGEM HORIZONTAL - ESTILIZADA - REMOVIDO pois agora é grid vertical */
 
 /* ************************************************* */
 /* ALTERAÇÕES APLICADAS AQUI PARA O CARD DO CONTEÚDO */
@@ -871,12 +732,11 @@ body::before {
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid var(--border);
-  flex: 0 0 160px;
+  flex: none; /* REMOVIDO: flex: 0 0 160px; - Deixando o grid controlar o tamanho */
   position: relative;
   text-decoration: none;
   color: inherit;
   backdrop-filter: blur(10px);
-  /* Altura removida para se ajustar ao conteúdo (Imagem + Novo Info) */
 }
 
 .content-card:hover {
@@ -961,11 +821,6 @@ body::before {
     text-shadow: none;
 }
 
-/* Container para Ano e Rating (mantém no mesmo bloco) - Removido pois usamos .content-year diretamente */
-.content-text-meta {
-    display: none; 
-}
-
 /* Estilo para a classificação por estrelas - Mantido, caso queira adicionar depois */
 .content-rating {
     display: flex;
@@ -1020,84 +875,15 @@ body::before {
   animation: heart-pop 0.5s; 
 }
 
-/* Resultados da Busca */
+/* Resultados da Busca - Antigas classes removidas, agora usa .content-grid */
 .search-results-section {
-  display: none;
+    display: block; /* Sempre visível para usar a estrutura da home */
 }
 
-.search-results-section.active {
-  display: block;
-}
-
-.search-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.search-list-item {
-  display: flex;
-  align-items: center;
-  background-color: var(--card-bg);
-  padding: 1rem;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-  text-decoration: none;
-  color: inherit;
-  backdrop-filter: blur(10px);
-  position: relative;
-}
-
-.search-list-item::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  z-index: -1;
-}
-
-.search-list-item:hover {
-  border-color: var(--primary);
-  transform: translateX(5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.search-list-poster {
-  width: 60px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-right: 1rem;
-  flex-shrink: 0;
-}
-
-.search-list-info {
-  flex: 1;
-}
-
-.search-list-title {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.search-list-meta {
-  font-size: 0.85rem;
-  color: var(--secondary);
-  margin-bottom: 0.5rem;
-}
-
-.search-list-overview {
-  font-size: 0.8rem;
-  color: var(--text);
-  opacity: 0.8;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* Remover estilos de lista da busca anterior */
+.search-list, .search-list-item, .search-list-poster, .search-list-info, .search-list-title, .search-list-meta, .search-list-overview {
+    /* Estas classes não são mais usadas, os resultados usam ContentGrid */
+    display: contents; 
 }
 
 /* Botão Voltar para Home */
@@ -1194,20 +980,34 @@ footer {
   display: none;
 }
 
-/* Container Flutuante de Navegação - NOVO FORMATO, MAIOR E COM EFEITO DE CABEÇALHO */
-.bottom-nav-container {
+
+/* ********************************************************* */
+/* NOVO: Container Flutuante de Navegação e Busca com Transição */
+/* ********************************************************* */
+
+/* Container geral que irá se expandir/retrair */
+.bottom-nav-search-container {
   position: fixed;
   bottom: 25px; 
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  max-width: 600px; 
-  width: 90%; 
+  max-width: 90%; /* Máximo em modo de navegação */
+  width: fit-content;
   gap: 15px; 
   z-index: 100;
+  transition: max-width 0.4s ease, width 0.4s ease, transform 0.4s ease;
 }
 
+/* Estado de PESQUISA: Ocupa a largura máxima e esconde a barra de navegação */
+.bottom-nav-search-container.searching {
+    max-width: 600px;
+    width: 90%;
+    /* O gap será controlado por flexbox no interior */
+}
+
+/* Barra de Navegação (Ícones) */
 .main-nav-bar {
   /* Efeito idêntico ao cabeçalho (github-header) */
   background-color: transparent;
@@ -1222,9 +1022,14 @@ footer {
   overflow: hidden;
   padding: 0 10px; 
   position: relative;
+  transition: all 0.4s ease; /* Transição para esconder/mostrar */
+  opacity: 1;
+  visibility: visible;
+  flex-shrink: 1;
+  min-width: 200px; /* Largura mínima para os 3 ícones */
 }
 
-.main-nav-bar::before {
+.main-nav-bar::before, .main-nav-bar::after {
     content: '';
     position: absolute;
     top: 0;
@@ -1234,20 +1039,25 @@ footer {
     backdrop-filter: blur(10px); 
     filter: saturate(120%) brightness(1.15); 
     z-index: -1;
+    border-radius: 40px;
 }
 
 .main-nav-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: var(--header-bg); 
-    border-radius: 40px;
-    z-index: -1;
 }
 
+/* ESCONDENDO A BARRA DE NAVEGAÇÃO NO MODO PESQUISANDO */
+.bottom-nav-search-container.searching .main-nav-bar {
+    opacity: 0;
+    visibility: hidden;
+    flex-grow: 0; /* Não ocupa mais espaço */
+    min-width: 0;
+    width: 0; /* Ocupa 0 de largura */
+    padding: 0;
+    margin-right: -15px; /* Compensa o gap para o circle */
+}
+
+/* Itens de Navegação (Ícones) */
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -1263,7 +1073,6 @@ footer {
   border: none;
   background: none;
   position: relative;
-  /* NOVO: Garante que o item ocupe a altura total para centralizar o ícone */
   height: 100%; 
   justify-content: center; 
 }
@@ -1276,7 +1085,7 @@ footer {
 /* NOVO: Define a cor BRANCA (var(--text)) para o ícone por padrão (não ativo) */
 .nav-item i {
   font-size: 26px; 
-  margin-bottom: 0; /* REMOVIDO: margin-bottom: 2px; para centralizar */
+  margin-bottom: 0; 
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text); /* Ícone BRANCO quando não ativo/hover */
 }
@@ -1288,23 +1097,15 @@ footer {
 
 /* ATUALIZADO: ÍCONE COLORIDO QUANDO ATIVO */
 .nav-item.active {
-  color: initial; /* Cor base do item irrelevante já que o span está oculto */
+  color: initial; 
 }
 
 .nav-item.active i {
   color: var(--primary); /* Ícone primário quando ativo */
-  transform: none; /* Remove o scale do hover se estiver ativo */
+  transform: none; 
 }
 
-/* Ajuste do tamanho dos itens - REMOVIDO para que o flex-1 nos nav-item lide com o layout */
-.nav-item:nth-child(1), .nav-item:nth-child(4) {
-  flex-basis: initial;
-}
-.nav-item:nth-child(2), .nav-item:nth-child(3) {
-  flex-basis: initial;
-}
-
-/* Ícone de Pesquisa Separado - MAIOR E COM EFEITO DE CABEÇALHO */
+/* Ícone de Lupa Separado (Permanece sempre visível) */
 .search-circle {
   /* Efeito idêntico ao cabeçalho (github-header) */
   background-color: transparent;
@@ -1321,8 +1122,9 @@ footer {
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text); /* ALTERADO para branco */
-  transition: all 0.3s ease;
+  transition: all 0.4s ease; /* Transição para rotação/cor */
   position: relative;
+  z-index: 2; /* Garante que fique acima da barra de pesquisa */
 }
 
 .search-circle::after {
@@ -1332,6 +1134,7 @@ footer {
     background: var(--header-bg);
     border-radius: 50%;
     z-index: -1;
+    transition: all 0.4s ease;
 }
 
 .search-circle:hover {
@@ -1343,125 +1146,149 @@ footer {
 .search-circle i {
   font-size: 32px; 
   z-index: 1;
+  transition: all 0.4s ease;
 }
 
-/* Overlay de Pesquisa */
-.search-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: none;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 20%;
-  backdrop-filter: blur(10px);
+/* Rotação e Cor da Lupa no modo de pesquisa */
+.bottom-nav-search-container.searching .search-circle {
+    transform: rotate(360deg);
+    background-color: var(--primary); /* Destaca a lupa quando a barra de pesquisa está ativa */
+    border-color: var(--primary);
 }
 
-.search-overlay.active {
-  display: flex;
+.bottom-nav-search-container.searching .search-circle i {
+    color: var(--text); 
 }
 
-.search-overlay-content {
-  background: var(--card-bg);
-  border: 2px solid var(--border);
-  border-radius: 25px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+/* Barra de Pesquisa Flutuante (Nova) */
+.floating-search-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Começa ESCONDIDA */
+    left: 70px; /* Alinhado à esquerda da lupa (70px de largura da lupa) */
+    width: calc(100% - 70px - 15px); /* Largura total - largura da lupa - gap */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+    z-index: 1; /* Abaixo da lupa */
+    height: 70px; /* Altura igual à lupa */
 }
 
-.search-overlay-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+/* MODO PESQUISA: A barra de pesquisa se move para a esquerda (ficando VISÍVEL) */
+.bottom-nav-search-container.searching .floating-search-bar {
+    left: 0; /* Move para a esquerda do contêiner */
+    opacity: 1;
+    visibility: visible;
+    width: calc(100% - 70px - 15px);
 }
 
-.search-overlay-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--text);
+.floating-search-form {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    /* Efeito de vidro para a barra de pesquisa */
+    background-color: transparent;
+    border: 2px solid var(--header-border); 
+    border-radius: 40px; 
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
+    overflow: hidden;
 }
 
-.close-search-overlay {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+.floating-search-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(10px); 
+    filter: saturate(120%) brightness(1.15); 
+    z-index: -1;
+    border-radius: 40px;
 }
 
-.close-search-overlay:hover {
-  background: var(--primary);
-  color: white;
+.floating-search-form::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--header-bg); 
+    border-radius: 40px;
+    z-index: -1;
 }
 
-.overlay-search-container {
-  position: relative;
-  width: 100%;
+.floating-search-input {
+    background: transparent;
+    border: none;
+    padding: 0 1rem;
+    font-size: 1.1rem;
+    color: var(--text); /* Texto branco */
+    flex-grow: 1;
+    height: 100%;
+    min-width: 0; /* Permite o encolhimento */
 }
 
-.overlay-search-input {
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid var(--border);
-  border-radius: 25px;
-  padding: 1rem 3rem 1rem 1.5rem;
-  font-size: 1rem;
-  color: var(--text);
-  width: 100%;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+.floating-search-input::placeholder {
+    color: var(--text); /* Placeholder branco */
+    opacity: 0.8; 
 }
 
-.overlay-search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
+.floating-search-input:focus {
+    outline: none;
 }
 
-.overlay-search-button {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--primary);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
+/* Botão de Enviar (Lupa dentro da barra) - Ícone menor, alinhado à direita */
+.floating-search-button {
+    background: transparent;
+    border: none;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 5px; /* Espaçamento com o botão fechar */
 }
 
-.overlay-search-button:hover {
-  background: var(--primary-dark);
-  transform: translateY(-50%) scale(1.1);
+.floating-search-button:hover {
+    color: var(--primary);
+    transform: scale(1.1);
 }
+
+/* Botão de Fechar (X) - Ícone menor, alinhado à direita */
+.floating-search-close {
+    background: transparent;
+    border: none;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 15px; /* Alinhamento final */
+}
+
+.floating-search-close:hover {
+    color: var(--error);
+    transform: scale(1.1);
+}
+
 
 /* Responsividade para o container flutuante */
 @media (max-width: 768px) {
-  .bottom-nav-container {
+  .bottom-nav-search-container {
     bottom: 20px; 
     max-width: 95%; 
-    width: 95%;
     gap: 10px;
   }
   
@@ -1471,7 +1298,7 @@ footer {
     border: 1px solid var(--header-border); 
   }
   
-  .main-nav-bar::after {
+  .main-nav-bar::before, .main-nav-bar::after {
       border-radius: 35px;
   }
   
@@ -1493,12 +1320,38 @@ footer {
     font-size: 28px;
   }
   
-  .search-overlay {
-    padding-top: 30%;
+  /* Ajuste para a barra de pesquisa no modo mobile */
+  .floating-search-bar {
+      left: 65px; /* Largura da lupa (65px) */
+      width: calc(100% - 65px - 10px); /* Largura total - largura da lupa - gap */
+      height: 65px;
   }
   
-  .search-overlay-content {
-    padding: 1.5rem;
+  .bottom-nav-search-container.searching .floating-search-bar {
+      width: calc(100% - 65px - 10px);
+  }
+  
+  .floating-search-input {
+      font-size: 1rem;
+      padding: 0 0.8rem;
+  }
+  
+  .floating-search-button, .floating-search-close {
+      width: 35px;
+      height: 35px;
+  }
+  
+  .floating-search-close {
+      margin-right: 10px;
+  }
+
+  .floating-search-form {
+      border-radius: 35px;
+      border: 1px solid var(--header-border); 
+  }
+  
+  .floating-search-form::before, .floating-search-form::after {
+      border-radius: 35px;
   }
   
   .container {
@@ -1511,7 +1364,9 @@ footer {
   }
 
   .content-card {
-    flex: 0 0 140px;
+    /* Ajuste para grids mobile */
+    min-width: 140px; 
+    max-width: 100%;
   }
 
   .content-poster {
@@ -1528,23 +1383,13 @@ footer {
     font-size: 1.4rem;
   }
   
-  .search-list-item {
-    padding: 0.75rem;
-  }
-
-  .search-list-poster {
-    width: 50px;
-    height: 75px;
-    margin-right: 0.75rem;
-  }
-
-  .favorites-menu {
-    width: 90%;
-    right: -90%;
+  .content-grid {
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
   }
   
   .content-card {
-    flex: 0 0 120px;
+    min-width: 120px;
   }
 
   .content-poster {
@@ -1562,6 +1407,10 @@ footer {
 
   .floating-text-wrapper .content-year {
       font-size: 0.75rem;
+  }
+  
+  .floating-search-input {
+      font-size: 0.9rem;
   }
 }
 
@@ -1637,16 +1486,6 @@ footer {
     font-size: 1.4rem;
   }
   
-  .search-list-item {
-    padding: 0.75rem;
-  }
-
-  .search-list-poster {
-    width: 50px;
-    height: 75px;
-    margin-right: 0.75rem;
-  }
-
   .favorites-menu {
     width: 90%;
     right: -90%;
@@ -1681,4 +1520,4 @@ img {
     transition-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
