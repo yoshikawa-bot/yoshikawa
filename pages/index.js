@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState([]) // Inicializado como array
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -14,6 +14,9 @@ export default function Home() {
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
+
+  // Auxiliar para criar uma chave única
+  const getItemKey = (item) => `${item.media_type}-${item.id}`
 
   useEffect(() => {
     loadHomeContent()
@@ -64,12 +67,50 @@ export default function Home() {
     // Carregar favoritos do localStorage
     try {
       const savedFavorites = localStorage.getItem('yoshikawaFavorites')
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites))
-      }
+      // Garante que é um array, mesmo que localStorage esteja vazio ou inválido
+      const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
+      setFavorites(initialFavorites)
     } catch (error) {
       console.error('Erro ao carregar favoritos:', error)
+      setFavorites([]) // Default para array vazio em caso de erro
     }
+  }
+  
+  // FUNÇÃO DE VERIFICAÇÃO: Verifica se o item está nos favoritos
+  const isFavorite = (item) => {
+    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type);
+  }
+
+  // FUNÇÃO DE AÇÃO: Adiciona ou remove o item e salva no localStorage
+  const toggleFavorite = (item) => {
+    setFavorites(prevFavorites => {
+      let newFavorites
+      if (isFavorite(item)) {
+        // Remove dos favoritos
+        newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
+      } else {
+        // Adiciona aos favoritos (apenas os dados essenciais)
+        const favoriteItem = {
+          id: item.id,
+          media_type: item.media_type,
+          title: item.title || item.name,
+          poster_path: item.poster_path,
+          release_date: item.release_date,
+          first_air_date: item.first_air_date,
+          overview: item.overview // Mantém a sinopse
+        }
+        newFavorites = [...prevFavorites, favoriteItem]
+      }
+      
+      // Atualiza localStorage
+      try {
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      } catch (error) {
+        console.error('Erro ao salvar favoritos:', error)
+      }
+
+      return newFavorites
+    })
   }
 
   const handleSearch = async (query) => {
@@ -116,37 +157,55 @@ export default function Home() {
     }
   }
 
-  const ContentGrid = ({ items }) => (
+  // COMPONENTE CONTENTGRID ATUALIZADO
+  const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
     <section className="section">
       <div className="content-grid">
         {items.length > 0 ? (
-          items.map(item => (
-            <Link 
-              key={`${item.media_type}-${item.id}`}
-              href={`/${item.media_type}/${item.id}`}
-              className="content-card"
-            >
-              <img 
-                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-                alt={item.title || item.name}
-                className="content-poster"
-              />
-              
-              {/* INÍCIO DA ALTERAÇÃO MÍNIMA: Incluir o wrapper flutuante */}
-              <div className="floating-text-wrapper">
-                <div className="content-title-card">{item.title || item.name}</div>
-                <div className="content-year">
-                  {item.release_date ? new Date(item.release_date).getFullYear() : 
-                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+          items.map(item => {
+            const isFav = isFavorite(item)
+            return (
+              <Link 
+                key={getItemKey(item)}
+                href={`/${item.media_type}/${item.id}`}
+                className="content-card"
+              >
+                <img 
+                  src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                  alt={item.title || item.name}
+                  className="content-poster"
+                />
+                
+                {/* BOTÃO DE FAVORITAR COM ÍCONE DINÂMICO */}
+                <button 
+                  className={`favorite-btn ${isFav ? 'active' : ''}`}
+                  onClick={(e) => {
+                    // Impede o Link pai de navegar
+                    e.preventDefault() 
+                    e.stopPropagation() 
+                    toggleFavorite(item)
+                  }}
+                  title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+                >
+                  <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+                </button>
+                {/* FIM DO BOTÃO DE FAVORITAR */}
+
+                {/* INÍCIO DA ALTERAÇÃO MÍNIMA: Incluir o wrapper flutuante */}
+                <div className="floating-text-wrapper">
+                  <div className="content-title-card">{item.title || item.name}</div>
+                  <div className="content-year">
+                    {item.release_date ? new Date(item.release_date).getFullYear() : 
+                     item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                  </div>
                 </div>
-              </div>
-              {/* FIM DA ALTERAÇÃO MÍNIMA */}
-              
-              {/* O content-info-card ORIGINAL deve ser mantido, mas agora está vazio, pois o conteúdo foi movido para o floating-text-wrapper, permitindo que o CSS anterior para content-info-card seja ignorado ou ajustado. */}
-              <div className="content-info-card">
-              </div>
-            </Link>
-          ))
+                {/* FIM DA ALTERAÇÃO MÍNIMA */}
+                
+                <div className="content-info-card">
+                </div>
+              </Link>
+            )
+          })
         ) : (
           <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
             {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
@@ -165,7 +224,7 @@ export default function Home() {
       <div className="search-list">
         {searchResults.map(item => (
           <Link
-            key={`${item.media_type}-${item.id}`}
+            key={getItemKey(item)}
             href={`/${item.media_type}/${item.id}`}
             className="search-list-item"
           >
@@ -185,6 +244,19 @@ export default function Home() {
                 {item.overview || 'Sinopse não disponível'}
               </div>
             </div>
+            {/* Opcional: Adicionar botão de favoritar também nos resultados da busca */}
+            <button 
+                className={`favorite-btn ${isFavorite(item) ? 'active' : ''}`}
+                onClick={(e) => {
+                    e.preventDefault() 
+                    e.stopPropagation() 
+                    toggleFavorite(item)
+                }}
+                style={{position: 'absolute', top: '10px', right: '10px'}} // Adapte o CSS se necessário
+                title={isFavorite(item) ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+            >
+                <i className={isFavorite(item) ? 'fas fa-heart' : 'far fa-heart'}></i>
+            </button>
           </Link>
         ))}
       </div>
@@ -198,6 +270,7 @@ export default function Home() {
         <meta name="description" content="Yoshikawa Streaming Player" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Confirme que esta linha do Font Awesome está carregada */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -215,7 +288,12 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
-            <ContentGrid items={getActiveItems()} />
+            {/* PASSANDO AS NOVAS FUNÇÕES PARA O ContentGrid */}
+            <ContentGrid 
+                items={getActiveItems()} 
+                isFavorite={isFavorite} 
+                toggleFavorite={toggleFavorite} 
+            />
           </div>
         )}
       </main>
@@ -311,4 +389,4 @@ const Header = () => {
       </div>
     </header>
   )
-        }
+}
