@@ -35,8 +35,8 @@ body {
   font-size: 16px;
   min-height: 100vh;
   position: relative;
-  /* 1. ATUALIZAÇÃO: BLOQUEAR ROLAGEM VERTICAL */
-  overflow-y: hidden; 
+  /* 1. ATUALIZAÇÃO: PERMITIR ROLAGEM VERTICAL */
+  overflow-y: auto; 
 }
 
 body::before {
@@ -175,7 +175,7 @@ body::before {
   gap: 1rem;
 }
 
-/* BARRA DE BUSCA MELHORADA - Design mais arredondado */
+/* 2. ATUALIZAÇÃO: BARRA DE BUSCA MELHORADA - Design de vidro */
 .search-container {
   position: relative;
   max-width: 400px;
@@ -183,7 +183,8 @@ body::before {
 }
 
 .search-input {
-  background-color: rgba(0, 0, 0, 0.3);
+  /* Efeitos de vidro do cabeçalho */
+  background: transparent;
   border: 1px solid var(--header-border);
   border-radius: 25px;
   padding: 0.5rem 2.5rem 0.5rem 1rem;
@@ -192,13 +193,14 @@ body::before {
   width: 100%;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra interna sutil */
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--primary);
-  background-color: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.4);
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .search-button {
@@ -206,7 +208,7 @@ body::before {
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: transparent; /* Remove background */
   border: none;
   color: var(--secondary);
   cursor: pointer;
@@ -301,7 +303,7 @@ body::before {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent; /* Transparente para usar o blur do header */
   border: 1px solid var(--border);
   color: var(--text);
   backdrop-filter: blur(10px);
@@ -540,11 +542,11 @@ body::before {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.5rem;
-  /* 2. ATUALIZAÇÃO: AJUSTAR CONTAINER PARA CENTRALIZAR CONTEÚDO */
-  min-height: calc(100vh - 80px); /* Garante que o container use a altura máxima disponível, subtraindo o header e o nav de baixo */
+  min-height: calc(100vh - 80px); 
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Centraliza verticalmente o conteúdo interno */
+  /* 3. ATUALIZAÇÃO: REMOVER CENTRALIZAÇÃO VERTICAL para levantar os cards */
+  justify-content: flex-start; 
   align-items: center;
 }
 
@@ -764,11 +766,11 @@ body::before {
 /* Seções da Home */
 .home-sections {
   display: block;
-  /* 3. ATUALIZAÇÃO: CENTRALIZAÇÃO DA SEÇÃO DE CARDS DENTRO DO CONTAINER */
+  /* 4. ATUALIZAÇÃO: REMOVER PADDING INFERIOR PARA LEVANTAR OS CARDS */
   width: 100%;
   max-width: 1280px;
-  margin: auto; /* Garante centralização horizontal */
-  padding-bottom: 7rem; /* Espaço para o menu flutuante */
+  margin: auto; 
+  padding-bottom: 7rem; 
 }
 
 .home-sections.hidden {
@@ -835,20 +837,20 @@ body::before {
 
 /* BARRA DE ROLAGEM HORIZONTAL - ATUALIZADA */
 .content-grid::-webkit-scrollbar {
-  height: 10px; /* Mais grossa */
+  height: 10px; 
 }
 
 .content-grid::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2); /* Fundo sutil */
+  background: rgba(0, 0, 0, 0.2); 
   border-radius: 10px;
   margin: 0 10px;
 }
 
 .content-grid::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, var(--primary), var(--primary-dark)); /* Gradiente mais elaborado */
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark)); 
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); /* Sombra mais visível */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Borda sutil */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
   min-width: 120px;
 }
 
@@ -870,7 +872,7 @@ body::before {
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid var(--border);
-  flex: 0 0 190px; /* Aumentado de 160px para 190px */
+  flex: 0 0 190px; 
   position: relative;
   text-decoration: none;
   color: inherit;
@@ -885,7 +887,7 @@ body::before {
 
 .content-poster {
   width: 100%;
-  height: 285px; /* Aumentado de 240px para 285px (proporção mantida) */
+  height: 285px; 
   object-fit: cover;
 }
 
@@ -895,7 +897,7 @@ body::before {
 
 .content-title-card {
   font-weight: 500;
-  font-size: 0.95rem; /* Levemente maior */
+  font-size: 0.95rem; 
   margin-bottom: 0.25rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1121,30 +1123,30 @@ footer {
 /* Container Flutuante de Navegação - NOVO FORMATO, MAIOR E COM EFEITO DE CABEÇALHO */
 .bottom-nav-container {
   position: fixed;
-  bottom: 25px; /* Um pouco mais alto */
+  bottom: 25px; 
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  max-width: 600px; /* Mais largo (era 500px) */
-  width: 90%; /* Mais largo em relação à tela */
-  gap: 15px; /* Espaço maior */
+  max-width: 600px; 
+  width: 90%; 
+  gap: 15px; 
   z-index: 100;
 }
 
 .main-nav-bar {
   /* Efeito idêntico ao cabeçalho (github-header) */
   background-color: transparent;
-  border: 2px solid var(--header-border); /* Mais grosso */
-  border-radius: 40px; /* Mais arredondado */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); /* Sombra mais proeminente */
+  border: 2px solid var(--header-border); 
+  border-radius: 40px; 
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 70px; /* Mais grosso (era 60px) */
+  height: 70px; 
   flex-grow: 1;
   overflow: hidden;
-  padding: 0 10px; /* Padding ajustado */
+  padding: 0 10px; 
   position: relative;
 }
 
@@ -1155,8 +1157,8 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    backdrop-filter: blur(10px); /* Efeito de vidro */
-    filter: saturate(120%) brightness(1.15); /* Efeito de vidro */
+    backdrop-filter: blur(10px); 
+    filter: saturate(120%) brightness(1.15); 
     z-index: -1;
 }
 
@@ -1167,7 +1169,7 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--header-bg); /* Cor de fundo */
+    background: var(--header-bg); 
     border-radius: 40px;
     z-index: -1;
 }
@@ -1179,7 +1181,7 @@ footer {
   justify-content: center;
   flex: 1;
   color: var(--secondary);
-  font-size: 12px; /* Fonte levemente maior */
+  font-size: 12px; 
   font-weight: 500;
   padding: 5px 0;
   transition: all 0.3s ease;
@@ -1190,7 +1192,7 @@ footer {
 }
 
 .nav-item i {
-  font-size: 26px; /* Ícone levemente maior */
+  font-size: 26px; 
   margin-bottom: 2px;
   transition: color 0.3s ease, transform 0.3s ease;
 }
@@ -1226,12 +1228,12 @@ footer {
 .search-circle {
   /* Efeito idêntico ao cabeçalho (github-header) */
   background-color: transparent;
-  border: 2px solid var(--header-border); /* Mais grosso */
+  border: 2px solid var(--header-border); 
   backdrop-filter: blur(10px); 
   filter: saturate(120%) brightness(1.15); 
   border-radius: 50%;
-  width: 70px; /* Mais largo (era 60px) */
-  height: 70px; /* Mais grosso (era 60px) */
+  width: 70px; 
+  height: 70px; 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1259,7 +1261,7 @@ footer {
 }
 
 .search-circle i {
-  font-size: 32px; /* Ícone maior */
+  font-size: 32px; 
   z-index: 1;
 }
 
@@ -1377,16 +1379,16 @@ footer {
 /* Responsividade para o container flutuante */
 @media (max-width: 768px) {
   .bottom-nav-container {
-    bottom: 20px; /* Ajustado */
-    max-width: 95%; /* Ajustado */
+    bottom: 20px; 
+    max-width: 95%; 
     width: 95%;
     gap: 10px;
   }
   
   .main-nav-bar {
-    height: 65px; /* Ajustado */
+    height: 65px; 
     border-radius: 35px;
-    border: 1px solid var(--header-border); /* Mais fino em mobile */
+    border: 1px solid var(--header-border); 
   }
   
   .main-nav-bar::after {
@@ -1402,9 +1404,9 @@ footer {
   }
   
   .search-circle {
-    width: 65px; /* Ajustado */
-    height: 65px; /* Ajustado */
-    border: 1px solid var(--header-border); /* Mais fino em mobile */
+    width: 65px; 
+    height: 65px; 
+    border: 1px solid var(--header-border); 
   }
   
   .search-circle i {
@@ -1421,32 +1423,31 @@ footer {
   
   /* Cards de Conteúdo em Mobile */
   .content-card {
-    flex: 0 0 160px; /* Ajustado para mobile */
+    flex: 0 0 160px; 
   }
 
   .content-poster {
-    height: 240px; /* Ajustado para mobile */
+    height: 240px; 
   }
   
-  /* 4. ATUALIZAÇÃO: REMOVER PADDING DO CONTAINER EM MOBILE PARA CENTRALIZAÇÃO TOTAL */
   .container {
     padding: 1rem;
     min-height: calc(100vh - 80px); 
   }
   
   .home-sections {
-    padding-bottom: 6rem; /* Ajuste para mobile */
+    padding-bottom: 6rem; 
   }
 }
 
 @media (max-width: 480px) {
   .bottom-nav-container {
-    bottom: 15px; /* Ajustado */
+    bottom: 15px; 
     gap: 8px;
   }
   
   .main-nav-bar {
-    height: 60px; /* Ajustado */
+    height: 60px; 
     border-radius: 30px;
   }
   
@@ -1464,8 +1465,8 @@ footer {
   }
   
   .search-circle {
-    width: 60px; /* Ajustado */
-    height: 60px; /* Ajustado */
+    width: 60px; 
+    height: 60px; 
   }
   
   .search-circle i {
@@ -1483,11 +1484,11 @@ footer {
   
   /* Cards de Conteúdo em Mobile Pequeno */
   .content-card {
-    flex: 0 0 135px; /* Mais ajustado para mobile */
+    flex: 0 0 135px; 
   }
   
   .content-poster {
-    height: 200px; /* Mais ajustado para mobile */
+    height: 200px; 
   }
 }
 
