@@ -18,6 +18,11 @@
   --error: #ef4444;
   --overlay-bg: rgba(0, 0, 0, 0.5);
   --highlight: rgba(255, 255, 255, 0.15);
+  
+  /* Novo: Variáveis para o Popup de Serviço (mais claro e glass) */
+  --popup-bg: rgba(255, 255, 255, 0.1);
+  --popup-border: rgba(255, 255, 255, 0.3);
+  --option-bg: rgba(0, 0, 0, 0.15);
 }
 
 * {
@@ -549,6 +554,28 @@ body::before {
   transform: none;
 }
 
+/* Novo: Estilo para Bolha em Modo de Reprodução (sem pesquisa) */
+.bottom-nav-container.reproduction-mode .main-nav-bar {
+    justify-content: center;
+    padding: 0 15px;
+    flex-grow: 0;
+    width: auto;
+    max-width: fit-content;
+    gap: 15px;
+}
+
+.bottom-nav-container.reproduction-mode .nav-item {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+    flex: none;
+    width: 45px; /* Define um tamanho fixo para os botões */
+}
+
+.bottom-nav-container.reproduction-mode .nav-item.hidden-on-repro {
+    display: none; /* Esconde botões Home, Filmes, Séries */
+}
+
 .search-circle {
   background-color: transparent;
   border: 2px solid var(--header-border);
@@ -594,6 +621,13 @@ body::before {
   opacity: 0;
   transform: scale(0);
   pointer-events: none;
+}
+
+/* Novo: Bolha de Pesquisa desaparece no modo reprodução */
+.bottom-nav-container.reproduction-mode .search-circle {
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
 }
 
 .search-container {
@@ -716,7 +750,7 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== PÁGINAS DE STREAMING - ATUALIZADO ===== */
+/* ===== PÁGINAS DE STREAMING - REVISADO (Glass/Harmonia) ===== */
 .player-wrapper {
   position: relative;
   padding-bottom: 56.25%;
@@ -739,50 +773,28 @@ body::before {
   border-radius: 15px;
 }
 
-/* Sistema de Seleção de Player - Ajustado para o padrão visual */
+/* Sistema de Seleção de Player - TOTALMENTE REVISADO para Glass */
 .player-selector-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  /* Usando o mesmo overlay semi-transparente do menu de favoritos */
   background: rgba(0, 0, 0, 0.5); 
-  z-index: 990; /* Z-index abaixo do menu e barra de navegação para que o popup fique 'por trás' do menu flutuante */
+  z-index: 990; 
   display: none;
   justify-content: center;
-  align-items: flex-end; /* Alinha o conteúdo na parte de baixo */
+  align-items: flex-end; 
   padding: 2rem;
   opacity: 0;
   transition: opacity 0.3s ease;
-  backdrop-filter: blur(5px); /* Suaviza o fundo, menos que o modal anterior */
+  backdrop-filter: blur(5px);
 }
 
 .player-selector-overlay.active {
   display: flex;
   opacity: 1;
   animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.player-selector-content {
-  /* Estilo de card/menu flutuante */
-  background: var(--card-bg);
-  border: 2px solid var(--header-border); /* Usando a cor de borda do menu */
-  border-radius: 20px;
-  padding: 2.5rem;
-  max-width: 600px;
-  width: 100%;
-  text-align: center;
-  backdrop-filter: blur(10px); /* Usando o blur de card/header */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86); /* Animação customizada para vir de baixo */
-  margin-bottom: 80px; /* Espaço para o menu flutuante */
-  position: relative;
 }
 
 @keyframes slideUpFromBottom {
@@ -794,6 +806,36 @@ body::before {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.player-selector-content {
+  /* Novo estilo: Mais claro, usando as variáveis de Glass */
+  background: var(--popup-bg); 
+  border: 2px solid var(--popup-border); 
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  backdrop-filter: blur(15px) brightness(1.2); /* Mais blur e brilho para o visual 'glass' claro */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  margin-bottom: 80px; 
+  position: relative;
+  /* Efeito de reflexo sutil */
+  overflow: hidden; 
+}
+
+.player-selector-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 30%);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .player-selector-title {
@@ -813,7 +855,7 @@ body::before {
 }
 
 .player-selector-subtitle {
-  color: var(--secondary);
+  color: var(--dark); /* Texto mais escuro para maior contraste no fundo claro */
   margin-bottom: 2rem;
   font-size: 1.1rem;
 }
@@ -826,16 +868,16 @@ body::before {
 }
 
 .player-option {
-  /* Estilo de card/opção semelhante */
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border); /* Ajustado para 1px para ser mais sutil como os cards */
+  /* Novo estilo: Opções mais claras e definidas */
+  background: var(--option-bg); 
+  border: 1px solid rgba(255, 255, 255, 0.2); 
   border-radius: 15px;
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
 }
 
 .player-option:hover {
@@ -919,6 +961,7 @@ body::before {
 
 .player-select-btn {
   width: 100%;
+  /* Mantém o gradiente para destaque */
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
   border: none;
@@ -968,62 +1011,9 @@ body::before {
   font-size: 0.9rem;
 }
 
+/* Novo: Centraliza os botões de controle na bolha flutuante e remove o botão de favoritos fixo */
 .player-favorite-btn {
-  /* Posição ajustada para ficar ao lado do menu flutuante */
-  position: fixed;
-  bottom: 25px; 
-  right: auto;
-  left: 50%;
-  transform: translateX(250px); /* Ajuste para centralizar com o bottom-nav-container de max-width 600px + gap 15px */
-  background-color: var(--card-bg);
-  color: var(--text);
-  border: none;
-  border-radius: 50%;
-  width: 70px; /* Mesmo tamanho do search-circle */
-  height: 70px; /* Mesmo tamanho do search-circle */
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); /* Sombra do search-circle */
-  transition: all 0.3s ease;
-  z-index: 100; /* Z-index igual ou superior ao bottom-nav-container */
-  border: 2px solid var(--header-border); /* Borda do search-circle */
-  backdrop-filter: blur(10px);
-}
-
-.player-favorite-btn i {
-    font-size: 32px; /* Tamanho do ícone do search-circle */
-}
-
-.player-favorite-btn::after { /* Adiciona o fundo 'glass' */
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--header-bg);
-    border-radius: 50%;
-    z-index: -1;
-}
-
-.player-favorite-btn:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateX(250px) scale(1.05); /* Mantém a posição e escala levemente */
-  border-color: var(--primary);
-}
-
-.player-favorite-btn.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.player-favorite-btn.active:hover {
-    transform: translateX(250px) scale(1.05);
-}
-
-.player-favorite-btn.active i {
-  animation: heart-pop 0.5s; 
+  display: none;
 }
 
 .navigation-controls {
@@ -1468,6 +1458,16 @@ body::before {
     font-size: 24px;
   }
   
+  /* Novo: Estilo para Bolha em Modo de Reprodução (mobile) */
+  .bottom-nav-container.reproduction-mode .main-nav-bar {
+      height: 65px;
+      gap: 10px;
+  }
+
+  .bottom-nav-container.reproduction-mode .nav-item {
+      width: 40px; 
+  }
+
   .search-circle {
     width: 65px;
     height: 65px;
@@ -1507,28 +1507,6 @@ body::before {
     height: 30px;
   }
 
-  .player-favorite-btn {
-    /* Ajuste para mobile, baseado no novo bottom-nav-container */
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(190px); /* (95% de 768px é 729px. 729/2 = 364.5px. (65px+10px) = 75px. 364.5 - 75/2 - 10px(gap) = 317. Foco em manter visualmente correto, ajustando para 190px) */
-    width: 65px;
-    height: 65px;
-    border: 1px solid var(--header-border);
-  }
-  
-  .player-favorite-btn i {
-    font-size: 28px;
-  }
-  
-  .player-favorite-btn:hover {
-    transform: translateX(190px) scale(1.05);
-  }
-
-  .player-favorite-btn.active:hover {
-    transform: translateX(190px) scale(1.05);
-  }
-
   .back-to-home {
     bottom: 1rem;
     right: 1rem;
@@ -1557,7 +1535,7 @@ body::before {
   .player-selector-content {
     padding: 2rem 1.5rem;
     margin: 1rem;
-    margin-bottom: 75px; /* Altura do menu flutuante em mobile */
+    margin-bottom: 75px; 
   }
   
   .player-options {
@@ -1570,8 +1548,8 @@ body::before {
   }
   
   .player-option-header {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row; /* Mantém a organização em linha para mobile */
+    gap: 0.75rem;
   }
 }
 
@@ -1639,18 +1617,6 @@ body::before {
   
   .player-option {
     padding: 1rem;
-  }
-
-  .player-favorite-btn {
-    transform: translateX(180px); /* Ajuste fino para telas muito pequenas */
-  }
-  
-  .player-favorite-btn:hover {
-    transform: translateX(180px) scale(1.05);
-  }
-
-  .player-favorite-btn.active:hover {
-    transform: translateX(180px) scale(1.05);
   }
 }
 
