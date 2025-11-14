@@ -29,7 +29,7 @@
 
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: url('https://yoshikawa-bot.github.io/cache/images/5061d566.jpg') no-repeat center/cover fixed;
+  background: url('https://yoshikawa-bot.github.io/cache/images/ea6ceee5.jpg') no-repeat center/cover fixed;
   color: var(--text);
   line-height: 1.6;
   font-size: 16px;
@@ -1263,39 +1263,45 @@ footer {
   border: none;
   background: none;
   position: relative;
+  /* NOVO: Garante que o item ocupe a altura total para centralizar o ícone */
+  height: 100%; 
+  justify-content: center; 
 }
 
+/* NOVO: Oculta o título (span) e anula seu espaço */
+.nav-item span {
+  display: none; 
+}
+
+/* NOVO: Define a cor BRANCA (var(--text)) para o ícone por padrão (não ativo) */
 .nav-item i {
   font-size: 26px; 
-  margin-bottom: 2px;
+  margin-bottom: 0; /* REMOVIDO: margin-bottom: 2px; para centralizar */
   transition: color 0.3s ease, transform 0.3s ease;
+  color: var(--text); /* Ícone BRANCO quando não ativo/hover */
 }
 
 .nav-item:hover i {
     transform: scale(1.1);
-    color: var(--primary);
+    color: var(--primary); /* Cor primária no hover */
 }
 
-.nav-item span {
-  transition: color 0.3s ease;
-}
-
+/* ATUALIZADO: ÍCONE COLORIDO QUANDO ATIVO */
 .nav-item.active {
-  color: var(--primary);
+  color: initial; /* Cor base do item irrelevante já que o span está oculto */
 }
 
-/* ÍCONE E TEXTO COLORIDOS QUANDO ATIVO - SEM FUNDO */
-.nav-item.active i,
-.nav-item.active span {
-  color: var(--primary);
+.nav-item.active i {
+  color: var(--primary); /* Ícone primário quando ativo */
+  transform: none; /* Remove o scale do hover se estiver ativo */
 }
 
-/* Ajuste do tamanho dos itens - Mantido, mas reavaliar se a proporção de 4 itens é a mesma */
+/* Ajuste do tamanho dos itens - REMOVIDO para que o flex-1 nos nav-item lide com o layout */
 .nav-item:nth-child(1), .nav-item:nth-child(4) {
-  flex-basis: 30%;
+  flex-basis: initial;
 }
 .nav-item:nth-child(2), .nav-item:nth-child(3) {
-  flex-basis: 20%;
+  flex-basis: initial;
 }
 
 /* Ícone de Pesquisa Separado - MAIOR E COM EFEITO DE CABEÇALHO */
