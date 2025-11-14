@@ -1,147 +1,215 @@
-import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
 
-export default function Movie() {
+export default function MoviePlayer() {
   const router = useRouter()
   const { id } = router.query
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [favorites, setFavorites] = useState([])
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-  const STREAM_BASE_URL = 'https://superflixapi.blog'
-  const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
+  const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/ea6ceee5.jpg'
 
   useEffect(() => {
     if (id) {
-      loadMovie(id)
+      loadMovieData()
     }
+    loadFavorites()
   }, [id])
 
-  const loadMovie = async (movieId) => {
+  const loadMovieData = async () => {
     try {
-      setLoading(true)
-      const movieUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids,images`
-      const movieResponse = await fetch(movieUrl)
-      
-      if (!movieResponse.ok) throw new Error('Filme não encontrado')
-      
-      const movieData = await movieResponse.json()
-      setMovie(movieData)
-      
-    } catch (err) {
-      setError(err.message)
+      const response = await fetch(
+        `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`
+      )
+      const data = await response.json()
+      setMovie(data)
+    } catch (error) {
+      console.error('Erro ao carregar filme:', error)
     } finally {
       setLoading(false)
     }
   }
 
+  const loadFavorites = () => {
+    try {
+      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
+      const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
+      setFavorites(initialFavorites)
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error)
+      setFavorites([])
+    }
+  }
+
+  const isFavorite = () => {
+    return favorites.some(fav => fav.id === movie.id && fav.media_type === 'movie')
+  }
+
+  const toggleFavorite = () => {
+    if (!movie) return
+
+    setFavorites(prevFavorites => {
+      let newFavorites
+      if (isFavorite()) {
+        newFavorites = prevFavorites.filter(fav => !(fav.id === movie.id && fav.media_type === 'movie'))
+      } else {
+        const favoriteItem = {
+          id: movie.id,
+          media_type: 'movie',
+          title: movie.title,
+          poster_path: movie.poster_path,
+          release_date: movie.release_date,
+          overview: movie.overview
+        }
+        newFavorites = [...prevFavorites, favoriteItem]
+      }
+      
+      try {
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      } catch (error) {
+        console.error('Erro ao salvar favoritos:', error)
+      }
+
+      return newFavorites
+    })
+  }
+
   if (loading) {
     return (
-      <div className="loading active">
+      <div className="loading-screen">
         <div className="spinner"></div>
+        <div className="loading-dots">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
         <p>Carregando filme...</p>
       </div>
     )
   }
 
-  if (error) {
+  if (!movie) {
     return (
-      <div className="error-message active">
-        <h3>
+      <div className="error-screen">
+        <div className="error-content">
           <i className="fas fa-exclamation-triangle"></i>
-          Ocorreu um erro
-        </h3>
-        <p>{error}</p>
-        <Link href="/" className="nav-button" style={{marginTop: '1rem'}}>
-          <i className="fas fa-home"></i>
-          Voltar para Home
-        </Link>
+          <h2>Filme não encontrado</h2>
+          <Link href="/" className="nav-button">
+            <i className="fas fa-arrow-left"></i>
+            Voltar para Home
+          </Link>
+        </div>
       </div>
     )
   }
 
-  if (!movie) return null
-
-  const identifier = movie.external_ids?.imdb_id || id
-  const playerUrl = `${STREAM_BASE_URL}/filme/${identifier}#noLink#transparent#noBackground`
+  const backdropUrl = movie.backdrop_path 
+    ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`
+    : DEFAULT_BACKDROP
 
   return (
     <>
       <Head>
         <title>{movie.title} - Yoshikawa Player</title>
+        <meta name="description" content={movie.overview} />
       </Head>
 
-      <Header />
+      {/* Background dinâmico */}
+      <div 
+        className="streaming-background"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url(${backdropUrl})`
+        }}
+      ></div>
 
-      <main className="container">
-        <div className="player-wrapper">
-          <iframe 
-            src={playerUrl}
-            allow="autoplay; encrypted-media; picture-in-picture" 
-            allowFullScreen 
-            loading="lazy" 
-            title={`Yoshikawa Player - ${movie.title}`}
-          ></iframe>
+      <header className="streaming-header">
+        <div className="header-content">
+          <Link href="/" className="logo-container">
+            <img 
+              src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
+              alt="Yoshikawa Bot" 
+              className="logo-image"
+            />
+            <div className="logo-text">
+              <span className="logo-name">Yoshikawa</span>
+              <span className="beta-tag">STREAMING</span>
+            </div>
+          </Link>
+        </div>
+      </header>
+
+      <main className="streaming-container">
+        <div className="player-section">
+          <div className="player-wrapper">
+            <iframe
+              src={`https://vidsrc.to/embed/movie/${id}`}
+              allowFullScreen
+              title={`Assistir ${movie.title}`}
+            ></iframe>
+          </div>
+
+          <button 
+            className={`player-favorite-btn ${isFavorite() ? 'active' : ''}`}
+            onClick={toggleFavorite}
+            title={isFavorite() ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+          >
+            <i className={isFavorite() ? 'fas fa-heart' : 'far fa-heart'}></i>
+          </button>
         </div>
 
-        <div className="content-info">
+        <div className="content-info-streaming">
           <h1 className="content-title">{movie.title}</h1>
-          <div className="content-meta">
-            <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
-            <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
-            <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
-          </div>
           
-          <Link href="/" className="nav-button secondary">
-            <i className="fas fa-arrow-left"></i>
-            Voltar para Home
-          </Link>
+          <div className="content-meta">
+            {movie.release_date && (
+              <span>{new Date(movie.release_date).getFullYear()}</span>
+            )}
+            {movie.runtime && (
+              <span>{Math.floor(movie.runtime / 60)}h {movie.runtime % 60}min</span>
+            )}
+            {movie.vote_average && (
+              <span>
+                <i className="fas fa-star" style={{color: 'gold', marginRight: '0.25rem'}}></i>
+                {movie.vote_average.toFixed(1)}
+              </span>
+            )}
+          </div>
 
-          <h3 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>Sinopse</h3>
-          <p className="content-description">
-            {movie.overview || 'Descrição não disponível.'}
-          </p>
+          {movie.genres && movie.genres.length > 0 && (
+            <div className="content-genres">
+              {movie.genres.map(genre => (
+                <span key={genre.id} className="genre-tag">{genre.name}</span>
+              ))}
+            </div>
+          )}
+
+          {movie.overview && (
+            <div className="content-description">
+              <p>{movie.overview}</p>
+            </div>
+          )}
+
+          <div className="streaming-actions">
+            <Link href="/" className="nav-button secondary">
+              <i className="fas fa-arrow-left"></i>
+              Voltar para Home
+            </Link>
+            
+            <button className="nav-button" onClick={() => window.location.reload()}>
+              <i className="fas fa-redo"></i>
+              Recarregar Player
+            </button>
+          </div>
         </div>
       </main>
 
-      <Footer />
+      <Link href="/" className="back-to-home active">
+        <i className="fas fa-home"></i>
+      </Link>
     </>
   )
-}
-
-const Header = () => (
-  <header className="github-header">
-    <div className="header-content">
-      <Link href="/" className="logo-container">
-        <img 
-          src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
-          alt="Yoshikawa Bot" 
-          className="logo-image"
-        />
-        <div className="logo-text">
-          <span className="logo-name">Yoshikawa</span>
-          <span className="beta-tag">STREAMING</span>
-        </div>
-      </Link>
-    </div>
-  </header>
-)
-
-const Footer = () => (
-  <footer>
-    <div className="footer-content">
-      <p>© 2025 Yoshikawa Bot · Todos os direitos reservados.</p>
-      <div className="footer-links">
-        <a href="https://yoshikawa-bot.github.io/termos/" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Termos de Uso
-        </a>
-        <a href="https://wa.me/18589258076" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Suporte
-        </a>
-      </div>
-    </div>
-  </footer>
-)
+      }
