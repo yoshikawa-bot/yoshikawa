@@ -116,24 +116,8 @@ export default function Home() {
     }
   }
 
-  const getSectionTitle = () => {
-    switch (activeSection) {
-      case 'releases':
-        return 'Últimos Lançamentos'
-      case 'recommendations':
-        return 'Populares e Recomendações'
-      case 'favorites':
-        return 'Meus Favoritos'
-      default:
-        return 'Últimos Lançamentos'
-    }
-  }
-
-  const ContentGrid = ({ items, title }) => (
+  const ContentGrid = ({ items }) => (
     <section className="section">
-      <div className="section-header">
-        <h2 className="section-title">{title}</h2>
-      </div>
       <div className="content-grid">
         {items.length > 0 ? (
           items.map(item => (
@@ -224,31 +208,31 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
-            <ContentGrid items={getActiveItems()} title={getSectionTitle()} />
+            <ContentGrid items={getActiveItems()} />
           </div>
         )}
       </main>
 
-      {/* Container Flutuante de Navegação */}
+      {/* Container Flutuante de Navegação - NOVO FORMATO */}
       {searchResults.length === 0 && (
-        <div className="floating-nav-container">
-          <div className="nav-tabs-container">
+        <div className="bottom-nav-container">
+          <div className="main-nav-bar">
             <button 
-              className={`nav-tab ${activeSection === 'releases' ? 'active' : ''}`}
+              className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
               onClick={() => setActiveSection('releases')}
             >
               <i className="fas fa-film"></i>
               <span>Lançamentos</span>
             </button>
             <button 
-              className={`nav-tab ${activeSection === 'recommendations' ? 'active' : ''}`}
+              className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
               onClick={() => setActiveSection('recommendations')}
             >
               <i className="fas fa-fire"></i>
               <span>Populares</span>
             </button>
             <button 
-              className={`nav-tab ${activeSection === 'favorites' ? 'active' : ''}`}
+              className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
               onClick={() => setActiveSection('favorites')}
             >
               <i className="fas fa-heart"></i>
@@ -257,7 +241,7 @@ export default function Home() {
           </div>
           
           <button 
-            className="floating-search-btn"
+            className="search-circle"
             onClick={() => setShowSearchOverlay(true)}
           >
             <i className="fas fa-search"></i>
@@ -298,8 +282,6 @@ export default function Home() {
           </form>
         </div>
       </div>
-
-      <Footer />
     </>
   )
 }
@@ -322,20 +304,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
-
-const Footer = () => (
-  <footer>
-    <div className="footer-content">
-      <p>© 2025 Yoshikawa Bot · Todos os direitos reservados.</p>
-      <div className="footer-links">
-        <a href="https://yoshikawa-bot.github.io/termos/" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Termos de Uso
-        </a>
-        <a href="https://wa.me/18589258076" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Suporte
-        </a>
-      </div>
-    </div>
-  </footer>
-)
+        }
