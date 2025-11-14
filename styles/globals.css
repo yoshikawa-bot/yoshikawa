@@ -35,7 +35,7 @@ body {
   font-size: 16px;
   min-height: 100vh;
   position: relative;
-  /* 1. ATUALIZAÇÃO: PERMITIR ROLAGEM VERTICAL */
+  /* ROLAGEM PERMITIDA */
   overflow-y: auto; 
 }
 
@@ -175,7 +175,7 @@ body::before {
   gap: 1rem;
 }
 
-/* 2. ATUALIZAÇÃO: BARRA DE BUSCA MELHORADA - Design de vidro */
+/* BARRA DE BUSCA MELHORADA - Design de vidro */
 .search-container {
   position: relative;
   max-width: 400px;
@@ -545,7 +545,6 @@ body::before {
   min-height: calc(100vh - 80px); 
   display: flex;
   flex-direction: column;
-  /* 3. ATUALIZAÇÃO: REMOVER CENTRALIZAÇÃO VERTICAL para levantar os cards */
   justify-content: flex-start; 
   align-items: center;
 }
@@ -766,7 +765,6 @@ body::before {
 /* Seções da Home */
 .home-sections {
   display: block;
-  /* 4. ATUALIZAÇÃO: REMOVER PADDING INFERIOR PARA LEVANTAR OS CARDS */
   width: 100%;
   max-width: 1280px;
   margin: auto; 
@@ -825,46 +823,33 @@ body::before {
   transition: background-color 0.3s ease;
 }
 
-/* Grid de Conteúdo Horizontal */
+/* 1. ATUALIZAÇÃO: Grid de Conteúdo Vertical */
 .content-grid {
-  display: flex;
-  overflow-x: auto;
-  gap: 1rem;
-  padding: 0.5rem 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
+  display: grid;
+  /* Configuração padrão (Desktop/Tablet): 5 colunas de tamanho flexível */
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); 
+  gap: 1.5rem; /* Aumentar o gap para melhor espaçamento */
+  padding: 0; /* Remover padding horizontal desnecessário */
+  overflow-x: hidden; /* Garantir que não haja rolagem horizontal no container */
 }
 
-/* BARRA DE ROLAGEM HORIZONTAL - ATUALIZADA */
+/* Remove a barra de rolagem horizontal desnecessária com display: grid */
 .content-grid::-webkit-scrollbar {
-  height: 10px; 
+  height: 0;
+  display: none;
 }
 
-.content-grid::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2); 
-  border-radius: 10px;
-  margin: 0 10px;
-}
-
+.content-grid::-webkit-scrollbar-track, 
 .content-grid::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, var(--primary), var(--primary-dark)); 
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); 
-  border: 1px solid rgba(255, 255, 255, 0.1); 
-  min-width: 120px;
-}
-
-.content-grid::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+  background: transparent;
 }
 
 /* Firefox */
 .content-grid {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
+  scrollbar-width: none;
 }
 
-/* Cards de Conteúdo - ATUALIZADO PARA MAIOR TAMANHO */
+/* 2. ATUALIZAÇÃO: Cards de Conteúdo - Ajustes de Flexibilidade */
 .content-card {
   background-color: var(--card-bg);
   border-radius: 15px;
@@ -872,11 +857,13 @@ body::before {
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid var(--border);
-  flex: 0 0 190px; 
+  /* Agora o tamanho é controlado pelo grid-template-columns */
+  flex: unset; 
   position: relative;
   text-decoration: none;
   color: inherit;
   backdrop-filter: blur(10px);
+  width: 100%; /* Ocupa a coluna inteira do grid */
 }
 
 .content-card:hover {
@@ -887,7 +874,7 @@ body::before {
 
 .content-poster {
   width: 100%;
-  height: 285px; 
+  height: 285px; /* Mantém a altura desejada */
   object-fit: cover;
 }
 
@@ -1378,6 +1365,24 @@ footer {
 
 /* Responsividade para o container flutuante */
 @media (max-width: 768px) {
+  /* 3. ATUALIZAÇÃO: MOBILE - Mostrar 2 cards por linha */
+  .content-grid {
+    /* Garante 2 colunas de tamanho igual com um gap de 1rem */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 1rem;
+  }
+  
+  .content-card {
+    /* Altura ajustada para manter a proporção com a largura em mobile */
+    height: auto; 
+  }
+  
+  .content-poster {
+    /* Ajusta a altura da imagem para a proporção 2:3 em mobile */
+    height: 240px; 
+  }
+  
+  /* Ajustes gerais de mobile */
   .bottom-nav-container {
     bottom: 20px; 
     max-width: 95%; 
@@ -1421,15 +1426,6 @@ footer {
     padding: 1.5rem;
   }
   
-  /* Cards de Conteúdo em Mobile */
-  .content-card {
-    flex: 0 0 160px; 
-  }
-
-  .content-poster {
-    height: 240px; 
-  }
-  
   .container {
     padding: 1rem;
     min-height: calc(100vh - 80px); 
@@ -1441,6 +1437,17 @@ footer {
 }
 
 @media (max-width: 480px) {
+  /* Mobile Pequeno: Mantém 2 cards, ajusta o tamanho da imagem */
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 0.75rem;
+  }
+
+  .content-poster {
+    height: 200px; /* Um pouco menor para telas muito pequenas */
+  }
+
+  /* Ajustes gerais de mobile pequeno */
   .bottom-nav-container {
     bottom: 15px; 
     gap: 8px;
@@ -1480,15 +1487,6 @@ footer {
 
   .page-title-home i {
     font-size: 2rem;
-  }
-  
-  /* Cards de Conteúdo em Mobile Pequeno */
-  .content-card {
-    flex: 0 0 135px; 
-  }
-  
-  .content-poster {
-    height: 200px; 
   }
 }
 
