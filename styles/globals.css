@@ -766,6 +766,24 @@ body::before {
   margin-bottom: 2rem;
 }
 
+/* NOVO: Título da Página com Ícone */
+.page-title-home {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1rem;
+}
+
+.page-title-home i {
+    font-size: 2.5rem;
+    color: var(--primary); /* Cor do ícone */
+}
+/* FIM NOVO: Título da Página com Ícone */
+
 .section-header {
   display: flex;
   align-items: center;
@@ -802,22 +820,23 @@ body::before {
   scrollbar-color: var(--primary) transparent;
 }
 
-/* BARRA DE ROLAGEM HORIZONTAL - CORRIGIDA PARA PÍLULA ARREDONDADA */
+/* BARRA DE ROLAGEM HORIZONTAL - ATUALIZADA */
 .content-grid::-webkit-scrollbar {
-  height: 8px;
+  height: 10px; /* Mais grossa */
 }
 
 .content-grid::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.2); /* Fundo sutil */
   border-radius: 10px;
   margin: 0 10px;
 }
 
 .content-grid::-webkit-scrollbar-thumb {
-  background: var(--primary);
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark)); /* Gradiente mais elaborado */
   border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  min-width: 100px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); /* Sombra mais visível */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Borda sutil */
+  min-width: 120px;
 }
 
 .content-grid::-webkit-scrollbar-thumb:hover {
@@ -830,6 +849,7 @@ body::before {
   scrollbar-color: var(--primary) transparent;
 }
 
+/* Cards de Conteúdo - ATUALIZADO PARA MAIOR TAMANHO */
 .content-card {
   background-color: var(--card-bg);
   border-radius: 15px;
@@ -837,7 +857,7 @@ body::before {
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid var(--border);
-  flex: 0 0 160px;
+  flex: 0 0 190px; /* Aumentado de 160px para 190px */
   position: relative;
   text-decoration: none;
   color: inherit;
@@ -852,7 +872,7 @@ body::before {
 
 .content-poster {
   width: 100%;
-  height: 240px;
+  height: 285px; /* Aumentado de 240px para 285px (proporção mantida) */
   object-fit: cover;
 }
 
@@ -862,7 +882,7 @@ body::before {
 
 .content-title-card {
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Levemente maior */
   margin-bottom: 0.25rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1085,33 +1105,58 @@ footer {
   display: none;
 }
 
-/* Container Flutuante de Navegação - NOVO FORMATO */
+/* Container Flutuante de Navegação - NOVO FORMATO, MAIOR E COM EFEITO DE CABEÇALHO */
 .bottom-nav-container {
   position: fixed;
-  bottom: 20px;
+  bottom: 25px; /* Um pouco mais alto */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  max-width: 500px;
-  width: 95%;
-  gap: 10px;
+  max-width: 600px; /* Mais largo (era 500px) */
+  width: 90%; /* Mais largo em relação à tela */
+  gap: 15px; /* Espaço maior */
   z-index: 100;
 }
 
 .main-nav-bar {
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 30px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  /* Efeito idêntico ao cabeçalho (github-header) */
+  background-color: transparent;
+  border: 2px solid var(--header-border); /* Mais grosso */
+  border-radius: 40px; /* Mais arredondado */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); /* Sombra mais proeminente */
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 60px;
+  height: 70px; /* Mais grosso (era 60px) */
   flex-grow: 1;
   overflow: hidden;
-  padding: 0 5px;
+  padding: 0 10px; /* Padding ajustado */
+  position: relative;
+}
+
+.main-nav-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(10px); /* Efeito de vidro */
+    filter: saturate(120%) brightness(1.15); /* Efeito de vidro */
+    z-index: -1;
+}
+
+.main-nav-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--header-bg); /* Cor de fundo */
+    border-radius: 40px;
+    z-index: -1;
 }
 
 .nav-item {
@@ -1121,7 +1166,7 @@ footer {
   justify-content: center;
   flex: 1;
   color: var(--secondary);
-  font-size: 11px;
+  font-size: 12px; /* Fonte levemente maior */
   font-weight: 500;
   padding: 5px 0;
   transition: all 0.3s ease;
@@ -1132,9 +1177,14 @@ footer {
 }
 
 .nav-item i {
-  font-size: 24px;
+  font-size: 26px; /* Ícone levemente maior */
   margin-bottom: 2px;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.nav-item:hover i {
+    transform: scale(1.1);
+    color: var(--primary);
 }
 
 .nav-item span {
@@ -1151,7 +1201,7 @@ footer {
   color: var(--primary);
 }
 
-/* Ajuste do tamanho dos itens */
+/* Ajuste do tamanho dos itens - Mantido, mas reavaliar se a proporção de 4 itens é a mesma */
 .nav-item:nth-child(1), .nav-item:nth-child(4) {
   flex-basis: 30%;
 }
@@ -1159,32 +1209,45 @@ footer {
   flex-basis: 20%;
 }
 
-/* Ícone de Pesquisa Separado */
+/* Ícone de Pesquisa Separado - MAIOR E COM EFEITO DE CABEÇALHO */
 .search-circle {
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Efeito idêntico ao cabeçalho (github-header) */
+  background-color: transparent;
+  border: 2px solid var(--header-border); /* Mais grosso */
+  backdrop-filter: blur(10px); 
+  filter: saturate(120%) brightness(1.15); 
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
+  width: 70px; /* Mais largo (era 60px) */
+  height: 70px; /* Mais grosso (era 60px) */
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
   flex-shrink: 0;
   cursor: pointer;
-  border: none;
   color: var(--secondary);
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.search-circle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--header-bg);
+    border-radius: 50%;
+    z-index: -1;
 }
 
 .search-circle:hover {
   background-color: var(--primary);
   color: var(--text);
+  border-color: var(--primary);
 }
 
 .search-circle i {
-  font-size: 28px;
+  font-size: 32px; /* Ícone maior */
+  z-index: 1;
 }
 
 /* Overlay de Pesquisa */
@@ -1301,29 +1364,38 @@ footer {
 /* Responsividade para o container flutuante */
 @media (max-width: 768px) {
   .bottom-nav-container {
-    bottom: 15px;
-    width: 98%;
+    bottom: 20px; /* Ajustado */
+    max-width: 95%; /* Ajustado */
+    width: 95%;
+    gap: 10px;
   }
   
   .main-nav-bar {
-    height: 55px;
+    height: 65px; /* Ajustado */
+    border-radius: 35px;
+    border: 1px solid var(--header-border); /* Mais fino em mobile */
+  }
+  
+  .main-nav-bar::after {
+      border-radius: 35px;
   }
   
   .nav-item {
-    font-size: 10px;
+    font-size: 11px;
   }
   
   .nav-item i {
-    font-size: 22px;
+    font-size: 24px;
   }
   
   .search-circle {
-    width: 55px;
-    height: 55px;
+    width: 65px; /* Ajustado */
+    height: 65px; /* Ajustado */
+    border: 1px solid var(--header-border); /* Mais fino em mobile */
   }
   
   .search-circle i {
-    font-size: 26px;
+    font-size: 28px;
   }
   
   .search-overlay {
@@ -1333,33 +1405,66 @@ footer {
   .search-overlay-content {
     padding: 1.5rem;
   }
+  
+  /* Cards de Conteúdo em Mobile */
+  .content-card {
+    flex: 0 0 160px; /* Ajustado para mobile */
+  }
+
+  .content-poster {
+    height: 240px; /* Ajustado para mobile */
+  }
 }
 
 @media (max-width: 480px) {
   .bottom-nav-container {
-    bottom: 10px;
+    bottom: 15px; /* Ajustado */
+    gap: 8px;
   }
   
   .main-nav-bar {
-    height: 50px;
+    height: 60px; /* Ajustado */
+    border-radius: 30px;
+  }
+  
+  .main-nav-bar::after {
+      border-radius: 30px;
   }
   
   .nav-item {
-    font-size: 9px;
+    font-size: 10px;
     padding: 3px 0;
   }
   
   .nav-item i {
-    font-size: 20px;
+    font-size: 22px;
   }
   
   .search-circle {
-    width: 50px;
-    height: 50px;
+    width: 60px; /* Ajustado */
+    height: 60px; /* Ajustado */
   }
   
   .search-circle i {
-    font-size: 24px;
+    font-size: 26px;
+  }
+  
+  .page-title-home {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-title-home i {
+    font-size: 2rem;
+  }
+  
+  /* Cards de Conteúdo em Mobile Pequeno */
+  .content-card {
+    flex: 0 0 135px; /* Mais ajustado para mobile */
+  }
+  
+  .content-poster {
+    height: 200px; /* Mais ajustado para mobile */
   }
 }
 
@@ -1386,14 +1491,6 @@ footer {
 
   .nav-button {
     min-width: auto;
-  }
-
-  .content-card {
-    flex: 0 0 140px;
-  }
-
-  .content-poster {
-    height: 210px;
   }
 
   .back-to-home {
@@ -1447,14 +1544,6 @@ footer {
     font-size: 1.4rem;
   }
   
-  .content-card {
-    flex: 0 0 120px;
-  }
-  
-  .content-poster {
-    height: 180px;
-  }
-
   .search-list-item {
     padding: 0.75rem;
   }
