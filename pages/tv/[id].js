@@ -1,252 +1,330 @@
-import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-export default function TvPlayer() {
+export default function TVShow() {
   const router = useRouter()
   const { id } = router.query
   const [tvShow, setTvShow] = useState(null)
+  const [season, setSeason] = useState(1)
+  const [episode, setEpisode] = useState(1)
+  const [seasonDetails, setSeasonDetails] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [favorites, setFavorites] = useState([])
-  const [selectedSeason, setSelectedSeason] = useState(1)
-  const [selectedEpisode, setSelectedEpisode] = useState(1)
+  const [error, setError] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-  const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/ea6ceee5.jpg'
+  const STREAM_BASE_URL = 'https://superflixapi.blog'
 
   useEffect(() => {
     if (id) {
-      loadTvShowData()
+      loadTvShow(id)
     }
-    loadFavorites()
   }, [id])
 
-  const loadTvShowData = async () => {
+  useEffect(() => {
+    if (tvShow && season) {
+      loadSeasonDetails(season)
+    }
+  }, [tvShow, season])
+
+  const loadTvShow = async (tvId) => {
     try {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`
-      )
-      const data = await response.json()
-      setTvShow(data)
-    } catch (error) {
-      console.error('Erro ao carregar série:', error)
+      setLoading(true)
+      const tvUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=pt-BR`
+      const tvResponse = await fetch(tvUrl)
+      
+      if (!tvResponse.ok) throw new Error('Série não encontrada')
+      
+      const tvData = await tvResponse.json()
+      setTvShow(tvData)
+      
+    } catch (err) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const loadFavorites = () => {
+  const loadSeasonDetails = async (seasonNumber) => {
     try {
-      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
-      const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
-      setFavorites(initialFavorites)
-    } catch (error) {
-      console.error('Erro ao carregar favoritos:', error)
-      setFavorites([])
+      const seasonUrl = `https://api.themoviedb.org/3/tv/${id}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=pt-BR`
+      const seasonResponse = await fetch(seasonUrl)
+      
+      if (seasonResponse.ok) {
+        const seasonData = await seasonResponse.json()
+        setSeasonDetails(seasonData)
+      }
+    } catch (err) {
+      console.error('Erro ao carregar temporada:', err)
     }
   }
 
-  const isFavorite = () => {
-    return favorites.some(fav => fav.id === tvShow.id && fav.media_type === 'tv')
+  const selectPlayer = (playerType) => {
+    setSelectedPlayer(playerType)
   }
 
-  const toggleFavorite = () => {
-    if (!tvShow) return
+  const getPlayerUrl = () => {
+    if (selectedPlayer === 'superflix') {
+      return `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent#noBackground`
+    } else {
+      return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
+    }
+  }
 
-    setFavorites(prevFavorites => {
-      let newFavorites
-      if (isFavorite()) {
-        newFavorites = prevFavorites.filter(fav => !(fav.id === tvShow.id && fav.media_type === 'tv'))
-      } else {
-        const favoriteItem = {
-          id: tvShow.id,
-          media_type: 'tv',
-          title: tvShow.name,
-          poster_path: tvShow.poster_path,
-          first_air_date: tvShow.first_air_date,
-          overview: tvShow.overview
-        }
-        newFavorites = [...prevFavorites, favoriteItem]
-      }
-      
-      try {
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
-      } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
-      }
+  const handleSeasonChange = (newSeason) => {
+    setSeason(newSeason)
+    setEpisode(1)
+  }
 
-      return newFavorites
-    })
+  const handleEpisodeChange = (newEpisode) => {
+    setEpisode(newEpisode)
   }
 
   if (loading) {
     return (
-      <div className="loading-screen">
+      <div className="loading active">
         <div className="spinner"></div>
-        <div className="loading-dots">
-          <div className="dot"></div>
-          <div className="dot"></div>
-          <div className="dot"></div>
-        </div>
         <p>Carregando série...</p>
       </div>
     )
   }
 
-  if (!tvShow) {
+  if (error) {
     return (
-      <div className="error-screen">
-        <div className="error-content">
+      <div className="error-message active">
+        <h3>
           <i className="fas fa-exclamation-triangle"></i>
-          <h2>Série não encontrada</h2>
-          <Link href="/" className="nav-button">
-            <i className="fas fa-arrow-left"></i>
-            Voltar para Home
-          </Link>
-        </div>
+          Ocorreu um erro
+        </h3>
+        <p>{error}</p>
+        <Link href="/" className="nav-button" style={{marginTop: '1rem'}}>
+          <i className="fas fa-home"></i>
+          Voltar para Home
+        </Link>
       </div>
     )
   }
 
-  const backdropUrl = tvShow.backdrop_path 
-    ? `https://image.tmdb.org/t/p/w1280${tvShow.backdrop_path}`
-    : DEFAULT_BACKDROP
+  if (!tvShow) return null
+
+  const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
 
   return (
     <>
       <Head>
-        <title>{tvShow.name} - Yoshikawa Player</title>
-        <meta name="description" content={tvShow.overview} />
+        <title>{tvShow.name} S{season} E{episode} - Yoshikawa Player</title>
       </Head>
 
-      {/* Background dinâmico */}
-      <div 
-        className="streaming-background"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url(${backdropUrl})`
-        }}
-      ></div>
+      <Header />
 
-      <header className="streaming-header">
-        <div className="header-content">
-          <Link href="/" className="logo-container">
-            <img 
-              src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
-              alt="Yoshikawa Bot" 
-              className="logo-image"
-            />
-            <div className="logo-text">
-              <span className="logo-name">Yoshikawa</span>
-              <span className="beta-tag">STREAMING</span>
-            </div>
-          </Link>
-        </div>
-      </header>
+      <main className="container">
+        {!selectedPlayer ? (
+          <div className="player-selector-overlay active">
+            <div className="player-selector-content">
+              <h2 className="player-selector-title">
+                <i className="fas fa-play-circle"></i>
+                Escolha o Player
+              </h2>
+              <p className="player-selector-subtitle">Selecione a melhor opção para assistir</p>
+              
+              <div className="player-options">
+                <div className="player-option" onClick={() => selectPlayer('superflix')}>
+                  <div className="player-option-header">
+                    <i className="fas fa-film"></i>
+                    <h3>SuperFlix</h3>
+                    <span className="player-tag player-tag-dub">Dublado</span>
+                  </div>
+                  <div className="player-option-info">
+                    <p><i className="fas fa-check"></i> Conteúdo dublado disponível</p>
+                    <p><i className="fas fa-exclamation-triangle"></i> Mais anúncios</p>
+                    <p><i className="fas fa-clock"></i> Carregamento mais lento</p>
+                  </div>
+                  <button className="player-select-btn">
+                    <i className="fas fa-play"></i>
+                    Usar SuperFlix
+                  </button>
+                </div>
 
-      <main className="streaming-container">
-        <div className="player-section">
-          <div className="player-wrapper">
-            <iframe
-              src={`https://vidsrc.to/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`}
-              allowFullScreen
-              title={`Assistir ${tvShow.name} - Temporada ${selectedSeason} Episódio ${selectedEpisode}`}
-            ></iframe>
-          </div>
+                <div className="player-option" onClick={() => selectPlayer('vidsrc')}>
+                  <div className="player-option-header">
+                    <i className="fas fa-bolt"></i>
+                    <h3>VidSrc</h3>
+                    <span className="player-tag player-tag-sub">Legendado</span>
+                  </div>
+                  <div className="player-option-info">
+                    <p><i className="fas fa-check"></i> Carregamento rápido</p>
+                    <p><i className="fas fa-check"></i> Menos anúncios</p>
+                    <p><i className="fas fa-closed-captioning"></i> Apenas legendado</p>
+                  </div>
+                  <button className="player-select-btn">
+                    <i className="fas fa-play"></i>
+                    Usar VidSrc
+                  </button>
+                </div>
+              </div>
 
-          <button 
-            className={`player-favorite-btn ${isFavorite() ? 'active' : ''}`}
-            onClick={toggleFavorite}
-            title={isFavorite() ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
-          >
-            <i className={isFavorite() ? 'fas fa-heart' : 'far fa-heart'}></i>
-          </button>
-        </div>
-
-        <div className="content-info-streaming">
-          <h1 className="content-title">{tvShow.name}</h1>
-          
-          <div className="content-meta">
-            {tvShow.first_air_date && (
-              <span>{new Date(tvShow.first_air_date).getFullYear()}</span>
-            )}
-            {tvShow.number_of_seasons && (
-              <span>{tvShow.number_of_seasons} temporada{tvShow.number_of_seasons > 1 ? 's' : ''}</span>
-            )}
-            {tvShow.vote_average && (
-              <span>
-                <i className="fas fa-star" style={{color: 'gold', marginRight: '0.25rem'}}></i>
-                {tvShow.vote_average.toFixed(1)}
-              </span>
-            )}
-          </div>
-
-          {tvShow.genres && tvShow.genres.length > 0 && (
-            <div className="content-genres">
-              {tvShow.genres.map(genre => (
-                <span key={genre.id} className="genre-tag">{genre.name}</span>
-              ))}
-            </div>
-          )}
-
-          {tvShow.overview && (
-            <div className="content-description">
-              <p>{tvShow.overview}</p>
-            </div>
-          )}
-
-          <div className="episode-selector active">
-            <div className="selector-group">
-              <label className="selector-label">Temporada:</label>
-              <select 
-                className="selector-select"
-                value={selectedSeason}
-                onChange={(e) => {
-                  setSelectedSeason(parseInt(e.target.value))
-                  setSelectedEpisode(1)
-                }}
+              <button 
+                className="nav-button secondary"
+                onClick={() => router.back()}
+                style={{marginTop: '1rem'}}
               >
-                {Array.from({ length: tvShow.number_of_seasons || 1 }, (_, i) => i + 1).map(season => (
-                  <option key={season} value={season}>
-                    Temporada {season}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="selector-group">
-              <label className="selector-label">Episódio:</label>
-              <select 
-                className="selector-select"
-                value={selectedEpisode}
-                onChange={(e) => setSelectedEpisode(parseInt(e.target.value))}
-              >
-                {Array.from({ length: 20 }, (_, i) => i + 1).map(episode => (
-                  <option key={episode} value={episode}>
-                    Episódio {episode}
-                  </option>
-                ))}
-              </select>
+                <i className="fas fa-arrow-left"></i>
+                Voltar
+              </button>
             </div>
           </div>
+        ) : (
+          <>
+            <div className="player-wrapper">
+              <iframe 
+                src={getPlayerUrl()}
+                allow="autoplay; encrypted-media; picture-in-picture" 
+                allowFullScreen 
+                loading="lazy" 
+                title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
+              ></iframe>
+            </div>
 
-          <div className="streaming-actions">
-            <Link href="/" className="nav-button secondary">
-              <i className="fas fa-arrow-left"></i>
-              Voltar para Home
-            </Link>
-            
-            <button className="nav-button" onClick={() => window.location.reload()}>
-              <i className="fas fa-redo"></i>
-              Recarregar Player
-            </button>
-          </div>
-        </div>
+            <div className="player-header">
+              <div className="player-info">
+                <span className="player-badge">
+                  {selectedPlayer === 'superflix' ? (
+                    <>
+                      <i className="fas fa-film"></i>
+                      SuperFlix
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-bolt"></i>
+                      VidSrc
+                    </>
+                  )}
+                </span>
+                <button 
+                  className="nav-button secondary small"
+                  onClick={() => setSelectedPlayer(null)}
+                >
+                  <i className="fas fa-sync"></i>
+                  Trocar Player
+                </button>
+              </div>
+            </div>
+
+            <div className="content-info">
+              <h1 className="content-title">
+                {tvShow.name} - {currentEpisode?.name || `Episódio ${episode}`}
+              </h1>
+              <div className="content-meta">
+                <span><i className="fas fa-layer-group"></i> Temporada {season}</span>
+                <span><i className="fas fa-tv"></i> Episódio {episode}</span>
+                <span><i className="fas fa-clock"></i> {currentEpisode?.runtime ? `${currentEpisode.runtime} min` : ''}</span>
+              </div>
+              
+              <div className="episode-selector active">
+                <div className="selector-group">
+                  <span className="selector-label">Temporada:</span>
+                  <select 
+                    className="selector-select" 
+                    value={season}
+                    onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
+                  >
+                    {tvShow.seasons
+                      .filter(s => s.season_number > 0 && s.episode_count > 0)
+                      .map(season => (
+                        <option key={season.season_number} value={season.season_number}>
+                          T{season.season_number}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+                <div className="selector-group">
+                  <span className="selector-label">Episódio:</span>
+                  <select 
+                    className="selector-select" 
+                    value={episode}
+                    onChange={(e) => handleEpisodeChange(parseInt(e.target.value))}
+                  >
+                    {seasonDetails?.episodes?.map(ep => (
+                      <option key={ep.episode_number} value={ep.episode_number}>
+                        E{ep.episode_number}: {ep.name || 'Sem título'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <Link href="/" className="nav-button secondary">
+                <i className="fas fa-arrow-left"></i>
+                Voltar para Home
+              </Link>
+
+              <h3 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>Sinopse</h3>
+              <p className="content-description">
+                {currentEpisode?.overview || tvShow.overview || 'Descrição não disponível'}
+              </p>
+            </div>
+          </>
+        )}
       </main>
 
-      <Link href="/" className="back-to-home active">
-        <i className="fas fa-home"></i>
-      </Link>
+      <BottomNav />
+      <Footer />
     </>
   )
 }
+
+const Header = () => (
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img 
+          src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
+          alt="Yoshikawa Bot" 
+          className="logo-image"
+        />
+        <div className="logo-text">
+          <span className="logo-name">Yoshikawa</span>
+          <span className="beta-tag">STREAMING</span>
+        </div>
+      </Link>
+    </div>
+  </header>
+)
+
+const BottomNav = () => (
+  <div className="bottom-nav-container">
+    <div className="main-nav-bar">
+      <Link href="/" className="nav-item">
+        <i className="fas fa-home"></i>
+        <span>Home</span>
+      </Link>
+      <button className="nav-item" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+        <i className="fas fa-arrow-up"></i>
+        <span>Topo</span>
+      </button>
+      <button className="nav-item" onClick={() => window.location.reload()}>
+        <i className="fas fa-redo"></i>
+        <span>Recarregar</span>
+      </button>
+    </div>
+  </div>
+)
+
+const Footer = () => (
+  <footer>
+    <div className="footer-content">
+      <p>© 2025 Yoshikawa Bot · Todos os direitos reservados.</p>
+      <div className="footer-links">
+        <a href="https://yoshikawa-bot.github.io/termos/" className="footer-link" target="_blank" rel="noopener noreferrer">
+          Termos de Uso
+        </a>
+        <a href="https://wa.me/18589258076" className="footer-link" target="_blank" rel="noopener noreferrer">
+          Suporte
+        </a>
+      </div>
+    </div>
+  </footer>
+)
