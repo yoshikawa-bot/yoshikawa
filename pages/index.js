@@ -131,12 +131,19 @@ export default function Home() {
                 alt={item.title || item.name}
                 className="content-poster"
               />
-              <div className="content-info-card">
+              
+              {/* INÍCIO DA ALTERAÇÃO MÍNIMA: Incluir o wrapper flutuante */}
+              <div className="floating-text-wrapper">
                 <div className="content-title-card">{item.title || item.name}</div>
                 <div className="content-year">
                   {item.release_date ? new Date(item.release_date).getFullYear() : 
                    item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                 </div>
+              </div>
+              {/* FIM DA ALTERAÇÃO MÍNIMA */}
+              
+              {/* O content-info-card ORIGINAL deve ser mantido, mas agora está vazio, pois o conteúdo foi movido para o floating-text-wrapper, permitindo que o CSS anterior para content-info-card seja ignorado ou ajustado. */}
+              <div className="content-info-card">
               </div>
             </Link>
           ))
@@ -304,4 +311,4 @@ const Header = () => {
       </div>
     </header>
   )
-            }
+        }
