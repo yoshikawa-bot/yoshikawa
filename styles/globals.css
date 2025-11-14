@@ -1021,7 +1021,7 @@ body::before {
   color: white;
 }
 
-/* Sistema de Seleção de Player - Design Integrado */
+/* Sistema de Seleção de Player - Design Integrado (Manter para evitar quebra de outras páginas, mas será ocultado) */
 .player-selector-overlay {
   position: fixed;
   top: 0;
@@ -1040,6 +1040,7 @@ body::before {
 .player-selector-overlay.active {
   display: flex;
   animation: fadeIn 0.3s ease;
+  display: none; /* Adicionado para garantir que o overlay antigo não apareça */
 }
 
 @keyframes fadeIn {
@@ -1473,6 +1474,217 @@ body::before {
   opacity: 1;
 }
 
+/* ========================================================= */
+/* ===== ESTILOS ESPECÍFICOS PARA PÁGINAS DE PLAYER REFEITAS ===== */
+/* ========================================================= */
+
+/* Esconde o seletor de player antigo (se ainda existir) */
+.player-selector-overlay.active {
+    display: none; /* Desativa completamente o overlay de seleção de player */
+}
+
+/* Informações do Conteúdo Abaixo do Embed */
+.content-info-player {
+    padding: 1rem 0;
+    margin-bottom: 7rem; /* Garante que o conteúdo não fique sob o BottomNav */
+}
+
+.content-title-player {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+
+.content-meta-player {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.content-meta-player span i {
+    color: var(--primary);
+    margin-right: 0.25rem;
+}
+
+.player-overview {
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Estilo do Pop-up de Informações */
+.info-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.info-popup-content {
+    background: var(--popup-bg);
+    border: 1px solid var(--popup-border);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative;
+    color: var(--text);
+    animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+}
+
+.close-popup-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.close-popup-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: rotate(90deg);
+}
+
+.content-header {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.content-poster-large {
+    width: 150px;
+    height: 225px;
+    object-fit: cover;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.content-title-large {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.content-meta-large {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.content-description-large {
+    line-height: 1.6;
+}
+
+/* Ajustes para BottomNav em Modo de Reprodução (a bolha) */
+.bottom-nav-container.reproduction-mode .main-nav-bar {
+    display: flex;
+    justify-content: flex-start; /* Alinha o Info/Controles à esquerda */
+    gap: 10px; 
+    padding: 0 15px;
+    flex-grow: 1; /* Ocupa o espaço se o search-circle estiver oculto */
+    width: 100%;
+    max-width: 600px; 
+}
+
+.bottom-nav-container.reproduction-mode .nav-item {
+    flex: none; /* Desabilita o flex-grow */
+    width: 45px; /* Define um tamanho fixo para os botões */
+    padding: 0;
+}
+
+.bottom-nav-container.reproduction-mode .nav-item.player-control-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    opacity: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.bottom-nav-container.reproduction-mode .nav-item.player-control-btn i {
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.bottom-nav-container.reproduction-mode .nav-item.player-control-btn span {
+    display: none; /* Oculta o texto para manter apenas o ícone na bolha */
+}
+
+/* Controles de Temporada/Episódio na Bolha */
+.selector-nav-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+    width: auto !important;
+    padding: 0 5px;
+}
+
+.selector-nav-item .selector-label {
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.selector-nav-item .nav-select {
+    padding: 5px 8px;
+    font-size: 12px;
+    min-width: 55px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    appearance: none; /* Remove o estilo padrão do SO */
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 10.958l3.71-3.73a.75.75 0 111.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 5px center;
+    background-size: 14px;
+}
+
+/* Agrupamento dos botões Home, Player, Favoritos */
+.player-extra-controls {
+    display: flex;
+    gap: 10px;
+    margin-left: auto; /* Empurra para o canto direito */
+}
+
 /* ===== RESPONSIVIDADE GERAL ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
@@ -1503,10 +1715,21 @@ body::before {
   .bottom-nav-container.reproduction-mode .main-nav-bar {
       height: 65px;
       gap: 10px;
+      padding: 0 10px;
+      justify-content: space-between;
   }
 
   .bottom-nav-container.reproduction-mode .nav-item {
       width: 40px; 
+  }
+  
+  .bottom-nav-container.reproduction-mode .nav-item.player-control-btn {
+      width: 40px;
+      height: 40px;
+  }
+
+  .bottom-nav-container.reproduction-mode .nav-item.player-control-btn i {
+      font-size: 18px;
   }
 
   .search-circle {
@@ -1598,6 +1821,19 @@ body::before {
     margin: 1rem;
   }
   
+  .player-option {
+    padding: 1rem;
+  }
+  
+  .player-option-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .player-option-header h3 {
+    font-size: 1.1rem;
+  }
+  
   .player-controls {
     padding: 1rem;
   }
@@ -1617,6 +1853,53 @@ body::before {
     right: 1rem;
     width: 45px;
     height: 45px;
+  }
+  
+  /* Media Queries para Pop-up de Informações */
+  .info-popup-content {
+      padding: 1.5rem;
+      width: 95%;
+  }
+
+  .content-header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1rem;
+  }
+  
+  .content-poster-large {
+      width: 100px;
+      height: 150px;
+  }
+  
+  .content-title-large {
+      font-size: 1.5rem;
+  }
+
+  .content-meta-large {
+      justify-content: center;
+  }
+
+  /* Ajustes na Bolha para Mobile */
+  .selector-nav-item .selector-label {
+    display: none; /* Oculta o "Temp:" e "Ep:" para economizar espaço */
+  }
+
+  .selector-nav-item .nav-select {
+    min-width: 45px;
+    padding: 5px 5px;
+    font-size: 11px;
+    background-position: right 2px center;
+    background-size: 12px;
+  }
+  
+  .player-extra-controls {
+    gap: 5px;
+  }
+  
+  .bottom-nav-container.reproduction-mode .main-nav-bar {
+      gap: 5px;
   }
 }
 
@@ -1734,4 +2017,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
