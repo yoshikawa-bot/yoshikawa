@@ -159,37 +159,10 @@ export default function TVShow() {
           </div>
         </div>
 
-        <div className="streaming-controls">
-          <button 
-            className="streaming-control-btn"
-            onClick={() => setShowPlayerSelector(!showPlayerSelector)}
-          >
-            <i className="fas fa-exchange-alt"></i>
-            Trocar Player
-          </button>
-          <button 
-            className="streaming-control-btn"
-            onClick={() => setShowInfoPopup(true)}
-          >
-            <i className="fas fa-info-circle"></i>
-            Informações
-          </button>
-          <Link href="/" className="streaming-control-btn">
-            <i className="fas fa-home"></i>
-            Voltar
-          </Link>
-        </div>
-
         <div className="content-info-streaming">
           <h1 className="content-title-streaming">
-            <i className="fas fa-tv"></i>
             {tvShow.name} - {currentEpisode?.name || `Episódio ${episode}`}
           </h1>
-          <div className="content-meta-streaming">
-            <span><i className="fas fa-layer-group"></i> Temporada {season}</span>
-            <span><i className="fas fa-tv"></i> Episódio {episode}</span>
-            <span><i className="fas fa-clock"></i> {currentEpisode?.runtime ? `${currentEpisode.runtime} min` : ''}</span>
-          </div>
           
           <div className={`episode-selector-streaming ${tvShow ? 'active' : ''}`}>
             <div className="selector-group-streaming">
@@ -218,7 +191,7 @@ export default function TVShow() {
               >
                 {seasonDetails?.episodes?.map(ep => (
                   <option key={ep.episode_number} value={ep.episode_number}>
-                    E{ep.episode_number}: {ep.name || 'Sem título'}
+                    E{ep.episode_number}
                   </option>
                 ))}
               </select>
@@ -296,7 +269,7 @@ export default function TVShow() {
 
       <BottomNav 
         selectedPlayer={selectedPlayer}
-        onPlayerChange={setSelectedPlayer}
+        onPlayerChange={() => setShowPlayerSelector(!showPlayerSelector)}
         isFavorite={isFavorite}
         onToggleFavorite={toggleFavorite}
         onShowInfo={() => setShowInfoPopup(true)}
@@ -326,10 +299,10 @@ const Header = () => (
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
-      <button className="nav-item" onClick={() => onPlayerChange(selectedPlayer === 'superflix' ? 'vidsrc' : 'superflix')}>
+      <button className="nav-item" onClick={onPlayerChange}>
         <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
       </button>
-      <button className="nav-item" onClick={onShowInfo}>
+      <button className="nav-item info-circle" onClick={onShowInfo}>
         <i className="fas fa-info-circle"></i>
       </button>
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
