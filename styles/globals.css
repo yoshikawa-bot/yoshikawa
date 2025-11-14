@@ -20,9 +20,9 @@
   --highlight: rgba(255, 255, 255, 0.15);
   
   /* Variáveis para o Popup de Serviço */
-  --popup-bg: rgba(255, 255, 255, 0.1);
+  --popup-bg: rgba(0, 0, 0, 0.5); /* Fundo mais escuro para o popup */
   --popup-border: rgba(255, 255, 255, 0.3);
-  --option-bg: rgba(0, 0, 0, 0.15);
+  --option-bg: rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -855,8 +855,31 @@ body::before {
   border-color: var(--primary);
 }
 
-/* Popup de informações */
-.info-popup-overlay {
+/* Animações de Entrada/Saída para Popups */
+@keyframes slideUpFromBottom {
+  from { 
+    transform: translate(-50%, 50px) scale(0.9);
+    opacity: 0;
+  }
+  to { 
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDownToBottom {
+  from { 
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+  to { 
+    transform: translate(-50%, 50px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* Overlay Geral para Pop-ups (fechar clique fora) */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -869,18 +892,20 @@ body::before {
   align-items: center;
   padding: 1.5rem;
   backdrop-filter: blur(5px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.info-popup-overlay.active {
+.modal-overlay.active {
   display: flex;
-  animation: fadeIn 0.3s ease;
+  opacity: 1;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.modal-overlay.active.animate-out {
+  opacity: 0;
 }
 
+/* Popup de informações - Modal */
 .info-popup-content {
   background: var(--popup-bg);
   border: 1px solid var(--popup-border);
@@ -892,20 +917,24 @@ body::before {
   overflow-y: auto;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  /* A animação é aplicada via JS, mas o estilo base é aqui */
+  position: relative; /* Para garantir o z-index dentro do overlay */
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 
-@keyframes slideUpFromBottom {
-  from { 
-    transform: translateY(50px);
-    opacity: 0;
-  }
-  to { 
-    transform: translateY(0);
-    opacity: 1;
-  }
+.modal-overlay.active .info-popup-content.animate-in {
+  transform: scale(1);
+  opacity: 1;
 }
 
+.modal-overlay.active.animate-out .info-popup-content {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+/* ESTILOS INTERNOS DO POPUP DE INFO - MANTIDOS */
 .info-popup-header {
   display: flex;
   justify-content: space-between;
@@ -964,8 +993,10 @@ body::before {
   background: var(--primary-dark);
   transform: translateY(-2px);
 }
+/* FIM ESTILOS INTERNOS DO POPUP DE INFO */
 
-/* Seletor de player na bolha */
+
+/* Seletor de player na bolha - Modificado para ser um modal centralizado flutuante*/
 .player-selector-bubble {
   position: fixed;
   bottom: 100px;
@@ -977,26 +1008,20 @@ body::before {
   padding: 1.5rem;
   backdrop-filter: blur(15px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  z-index: 99;
+  z-index: 1001; /* Maior que o overlay */
   display: none;
-  animation: slideUpFromBottom 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  transform: translate(-50%, 50px);
 }
 
 .player-selector-bubble.active {
   display: block;
+  animation: slideUpFromBottom 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86) forwards;
 }
 
-.player-selector-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 10px solid var(--popup-bg);
+.player-selector-bubble.active.animate-out {
+  animation: slideDownToBottom 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) forwards;
 }
 
 .player-options-bubble {
@@ -1007,8 +1032,9 @@ body::before {
 
 .player-option-bubble {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column; /* Altera para que o texto detalhado fique abaixo */
+  align-items: flex-start;
+  gap: 0.4rem;
   padding: 0.75rem 1rem;
   background: var(--option-bg);
   border: 1px solid var(--border);
@@ -1026,10 +1052,28 @@ body::before {
   transform: translateX(5px);
 }
 
-.player-option-bubble i {
+.player-option-main {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.player-option-main i {
   font-size: 1.2rem;
   width: 20px;
   text-align: center;
+}
+
+.player-description-bubble {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  padding-left: 27px; /* Alinha com o texto principal, offset do ícone */
+  line-height: 1.3;
+}
+
+.player-option-bubble:hover .player-description-bubble {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .player-tag-bubble {
@@ -1039,6 +1083,7 @@ body::before {
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .player-tag-dub {
@@ -1050,9 +1095,11 @@ body::before {
   background: linear-gradient(135deg, var(--success), var(--accent));
   color: white;
 }
+/* FIM POPUP DE SELEÇÃO DE PLAYER */
 
 /* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL */
 .bottom-nav-container.streaming-mode {
+  /* Mantém as posições originais */
   position: fixed;
   bottom: 25px;
   left: 50%;
@@ -1066,6 +1113,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar {
+  /* Mantém o estilo base da home */
   background-color: transparent;
   border: 2px solid var(--header-border);
   border-radius: 40px;
@@ -1081,6 +1129,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::before {
+  /* Glassmorphism */
   content: '';
   position: absolute;
   top: 0;
@@ -1093,6 +1142,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::after {
+  /* Camada de cor */
   content: '';
   position: absolute;
   top: 0;
@@ -1105,6 +1155,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .nav-item {
+  /* Garante visibilidade e interatividade */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1125,6 +1176,7 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
+  /* Ícones visíveis */
   font-size: 26px;
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
@@ -1140,8 +1192,8 @@ body::before {
   color: var(--primary);
 }
 
-/* Círculo de informações (substitui o de busca) */
-.info-circle {
+/* Novo Círculo de Navegação (Voltar para Home) - Substitui o search-circle */
+.back-to-home-circle {
   background-color: transparent;
   border: 2px solid var(--header-border);
   backdrop-filter: blur(10px);
@@ -1160,7 +1212,7 @@ body::before {
   position: relative;
 }
 
-.info-circle::after {
+.back-to-home-circle::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1169,15 +1221,20 @@ body::before {
   z-index: -1;
 }
 
-.info-circle:hover {
+.back-to-home-circle:hover {
   background-color: var(--primary);
   color: var(--text);
   border-color: var(--primary);
 }
 
-.info-circle i {
+.back-to-home-circle i {
   font-size: 32px;
   z-index: 1;
+}
+
+/* O antigo .info-circle será removido, o de info agora está como .nav-item */
+.info-circle {
+  display: none !important; /* Esconde o info-circle antigo */
 }
 
 /* Mensagem de erro */
@@ -1478,13 +1535,13 @@ body::before {
       font-size: 24px;
   }
 
-  .info-circle {
+  .back-to-home-circle {
     width: 65px;
     height: 65px;
     border: 1px solid var(--header-border);
   }
   
-  .info-circle i {
+  .back-to-home-circle i {
     font-size: 28px;
   }
   
@@ -1565,6 +1622,11 @@ body::before {
     max-width: 90%;
   }
   
+  .player-option-bubble {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
   .episode-selector-streaming {
     flex-direction: column;
     align-items: flex-start;
@@ -1577,6 +1639,10 @@ body::before {
   
   .selector-select-streaming {
     width: 120px; /* Tamanho fixo para mobile */
+  }
+  
+  .player-description-bubble {
+      font-size: 0.7rem;
   }
 }
 
