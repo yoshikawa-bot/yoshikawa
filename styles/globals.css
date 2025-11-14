@@ -1,23 +1,23 @@
 :root {
-  /* CORES PRINCIPAIS */
+  /* CORES PRINCIPAIS - Ajustadas para melhor contraste com glassmorphism */
   --primary: #ff6b6b; /* Cor de destaque principal */
   --primary-dark: #e05555; /* Cor mais escura para hover */
-  --secondary: #94a3b8; /* Cor secundária */
+  --secondary: rgba(148, 163, 184, 0.9); /* Cor secundária com transparência */
   --accent: #4dabf7; /* Cor para elementos clicáveis secundários */
   --accent-dark: #339af0; /* Cor mais escura para hover de elementos secundários */
   
-  --dark: #f1f5f9;
-  --light: #0f172a;
-  --border: #334155;
-  --card-bg: #1e293b;
-  --text: #f1f5f9;
-  --bg: #0f172a;
-  --header-bg: #161b22;
-  --header-border: #30363d;
-  --header-text: #f0f6fc;
+  --dark: rgba(241, 245, 249, 0.9);
+  --light: rgba(15, 23, 42, 0.9);
+  --border: rgba(51, 65, 85, 0.3);
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --text: rgba(241, 245, 249, 0.95);
+  --bg: rgba(15, 23, 42, 0.8);
+  --header-bg: rgba(22, 27, 34, 0.8);
+  --header-border: rgba(48, 54, 61, 0.4);
+  --header-text: rgba(240, 246, 252, 0.95);
   --success: #10b981;
   --error: #ef4444;
-  --overlay-bg: rgba(15, 23, 42, 0.95);
+  --overlay-bg: rgba(15, 23, 42, 0.85);
 }
 
 * {
@@ -33,6 +33,9 @@ body {
   line-height: 1.6;
   font-size: 16px;
   min-height: 100vh;
+  /* Efeito de vidro no body */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Animação para o botão de Favoritar */
@@ -52,7 +55,7 @@ body {
   transform: rotate(45deg);
 }
 
-/* Cabeçalho */
+/* Cabeçalho com efeito de vidro */
 .github-header {
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--header-border);
@@ -60,6 +63,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .header-content {
@@ -121,7 +127,7 @@ body {
   gap: 1rem;
 }
 
-/* BARRA DE BUSCA MELHORADA - Design mais arredondado */
+/* BARRA DE BUSCA MELHORADA - Design mais arredondado com vidro */
 .search-container {
   position: relative;
   max-width: 400px;
@@ -129,7 +135,7 @@ body {
 }
 
 .search-input {
-  background-color: var(--header-bg);
+  background-color: rgba(22, 27, 34, 0.6);
   border: 1px solid var(--header-border);
   border-radius: 25px;
   padding: 0.5rem 2.5rem 0.5rem 1rem;
@@ -137,12 +143,15 @@ body {
   color: var(--header-text);
   width: 100%;
   transition: all 0.3s ease;
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--primary);
-  background-color: var(--bg);
+  background-color: rgba(15, 23, 42, 0.7);
   box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.4);
 }
 
@@ -170,7 +179,7 @@ body {
   transform: translateY(-50%) scale(1.1);
 }
 
-/* Auto-complete Popup */
+/* Auto-complete Popup com vidro */
 .search-results {
   position: absolute;
   top: 100%;
@@ -183,7 +192,9 @@ body {
   overflow-y: auto;
   z-index: 1000;
   display: none;
-  backdrop-filter: blur(10px);
+  /* Efeito de vidro aprimorado */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .search-result-item {
@@ -193,10 +204,11 @@ body {
   cursor: pointer;
   border-bottom: 1px solid var(--border);
   transition: all 0.3s ease;
+  background: rgba(30, 41, 59, 0.5);
 }
 
 .search-result-item:hover {
-  background-color: var(--card-bg);
+  background-color: rgba(255, 107, 107, 0.15);
   transform: translateX(3px);
 }
 
@@ -237,7 +249,7 @@ body {
   margin-left: 0.5rem;
 }
 
-/* BOTÃO DE FAVORITOS NO HEADER - Design mais arredondado */
+/* BOTÃO DE FAVORITOS NO HEADER - Design mais arredondado com vidro */
 #headerFavoriteBtn {
   border-radius: 50%;
   width: 40px;
@@ -246,9 +258,12 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  background: var(--card-bg);
+  background: rgba(30, 41, 59, 0.7);
   border: 1px solid var(--border);
   color: var(--text);
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 #headerFavoriteBtn:hover {
@@ -262,7 +277,7 @@ body {
   border-color: var(--primary);
 }
 
-/* Menu de Favoritos - NOVO DESIGN */
+/* Menu de Favoritos - NOVO DESIGN com vidro */
 .favorites-menu {
   position: fixed;
   top: 0;
@@ -270,13 +285,15 @@ body {
   width: 50%;
   height: 100%;
   background: var(--overlay-bg);
-  backdrop-filter: blur(10px);
   z-index: 1000;
   transition: right 0.4s cubic-bezier(0.785, 0.135, 0.15, 0.86);
   display: flex;
   flex-direction: column;
   box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
+  /* Efeito de vidro aprimorado */
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
 }
 
 .favorites-menu.open {
@@ -289,7 +306,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--header-bg);
+  background: rgba(22, 27, 34, 0.7);
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .favorites-actions {
@@ -298,10 +318,11 @@ body {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+  background: rgba(30, 41, 59, 0.3);
 }
 
 .favorites-action-btn {
-  background: var(--card-bg);
+  background: rgba(30, 41, 59, 0.7);
   border: 1px solid var(--border);
   border-radius: 25px;
   padding: 0.6rem 1rem;
@@ -315,6 +336,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .favorites-action-btn:hover {
@@ -340,11 +364,14 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
-  background: var(--card-bg);
+  background: rgba(30, 41, 59, 0.5);
+  /* Efeito de vidro suave */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .favorite-item:hover {
-  background-color: rgba(255, 107, 107, 0.1);
+  background-color: rgba(255, 107, 107, 0.15);
   border-color: var(--primary);
   transform: translateX(5px);
 }
@@ -414,6 +441,9 @@ body {
   display: none;
   opacity: 0;
   transition: opacity 0.4s ease;
+  /* Efeito de vidro no overlay */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .menu-overlay.active {
@@ -450,12 +480,12 @@ body {
   border-radius: 15px;
 }
 
-/* Botão de Favoritar na página de exibição - NOVA POSIÇÃO */
+/* Botão de Favoritar na página de exibição - NOVA POSIÇÃO com vidro */
 .player-favorite-btn {
   position: fixed;
   bottom: 7rem;
   right: 2rem;
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.8);
   color: var(--text);
   border: none;
   border-radius: 50%;
@@ -469,6 +499,9 @@ body {
   transition: all 0.3s ease;
   z-index: 90;
   border: 1px solid var(--border);
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .player-favorite-btn:hover {
@@ -531,10 +564,13 @@ body {
 }
 
 .nav-button.secondary {
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   border: 1px solid var(--border);
   color: var(--text);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .nav-button.secondary:hover:not(:disabled) {
@@ -543,15 +579,18 @@ body {
   color: white;
 }
 
-/* Informações do Conteúdo - FUNDO RESTAURADO COMO ERA ANTES */
+/* Informações do Conteúdo - FUNDO COM VIDRO */
 .content-info {
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   padding: 1.5rem;
   border-radius: 15px;
   margin-bottom: 2rem;
   border-left: 4px solid var(--primary);
   transition: border-left-color 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .content-title {
@@ -604,13 +643,16 @@ body {
 }
 
 .selector-select {
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   border: 1px solid var(--border);
   border-radius: 25px;
   padding: 0.5rem;
   color: var(--text);
   min-width: 120px;
   transition: all 0.3s ease;
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .selector-select:focus {
@@ -688,8 +730,9 @@ body {
   background: var(--primary-dark);
 }
 
+/* Cards de conteúdo com efeito de vidro */
 .content-card {
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   border-radius: 15px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -699,6 +742,9 @@ body {
   position: relative;
   text-decoration: none;
   color: inherit;
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .content-card:hover {
@@ -749,6 +795,9 @@ body {
   align-items: center;
   transition: all 0.3s ease;
   z-index: 10;
+  /* Efeito de vidro */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .favorite-btn:not(#headerFavoriteBtn):hover {
@@ -785,7 +834,7 @@ body {
 .search-list-item {
   display: flex;
   align-items: center;
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   padding: 1rem;
   border-radius: 15px;
   cursor: pointer;
@@ -793,6 +842,9 @@ body {
   border: 1px solid transparent;
   text-decoration: none;
   color: inherit;
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .search-list-item:hover {
@@ -836,7 +888,7 @@ body {
   overflow: hidden;
 }
 
-/* Botão Voltar para Home */
+/* Botão Voltar para Home com vidro */
 .back-to-home {
   position: fixed;
   bottom: 2rem;
@@ -855,6 +907,9 @@ body {
   transition: all 0.3s ease;
   z-index: 90;
   text-decoration: none;
+  /* Efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .back-to-home:hover {
@@ -893,12 +948,15 @@ body {
 
 .error-message {
   display: none;
-  background-color: var(--card-bg);
+  background-color: rgba(30, 41, 59, 0.7);
   padding: 1.5rem;
   border-radius: 15px;
   border-left: 4px solid var(--error);
   margin-bottom: 2rem;
   text-align: center;
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .error-message.active {
@@ -914,15 +972,18 @@ body {
   gap: 0.5rem;
 }
 
-/* Footer */
+/* Footer com efeito de vidro */
 footer {
-  background-color: var(--header-bg);
+  background-color: rgba(22, 27, 34, 0.8);
   color: var(--secondary);
   padding: 1.5rem 0;
   text-align: center;
   font-size: 0.9rem;
   margin-top: 2rem;
   border-top: 1px solid var(--header-border);
+  /* Efeito de vidro */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .footer-content {
@@ -1086,3 +1147,110 @@ img {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Efeito de fundo animado para o body */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://assets.codepen.io/443195/carl-raw-8Gdayy2Lhi0-unsplash.jpg");
+  background-size: cover;
+  background-position: center;
+  animation: drift 60s ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+@keyframes drift {
+  0% {
+    background-position: 50% 50%;
+    transform: scale(1);
+  }
+  25% {
+    background-position: 60% 40%;
+    transform: scale(1.05);
+  }
+  50% {
+    background-position: 40% 60%;
+    transform: scale(1.1);
+  }
+  75% {
+    background-position: 55% 45%;
+    transform: scale(1.05);
+  }
+  100% {
+    background-position: 50% 50%;
+    transform: scale(1);
+  }
+}
+
+/* Reset para elementos de exemplo que você forneceu */
+#info{
+  position: absolute;
+  left: 5px;
+  bottom: 10px;
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 10px;
+}
+
+/* Reset para o container de exemplo */
+.container-example{
+  position: absolute;
+  display: grid;
+  place-items: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.lg-btn{
+  width: 50vmin;
+  height: 20vmin;
+  border-radius: 10.2vmin 9.8vmin 10.2vmin 9.8vmin;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.3),
+    inset -2px -2px 2px 1px rgba(255, 255, 255, 0.3), 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.2);;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 5vmin;
+  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.5);
+  cursor: pointer;
+}
+
+.gl{
+  backdrop-filter: url(#filter);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.lg-btn:hover{
+  transform: scale(1.05);
+  border-radius: 9.8vmin 10.2vmin 9.8vmin 10.2vmin;
+}
+
+.lg-btn:select{
+  transform: scale(0.95);
+}
+
+/* reset para botões de exemplo */
+button.example{
+  display: inline-block;
+  border: none;
+  margin: 0;
+  text-decoration: none;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.example:focus {
+  outline: none;
+  }
