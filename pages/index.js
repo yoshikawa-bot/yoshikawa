@@ -137,11 +137,6 @@ export default function Home() {
   const clearSearchResults = () => {
     setSearchResults([])
     setSearchQuery('')
-    // Limpa o campo de pesquisa
-    const searchInput = document.querySelector('.search-input')
-    if (searchInput) {
-      searchInput.value = ''
-    }
   }
 
   const getActiveItems = () => {
@@ -297,11 +292,6 @@ export default function Home() {
         {loading && (
           <div className="loading active">
             <div className="spinner"></div>
-            <div className="loading-dots">
-              <div className="dot"></div>
-              <div className="dot"></div>
-              <div className="dot"></div>
-            </div>
             <p>Carregando conteúdo...</p>
           </div>
         )}
@@ -354,8 +344,6 @@ export default function Home() {
                 e.preventDefault()
                 const formData = new FormData(e.target)
                 handleSearch(formData.get('search'))
-                // Limpa o campo após a pesquisa
-                e.target.reset()
               }}
               className="search-form"
             >
