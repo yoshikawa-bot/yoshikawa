@@ -10,6 +10,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases') // releases, recommendations, favorites
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
@@ -76,6 +77,7 @@ export default function Home() {
     
     setLoading(true)
     setSearchQuery(query)
+    setShowSearchOverlay(false)
 
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
@@ -208,7 +210,7 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header onSearch={handleSearch} />
+      <Header />
 
       <main className="container">
         {loading && (
@@ -230,43 +232,79 @@ export default function Home() {
       {/* Container Flutuante de Navegação */}
       {searchResults.length === 0 && (
         <div className="floating-nav-container">
+          <div className="nav-tabs-container">
+            <button 
+              className={`nav-tab ${activeSection === 'releases' ? 'active' : ''}`}
+              onClick={() => setActiveSection('releases')}
+            >
+              <i className="fas fa-film"></i>
+              <span>Lançamentos</span>
+            </button>
+            <button 
+              className={`nav-tab ${activeSection === 'recommendations' ? 'active' : ''}`}
+              onClick={() => setActiveSection('recommendations')}
+            >
+              <i className="fas fa-fire"></i>
+              <span>Populares</span>
+            </button>
+            <button 
+              className={`nav-tab ${activeSection === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveSection('favorites')}
+            >
+              <i className="fas fa-heart"></i>
+              <span>Favoritos</span>
+            </button>
+          </div>
+          
           <button 
-            className={`nav-tab ${activeSection === 'releases' ? 'active' : ''}`}
-            onClick={() => setActiveSection('releases')}
+            className="floating-search-btn"
+            onClick={() => setShowSearchOverlay(true)}
           >
-            <i className="fas fa-film"></i>
-            <span>Lançamentos</span>
-          </button>
-          <button 
-            className={`nav-tab ${activeSection === 'recommendations' ? 'active' : ''}`}
-            onClick={() => setActiveSection('recommendations')}
-          >
-            <i className="fas fa-fire"></i>
-            <span>Populares</span>
-          </button>
-          <button 
-            className={`nav-tab ${activeSection === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveSection('favorites')}
-          >
-            <i className="fas fa-heart"></i>
-            <span>Favoritos</span>
+            <i className="fas fa-search"></i>
           </button>
         </div>
       )}
+
+      {/* Overlay de Pesquisa */}
+      <div className={`search-overlay ${showSearchOverlay ? 'active' : ''}`}>
+        <div className="search-overlay-content">
+          <div className="search-overlay-header">
+            <h3 className="search-overlay-title">Buscar Conteúdo</h3>
+            <button 
+              className="close-search-overlay"
+              onClick={() => setShowSearchOverlay(false)}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target)
+              handleSearch(formData.get('search'))
+            }}
+            className="overlay-search-container"
+          >
+            <input 
+              type="text" 
+              name="search"
+              className="overlay-search-input" 
+              placeholder="Digite o nome do filme ou série..."
+              autoFocus
+            />
+            <button type="submit" className="overlay-search-button">
+              <i className="fas fa-search"></i>
+            </button>
+          </form>
+        </div>
+      </div>
 
       <Footer />
     </>
   )
 }
 
-const Header = ({ onSearch }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    onSearch(searchQuery)
-  }
-
+const Header = () => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -281,21 +319,6 @@ const Header = ({ onSearch }) => {
             <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
-        
-        <div className="header-right">
-          <form onSubmit={handleSearchSubmit} className="search-container">
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Buscar filmes e séries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit" className="search-button">
-              <i className="fas fa-search"></i>
-            </button>
-          </form>
-        </div>
       </div>
     </header>
   )
