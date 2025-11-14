@@ -1,26 +1,19 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState([]) // Inicializado como array
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeSection, setActiveSection] = useState('releases') // releases, recommendations, favorites, search
-  
-  // NOVO ESTADO: Controla a transição de Nav para Search no contêiner flutuante
-  const [isSearchActive, setIsSearchActive] = useState(false) 
-  
-  // REMOVIDO: showSearchOverlay
-  
+  const [activeSection, setActiveSection] = useState('releases') // releases, recommendations, favorites
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false)
+
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
-
-  // Ref para focar no input de busca ao abrir a barra
-  const searchInputRef = useRef(null) 
 
   // Auxiliar para criar uma chave única
   const getItemKey = (item) => `${item.media_type}-${item.id}`
@@ -29,13 +22,6 @@ export default function Home() {
     loadHomeContent()
     loadFavorites()
   }, [])
-  
-  // Efeito para focar o input quando a busca se torna ativa
-  useEffect(() => {
-    if (isSearchActive && searchInputRef.current) {
-      searchInputRef.current.focus()
-    }
-  }, [isSearchActive])
 
   const loadHomeContent = async () => {
     try {
@@ -111,7 +97,7 @@ export default function Home() {
           poster_path: item.poster_path,
           release_date: item.release_date,
           first_air_date: item.first_air_date,
-          overview: item.overview
+          overview: item.overview // Mantém a sinopse
         }
         newFavorites = [...prevFavorites, favoriteItem]
       }
@@ -127,25 +113,12 @@ export default function Home() {
     })
   }
 
-  // NOVO: Função para lidar com cliques nos botões de navegação
-  const handleNavClick = (section) => {
-      // 1. Desativa o modo de busca flutuante (caso estivesse ativo)
-      setIsSearchActive(false); 
-      // 2. Limpa os resultados da busca (para que a home apareça)
-      setSearchResults([]); 
-      // 3. Define a nova seção ativa
-      setActiveSection(section); 
-  }
-
   const handleSearch = async (query) => {
     if (!query.trim()) return
     
     setLoading(true)
     setSearchQuery(query)
-    // NOVO: Volta ao modo navegação após a busca
-    setIsSearchActive(false) 
-    // NOVO: Define a seção ativa como 'search'
-    setActiveSection('search') 
+    setShowSearchOverlay(false)
 
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
@@ -179,22 +152,20 @@ export default function Home() {
         return recommendations
       case 'favorites':
         return favorites
-      case 'search':
-        return searchResults
       default:
         return releases
     }
   }
   
-  // Função para definir o Título e o Ícone da seção ativa
+  // ALTERADO: Função para definir o Título e o Ícone da seção ativa (apenas uma palavra)
   const getActiveSectionDetails = () => {
     switch (activeSection) {
       case 'releases':
-        return { title: 'Lançamentos', icon: 'fas fa-film' } 
+        return { title: 'Lançamentos', icon: 'fas fa-film' } // Alterado para "Lançamentos"
       case 'recommendations':
         return { title: 'Populares', icon: 'fas fa-fire' }
       case 'favorites':
-        return { title: 'Favoritos', icon: 'fas fa-heart' } 
+        return { title: 'Favoritos', icon: 'fas fa-heart' } // Alterado para "Favoritos"
       default:
         return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
@@ -202,9 +173,10 @@ export default function Home() {
   
   const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
-  // COMPONENTE CONTENTGRID
+  // COMPONENTE CONTENTGRID ATUALIZADO
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
     <section className="section">
+      {/* NOVO: Linha horizontal de separação, caso queira. Removida para usar o page-title-home */}
       <div className="content-grid">
         {items.length > 0 ? (
           items.map(item => {
@@ -225,6 +197,7 @@ export default function Home() {
                 <button 
                   className={`favorite-btn ${isFav ? 'active' : ''}`}
                   onClick={(e) => {
+                    // Impede o Link pai de navegar
                     e.preventDefault() 
                     e.stopPropagation() 
                     toggleFavorite(item)
@@ -233,8 +206,9 @@ export default function Home() {
                 >
                   <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
                 </button>
+                {/* FIM DO BOTÃO DE FAVORITAR */}
 
-                {/* CONTAINER DE TEXTO FLUTUANTE */}
+                {/* INÍCIO DA ALTERAÇÃO MÍNIMA: Incluir o wrapper flutuante */}
                 <div className="floating-text-wrapper">
                   <div className="content-title-card">{item.title || item.name}</div>
                   <div className="content-year">
@@ -242,6 +216,7 @@ export default function Home() {
                      item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                   </div>
                 </div>
+                {/* FIM DA ALTERAÇÃO MÍNIMA */}
                 
                 <div className="content-info-card">
                 </div>
@@ -257,10 +232,8 @@ export default function Home() {
     </section>
   )
 
-  // COMPONENTE SEARCHRESULTS (Segue o padrão das demais páginas)
   const SearchResults = () => (
-    // Note que a classe 'active' é forçada, pois o estado isSearchActive cuida da visibilidade.
-    <div className="search-results-section active"> 
+    <div className="search-results-section active">
       <div className="section-header">
         <h2 className="section-title">Resultados da Busca</h2>
         <span style={{color: 'var(--secondary)', marginLeft: 'auto'}}>{searchQuery}</span>
@@ -288,6 +261,7 @@ export default function Home() {
                 {item.overview || 'Sinopse não disponível'}
               </div>
             </div>
+            {/* Opcional: Adicionar botão de favoritar também nos resultados da busca */}
             <button 
                 className={`favorite-btn ${isFavorite(item) ? 'active' : ''}`}
                 onClick={(e) => {
@@ -295,7 +269,7 @@ export default function Home() {
                     e.stopPropagation() 
                     toggleFavorite(item)
                 }}
-                style={{position: 'absolute', top: '10px', right: '10px'}} 
+                style={{position: 'absolute', top: '10px', right: '10px'}} // Adapte o CSS se necessário
                 title={isFavorite(item) ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
             >
                 <i className={isFavorite(item) ? 'fas fa-heart' : 'far fa-heart'}></i>
@@ -313,6 +287,7 @@ export default function Home() {
         <meta name="description" content="Yoshikawa Streaming Player" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Confirme que esta linha do Font Awesome está carregada */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -326,15 +301,16 @@ export default function Home() {
           </div>
         )}
 
-        {/* Exibe resultados da busca ou a Home com base na seção ativa */}
-        {searchResults.length > 0 && activeSection === 'search' ? ( 
+        {searchResults.length > 0 ? (
           <SearchResults />
         ) : (
           <div className="home-sections">
+            {/* NOVO: Título da Página Renderizado aqui, utilizando a classe do CSS */}
             <h1 className="page-title-home">
                 <i className={pageIcon}></i>
                 {pageTitle}
             </h1>
+            {/* PASSANDO AS NOVAS FUNÇÕES PARA O ContentGrid */}
             <ContentGrid 
                 items={getActiveItems()} 
                 isFavorite={isFavorite} 
@@ -344,88 +320,73 @@ export default function Home() {
         )}
       </main>
 
-      {/* CONTAINER FLUTUANTE DE NAVEGAÇÃO / PESQUISA */}
-      {/* A classe 'search-active' é adicionada/removida dinamicamente */}
-      <div className={`bottom-nav-container ${isSearchActive ? 'search-active' : ''}`}>
-        <div className="main-nav-bar">
+      {/* Container Flutuante de Navegação - NOVO FORMATO */}
+      {searchResults.length === 0 && (
+        <div className="bottom-nav-container">
+          <div className="main-nav-bar">
+            <button 
+              className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+              onClick={() => setActiveSection('releases')}
+            >
+              <i className="fas fa-film"></i>
+              <span>Lançamentos</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+              onClick={() => setActiveSection('recommendations')}
+            >
+              <i className="fas fa-fire"></i>
+              <span>Populares</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveSection('favorites')}
+            >
+              <i className="fas fa-heart"></i>
+              <span>Favoritos</span>
+            </button>
+          </div>
           
-          {/* ITENS DE NAVEGAÇÃO PADRÃO */}
           <button 
-            className={`nav-item ${activeSection === 'releases' && !isSearchActive ? 'active' : ''}`}
-            onClick={() => handleNavClick('releases')}
-          >
-            <i className="fas fa-film"></i>
-            <span>Lançamentos</span>
-          </button>
-          <button 
-            className={`nav-item ${activeSection === 'recommendations' && !isSearchActive ? 'active' : ''}`}
-            onClick={() => handleNavClick('recommendations')}
-          >
-            <i className="fas fa-fire"></i>
-            <span>Populares</span>
-          </button>
-          <button 
-            className={`nav-item ${activeSection === 'favorites' && !isSearchActive ? 'active' : ''}`}
-            onClick={() => handleNavClick('favorites')}
-          >
-            <i className="fas fa-heart"></i>
-            <span>Favoritos</span>
-          </button>
-          
-          {/* ÍCONE DE BUSCA (LUPA que abre o campo) */}
-          <button 
-            className={`nav-item`}
-            id="searchToggleBtn"
-            onClick={() => {
-                // Ativa a barra de pesquisa e prepara a interface
-                setIsSearchActive(true) 
-            }}
+            className="search-circle"
+            onClick={() => setShowSearchOverlay(true)}
           >
             <i className="fas fa-search"></i>
-            <span>Buscar</span>
           </button>
-          
-          
-          {/* BARRA DE PESQUISA FLUTUANTE (Formulário) */}
+        </div>
+      )}
+
+      {/* Overlay de Pesquisa */}
+      <div className={`search-overlay ${showSearchOverlay ? 'active' : ''}`}>
+        <div className="search-overlay-content">
+          <div className="search-overlay-header">
+            <h3 className="search-overlay-title">Buscar Conteúdo</h3>
+            <button 
+              className="close-search-overlay"
+              onClick={() => setShowSearchOverlay(false)}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
           <form 
-            className="floating-search-wrapper"
             onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.target)
-                handleSearch(formData.get('floatingSearch')) 
-                // Limpa o campo após submeter
-                searchInputRef.current.value = '' 
+              e.preventDefault()
+              const formData = new FormData(e.target)
+              handleSearch(formData.get('search'))
             }}
+            className="overlay-search-container"
           >
             <input 
               type="text" 
-              name="floatingSearch" 
-              className="floating-search-input" 
-              placeholder="O que você está procurando?"
-              ref={searchInputRef} // Atribui a ref para focar
+              name="search"
+              className="overlay-search-input" 
+              placeholder="Digite o nome do filme ou série..."
+              autoFocus
             />
-            
-            {/* BOTÃO DE AÇÃO: FECHAR (X) no modo ativo, ou SUBMETER (LUPA) */}
-            <button 
-              type={isSearchActive ? 'button' : 'submit'} 
-              className="search-action-btn" 
-              onClick={(e) => {
-                  if (isSearchActive) {
-                    // Se estiver no modo busca, este botão FECHA (X)
-                    e.preventDefault() 
-                    setIsSearchActive(false) 
-                    setSearchResults([]) 
-                    setActiveSection('releases') 
-                  }
-                  // Caso contrário, (se o formulário tivesse visível) ele submeteria.
-                  // Mas ele só fica visível no modo busca, então a função primária é fechar.
-              }}
-            >
-              <i className={`fas ${isSearchActive ? 'fa-times' : 'fa-search'}`}></i>
+            <button type="submit" className="overlay-search-button">
+              <i className="fas fa-search"></i>
             </button>
           </form>
-          {/* FIM: BARRA DE PESQUISA FLUTUANTE */}
-
         </div>
       </div>
     </>
@@ -450,4 +411,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
+        }
