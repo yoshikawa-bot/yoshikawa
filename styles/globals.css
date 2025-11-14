@@ -29,7 +29,7 @@
 
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: url('https://yoshikawa-bot.github.io/cache/images/5061d566.jpg') no-repeat center/cover fixed;
+  background: url('https://yoshikawa-bot.github.io/cache/images/ea6ceee5.jpg') no-repeat center/cover fixed;
   color: var(--text);
   line-height: 1.6;
   font-size: 16px;
@@ -777,21 +777,20 @@ body::before {
   margin-bottom: 2rem;
 }
 
-/* NOVO: Título da Página com Ícone */
-/* ATUALIZADO: Margem superior removida para ficar mais próximo do header */
+/* NOVO: Título da Página com Ícone - TAMANHO REDUZIDO */
 .page-title-home {
-    font-size: 2rem;
+    font-size: 1.6rem; /* REDUZIDO de 2rem */
     font-weight: 700;
     color: var(--text);
     margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding-top: 0; /* REMOVIDO: 1rem */
+    padding-top: 1rem;
 }
 
 .page-title-home i {
-    font-size: 2.5rem;
+    font-size: 2rem; /* REDUZIDO de 2.5rem */
     color: var(--primary); /* Cor do ícone */
 }
 /* FIM NOVO: Título da Página com Ícone */
@@ -1255,7 +1254,7 @@ footer {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--text); /* COR PADRÃO ALTERADA PARA BRANCO */
+  color: var(--secondary);
   font-size: 12px; 
   font-weight: 500;
   padding: 5px 0;
@@ -1266,14 +1265,9 @@ footer {
   position: relative;
 }
 
-/* REMOVENDO TEXTO: Altura e visibilidade do span */
-.nav-item span {
-    display: none; /* REMOVIDO: Texto do item de navegação */
-}
-
 .nav-item i {
   font-size: 26px; 
-  margin-bottom: 0; /* Espaço inferior removido já que o texto foi removido */
+  margin-bottom: 2px;
   transition: color 0.3s ease, transform 0.3s ease;
 }
 
@@ -1282,10 +1276,9 @@ footer {
     color: var(--primary);
 }
 
-/* COR PADRÃO DO ÍCONE: Não é mais necessário, mas mantendo a cor de hover */
-/* .nav-item span {
+.nav-item span {
   transition: color 0.3s ease;
-} */
+}
 
 .nav-item.active {
   color: var(--primary);
@@ -1321,7 +1314,7 @@ footer {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
   flex-shrink: 0;
   cursor: pointer;
-  color: var(--secondary);
+  color: var(--text); /* ALTERADO para branco */
   transition: all 0.3s ease;
   position: relative;
 }
@@ -1680,5 +1673,6 @@ img {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    }
+    transition-duration: 0.01ms !important;
+  }
 }
