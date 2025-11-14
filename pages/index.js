@@ -9,6 +9,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [favoritesMenuOpen, setFavoritesMenuOpen] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
@@ -52,7 +53,7 @@ export default function Home() {
       setReleases(allReleases)
       setRecommendations(allPopular)
       
-      // Calendário (usando séries populares como fallback)
+      // Calendário
       setCalendar((tvData.results || []).slice(0, 15).map(item => ({
         ...item,
         media_type: 'tv'
@@ -91,6 +92,14 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleFavoritesMenu = () => {
+    setFavoritesMenuOpen(!favoritesMenuOpen)
+  }
+
+  const closeFavoritesMenu = () => {
+    setFavoritesMenuOpen(false)
   }
 
   const ContentGrid = ({ items, title }) => (
@@ -168,7 +177,12 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header onSearch={handleSearch} />
+      <Header onSearch={handleSearch} onToggleFavorites={toggleFavoritesMenu} />
+
+      <FavoritesMenu 
+        isOpen={favoritesMenuOpen} 
+        onClose={closeFavoritesMenu} 
+      />
 
       <main className="container">
         {loading && (
@@ -194,7 +208,7 @@ export default function Home() {
   )
 }
 
-const Header = ({ onSearch }) => {
+const Header = ({ onSearch, onToggleFavorites }) => {
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleSearchSubmit = (e) => {
@@ -230,9 +244,124 @@ const Header = ({ onSearch }) => {
               <i className="fas fa-search"></i>
             </button>
           </form>
+
+          <button 
+            className="favorite-btn" 
+            id="headerFavoriteBtn"
+            onClick={onToggleFavorites}
+            title="Meus Favoritos"
+          >
+            <i className="fas fa-plus"></i>
+          </button>
         </div>
       </div>
     </header>
+  )
+}
+
+const FavoritesMenu = ({ isOpen, onClose }) => {
+  const [favorites, setFavorites] = useState([])
+
+  useEffect(() => {
+    loadFavorites()
+  }, [])
+
+  const loadFavorites = () => {
+    const savedFavorites = localStorage.getItem('yoshikawa_favorites')
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites))
+    }
+  }
+
+  const removeFavorite = (id, type) => {
+    const updatedFavorites = favorites.filter(fav => !(fav.id == id && fav.type === type))
+    setFavorites(updatedFavorites)
+    localStorage.setItem('yoshikawa_favorites', JSON.stringify(updatedFavorites))
+  }
+
+  const clearFavorites = () => {
+    if (confirm('Tem certeza que deseja limpar todos os favoritos?')) {
+      setFavorites([])
+      localStorage.setItem('yoshikawa_favorites', JSON.stringify([]))
+    }
+  }
+
+  const exportFavorites = () => {
+    if (favorites.length === 0) {
+      alert('Não há favoritos para exportar')
+      return
+    }
+    
+    const dataStr = JSON.stringify(favorites, null, 2)
+    const dataBlob = new Blob([dataStr], {type: 'application/json'})
+    
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'yoshikawa_favorites.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <>
+      <div 
+        className={`menu-overlay ${isOpen ? 'active' : ''}`} 
+        onClick={onClose}
+      ></div>
+      
+      <div className={`favorites-menu ${isOpen ? 'open' : ''}`}>
+        <div className="favorites-header">
+          <h3>Meus Favoritos</h3>
+          <button className="remove-favorite" onClick={onClose}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div className="favorites-actions">
+          <button className="favorites-action-btn" onClick={exportFavorites}>
+            <i className="fas fa-download"></i> Exportar
+          </button>
+          <button className="favorites-action-btn" onClick={clearFavorites}>
+            <i className="fas fa-trash"></i> Limpar
+          </button>
+        </div>
+        
+        <div className="favorites-list">
+          {favorites.length === 0 ? (
+            <div className="no-favorites">
+              <i className="fas fa-heart-broken" style={{fontSize: '2rem', marginBottom: '0.5rem'}}></i>
+              <p>Nenhum favorito adicionado</p>
+            </div>
+          ) : (
+            favorites.map(fav => (
+              <div key={`${fav.type}-${fav.id}`} className="favorite-item">
+                <img 
+                  src={fav.poster} 
+                  alt={fav.title}
+                  className="favorite-poster" 
+                />
+                <div className="favorite-info">
+                  <div className="favorite-title">{fav.title}</div>
+                  <div className="favorite-meta">
+                    {fav.type === 'movie' ? 'Filme' : 'Série'} | {fav.year}
+                  </div>
+                </div>
+                <button 
+                  className="remove-favorite" 
+                  onClick={() => removeFavorite(fav.id, fav.type)}
+                  title="Remover"
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
