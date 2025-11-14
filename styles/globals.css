@@ -35,6 +35,8 @@ body {
   font-size: 16px;
   min-height: 100vh;
   position: relative;
+  /* 1. ATUALIZAÇÃO: BLOQUEAR ROLAGEM VERTICAL */
+  overflow-y: hidden; 
 }
 
 body::before {
@@ -538,6 +540,12 @@ body::before {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.5rem;
+  /* 2. ATUALIZAÇÃO: AJUSTAR CONTAINER PARA CENTRALIZAR CONTEÚDO */
+  min-height: calc(100vh - 80px); /* Garante que o container use a altura máxima disponível, subtraindo o header e o nav de baixo */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centraliza verticalmente o conteúdo interno */
+  align-items: center;
 }
 
 /* Player */
@@ -756,6 +764,11 @@ body::before {
 /* Seções da Home */
 .home-sections {
   display: block;
+  /* 3. ATUALIZAÇÃO: CENTRALIZAÇÃO DA SEÇÃO DE CARDS DENTRO DO CONTAINER */
+  width: 100%;
+  max-width: 1280px;
+  margin: auto; /* Garante centralização horizontal */
+  padding-bottom: 7rem; /* Espaço para o menu flutuante */
 }
 
 .home-sections.hidden {
@@ -1414,6 +1427,16 @@ footer {
   .content-poster {
     height: 240px; /* Ajustado para mobile */
   }
+  
+  /* 4. ATUALIZAÇÃO: REMOVER PADDING DO CONTAINER EM MOBILE PARA CENTRALIZAÇÃO TOTAL */
+  .container {
+    padding: 1rem;
+    min-height: calc(100vh - 80px); 
+  }
+  
+  .home-sections {
+    padding-bottom: 6rem; /* Ajuste para mobile */
+  }
 }
 
 @media (max-width: 480px) {
@@ -1470,10 +1493,6 @@ footer {
 
 /* Responsividade - Melhorias para Mobile */
 @media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-
   .header-content {
     padding: 0 1rem;
     flex-wrap: wrap;
