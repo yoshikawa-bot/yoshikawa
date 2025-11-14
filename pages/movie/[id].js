@@ -3,18 +3,61 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
+// Componente Pop-up de Informações
+const InfoPopup = ({ content, contentType, onClose }) => {
+  if (!content) return null
+
+  // Dados específicos para filme
+  const title = content.title
+  const year = content.release_date ? new Date(content.release_date).getFullYear() : 'N/A'
+  const runtime = content.runtime ? `${content.runtime} min` : ''
+  const genres = content.genres ? content.genres.map(g => g.name).join(', ') : ''
+  const overview = content.overview || 'Descrição não disponível.'
+  const posterPath = content.poster_path ? `https://image.tmdb.org/t/p/w500${content.poster_path}` : 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
+
+  return (
+    <div className="info-popup-overlay active" onClick={onClose}>
+      <div className="info-popup-content" onClick={e => e.stopPropagation()}>
+        <button className="close-popup-btn" onClick={onClose}>
+          <i className="fas fa-times"></i>
+        </button>
+        <div className="content-header">
+          <img 
+            src={posterPath} 
+            alt={`Poster de ${title}`} 
+            className="content-poster-large"
+          />
+          <div className="content-info-main">
+            <h1 className="content-title-large">{title}</h1>
+            <div className="content-meta-large">
+              <span><i className="fas fa-calendar"></i> {year}</span>
+              <span><i className="fas fa-clock"></i> {runtime}</span>
+              <span><i className="fas fa-tags"></i> {genres}</span>
+              {/* Adicione classificação, etc., se disponível */}
+            </div>
+            <h3 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>Sinopse</h3>
+            <p className="content-description-large">
+              {overview}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Movie() {
   const router = useRouter()
   const { id } = router.query
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [showPlayerSelector, setShowPlayerSelector] = useState(false)
-  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  // Define um player inicial (por exemplo, SuperFlix)
+  const [selectedPlayer, setSelectedPlayer] = useState('superflix') 
+  const [showInfoPopup, setShowInfoPopup] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
-  const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
 
   useEffect(() => {
     if (id) {
@@ -40,13 +83,15 @@ export default function Movie() {
     }
   }
 
-  const openPlayerSelector = () => {
-    setShowPlayerSelector(true)
+  const togglePlayer = () => {
+    setSelectedPlayer(prevPlayer => 
+      prevPlayer === 'superflix' ? 'vidsrc' : 'superflix'
+    )
   }
 
-  const selectPlayer = (playerType) => {
-    setSelectedPlayer(playerType)
-    setShowPlayerSelector(false)
+  const toggleFavorite = () => {
+    // Lógica para adicionar/remover dos favoritos
+    console.log(`Filme ${movie.title} favoritado/desfavoritado!`)
   }
 
   const getPlayerUrl = () => {
@@ -85,6 +130,16 @@ export default function Movie() {
   }
 
   if (!movie) return null
+  
+  // Propriedades para o BottomNav
+  const navProps = {
+    isReproductionMode: true,
+    contentType: 'movie',
+    selectedPlayer,
+    togglePlayer,
+    toggleInfoPopup: () => setShowInfoPopup(true),
+    toggleFavorite,
+  }
 
   return (
     <>
@@ -94,126 +149,48 @@ export default function Movie() {
 
       <Header />
 
-      <main className="container">
-        {!selectedPlayer ? (
-          <div className="player-selector-overlay active">
-            <div className="player-selector-content">
-              <h2 className="player-selector-title">
-                <i className="fas fa-play-circle"></i>
-                Escolha o Player
-              </h2>
-              <p className="player-selector-subtitle">Selecione a melhor opção para assistir</p>
-              
-              <div className="player-options">
-                <div className="player-option" onClick={() => selectPlayer('superflix')}>
-                  <div className="player-option-header">
-                    <i className="fas fa-film"></i>
-                    <h3>SuperFlix</h3>
-                    <span className="player-tag player-tag-dub">Dublado</span>
-                  </div>
-                  <div className="player-option-info">
-                    <p><i className="fas fa-check"></i> Conteúdo dublado disponível</p>
-                    <p><i className="fas fa-exclamation-triangle"></i> Mais anúncios</p>
-                    <p><i className="fas fa-clock"></i> Carregamento mais lento</p>
-                  </div>
-                  <button className="player-select-btn">
-                    <i className="fas fa-play"></i>
-                    Usar SuperFlix
-                  </button>
-                </div>
+      <main className="container player-page-container">
+        {/* Player Wrapper */}
+        <div className="player-wrapper">
+          <iframe 
+            key={selectedPlayer} // Força a recarregar o iframe ao trocar o player
+            src={getPlayerUrl()}
+            allow="autoplay; encrypted-media; picture-in-picture" 
+            allowFullScreen 
+            loading="lazy" 
+            title={`Yoshikawa Player - ${movie.title} (${selectedPlayer})`}
+          ></iframe>
+        </div>
 
-                <div className="player-option" onClick={() => selectPlayer('vidsrc')}>
-                  <div className="player-option-header">
-                    <i className="fas fa-bolt"></i>
-                    <h3>VidSrc</h3>
-                    <span className="player-tag player-tag-sub">Legendado</span>
-                  </div>
-                  <div className="player-option-info">
-                    <p><i className="fas fa-check"></i> Carregamento rápido</p>
-                    <p><i className="fas fa-check"></i> Menos anúncios</p>
-                    <p><i className="fas fa-closed-captioning"></i> Apenas legendado</p>
-                  </div>
-                  <button className="player-select-btn">
-                    <i className="fas fa-play"></i>
-                    Usar VidSrc
-                  </button>
-                </div>
-              </div>
-
-              <button 
-                className="nav-button secondary"
-                onClick={() => router.back()}
-                style={{marginTop: '1rem'}}
-              >
-                <i className="fas fa-arrow-left"></i>
-                Voltar
-              </button>
-            </div>
+        {/* Informações Abaixo do Embed */}
+        <div className="content-info-player">
+          <h1 className="content-title-player">{movie.title}</h1>
+          <div className="content-meta-player">
+            <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
+            <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
           </div>
-        ) : (
-          <>
-            <div className="player-wrapper">
-              <iframe 
-                src={getPlayerUrl()}
-                allow="autoplay; encrypted-media; picture-in-picture" 
-                allowFullScreen 
-                loading="lazy" 
-                title={`Yoshikawa Player - ${movie.title}`}
-              ></iframe>
-            </div>
-
-            <div className="player-header">
-              <div className="player-info">
-                <span className="player-badge">
-                  {selectedPlayer === 'superflix' ? (
-                    <>
-                      <i className="fas fa-film"></i>
-                      SuperFlix
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-bolt"></i>
-                      VidSrc
-                    </>
-                  )}
-                </span>
-                <button 
-                  className="nav-button secondary small"
-                  onClick={() => setSelectedPlayer(null)}
-                >
-                  <i className="fas fa-sync"></i>
-                  Trocar Player
-                </button>
-              </div>
-            </div>
-
-            <div className="content-info">
-              <h1 className="content-title">{movie.title}</h1>
-              <div className="content-meta">
-                <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
-                <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
-                <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
-              </div>
-              
-              <Link href="/" className="nav-button secondary">
-                <i className="fas fa-arrow-left"></i>
-                Voltar para Home
-              </Link>
-
-              <h3 style={{marginTop: '1rem', marginBottom: '0.5rem'}}>Sinopse</h3>
-              <p className="content-description">
-                {movie.overview || 'Descrição não disponível.'}
-              </p>
-            </div>
-          </>
+          <p className="player-overview">
+            {movie.overview || 'Descrição não disponível.'}
+          </p>
+        </div>
+        
+        {/* Pop-up de Informações - Exibido quando showInfoPopup é true */}
+        {showInfoPopup && (
+          <InfoPopup 
+            content={movie} 
+            contentType="movie" 
+            onClose={() => setShowInfoPopup(false)} 
+          />
         )}
       </main>
 
-      <BottomNav />
+      <BottomNav {...navProps} />
       <Footer />
     </>
   )
 }
+
+// --- Componentes Compartilhados Refatorados/Adaptados ---
 
 const Header = () => (
   <header className="github-header">
@@ -233,24 +210,119 @@ const Header = () => (
   </header>
 )
 
-const BottomNav = () => (
-  <div className="bottom-nav-container">
-    <div className="main-nav-bar">
-      <Link href="/" className="nav-item">
-        <i className="fas fa-home"></i>
-        <span>Home</span>
-      </Link>
-      <button className="nav-item" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-        <i className="fas fa-arrow-up"></i>
-        <span>Topo</span>
+const BottomNav = ({ 
+  isReproductionMode, 
+  contentType, 
+  selectedPlayer, 
+  togglePlayer, 
+  toggleInfoPopup,
+  toggleFavorite,
+  handleSeasonChange, // Apenas para TVShow
+  handleEpisodeChange, // Apenas para TVShow
+  currentSeason, // Apenas para TVShow
+  currentEpisode, // Apenas para TVShow
+  tvShowSeasons, // Apenas para TVShow
+  seasonDetails, // Apenas para TVShow
+}) => {
+
+  const PlayerSelectorButton = () => {
+    const isSuperflix = selectedPlayer === 'superflix'
+    return (
+      <button className="nav-item player-control-btn" onClick={togglePlayer} title={`Trocar para ${isSuperflix ? 'VidSrc' : 'SuperFlix'}`}>
+        <i className={`fas ${isSuperflix ? 'fa-film' : 'fa-bolt'}`}></i>
+        <span>{isSuperflix ? 'SuperFlix' : 'VidSrc'}</span>
       </button>
-      <button className="nav-item" onClick={() => window.location.reload()}>
-        <i className="fas fa-redo"></i>
-        <span>Recarregar</span>
-      </button>
+    )
+  }
+
+  const InfoButton = () => (
+    <button className="nav-item player-control-btn" onClick={toggleInfoPopup} title="Ver Informações">
+      <i className="fas fa-info-circle"></i>
+      <span>Informações</span>
+    </button>
+  )
+
+  const FavoriteButton = () => (
+    <button className="nav-item player-control-btn" onClick={toggleFavorite} title="Adicionar aos Favoritos">
+      <i className="fas fa-heart"></i>
+      <span>Favorito</span>
+    </button>
+  )
+  
+  const HomeButton = () => (
+    <Link href="/" className="nav-item player-control-btn" title="Voltar para Home">
+      <i className="fas fa-home"></i>
+      <span>Home</span>
+    </Link>
+  )
+  
+  // Controles de Episódio/Temporada (Apenas para Série)
+  const SeasonEpisodeControls = () => {
+    if (contentType !== 'tv') return null
+    
+    return (
+      <>
+        {/* Dropdown de Temporada */}
+        <div className="nav-item selector-nav-item">
+            <span className="selector-label">Temp:</span>
+            <select 
+              className="selector-select nav-select" 
+              value={currentSeason}
+              onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
+            >
+              {tvShowSeasons
+                .filter(s => s.season_number > 0 && s.episode_count > 0)
+                .map(season => (
+                  <option key={season.season_number} value={season.season_number}>
+                    T{season.season_number}
+                  </option>
+                ))
+              }
+            </select>
+        </div>
+        
+        {/* Dropdown de Episódio */}
+        <div className="nav-item selector-nav-item">
+            <span className="selector-label">Ep:</span>
+            <select 
+              className="selector-select nav-select" 
+              value={currentEpisode}
+              onChange={(e) => handleEpisodeChange(parseInt(e.target.value))}
+            >
+              {seasonDetails?.episodes?.map(ep => (
+                <option key={ep.episode_number} value={ep.episode_number}>
+                  E{ep.episode_number}
+                </option>
+              ))}
+            </select>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <div className={`bottom-nav-container ${isReproductionMode ? 'reproduction-mode' : ''}`}>
+      <div className="main-nav-bar reproduction-nav">
+        {/* Botão de Info (Substitui a Search) */}
+        <InfoButton /> 
+
+        {/* Controles de Episódio/Temporada (Apenas para Série) */}
+        <SeasonEpisodeControls />
+
+        {/* Botões do canto (Juntos no canto oposto ao Info/Controles) */}
+        <div className="player-extra-controls">
+          <HomeButton /> 
+          <PlayerSelectorButton />
+          <FavoriteButton />
+        </div>
+      </div>
+      {/* Search Circle e outros itens da Home (Ocultos em reproduction-mode) */}
+      <div className="search-circle hidden-on-repro">
+         {/* ... (Seus componentes de busca aqui) */}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const Footer = () => (
   <footer>
