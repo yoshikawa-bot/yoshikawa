@@ -156,10 +156,27 @@ export default function Home() {
         return releases
     }
   }
+  
+  // NOVO: Função para definir o Título e o Ícone da seção ativa
+  const getActiveSectionDetails = () => {
+    switch (activeSection) {
+      case 'releases':
+        return { title: 'Últimos Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations':
+        return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites':
+        return { title: 'Meus Favoritos', icon: 'fas fa-heart' }
+      default:
+        return { title: 'Conteúdo', icon: 'fas fa-tv' }
+    }
+  }
+  
+  const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
   // COMPONENTE CONTENTGRID ATUALIZADO
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
     <section className="section">
+      {/* NOVO: Linha horizontal de separação, caso queira. Removida para usar o page-title-home */}
       <div className="content-grid">
         {items.length > 0 ? (
           items.map(item => {
@@ -288,6 +305,11 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
+            {/* NOVO: Título da Página Renderizado aqui, utilizando a classe do CSS */}
+            <h1 className="page-title-home">
+                <i className={pageIcon}></i>
+                {pageTitle}
+            </h1>
             {/* PASSANDO AS NOVAS FUNÇÕES PARA O ContentGrid */}
             <ContentGrid 
                 items={getActiveItems()} 
@@ -312,14 +334,14 @@ export default function Home() {
             <button 
               className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
               onClick={() => setActiveSection('recommendations')}
-            >
+              >
               <i className="fas fa-fire"></i>
               <span>Populares</span>
             </button>
             <button 
               className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
               onClick={() => setActiveSection('favorites')}
-            >
+              >
               <i className="fas fa-heart"></i>
               <span>Favoritos</span>
             </button>
@@ -328,7 +350,7 @@ export default function Home() {
           <button 
             className="search-circle"
             onClick={() => setShowSearchOverlay(true)}
-          >
+            >
             <i className="fas fa-search"></i>
           </button>
         </div>
