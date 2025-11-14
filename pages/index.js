@@ -10,7 +10,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false)
   const [searchActive, setSearchActive] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -217,10 +216,7 @@ export default function Home() {
 
   const SearchResults = () => (
     <div className="search-results-section active">
-      <div className="section-header">
-        <h2 className="section-title">Resultados da Busca</h2>
-        <span style={{color: 'var(--secondary)', marginLeft: 'auto'}}>{searchQuery}</span>
-      </div>
+      <h2 className="page-title-home">Resultados</h2>
       <div className="content-grid">
         {searchResults.map(item => {
           const isFav = isFavorite(item)
@@ -289,10 +285,7 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
-            <h1 className="page-title-home">
-                <i className={pageIcon}></i>
-                {pageTitle}
-            </h1>
+            <h1 className="page-title-home">{pageTitle}</h1>
             <ContentGrid 
                 items={getActiveItems()} 
                 isFavorite={isFavorite} 
@@ -302,76 +295,74 @@ export default function Home() {
         )}
       </main>
 
-      {searchResults.length === 0 && (
-        <div className="bottom-nav-container">
-          <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-            {!searchActive && (
-              <>
-                <button 
-                  className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('releases')}
-                >
-                  <i className="fas fa-film"></i>
-                  <span>Lançamentos</span>
-                </button>
-                <button 
-                  className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('recommendations')}
-                >
-                  <i className="fas fa-fire"></i>
-                  <span>Populares</span>
-                </button>
-                <button 
-                  className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('favorites')}
-                >
-                  <i className="fas fa-heart"></i>
-                  <span>Favoritos</span>
-                </button>
-              </>
-            )}
-            
-            <div className={`search-container ${searchActive ? 'active' : ''}`}>
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const formData = new FormData(e.target)
-                  handleSearch(formData.get('search'))
-                }}
-                className="search-form"
-              >
-                <input 
-                  type="text" 
-                  name="search"
-                  className="search-input" 
-                  placeholder="Pesquisar conteúdo"
-                  autoFocus={searchActive}
-                />
-                <button type="submit" className="search-button">
-                  <i className="fas fa-search"></i>
-                </button>
-              </form>
-              {searchActive && (
-                <button 
-                  className="close-search"
-                  onClick={() => setSearchActive(false)}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              )}
-            </div>
-          </div>
-          
+      <div className="bottom-nav-container">
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
           {!searchActive && (
-            <button 
-              className="search-circle"
-              onClick={() => setSearchActive(true)}
-            >
-              <i className="fas fa-search"></i>
-            </button>
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
           )}
+          
+          <div className={`search-container ${searchActive ? 'active' : ''}`}>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.target)
+                handleSearch(formData.get('search'))
+              }}
+              className="search-form"
+            >
+              <input 
+                type="text" 
+                name="search"
+                className="search-input" 
+                placeholder="Pesquisar conteúdo"
+                autoFocus={searchActive}
+              />
+              <button type="submit" className="search-button">
+                <i className="fas fa-search"></i>
+              </button>
+            </form>
+            {searchActive && (
+              <button 
+                className="close-search"
+                onClick={() => setSearchActive(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
         </div>
-      )}
+        
+        {!searchActive && (
+          <button 
+            className="search-circle"
+            onClick={() => setSearchActive(true)}
+          >
+            <i className="fas fa-search"></i>
+          </button>
+        )}
+      </div>
     </>
   )
 }
@@ -394,4 +385,4 @@ const Header = () => {
       </div>
     </header>
   )
-                  }
+    }
