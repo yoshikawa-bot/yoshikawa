@@ -134,6 +134,11 @@ export default function Home() {
     }
   }
 
+  const clearSearchResults = () => {
+    setSearchResults([])
+    setSearchQuery('')
+  }
+
   const getActiveItems = () => {
     switch (activeSection) {
       case 'releases':
@@ -216,7 +221,17 @@ export default function Home() {
 
   const SearchResults = () => (
     <div className="search-results-section active">
-      <h2 className="page-title-home">Resultados</h2>
+      <div className="search-results-header">
+        <h2 className="page-title-home">Resultados</h2>
+        <button 
+          className="clear-search-btn"
+          onClick={clearSearchResults}
+          title="Voltar para a página inicial"
+        >
+          <i className="fas fa-times"></i>
+          <span>Limpar</span>
+        </button>
+      </div>
       <div className="content-grid">
         {searchResults.map(item => {
           const isFav = isFavorite(item)
@@ -385,4 +400,4 @@ const Header = () => {
       </div>
     </header>
   )
-    }
+}
