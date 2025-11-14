@@ -485,7 +485,7 @@ body::before {
     height: 100%;
     backdrop-filter: blur(10px);
     filter: saturate(120%) brightness(1.15);
-    z-index: -1;
+    z-index: 1; /* CORREÇÃO: z-index para o fundo */
 }
 
 .main-nav-bar::after {
@@ -497,7 +497,7 @@ body::before {
     height: 100%;
     background: var(--header-bg);
     border-radius: 40px;
-    z-index: -1;
+    z-index: 1; /* CORREÇÃO: z-index para o fundo */
 }
 
 .nav-item {
@@ -520,6 +520,7 @@ body::before {
   opacity: 1;
   transform: scale(1);
   transition: all 0.3s ease;
+  z-index: 2; /* CORREÇÃO: z-index acima do fundo */
 }
 
 .main-nav-bar.search-active .nav-item {
@@ -538,6 +539,8 @@ body::before {
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
+  position: relative;
+  z-index: 3; /* CORREÇÃO: z-index mais alto para os ícones */
 }
 
 .nav-item:hover i {
@@ -594,7 +597,7 @@ body::before {
   position: relative;
   opacity: 1;
   transform: scale(1);
-  z-index: 1; /* Garante que o ícone esteja acima dos pseudo-elementos */
+  z-index: 10;
 }
 
 .search-circle::after {
@@ -614,7 +617,7 @@ body::before {
 
 .search-circle i {
   font-size: 32px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .main-nav-bar.search-active + .search-circle {
@@ -1115,9 +1118,8 @@ body::before {
   color: white;
 }
 
-/* BOLHA DE STREAMING IDÊNTICA À PÁGINA INICIAL - Corrigido para refletir a estrutura da tela inicial */
+/* ===== CORREÇÃO ESPECÍFICA PARA A BARRA DE STREAMING ===== */
 .bottom-nav-container.streaming-mode {
-  /* Mantém as propriedades de posicionamento */
   position: fixed;
   bottom: 25px;
   left: 50%;
@@ -1131,7 +1133,6 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar {
-  /* Propriedades do main-nav-bar da home */
   background-color: transparent;
   border: 2px solid var(--header-border);
   border-radius: 40px;
@@ -1148,7 +1149,6 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::before {
-  /* Efeito glass */
   content: '';
   position: absolute;
   top: 0;
@@ -1157,11 +1157,10 @@ body::before {
   height: 100%;
   backdrop-filter: blur(10px);
   filter: saturate(120%) brightness(1.15);
-  z-index: -1;
+  z-index: 1; /* CORREÇÃO: Fundo atrás do conteúdo */
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::after {
-  /* Fundo escuro */
   content: '';
   position: absolute;
   top: 0;
@@ -1170,11 +1169,10 @@ body::before {
   height: 100%;
   background: var(--header-bg);
   border-radius: 40px;
-  z-index: -1;
+  z-index: 1; /* CORREÇÃO: Fundo atrás do conteúdo */
 }
 
 .bottom-nav-container.streaming-mode .nav-item {
-  /* Propriedades dos itens de navegação */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1192,15 +1190,16 @@ body::before {
   height: 100%;
   opacity: 1;
   transform: scale(1);
+  z-index: 2; /* CORREÇÃO: Acima do fundo */
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
-  /* Ícones visíveis e claros */
   font-size: 26px;
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text); /* Cor clara para visibilidade */
-  z-index: 2; /* Garante que os ícones estejam acima de tudo */
+  position: relative;
+  z-index: 3; /* CORREÇÃO: Ícones acima de tudo */
 }
 
 .bottom-nav-container.streaming-mode .nav-item:hover i {
@@ -1230,7 +1229,7 @@ body::before {
   color: var(--text);
   transition: all 0.3s ease;
   position: relative;
-  z-index: 1; /* Z-index para o ícone aparecer corretamente */
+  z-index: 10; /* Z-index para o ícone aparecer corretamente */
 }
 
 .info-circle::after {
