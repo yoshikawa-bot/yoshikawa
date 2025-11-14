@@ -10,6 +10,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases') // releases, recommendations, favorites
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
@@ -76,6 +77,7 @@ export default function Home() {
     
     setLoading(true)
     setSearchQuery(query)
+    setShowSearchOverlay(false)
 
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
@@ -114,24 +116,8 @@ export default function Home() {
     }
   }
 
-  const getSectionTitle = () => {
-    switch (activeSection) {
-      case 'releases':
-        return 'Últimos Lançamentos'
-      case 'recommendations':
-        return 'Populares e Recomendações'
-      case 'favorites':
-        return 'Meus Favoritos'
-      default:
-        return 'Últimos Lançamentos'
-    }
-  }
-
-  const ContentGrid = ({ items, title }) => (
+  const ContentGrid = ({ items }) => (
     <section className="section">
-      <div className="section-header">
-        <h2 className="section-title">{title}</h2>
-      </div>
       <div className="content-grid">
         {items.length > 0 ? (
           items.map(item => (
@@ -145,20 +131,12 @@ export default function Home() {
                 alt={item.title || item.name}
                 className="content-poster"
               />
-              
-              {/* VAMOS ADICIONAR O NOVO WRAPPER DE TEXTO AQUI */}
-              <div className="floating-text-wrapper">
-                  <div className="content-title-card">{item.title || item.name}</div>
-                  <div className="content-year">
-                      {item.release_date ? new Date(item.release_date).getFullYear() : 
-                       item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                  </div>
-              </div>
-              
-              {/* O content-info-card ORIGINAL foi esvaziado no CSS para permitir o efeito flutuante */}
-              {/* Ele precisa ser mantido ou a lógica de posicionamento pode quebrar se outros elementos usarem o mesmo nome */}
               <div className="content-info-card">
-                  {/* Conteúdo movido para .floating-text-wrapper */}
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                </div>
               </div>
             </Link>
           ))
@@ -216,7 +194,7 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header onSearch={handleSearch} />
+      <Header />
 
       <main className="container">
         {loading && (
@@ -230,51 +208,85 @@ export default function Home() {
           <SearchResults />
         ) : (
           <div className="home-sections">
-            <ContentGrid items={getActiveItems()} title={getSectionTitle()} />
+            <ContentGrid items={getActiveItems()} />
           </div>
         )}
       </main>
 
-      {/* Container Flutuante de Navegação (ORIGINAL) */}
+      {/* Container Flutuante de Navegação - NOVO FORMATO */}
       {searchResults.length === 0 && (
-        <div className="floating-nav-container">
+        <div className="bottom-nav-container">
+          <div className="main-nav-bar">
+            <button 
+              className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+              onClick={() => setActiveSection('releases')}
+            >
+              <i className="fas fa-film"></i>
+              <span>Lançamentos</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+              onClick={() => setActiveSection('recommendations')}
+            >
+              <i className="fas fa-fire"></i>
+              <span>Populares</span>
+            </button>
+            <button 
+              className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveSection('favorites')}
+            >
+              <i className="fas fa-heart"></i>
+              <span>Favoritos</span>
+            </button>
+          </div>
+          
           <button 
-            className={`nav-tab ${activeSection === 'releases' ? 'active' : ''}`}
-            onClick={() => setActiveSection('releases')}
+            className="search-circle"
+            onClick={() => setShowSearchOverlay(true)}
           >
-            <i className="fas fa-film"></i>
-            <span>Lançamentos</span>
-          </button>
-          <button 
-            className={`nav-tab ${activeSection === 'recommendations' ? 'active' : ''}`}
-            onClick={() => setActiveSection('recommendations')}
-          >
-            <i className="fas fa-fire"></i>
-            <span>Populares</span>
-          </button>
-          <button 
-            className={`nav-tab ${activeSection === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveSection('favorites')}
-          >
-            <i className="fas fa-heart"></i>
-            <span>Favoritos</span>
+            <i className="fas fa-search"></i>
           </button>
         </div>
       )}
 
-      <Footer />
+      {/* Overlay de Pesquisa */}
+      <div className={`search-overlay ${showSearchOverlay ? 'active' : ''}`}>
+        <div className="search-overlay-content">
+          <div className="search-overlay-header">
+            <h3 className="search-overlay-title">Buscar Conteúdo</h3>
+            <button 
+              className="close-search-overlay"
+              onClick={() => setShowSearchOverlay(false)}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target)
+              handleSearch(formData.get('search'))
+            }}
+            className="overlay-search-container"
+          >
+            <input 
+              type="text" 
+              name="search"
+              className="overlay-search-input" 
+              placeholder="Digite o nome do filme ou série..."
+              autoFocus
+            />
+            <button type="submit" className="overlay-search-button">
+              <i className="fas fa-search"></i>
+            </button>
+          </form>
+        </div>
+      </div>
     </>
   )
 }
 
-const Header = ({ onSearch }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    onSearch(searchQuery)
-  }
-
+const Header = () => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -289,38 +301,7 @@ const Header = ({ onSearch }) => {
             <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
-        
-        <div className="header-right">
-          <form onSubmit={handleSearchSubmit} className="search-container">
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Buscar filmes e séries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit" className="search-button">
-              <i className="fas fa-search"></i>
-            </button>
-          </form>
-        </div>
       </div>
     </header>
   )
-}
-
-const Footer = () => (
-  <footer>
-    <div className="footer-content">
-      <p>© 2025 Yoshikawa Bot · Todos os direitos reservados.</p>
-      <div className="footer-links">
-        <a href="https://yoshikawa-bot.github.io/termos/" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Termos de Uso
-        </a>
-        <a href="https://wa.me/18589258076" className="footer-link" target="_blank" rel="noopener noreferrer">
-          Suporte
-        </a>
-      </div>
-    </div>
-  </footer>
-)
+            }
