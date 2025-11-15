@@ -1099,7 +1099,7 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== BOTTOM NAV PARA STREAMING - AJUSTADO PARA SER IGUAL AO NORMAL ===== */
+/* ===== BOTTOM NAV PARA STREAMING - IDÊNTICA À PÁGINA INICIAL ===== */
 .bottom-nav-container.streaming-mode {
   position: fixed;
   bottom: 25px;
@@ -1121,11 +1121,12 @@ body::before {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 70px; /* Igual ao modo normal */
+  height: 70px;
   flex-grow: 1;
   overflow: hidden;
   padding: 0 10px;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::before {
@@ -1157,7 +1158,7 @@ body::before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1; /* Garante que os botões dividam o espaço igualmente */
+  flex: 1;
   color: var(--secondary);
   font-size: 12px;
   font-weight: 500;
@@ -1169,24 +1170,30 @@ body::before {
   position: relative;
   height: 100%;
   justify-content: center;
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.3s ease;
   text-decoration: none;
 }
 
-.bottom-nav-container.streaming-mode .nav-item i {
-  font-size: 26px; /* Igual ao modo normal */
-  margin-bottom: 0; /* Igual ao modo normal */
-  transition: color 0.3s ease, transform 0.3s ease;
-  color: var(--text);
-  z-index: 2;
+.bottom-nav-container.streaming-mode .nav-item span {
+  display: none;
 }
 
-.bottom-nav-container.streaming-mode .nav-item span {
-  display: none; /* Garante que o texto não apareça */
+.bottom-nav-container.streaming-mode .nav-item i {
+  font-size: 26px;
+  margin-bottom: 0;
+  transition: color 0.3s ease, transform 0.3s ease;
+  color: var(--text);
 }
 
 .bottom-nav-container.streaming-mode .nav-item:hover i {
-  color: var(--primary);
   transform: scale(1.1);
+  color: var(--primary);
+}
+
+.bottom-nav-container.streaming-mode .nav-item.active {
+  color: initial;
 }
 
 .bottom-nav-container.streaming-mode .nav-item.active i {
@@ -1211,6 +1218,8 @@ body::before {
   color: var(--text);
   transition: all 0.3s ease;
   position: relative;
+  opacity: 1;
+  transform: scale(1);
   z-index: 1;
 }
 
@@ -1230,11 +1239,11 @@ body::before {
 }
 
 .bottom-nav-container.streaming-mode .player-circle i {
-  font-size: 28px;
-  z-index: 2;
+  font-size: 32px;
+  z-index: 1;
 }
 
-/* ===== RESPONSIVIDADE - AJUSTES FINOS ===== */
+/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
     bottom: 20px;
@@ -1295,19 +1304,6 @@ body::before {
     max-width: 300px;
   }
   
-  .player-option-bubble {
-    padding: 0.75rem 1rem;
-  }
-  
-  .option-name {
-    font-size: 1rem;
-  }
-  
-  .option-details {
-    font-size: 0.8rem;
-    margin-left: 27.5px;
-  }
-  
   .episode-selector-streaming {
     flex-direction: column;
     align-items: flex-start;
@@ -1337,12 +1333,12 @@ body::before {
     border: 1px solid var(--header-border);
   }
   
-  .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 24px;
+  .bottom-nav-container.streaming-mode .main-nav-bar::after {
+    border-radius: 35px;
   }
   
-  .bottom-nav-container.streaming-mode .nav-item span {
-    display: none;
+  .bottom-nav-container.streaming-mode .nav-item i {
+    font-size: 24px;
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
@@ -1352,7 +1348,7 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 24px;
+    font-size: 28px;
   }
 }
 
@@ -1416,25 +1412,21 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 55px;
+    height: 60px;
     padding: 0 8px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 18px;
-  }
-  
-  .bottom-nav-container.streaming-mode .nav-item span {
-    display: none;
+    font-size: 22px;
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
-    width: 55px;
-    height: 55px;
+    width: 60px;
+    height: 60px;
   }
   
   .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 22px;
+    font-size: 26px;
   }
 }
 
@@ -1462,4 +1454,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+  }
