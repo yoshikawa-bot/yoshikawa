@@ -1518,7 +1518,7 @@ body::before {
 
 /* ===== CORREÇÃO PARA OS ÍCONES NA NAVBAR DA PÁGINA DE STREAMING ===== */
 
-/* Garantir que os ícones sejam visíveis na navbar da página de streaming */
+/* Garantir que os ícones sejam visíveis na navbar */
 .bottom-nav-container .nav-item i {
   font-size: 26px;
   margin-bottom: 0;
@@ -1539,12 +1539,9 @@ body::before {
   transform: none;
 }
 
-/* Garantir que os spans dos textos também sejam visíveis */
+/* Garantir que os spans dos textos NÃO sejam visíveis - APENAS ÍCONES */
 .bottom-nav-container .nav-item span {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-  margin-top: 4px;
+  display: none !important;
 }
 
 /* Garantir que o círculo de seleção de player tenha ícone visível */
