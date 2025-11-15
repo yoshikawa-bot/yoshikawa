@@ -1099,7 +1099,7 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== BOTTOM NAV PARA STREAMING ===== */
+/* ===== BOTTOM NAV PARA STREAMING - CORRIGIDO ===== */
 .bottom-nav-container.streaming-mode {
   position: fixed;
   bottom: 25px;
@@ -1121,7 +1121,7 @@ body::before {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 70px;
+  height: 70px; /* Igual à navbar normal */
   flex-grow: 1;
   overflow: hidden;
   padding: 0 10px;
@@ -1157,7 +1157,7 @@ body::before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 1; /* Garante que os botões dividam o espaço igualmente */
   color: var(--secondary);
   font-size: 12px;
   font-weight: 500;
@@ -1168,32 +1168,30 @@ body::before {
   background: none;
   position: relative;
   height: 100%;
+  justify-content: center; /* Centraliza o ícone verticalmente */
   text-decoration: none;
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
-  font-size: 24px;
-  margin-bottom: 2px;
+  font-size: 26px; /* Tamanho do ícone igual ao do modo normal */
+  margin-bottom: 0; /* Remove margem para centralizar melhor o ícone */
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
   z-index: 2;
 }
 
 .bottom-nav-container.streaming-mode .nav-item span {
-  font-size: 10px;
-  color: var(--text);
-  opacity: 0.9;
+  display: none; /* Oculta o texto para manter o visual de ícone-único */
 }
 
-.bottom-nav-container.streaming-mode .nav-item:hover i,
-.bottom-nav-container.streaming-mode .nav-item:hover span {
+.bottom-nav-container.streaming-mode .nav-item:hover i {
   color: var(--primary);
   transform: scale(1.1);
 }
 
-.bottom-nav-container.streaming-mode .nav-item.active i,
-.bottom-nav-container.streaming-mode .nav-item.active span {
+.bottom-nav-container.streaming-mode .nav-item.active i {
   color: var(--primary);
+  transform: none;
 }
 
 .bottom-nav-container.streaming-mode .player-circle {
@@ -1236,7 +1234,7 @@ body::before {
   z-index: 2;
 }
 
-/* ===== RESPONSIVIDADE ===== */
+/* ===== RESPONSIVIDADE - AJUSTADA ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
     bottom: 20px;
@@ -1297,6 +1295,19 @@ body::before {
     max-width: 300px;
   }
   
+  .player-option-bubble {
+    padding: 0.75rem 1rem;
+  }
+  
+  .option-name {
+    font-size: 1rem;
+  }
+  
+  .option-details {
+    font-size: 0.8rem;
+    margin-left: 27.5px;
+  }
+  
   .episode-selector-streaming {
     flex-direction: column;
     align-items: flex-start;
@@ -1321,22 +1332,22 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 60px;
+    height: 65px; /* Igual ao modo normal */
     border-radius: 35px;
     border: 1px solid var(--header-border);
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 20px;
+    font-size: 24px; /* Igual ao modo normal */
   }
   
   .bottom-nav-container.streaming-mode .nav-item span {
-    font-size: 9px;
+    display: none;
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     border: 1px solid var(--header-border);
   }
   
@@ -1405,16 +1416,16 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 55px;
+    height: 55px; /* Igual ao modo normal */
     padding: 0 8px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 18px;
+    font-size: 18px; /* Igual ao modo normal */
   }
   
   .bottom-nav-container.streaming-mode .nav-item span {
-    font-size: 8px;
+    display: none;
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
@@ -1451,4 +1462,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
