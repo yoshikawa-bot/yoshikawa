@@ -1099,7 +1099,7 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== BOTTOM NAV PARA STREAMING - CORRIGIDO ===== */
+/* ===== BOTTOM NAV PARA STREAMING - AJUSTADO PARA SER IGUAL AO NORMAL ===== */
 .bottom-nav-container.streaming-mode {
   position: fixed;
   bottom: 25px;
@@ -1121,7 +1121,7 @@ body::before {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 70px; /* Igual à navbar normal */
+  height: 70px; /* Igual ao modo normal */
   flex-grow: 1;
   overflow: hidden;
   padding: 0 10px;
@@ -1168,20 +1168,20 @@ body::before {
   background: none;
   position: relative;
   height: 100%;
-  justify-content: center; /* Centraliza o ícone verticalmente */
+  justify-content: center;
   text-decoration: none;
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
-  font-size: 26px; /* Tamanho do ícone igual ao do modo normal */
-  margin-bottom: 0; /* Remove margem para centralizar melhor o ícone */
+  font-size: 26px; /* Igual ao modo normal */
+  margin-bottom: 0; /* Igual ao modo normal */
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
   z-index: 2;
 }
 
 .bottom-nav-container.streaming-mode .nav-item span {
-  display: none; /* Oculta o texto para manter o visual de ícone-único */
+  display: none; /* Garante que o texto não apareça */
 }
 
 .bottom-nav-container.streaming-mode .nav-item:hover i {
@@ -1234,7 +1234,7 @@ body::before {
   z-index: 2;
 }
 
-/* ===== RESPONSIVIDADE - AJUSTADA ===== */
+/* ===== RESPONSIVIDADE - AJUSTES FINOS ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
     bottom: 20px;
@@ -1332,13 +1332,13 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 65px; /* Igual ao modo normal */
+    height: 65px;
     border-radius: 35px;
     border: 1px solid var(--header-border);
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 24px; /* Igual ao modo normal */
+    font-size: 24px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item span {
@@ -1416,12 +1416,12 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 55px; /* Igual ao modo normal */
+    height: 55px;
     padding: 0 8px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 18px; /* Igual ao modo normal */
+    font-size: 18px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item span {
