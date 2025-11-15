@@ -288,7 +288,7 @@ const Header = () => (
         />
         <div className="logo-text">
           <span className="logo-name">Yoshikawa</span>
-          <span className="beta-tag">STREAMING</span>
+          <span className="beta-tag">流媒体</span>
         </div>
       </Link>
     </div>
