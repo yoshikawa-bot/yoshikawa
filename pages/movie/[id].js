@@ -148,14 +148,8 @@ export default function Movie() {
     <>
       <Head>
         <title>{movie.title} - Yoshikawa Player</title>
-        {/* Importa Font Awesome CDN para ícones funcionarem */}
-        <link 
-          rel="stylesheet" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-          integrity="sha512-papbXD19lhBWljEUwOg58qZsWxprGqmXqPLag8CZTGX0ySpaYjYRZxjL+2Pc4UNfMusxHTX65PuY4ff/pr/+MQ==" 
-          crossOrigin="anonymous" 
-          referrerPolicy="no-referrer" 
-        />
+        {/* Importação direta do Font Awesome */}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
       <Header />
