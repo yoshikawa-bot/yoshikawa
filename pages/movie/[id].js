@@ -296,17 +296,17 @@ const Header = () => (
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
-      {/* CORRIGIDO: Removida a tag <span>, o ícone é centralizado e a proporção é mantida pelo CSS */}
+      {/* Usando Link para "Início" */}
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
       </Link>
       
-      {/* CORRIGIDO: Removida a tag <span>, o ícone é centralizado e a proporção é mantida pelo CSS */}
+      {/* Usando Button para "Info" */}
       <button className="nav-item" onClick={onShowInfo}>
         <i className="fas fa-info-circle"></i>
       </button>
       
-      {/* CORRIGIDO: Removida a tag <span>, o ícone é centralizado e a proporção é mantida pelo CSS */}
+      {/* Usando Button para "Favorito" */}
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
         <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
       </button>
