@@ -1769,4 +1769,124 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* ===== CORREÇÃO PARA ÍCONES NA PÁGINA DE STREAMING ===== */
+
+/* Garantir que os ícones sejam sempre visíveis */
+.bottom-nav-container.streaming-mode .nav-item i {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 26px !important;
+  color: var(--text) !important;
+}
+
+/* Garantir que o círculo de informações tenha ícone visível */
+.bottom-nav-container.streaming-mode .info-circle i {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 32px !important;
+  color: var(--text) !important;
+}
+
+/* Garantir que os textos não apareçam */
+.bottom-nav-container.streaming-mode .nav-item span {
+  display: none !important;
+}
+
+/* Manter o estilo original da navbar no modo streaming */
+.bottom-nav-container.streaming-mode .main-nav-bar {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  border-radius: 40px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 70px;
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 0 10px;
+  position: relative;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  z-index: -1;
+}
+
+.bottom-nav-container.streaming-mode .main-nav-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--header-bg);
+  border-radius: 40px;
+  z-index: -1;
+}
+
+/* Estilo do círculo de informações */
+.bottom-nav-container.streaming-mode .info-circle {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.bottom-nav-container.streaming-mode .info-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--header-bg);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.bottom-nav-container.streaming-mode .info-circle:hover {
+  background-color: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+/* Responsividade para streaming mode */
+@media (max-width: 768px) {
+  .bottom-nav-container.streaming-mode .main-nav-bar {
+    height: 65px;
+    border: 1px solid var(--header-border);
   }
+  
+  .bottom-nav-container.streaming-mode .nav-item i {
+    font-size: 24px !important;
+  }
+  
+  .bottom-nav-container.streaming-mode .info-circle {
+    width: 65px;
+    height: 65px;
+    border: 1px solid var(--header-border);
+  }
+  
+  .bottom-nav-container.streaming-mode .info-circle i {
+    font-size: 28px !important;
+  }
+    }
