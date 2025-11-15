@@ -1321,7 +1321,7 @@ body::before {
     width: 120px;
   }
 
-  /* Streaming mode responsive */
+  /* ✅ STREAMING MODE RESPONSIVE - CORRIGIDO */
   .bottom-nav-container.streaming-mode {
     bottom: 20px;
     max-width: 95%;
@@ -1330,23 +1330,23 @@ body::before {
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 65px;
-    border-radius: 35px;
-    border: 1px solid var(--header-border);
+    height: 65px; /* ✅ IGUAL À PÁGINA INICIAL */
+    border-radius: 35px; /* ✅ IGUAL À PÁGINA INICIAL */
+    border: 1px solid var(--header-border); /* ✅ IGUAL À PÁGINA INICIAL */
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 24px;
+    font-size: 24px; /* ✅ IGUAL À PÁGINA INICIAL */
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
-    width: 65px;
-    height: 65px;
-    border: 1px solid var(--header-border);
+    width: 65px; /* ✅ PROPORCIONAL À NAVBAR */
+    height: 65px; /* ✅ PROPORCIONAL À NAVBAR */
+    border: 1px solid var(--header-border); /* ✅ IGUAL À PÁGINA INICIAL */
   }
   
   .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 28px;
+    font-size: 28px; /* ✅ PROPORCIONAL AO CÍRCULO */
   }
 }
 
@@ -1404,27 +1404,27 @@ body::before {
     padding: 0.4rem 0.8rem;
   }
 
-  /* Streaming mode mobile */
+  /* ✅ STREAMING MODE MOBILE - CORRIGIDO */
   .bottom-nav-container.streaming-mode {
     gap: 8px;
   }
   
   .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 60px;
+    height: 60px; /* ✅ IGUAL À PÁGINA INICIAL */
     padding: 0 8px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 22px;
+    font-size: 22px; /* ✅ IGUAL À PÁGINA INICIAL */
   }
   
   .bottom-nav-container.streaming-mode .player-circle {
-    width: 60px;
-    height: 60px;
+    width: 60px; /* ✅ PROPORCIONAL À NAVBAR */
+    height: 60px; /* ✅ PROPORCIONAL À NAVBAR */
   }
   
   .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 26px;
+    font-size: 26px; /* ✅ PROPORCIONAL AO CÍRCULO */
   }
 }
 
