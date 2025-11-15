@@ -355,7 +355,7 @@ const Header = () => (
 )
 
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  <div className="bottom-nav-container">
+  <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
