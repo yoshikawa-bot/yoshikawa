@@ -93,7 +93,7 @@ export default function Movie() {
   }
   
   const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-overlay.active');
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -148,6 +148,14 @@ export default function Movie() {
     <>
       <Head>
         <title>{movie.title} - Yoshikawa Player</title>
+        {/* Importa Font Awesome CDN para ícones funcionarem */}
+        <link 
+          rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+          integrity="sha512-papbXD19lhBWljEUwOg58qZsWxprGqmXqPLag8CZTGX0ySpaYjYRZxjL+2Pc4UNfMusxHTX65PuY4ff/pr/+MQ==" 
+          crossOrigin="anonymous" 
+          referrerPolicy="no-referrer" 
+        />
       </Head>
 
       <Header />
@@ -298,14 +306,17 @@ const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorit
     <div className="main-nav-bar">
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
+        <span>Início</span>
       </Link>
       
       <button className="nav-item" onClick={onShowInfo}>
         <i className="fas fa-info-circle"></i>
+        <span>Info</span>
       </button>
       
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
         <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+        <span>Favorito</span>
       </button>
     </div>
     
