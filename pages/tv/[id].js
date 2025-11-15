@@ -1,382 +1,403 @@
-import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-export default function TVShow() {
-  const router = useRouter()
-  const { id } = router.query
-  const [tvShow, setTvShow] = useState(null)
-  const [season, setSeason] = useState(1)
-  const [episode, setEpisode] = useState(1)
-  const [seasonDetails, setSeasonDetails] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [selectedPlayer, setSelectedPlayer] = useState('vidsrc')
-  const [showInfoPopup, setShowInfoPopup] = useState(false)
-  const [showPlayerSelector, setShowPlayerSelector] = useState(false)
-  const [isFavorite, setIsFavorite] = useState(false)
+export default function Home() {
+  const [releases, setReleases] = useState([])
+  const [recommendations, setRecommendations] = useState([])
+  const [favorites, setFavorites] = useState([])
+  const [searchResults, setSearchResults] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSection, setActiveSection] = useState('releases')
+  const [searchActive, setSearchActive] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-  const STREAM_BASE_URL = 'https://superflixapi.blog'
+  const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
+
+  const getItemKey = (item) => `${item.media_type}-${item.id}`
 
   useEffect(() => {
-    if (id) {
-      loadTvShow(id)
-      checkIfFavorite()
-    }
-  }, [id])
+    loadHomeContent()
+    loadFavorites()
+  }, [])
 
-  useEffect(() => {
-    if (tvShow && season) {
-      loadSeasonDetails(season)
-    }
-  }, [tvShow, season])
-
-  const loadTvShow = async (tvId) => {
+  const loadHomeContent = async () => {
     try {
-      setLoading(true)
-      const tvUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=pt-BR`
-      const tvResponse = await fetch(tvUrl)
-      
-      if (!tvResponse.ok) throw new Error('Série não encontrada')
-      
+      const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`)
+      ])
+
+      const moviesData = await moviesResponse.json()
       const tvData = await tvResponse.json()
-      setTvShow(tvData)
+      const popularMoviesData = await popularMoviesResponse.json()
+      const popularTvData = await popularTvResponse.json()
+
+      const allReleases = [
+        ...(moviesData.results || []).map(item => ({...item, media_type: 'movie'})),
+        ...(tvData.results || []).map(item => ({...item, media_type: 'tv'}))
+      ]
+        .filter(item => item.poster_path)
+        .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
+        .slice(0, 15)
+
+      const allPopular = [
+        ...(popularMoviesData.results || []).map(item => ({...item, media_type: 'movie'})),
+        ...(popularTvData.results || []).map(item => ({...item, media_type: 'tv'}))
+      ]
+        .filter(item => item.poster_path)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 15)
+
+      setReleases(allReleases)
+      setRecommendations(allPopular)
+
+    } catch (error) {
+      console.error('Erro ao carregar conteúdo:', error)
+    }
+  }
+
+  const loadFavorites = () => {
+    try {
+      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
+      const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
+      setFavorites(initialFavorites)
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error)
+      setFavorites([])
+    }
+  }
+  
+  const isFavorite = (item) => {
+    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type);
+  }
+
+  const toggleFavorite = (item) => {
+    setFavorites(prevFavorites => {
+      let newFavorites
+      if (isFavorite(item)) {
+        newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
+      } else {
+        const favoriteItem = {
+          id: item.id,
+          media_type: item.media_type,
+          title: item.title || item.name,
+          poster_path: item.poster_path,
+          release_date: item.release_date,
+          first_air_date: item.first_air_date,
+          overview: item.overview
+        }
+        newFavorites = [...prevFavorites, favoriteItem]
+      }
       
-    } catch (err) {
-      setError(err.message)
+      try {
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      } catch (error) {
+        console.error('Erro ao salvar favoritos:', error)
+      }
+
+      return newFavorites
+    })
+  }
+
+  const handleSearch = async (query) => {
+    if (!query.trim()) return
+    
+    setLoading(true)
+    setSearchQuery(query)
+    setSearchActive(false)
+
+    try {
+      const [moviesResponse, tvResponse] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`)
+      ])
+
+      const moviesData = await moviesResponse.json()
+      const tvData = await tvResponse.json()
+
+      const allResults = [
+        ...(moviesData.results || []).map(item => ({ ...item, media_type: 'movie' })),
+        ...(tvData.results || []).map(item => ({ ...item, media_type: 'tv' }))
+      ].filter(item => item.poster_path)
+       .sort((a, b) => b.popularity - a.popularity)
+       .slice(0, 30)
+
+      setSearchResults(allResults)
+    } catch (error) {
+      console.error('Erro na busca:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const loadSeasonDetails = async (seasonNumber) => {
-    try {
-      const seasonUrl = `https://api.themoviedb.org/3/tv/${id}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=pt-BR`
-      const seasonResponse = await fetch(seasonUrl)
-      
-      if (seasonResponse.ok) {
-        const seasonData = await seasonResponse.json()
-        setSeasonDetails(seasonData)
-      }
-    } catch (err) {
-      console.error('Erro ao carregar temporada:', err)
-    }
+  const clearSearchResults = () => {
+    setSearchResults([])
+    setSearchQuery('')
   }
 
-  const checkIfFavorite = () => {
-    try {
-      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
-      const favorites = savedFavorites ? JSON.parse(savedFavorites) : []
-      const isFav = favorites.some(fav => fav.id === parseInt(id) && fav.media_type === 'tv')
-      setIsFavorite(isFav)
-    } catch (error) {
-      console.error('Erro ao verificar favoritos:', error)
-      setIsFavorite(false)
-    }
-  }
-
-  const toggleFavorite = () => {
-    if (!tvShow) return
-    
-    try {
-      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
-      const favorites = savedFavorites ? JSON.parse(savedFavorites) : []
-      
-      if (isFavorite) {
-        const newFavorites = favorites.filter(fav => !(fav.id === parseInt(id) && fav.media_type === 'tv'))
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
-        setIsFavorite(false)
-      } else {
-        const newFavorite = {
-          id: parseInt(id),
-          media_type: 'tv',
-          title: tvShow.name,
-          poster_path: tvShow.poster_path,
-          first_air_date: tvShow.first_air_date,
-          overview: tvShow.overview
-        }
-        const newFavorites = [...favorites, newFavorite]
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
-        setIsFavorite(true)
-      }
-    } catch (error) {
-      console.error('Erro ao alternar favoritos:', error)
-    }
-  }
-
-  const getPlayerUrl = () => {
-    if (selectedPlayer === 'superflix') {
-      return `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent#noBackground`
-    } else {
-      return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
+  const getActiveItems = () => {
+    switch (activeSection) {
+      case 'releases':
+        return releases
+      case 'recommendations':
+        return recommendations
+      case 'favorites':
+        return favorites
+      default:
+        return releases
     }
   }
   
-  // FUNÇÕES DE FECHAMENTO COM ANIMAÇÃO
-  const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
-    if (element) {
-        element.classList.add('closing');
-        setTimeout(() => {
-            setter(false);
-            element.classList.remove('closing');
-        }, 300);
-    } else {
-        setter(false);
+  const getActiveSectionDetails = () => {
+    switch (activeSection) {
+      case 'releases':
+        return { title: 'Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations':
+        return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites':
+        return { title: 'Favoritos', icon: 'fas fa-heart' }
+      default:
+        return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
-  };
-  
-  // Manipulador de clique no overlay de informações
-  const handleInfoOverlayClick = (e) => {
-    if (e.target.classList.contains('info-popup-overlay')) {
-      closePopup(setShowInfoPopup);
-    }
-  };
-  
-  const handleSelectorOverlayClick = (e) => {
-    if (e.target.classList.contains('player-selector-overlay')) {
-      closePopup(setShowPlayerSelector);
-    }
-  };
-  
-  const handleSeasonChange = (newSeason) => {
-    setSeason(newSeason)
-    setEpisode(1)
   }
+  
+  const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
-  const handleEpisodeChange = (newEpisode) => {
-    setEpisode(newEpisode)
-  }
+  const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
+    <section className="section">
+      <div className="content-grid">
+        {items.length > 0 ? (
+          items.map(item => {
+            const isFav = isFavorite(item)
+            return (
+              <Link 
+                key={getItemKey(item)}
+                href={`/${item.media_type}/${item.id}`}
+                className="content-card"
+              >
+                <img 
+                  src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                  alt={item.title || item.name}
+                  className="content-poster"
+                />
+                
+                <button 
+                  className={`favorite-btn ${isFav ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault() 
+                    e.stopPropagation() 
+                    toggleFavorite(item)
+                  }}
+                  title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+                >
+                  <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+                </button>
 
-  if (loading) {
-    return (
-      <div className="loading active">
-        <div className="spinner"></div>
-        <p>Carregando série...</p>
+                <div className="floating-text-wrapper">
+                  <div className="content-title-card">{item.title || item.name}</div>
+                  <div className="content-year">
+                    {item.release_date ? new Date(item.release_date).getFullYear() : 
+                     item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                  </div>
+                </div>
+                
+                <div className="content-info-card">
+                </div>
+              </Link>
+            )
+          })
+        ) : (
+          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
+            {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
+          </div>
+        )}
       </div>
-    )
-  }
+    </section>
+  )
 
-  if (error) {
-    return (
-      <div className="error-message active">
-        <h3>
-          <i className="fas fa-exclamation-triangle"></i>
-          Ocorreu um erro
-        </h3>
-        <p>{error}</p>
-        <Link href="/" className="clear-search-btn" style={{marginTop: '1rem'}}>
-          <i className="fas fa-home"></i>
-          Voltar para Home
-        </Link>
+  const SearchResults = () => (
+    <div className="search-results-section active">
+      <div className="search-results-header">
+        <h2 className="page-title-home">Resultados</h2>
+        <button 
+          className="clear-search-btn"
+          onClick={clearSearchResults}
+          title="Voltar para a página inicial"
+        >
+          <i className="fas fa-times"></i>
+          <span>Limpar</span>
+        </button>
       </div>
-    )
-  }
+      <div className="content-grid">
+        {searchResults.map(item => {
+          const isFav = isFavorite(item)
+          return (
+            <Link 
+              key={getItemKey(item)}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+              />
+              
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+              >
+                <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+              </button>
 
-  if (!tvShow) return null
-
-  const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
+              <div className="floating-text-wrapper">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                </div>
+              </div>
+              
+              <div className="content-info-card">
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
 
   return (
     <>
       <Head>
-        <title>{tvShow.name} S{season} E{episode} - Yoshikawa Player</title>
+        <title>Yoshikawa Player</title>
+        <meta name="description" content="Yoshikawa Streaming Player" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
       <Header />
 
-      <main className="streaming-container">
-        <div className="player-container">
-          <div className="player-wrapper">
-            <iframe 
-              src={getPlayerUrl()}
-              allow="autoplay; encrypted-media; picture-in-picture" 
-              allowFullScreen 
-              loading="lazy" 
-              title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
-            ></iframe>
+      <main className="container">
+        {loading && (
+          <div className="loading active">
+            <div className="spinner"></div>
+            <p>Carregando conteúdo...</p>
           </div>
-        </div>
-
-        <div className="content-info-streaming">
-          <h1 className="content-title-streaming">
-            {tvShow.name} - {currentEpisode?.name || `Episódio ${episode}`}
-          </h1>
-          
-          <div className={`episode-selector-streaming ${tvShow ? 'active' : ''}`}>
-            <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Temporada:</span>
-              <select 
-                className="selector-select-streaming" 
-                value={season}
-                onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
-              >
-                {tvShow.seasons
-                  .filter(s => s.season_number > 0 && s.episode_count > 0)
-                  .map(season => (
-                    <option key={season.season_number} value={season.season_number}>
-                      T{season.season_number}
-                    </option>
-                  ))
-                }
-              </select>
-            </div>
-            <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Episódio:</span>
-              <select 
-                className="selector-select-streaming" 
-                value={episode}
-                onChange={(e) => handleEpisodeChange(parseInt(e.target.value))}
-              >
-                {seasonDetails?.episodes?.map(ep => (
-                  <option key={ep.episode_number} value={ep.episode_number}>
-                    E{ep.episode_number}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <p className="content-description-streaming">
-            {currentEpisode?.overview || tvShow.overview || 'Descrição não disponível'}
-          </p>
-        </div>
-
-        {/* Overlay para o Seletor de Player */}
-        {showPlayerSelector && (
-            <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
-                <div 
-                    className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="player-options-bubble">
-                        <div 
-                            className="player-option-bubble"
-                            onClick={() => {
-                                setSelectedPlayer('superflix')
-                                closePopup(setShowPlayerSelector)
-                            }}
-                        >
-                            <div className="option-main-line">
-                                <i className="fas fa-film"></i>
-                                <span className="option-name">SuperFlix</span>
-                                <span className="player-tag-bubble player-tag-dub">DUB</span>
-                            </div>
-                            <span className="option-details">Lento, mas possui dublagem.</span>
-                        </div>
-                        <div 
-                            className="player-option-bubble"
-                            onClick={() => {
-                                setSelectedPlayer('vidsrc')
-                                closePopup(setShowPlayerSelector)
-                            }}
-                        >
-                            <div className="option-main-line">
-                                <i className="fas fa-bolt"></i>
-                                <span className="option-name">VidSrc</span>
-                                <span className="player-tag-bubble player-tag-sub">LEG</span>
-                            </div>
-                            <span className="option-details">Mais rápido, mas apenas legendado.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         )}
 
-        {/* Popup de Informações */}
-        <div 
-            className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`}
-            onClick={handleInfoOverlayClick}
-        >
-          <div 
-              className="info-popup-content"
-              onClick={(e) => e.stopPropagation()}
-          >
-            <div className="info-popup-header">
-              <img 
-                src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w500${tvShow.poster_path}` : 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'}
-                alt={tvShow.name}
-                className="info-poster"
-              />
-              <div className="info-details">
-                <h2 className="info-title">{tvShow.name}</h2>
-                <div className="info-meta">
-                  <span><i className="fas fa-calendar"></i> {tvShow.first_air_date ? new Date(tvShow.first_air_date).getFullYear() : 'N/A'}</span>
-                  <span><i className="fas fa-star"></i> {tvShow.vote_average ? tvShow.vote_average.toFixed(1) : 'N/A'}</span>
-                  <span><i className="fas fa-tags"></i> {tvShow.genres ? tvShow.genres.map(g => g.name).join(', ') : ''}</span>
-                </div>
-                <div className="info-meta">
-                  <span><i className="fas fa-layer-group"></i> {tvShow.number_of_seasons} temporadas</span>
-                  <span><i className="fas fa-tv"></i> {tvShow.number_of_episodes} episódios</span>
-                </div>
-              </div>
-            </div>
-            <p className="info-description">
-              {tvShow.overview || 'Descrição não disponível.'}
-            </p>
-            <button 
-              className="close-popup-btn"
-              onClick={() => closePopup(setShowInfoPopup)}
-            >
-              <i className="fas fa-times"></i>
-              Fechar
-            </button>
+        {searchResults.length > 0 ? (
+          <SearchResults />
+        ) : (
+          <div className="home-sections">
+            <h1 className="page-title-home">{pageTitle}</h1>
+            <ContentGrid 
+                items={getActiveItems()} 
+                isFavorite={isFavorite} 
+                toggleFavorite={toggleFavorite} 
+            />
           </div>
-        </div>
+        )}
       </main>
 
-      <BottomNav 
-        selectedPlayer={selectedPlayer}
-        onPlayerChange={() => setShowPlayerSelector(true)}
-        isFavorite={isFavorite}
-        onToggleFavorite={toggleFavorite}
-        onShowInfo={() => setShowInfoPopup(true)}
-      />
+      <div className="bottom-nav-container">
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
+          {!searchActive && (
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
+          )}
+          
+          <div className={`search-container ${searchActive ? 'active' : ''}`}>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.target)
+                handleSearch(formData.get('search'))
+              }}
+              className="search-form"
+            >
+              <input 
+                type="text" 
+                name="search"
+                className="search-input" 
+                placeholder="Pesquisar conteúdo"
+                autoFocus={searchActive}
+              />
+              <button type="submit" className="search-button">
+                <i className="fas fa-search"></i>
+              </button>
+            </form>
+            {searchActive && (
+              <button 
+                className="close-search"
+                onClick={() => setSearchActive(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {!searchActive && (
+          <button 
+            className="search-circle"
+            onClick={() => setSearchActive(true)}
+          >
+            <i className="fas fa-search"></i>
+          </button>
+        )}
+      </div>
     </>
   )
 }
 
-const Header = () => (
-  <header className="github-header">
-    <div className="header-content">
-      <Link href="/" className="logo-container">
-        <img 
-          src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
-          alt="Yoshikawa Bot" 
-          className="logo-image"
-        />
-        <div className="logo-text">
-          <span className="logo-name">Yoshikawa</span>
-          <span className="beta-tag">STREAMING</span>
-        </div>
-      </Link>
-    </div>
-  </header>
-)
-
-const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  <div className="bottom-nav-container streaming-mode">
-    <div className="main-nav-bar">
-      <Link href="/" className="nav-item">
-        <i className="fas fa-home"></i>
-        <span>Início</span>
-      </Link>
-      
-      <button className="nav-item" onClick={onShowInfo}>
-        <i className="fas fa-info-circle"></i>
-        <span>Info</span>
-      </button>
-      
-      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
-        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
-        <span>Favorito</span>
-      </button>
-    </div>
-    
-    <button className="info-circle" onClick={onPlayerChange}>
-      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
-    </button>
-  </div>
-)
+const Header = () => {
+  return (
+    <header className="github-header">
+      <div className="header-content">
+        <Link href="/" className="logo-container">
+          <img 
+            src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
+            alt="Yoshikawa Bot" 
+            className="logo-image"
+          />
+          <div className="logo-text">
+            <span className="logo-name">Yoshikawa</span>
+            <span className="beta-tag">STREAMING</span>
+          </div>
+        </Link>
+      </div>
+    </header>
+  )
+                                             }
