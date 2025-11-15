@@ -633,6 +633,9 @@ body::before {
   width: 100%;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .search-input:focus {
@@ -644,6 +647,15 @@ body::before {
 .search-input::placeholder {
   color: var(--text);
   opacity: 0.7;
+}
+
+.search-input:-webkit-autofill,
+.search-input:-webkit-autofill:hover, 
+.search-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.3) inset;
+  transition: background-color 5000s ease-in-out 0s;
+  border: 2px solid var(--border);
 }
 
 .search-button {
