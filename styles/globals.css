@@ -603,6 +603,49 @@ body::before {
     pointer-events: none;
 }
 
+/* ===== PLAYER CIRCLE (PARA PÁGINAS DE STREAMING) ===== */
+.player-circle {
+  background-color: transparent;
+  border: 2px solid var(--header-border);
+  backdrop-filter: blur(10px);
+  filter: saturate(120%) brightness(1.15);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.3s ease;
+  position: relative;
+  opacity: 1;
+  transform: scale(1);
+  z-index: 1;
+}
+
+.player-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--header-bg);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.player-circle:hover {
+  background-color: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.player-circle i {
+  font-size: 32px;
+  z-index: 2;
+}
+
 .search-container {
   position: relative;
   flex: 0;
@@ -1111,140 +1154,6 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== BOTTOM NAV PARA STREAMING ===== */
-.bottom-nav-container.streaming-mode {
-  position: fixed;
-  bottom: 25px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  max-width: 600px;
-  width: 90%;
-  gap: 15px;
-  z-index: 1000;
-}
-
-.bottom-nav-container.streaming-mode .main-nav-bar {
-  background-color: transparent;
-  border: 2px solid var(--header-border);
-  border-radius: 40px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  height: 70px;
-  flex-grow: 1;
-  overflow: hidden;
-  padding: 0 10px;
-  position: relative;
-}
-
-.bottom-nav-container.streaming-mode .main-nav-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
-  z-index: -1;
-}
-
-.bottom-nav-container.streaming-mode .main-nav-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--header-bg);
-  border-radius: 40px;
-  z-index: -1;
-}
-
-.bottom-nav-container.streaming-mode .nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  color: var(--secondary);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 0;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: none;
-  background: none;
-  position: relative;
-  height: 100%;
-  text-decoration: none;
-}
-
-.bottom-nav-container.streaming-mode .nav-item i {
-  font-size: 26px;
-  margin-bottom: 0;
-  transition: color 0.3s ease, transform 0.3s ease;
-  color: var(--text);
-  z-index: 2;
-}
-
-.bottom-nav-container.streaming-mode .nav-item span {
-  display: none;
-}
-
-.bottom-nav-container.streaming-mode .nav-item:hover i {
-  transform: scale(1.1);
-  color: var(--primary);
-}
-
-.bottom-nav-container.streaming-mode .nav-item.active i {
-  color: var(--primary);
-  transform: none;
-}
-
-.bottom-nav-container.streaming-mode .player-circle {
-  background-color: transparent;
-  border: 2px solid var(--header-border);
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
-  border-radius: 50%;
-  width: 70px;
-  height: 70px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  flex-shrink: 0;
-  cursor: pointer;
-  color: var(--text);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.bottom-nav-container.streaming-mode .player-circle::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--header-bg);
-  border-radius: 50%;
-  z-index: -1;
-}
-
-.bottom-nav-container.streaming-mode .player-circle:hover {
-  background-color: var(--primary);
-  color: var(--text);
-  border-color: var(--primary);
-}
-
-.bottom-nav-container.streaming-mode .player-circle i {
-  font-size: 32px;
-  z-index: 2;
-}
-
 /* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
@@ -1275,6 +1184,16 @@ body::before {
   }
   
   .search-circle i {
+    font-size: 28px;
+  }
+  
+  .player-circle {
+    width: 65px;
+    height: 65px;
+    border: 1px solid var(--header-border);
+  }
+  
+  .player-circle i {
     font-size: 28px;
   }
   
@@ -1319,34 +1238,6 @@ body::before {
   
   .selector-select-streaming {
     width: 120px;
-  }
-
-  /* ✅ STREAMING MODE RESPONSIVE - CORRIGIDO */
-  .bottom-nav-container.streaming-mode {
-    bottom: 20px;
-    max-width: 95%;
-    width: 95%;
-    gap: 10px;
-  }
-  
-  .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 65px; /* ✅ IGUAL À PÁGINA INICIAL */
-    border-radius: 35px; /* ✅ IGUAL À PÁGINA INICIAL */
-    border: 1px solid var(--header-border); /* ✅ IGUAL À PÁGINA INICIAL */
-  }
-  
-  .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 24px; /* ✅ IGUAL À PÁGINA INICIAL */
-  }
-  
-  .bottom-nav-container.streaming-mode .player-circle {
-    width: 65px; /* ✅ PROPORCIONAL À NAVBAR */
-    height: 65px; /* ✅ PROPORCIONAL À NAVBAR */
-    border: 1px solid var(--header-border); /* ✅ IGUAL À PÁGINA INICIAL */
-  }
-  
-  .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 28px; /* ✅ PROPORCIONAL AO CÍRCULO */
   }
 }
 
@@ -1404,27 +1295,35 @@ body::before {
     padding: 0.4rem 0.8rem;
   }
 
-  /* ✅ STREAMING MODE MOBILE - CORRIGIDO */
-  .bottom-nav-container.streaming-mode {
+  .bottom-nav-container {
     gap: 8px;
   }
   
-  .bottom-nav-container.streaming-mode .main-nav-bar {
-    height: 60px; /* ✅ IGUAL À PÁGINA INICIAL */
+  .main-nav-bar {
+    height: 60px;
     padding: 0 8px;
   }
   
-  .bottom-nav-container.streaming-mode .nav-item i {
-    font-size: 22px; /* ✅ IGUAL À PÁGINA INICIAL */
+  .nav-item i {
+    font-size: 22px;
   }
   
-  .bottom-nav-container.streaming-mode .player-circle {
-    width: 60px; /* ✅ PROPORCIONAL À NAVBAR */
-    height: 60px; /* ✅ PROPORCIONAL À NAVBAR */
+  .search-circle {
+    width: 60px;
+    height: 60px;
   }
   
-  .bottom-nav-container.streaming-mode .player-circle i {
-    font-size: 26px; /* ✅ PROPORCIONAL AO CÍRCULO */
+  .search-circle i {
+    font-size: 26px;
+  }
+  
+  .player-circle {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .player-circle i {
+    font-size: 26px;
   }
 }
 
