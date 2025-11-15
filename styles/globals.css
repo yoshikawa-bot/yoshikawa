@@ -22,6 +22,25 @@
   --popup-bg: rgba(255, 255, 255, 0.1);
   --popup-border: rgba(255, 255, 255, 0.3);
   --option-bg: rgba(0, 0, 0, 0.15);
+  --transition-speed: 0.3s; /* Variável para transição */
+}
+
+/* 🔑 Chave de Refinamento: Animações de micro-interação */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes heart-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* 🆕 Animação sutil para indicar que a área é rolavel */
+@keyframes bounce-scroll {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
 * {
@@ -111,7 +130,7 @@ body::before {
   border-radius: 6px;
   object-fit: cover;
   flex-shrink: 0;
-  transition: all 0.3s;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .logo-image:hover {
@@ -228,6 +247,7 @@ body::before {
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .content-row::-webkit-scrollbar-thumb:hover {
@@ -243,7 +263,7 @@ body::before {
   background-color: var(--card-bg);
   border-radius: 15px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   cursor: pointer;
   border: 1px solid var(--border);
   position: relative;
@@ -257,6 +277,12 @@ body::before {
   transform: translateY(-5px);
   border-color: var(--primary);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 🆕 Animação de clique sutil */
+.content-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .content-poster {
@@ -358,7 +384,7 @@ body::before {
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   z-index: 10;
   backdrop-filter: blur(5px);
 }
@@ -366,6 +392,11 @@ body::before {
 .favorite-btn:not(#headerFavoriteBtn):hover {
   background: rgba(255, 107, 107, 0.9);
   transform: scale(1.1);
+}
+
+/* 🆕 Animação de clique sutil */
+.favorite-btn:active {
+  transform: scale(0.9) !important;
 }
 
 .favorite-btn.active:not(#headerFavoriteBtn) {
@@ -403,7 +434,7 @@ body::before {
   padding: 0.5rem 1rem;
   color: var(--text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   backdrop-filter: blur(10px);
   font-size: 0.9rem;
 }
@@ -412,6 +443,12 @@ body::before {
   background: var(--primary);
   border-color: var(--primary);
   transform: translateY(-2px);
+}
+
+/* 🆕 Animação de clique sutil */
+.clear-search-btn:active {
+  transform: scale(0.98);
+  background: var(--primary-dark);
 }
 
 /* ===== BOTTOM NAVIGATION ORIGINAL ===== */
@@ -441,12 +478,14 @@ body::before {
   overflow: hidden;
   padding: 0 10px;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
 }
 
+/* 🔑 Refinamento: Suaviza a transição da barra de navegação para o modo busca */
 .main-nav-bar.search-active {
   justify-content: center;
   padding: 0 15px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra mais sutil para integrar com o input */
 }
 
 .main-nav-bar::before {
@@ -483,7 +522,7 @@ body::before {
   font-size: 12px;
   font-weight: 500;
   padding: 5px 0;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   cursor: pointer;
   border: none;
   background: none;
@@ -492,7 +531,6 @@ body::before {
   justify-content: center;
   opacity: 1;
   transform: scale(1);
-  transition: all 0.3s ease;
   text-decoration: none;
 }
 
@@ -510,13 +548,18 @@ body::before {
 .nav-item i {
   font-size: 26px;
   margin-bottom: 0;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: color var(--transition-speed) ease, transform var(--transition-speed) ease; /* ➕ Animação */
   color: var(--text);
 }
 
 .nav-item:hover i {
     transform: scale(1.1);
     color: var(--primary);
+}
+
+/* 🆕 Animação de clique sutil */
+.nav-item:active {
+  transform: scale(0.95);
 }
 
 .nav-item.active {
@@ -564,7 +607,7 @@ body::before {
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   position: relative;
   opacity: 1;
   transform: scale(1);
@@ -584,6 +627,13 @@ body::before {
   background-color: var(--primary);
   color: var(--text);
   border-color: var(--primary);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+}
+
+/* 🆕 Animação de clique sutil */
+.search-circle:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .search-circle i {
@@ -619,7 +669,7 @@ body::before {
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   position: relative;
   opacity: 1;
   transform: scale(1);
@@ -639,6 +689,13 @@ body::before {
   background-color: var(--primary);
   color: var(--text);
   border-color: var(--primary);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+}
+
+/* 🆕 Animação de clique sutil */
+.player-circle:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .player-circle i {
@@ -651,10 +708,11 @@ body::before {
   flex: 0;
   max-width: 0;
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   overflow: hidden;
 }
 
+/* 🔑 Refinamento: Oculta o botão de busca da nav-bar e estende a nav-bar */
 .search-container.active {
   flex: 1;
   max-width: 100%;
@@ -674,16 +732,18 @@ body::before {
   font-size: 1rem;
   color: var(--text);
   width: 100%;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   backdrop-filter: blur(10px);
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  /* 🔑 Refinamento: Sombra interna para integrar melhor com o fundo transparente da nav-bar */
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); 
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--border);
+  border-color: var(--primary); /* Muda a cor da borda no foco */
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -698,7 +758,7 @@ body::before {
   -webkit-text-fill-color: var(--text);
   -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.3) inset;
   transition: background-color 5000s ease-in-out 0s;
-  border: 2px solid var(--border);
+  border: 2px solid var(--primary); /* Borda primária no autofill */
 }
 
 .search-button {
@@ -716,12 +776,19 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .search-button:hover {
   background: var(--primary-dark);
   transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 🆕 Animação de clique sutil */
+.search-button:active {
+  transform: translateY(-50%) scale(0.95);
+  background: var(--primary);
 }
 
 .close-search {
@@ -734,7 +801,7 @@ body::before {
   color: var(--text);
   font-size: 1.2rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   width: 35px;
   height: 35px;
   display: flex;
@@ -748,6 +815,12 @@ body::before {
   background: rgba(255, 107, 107, 0.2);
   opacity: 1;
   transform: translateY(-50%) scale(1.1);
+}
+
+/* 🆕 Animação de clique sutil */
+.close-search:active {
+  transform: translateY(-50%) scale(0.95);
+  background: rgba(255, 107, 107, 0.4);
 }
 
 .loading {
@@ -771,11 +844,6 @@ body::before {
   height: 40px;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* ===== PÁGINAS DE STREAMING ===== */
@@ -821,6 +889,20 @@ body::before {
   margin-bottom: 1.5rem;
   border: 1px solid var(--border);
   backdrop-filter: blur(10px);
+}
+
+/* 🆕 Indicador de Scroll Animado */
+.scroll-indicator-icon {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--primary);
+  font-size: 1.5rem;
+  animation: bounce-scroll 1.5s infinite;
+  opacity: 0.8;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .content-title-streaming {
@@ -871,6 +953,14 @@ body::before {
   gap: 0.5rem;
 }
 
+/* 🔑 Refinamento: Corrige o alinhamento vertical dos ícones/rótulos nos seletores */
+.selector-group-streaming i {
+    color: var(--primary);
+    font-size: 1.2rem;
+    position: relative;
+    top: -1px; /* Ajuste fino para alinhamento */
+}
+
 .selector-label-streaming {
   color: var(--secondary);
   font-size: 0.9rem;
@@ -884,10 +974,17 @@ body::before {
   padding: 0.5rem 1rem;
   color: var(--text);
   width: 140px;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   backdrop-filter: blur(10px);
   cursor: pointer;
   font-size: 0.9rem;
+  -webkit-appearance: none; /* Remove estilo nativo */
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23f1f5f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>'); /* Ícone customizado */
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 2.5rem; /* Espaço para o ícone */
 }
 
 .selector-select-streaming:focus {
@@ -909,7 +1006,7 @@ body::before {
   align-items: center;
   backdrop-filter: blur(5px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .player-selector-overlay.active {
@@ -928,7 +1025,7 @@ body::before {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   transform: scale(0.8);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .player-selector-bubble.active {
@@ -952,7 +1049,7 @@ body::before {
   border: 1px solid var(--border);
   border-radius: 15px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   color: var(--text);
 }
 
@@ -961,6 +1058,11 @@ body::before {
   border-color: var(--primary);
   color: white;
   transform: translateX(5px);
+}
+
+/* 🆕 Animação de clique sutil */
+.player-option-bubble:active {
+  transform: scale(0.98);
 }
 
 .option-main-line {
@@ -988,6 +1090,7 @@ body::before {
   color: var(--secondary);
   margin-left: 27.5px;
   text-align: left;
+  transition: color var(--transition-speed) ease, opacity var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .player-option-bubble:hover .option-details {
@@ -1030,7 +1133,7 @@ body::before {
   padding: 1rem;
   backdrop-filter: blur(5px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-speed) ease; /* ➕ Animação */
 }
 
 .info-popup-overlay.active {
@@ -1051,7 +1154,7 @@ body::before {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   transform: translateY(50px);
   opacity: 0;
-  transition: all 0.4s ease;
+  transition: all 0.4s ease; /* Transição um pouco mais lenta para o pop-up */
 }
 
 .info-popup-overlay.active .info-popup-content {
@@ -1116,7 +1219,7 @@ body::before {
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease; /* ➕ Animação */
   width: 100%;
   display: flex;
   align-items: center;
@@ -1127,6 +1230,14 @@ body::before {
 
 .close-popup-btn:hover {
   background: var(--primary-dark);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 🆕 Animação de clique sutil */
+.close-popup-btn:active {
+  transform: scale(0.98);
+  background: var(--primary);
+  box-shadow: none;
 }
 
 .error-message {
@@ -1351,4 +1462,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
