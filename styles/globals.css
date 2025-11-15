@@ -1516,6 +1516,65 @@ body::before {
   opacity: 1;
 }
 
+/* ===== CORREÇÃO PARA OS ÍCONES NA NAVBAR DA PÁGINA DE STREAMING ===== */
+
+/* Garantir que os ícones sejam visíveis na navbar da página de streaming */
+.bottom-nav-container .nav-item i {
+  font-size: 26px;
+  margin-bottom: 0;
+  transition: color 0.3s ease, transform 0.3s ease;
+  color: var(--text);
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.bottom-nav-container .nav-item:hover i {
+  transform: scale(1.1);
+  color: var(--primary);
+}
+
+.bottom-nav-container .nav-item.active i {
+  color: var(--primary);
+  transform: none;
+}
+
+/* Garantir que os spans dos textos também sejam visíveis */
+.bottom-nav-container .nav-item span {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Garantir que o círculo de seleção de player tenha ícone visível */
+.bottom-nav-container .search-circle i {
+  font-size: 32px;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Remover qualquer estilo que possa estar escondendo os ícones */
+.bottom-nav-container.streaming-mode .nav-item i,
+.bottom-nav-container .nav-item i {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Remover qualquer transform que possa estar escondendo elementos */
+.bottom-nav-container .nav-item {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  pointer-events: auto !important;
+}
+
+/* Garantir que a navbar principal tenha display flex */
+.bottom-nav-container .main-nav-bar {
+  display: flex !important;
+}
+
 /* ===== RESPONSIVIDADE GERAL ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
