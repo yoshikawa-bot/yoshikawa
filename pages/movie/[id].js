@@ -296,7 +296,8 @@ const Header = () => (
 )
 
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  <div className="bottom-nav-container streaming-mode">
+  // ✅ REMOVIDA a classe streaming-mode - usando as mesmas classes da página inicial
+  <div className="bottom-nav-container reproduction-mode">
     <div className="main-nav-bar">
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
@@ -314,6 +315,7 @@ const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorit
       </button>
     </div>
     
+    {/* ✅ Trocado para player-circle (igual ao search-circle da página inicial) */}
     <button className="player-circle" onClick={onPlayerChange}>
       <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
     </button>
