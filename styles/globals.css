@@ -1099,7 +1099,7 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== BOTTOM NAV PARA STREAMING - IDÊNTICA À PÁGINA INICIAL ===== */
+/* ===== BOTTOM NAV PARA STREAMING ===== */
 .bottom-nav-container.streaming-mode {
   position: fixed;
   bottom: 25px;
@@ -1126,7 +1126,6 @@ body::before {
   overflow: hidden;
   padding: 0 10px;
   position: relative;
-  transition: all 0.3s ease;
 }
 
 .bottom-nav-container.streaming-mode .main-nav-bar::before {
@@ -1169,15 +1168,7 @@ body::before {
   background: none;
   position: relative;
   height: 100%;
-  justify-content: center;
-  opacity: 1;
-  transform: scale(1);
-  transition: all 0.3s ease;
   text-decoration: none;
-}
-
-.bottom-nav-container.streaming-mode .nav-item span {
-  display: none;
 }
 
 .bottom-nav-container.streaming-mode .nav-item i {
@@ -1185,15 +1176,16 @@ body::before {
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
+  z-index: 2;
+}
+
+.bottom-nav-container.streaming-mode .nav-item span {
+  display: none;
 }
 
 .bottom-nav-container.streaming-mode .nav-item:hover i {
   transform: scale(1.1);
   color: var(--primary);
-}
-
-.bottom-nav-container.streaming-mode .nav-item.active {
-  color: initial;
 }
 
 .bottom-nav-container.streaming-mode .nav-item.active i {
@@ -1218,8 +1210,6 @@ body::before {
   color: var(--text);
   transition: all 0.3s ease;
   position: relative;
-  opacity: 1;
-  transform: scale(1);
   z-index: 1;
 }
 
@@ -1240,7 +1230,7 @@ body::before {
 
 .bottom-nav-container.streaming-mode .player-circle i {
   font-size: 32px;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* ===== RESPONSIVIDADE ===== */
@@ -1331,10 +1321,6 @@ body::before {
     height: 65px;
     border-radius: 35px;
     border: 1px solid var(--header-border);
-  }
-  
-  .bottom-nav-container.streaming-mode .main-nav-bar::after {
-    border-radius: 35px;
   }
   
   .bottom-nav-container.streaming-mode .nav-item i {
