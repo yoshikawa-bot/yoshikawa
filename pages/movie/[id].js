@@ -93,7 +93,7 @@ export default function Movie() {
   }
   
   const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-overlay.active');
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -296,17 +296,14 @@ const Header = () => (
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
-      {/* Usando Link para "Início" */}
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
       </Link>
       
-      {/* Usando Button para "Info" */}
       <button className="nav-item" onClick={onShowInfo}>
         <i className="fas fa-info-circle"></i>
       </button>
       
-      {/* Usando Button para "Favorito" */}
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
         <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
       </button>
