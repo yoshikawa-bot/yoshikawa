@@ -528,21 +528,21 @@ body::before {
   transform: none;
 }
 
+/* ✅ CORRIGIDO: Removidas as restrições de largura do reproduction-mode */
 .bottom-nav-container.reproduction-mode .main-nav-bar {
-    justify-content: center;
-    padding: 0 15px;
-    flex-grow: 0;
-    width: auto;
-    max-width: fit-content;
-    gap: 15px;
+    justify-content: space-around; /* ✅ Mantém a distribuição igual */
+    padding: 0 10px; /* ✅ Mesmo padding da inicial */
+    flex-grow: 1; /* ✅ Ocupa toda a largura disponível */
+    width: auto; /* ✅ Largura automática */
+    max-width: none; /* ✅ Remove limite de largura */
 }
 
 .bottom-nav-container.reproduction-mode .nav-item {
     opacity: 1;
     transform: scale(1);
     pointer-events: auto;
-    flex: none;
-    width: 45px;
+    flex: 1; /* ✅ Ocupa espaço igual */
+    width: auto; /* ✅ Largura automática */
 }
 
 .bottom-nav-container.reproduction-mode .nav-item.hidden-on-repro {
