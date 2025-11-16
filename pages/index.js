@@ -1,26 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
 
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [favorites, setFavorites] = useState([])
+  const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
-  const router = useRouter()
+  const [toasts, setToasts] = useState([])
 
+  const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
+  // Sistema de Toast Notifications
+  const showToast = (message, type = 'info') => {
+    const id = Date.now()
+    const toast = { id, message, type }
+    setToasts(prev => [...prev, toast])
+    
+    setTimeout(() => {
+      removeToast(id)
+    }, 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
+
   useEffect(() => {
     loadHomeContent()
     loadFavorites()
   }, [])
+
+  useEffect(() => {
+    // Focar no input quando a search ficar ativa
+    if (searchActive && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [searchActive])
 
   const loadHomeContent = async () => {
     try {
@@ -78,8 +102,11 @@ export default function Home() {
   const toggleFavorite = (item) => {
     setFavorites(prevFavorites => {
       let newFavorites
-      if (isFavorite(item)) {
+      const wasFavorite = isFavorite(item)
+      
+      if (wasFavorite) {
         newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
+        showToast('Removido dos favoritos', 'info')
       } else {
         const favoriteItem = {
           id: item.id,
@@ -91,12 +118,14 @@ export default function Home() {
           overview: item.overview
         }
         newFavorites = [...prevFavorites, favoriteItem]
+        showToast('Adicionado aos favoritos!', 'success')
       }
       
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
         console.error('Erro ao salvar favoritos:', error)
+        showToast('Erro ao salvar favoritos', 'info')
       }
 
       return newFavorites
@@ -104,17 +133,66 @@ export default function Home() {
   }
 
   const handleSearch = async (query) => {
-    if (!query.trim()) return
+    if (!query.trim()) {
+      showToast('Digite algo para pesquisar', 'info')
+      return
+    }
     
     setLoading(true)
+    setSearchQuery(query)
+    setSearchActive(false)
 
     try {
-      // Redireciona para a página de resultados
-      router.push(`/search?q=${encodeURIComponent(query)}`)
+      const [moviesResponse, tvResponse] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`)
+      ])
+
+      const moviesData = await moviesResponse.json()
+      const tvData = await tvResponse.json()
+
+      const allResults = [
+        ...(moviesData.results || []).map(item => ({ ...item, media_type: 'movie' })),
+        ...(tvData.results || []).map(item => ({ ...item, media_type: 'tv' }))
+      ].filter(item => item.poster_path)
+       .sort((a, b) => b.popularity - a.popularity)
+       .slice(0, 30)
+
+      setSearchResults(allResults)
+      
+      if (allResults.length === 0) {
+        showToast('Nenhum resultado encontrado', 'info')
+      } else {
+        showToast(`Encontrados ${allResults.length} resultados`, 'success')
+      }
     } catch (error) {
       console.error('Erro na busca:', error)
+      showToast('Erro na busca', 'info')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const clearSearchResults = () => {
+    setSearchResults([])
+    setSearchQuery('')
+    showToast('Busca limpa', 'info')
+  }
+
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        handleSearch(query)
+      } else {
+        showToast('Digite algo para pesquisar', 'info')
+      }
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit()
     }
   }
 
@@ -198,6 +276,86 @@ export default function Home() {
     </section>
   )
 
+  const SearchResults = () => (
+    <div className="search-results-section active">
+      <div className="search-results-header">
+        <h2 className="page-title-home">Resultados</h2>
+        <button 
+          className="clear-search-btn"
+          onClick={clearSearchResults}
+          title="Voltar para a página inicial"
+        >
+          <i className="fas fa-times"></i>
+          <span>Limpar</span>
+        </button>
+      </div>
+      <div className="content-grid">
+        {searchResults.map(item => {
+          const isFav = isFavorite(item)
+          return (
+            <Link 
+              key={getItemKey(item)}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+              />
+              
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+              >
+                <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+              </button>
+
+              <div className="floating-text-wrapper">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                </div>
+              </div>
+              
+              <div className="content-info-card">
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  const ToastContainer = () => (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <>
       <Head>
@@ -218,19 +376,25 @@ export default function Home() {
           </div>
         )}
 
-        <div className="home-sections">
-          <h1 className="page-title-home">{pageTitle}</h1>
-          <ContentGrid 
-              items={getActiveItems()} 
-              isFavorite={isFavorite} 
-              toggleFavorite={toggleFavorite} 
-          />
-        </div>
+        {searchResults.length > 0 ? (
+          <SearchResults />
+        ) : (
+          <div className="home-sections">
+            <h1 className="page-title-home">{pageTitle}</h1>
+            <ContentGrid 
+                items={getActiveItems()} 
+                isFavorite={isFavorite} 
+                toggleFavorite={toggleFavorite} 
+            />
+          </div>
+        )}
       </main>
+
+      <ToastContainer />
 
       <div className="bottom-nav-container">
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-          {!searchActive && (
+          {!searchActive ? (
             <>
               <button 
                 className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
@@ -254,47 +418,45 @@ export default function Home() {
                 <span>Favoritos</span>
               </button>
             </>
-          )}
-          
-          <div className={`search-container ${searchActive ? 'active' : ''}`}>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.target)
-                handleSearch(formData.get('search'))
-              }}
-              className="search-form"
-            >
+          ) : (
+            <div className="search-input-container">
               <input 
-                type="text" 
-                name="search"
-                className="search-input" 
-                placeholder="Pesquisar conteúdo"
-                autoFocus={searchActive}
+                ref={searchInputRef}
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                defaultValue={searchQuery}
+                onKeyPress={handleKeyPress}
               />
-              <button type="submit" className="search-button">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-            {searchActive && (
               <button 
-                className="close-search"
-                onClick={() => setSearchActive(false)}
+                className="close-search-expanded"
+                onClick={() => {
+                  setSearchActive(false)
+                  if (searchResults.length > 0) {
+                    clearSearchResults()
+                  }
+                }}
               >
                 <i className="fas fa-times"></i>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         
-        {!searchActive && (
-          <button 
-            className="search-circle"
-            onClick={() => setSearchActive(true)}
-          >
-            <i className="fas fa-search"></i>
-          </button>
-        )}
+        <button 
+          className={`search-circle ${searchActive ? 'active' : ''}`}
+          onClick={() => {
+            if (searchActive) {
+              // Se a search já está ativa, clicar no botão executa a pesquisa
+              handleSearchSubmit()
+            } else {
+              // Se a search não está ativa, clicar ativa a barra de pesquisa
+              setSearchActive(true)
+            }
+          }}
+        >
+          <i className="fas fa-search"></i>
+        </button>
       </div>
     </>
   )
@@ -318,4 +480,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
+              }
