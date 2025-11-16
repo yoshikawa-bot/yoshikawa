@@ -420,6 +420,11 @@ body::before {
   transform: translateY(-2px);
 }
 
+.clear-search-btn:active {
+  transform: translateY(0);
+  background: var(--primary-dark);
+}
+
 /* ===== BOTTOM NAVIGATION ORIGINAL ===== */
 .bottom-nav-container {
   position: fixed;
@@ -527,6 +532,10 @@ body::before {
     color: var(--primary);
 }
 
+.nav-item:active i {
+  transform: scale(0.95);
+}
+
 .nav-item.active {
   color: initial;
 }
@@ -593,6 +602,11 @@ body::before {
   border-color: var(--primary);
 }
 
+.search-circle:active {
+  transform: scale(0.95);
+  background-color: var(--primary-dark);
+}
+
 .search-circle.active {
   background-color: var(--primary);
   border-color: var(--primary);
@@ -604,10 +618,11 @@ body::before {
   z-index: 1;
 }
 
+/* O botão da lupa NÃO some mais quando a search está ativa */
 .main-nav-bar.search-active + .search-circle {
-  opacity: 0;
-  transform: scale(0);
-  pointer-events: none;
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
 .bottom-nav-container.reproduction-mode .search-circle {
@@ -654,6 +669,11 @@ body::before {
   border-color: var(--primary);
 }
 
+.player-circle:active {
+  transform: scale(0.95);
+  background-color: var(--primary-dark);
+}
+
 .player-circle i {
   font-size: 32px;
   z-index: 2;
@@ -675,7 +695,7 @@ body::before {
   color: var(--text);
   font-size: 16px;
   width: 100%;
-  padding: 0 40px 0 0;
+  padding: 0 50px 0 0;
   outline: none;
   font-family: 'Inter', sans-serif;
 }
@@ -690,25 +710,28 @@ body::before {
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.6);
+  background: transparent;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   z-index: 2;
+  font-size: 1.3rem;
 }
 
 .close-search-expanded:hover {
-  background: var(--primary);
-  color: white;
+  color: var(--primary);
   transform: translateY(-50%) scale(1.1);
+}
+
+.close-search-expanded:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 /* Remover search container antigo */
@@ -933,6 +956,10 @@ body::before {
   transform: translateX(5px);
 }
 
+.player-option-bubble:active {
+  transform: translateX(5px) scale(0.98);
+}
+
 .option-main-line {
   display: flex;
   align-items: center;
@@ -1099,6 +1126,10 @@ body::before {
   background: var(--primary-dark);
 }
 
+.close-popup-btn:active {
+  transform: scale(0.98);
+}
+
 .error-message {
   display: none;
   background: var(--card-bg);
@@ -1127,7 +1158,7 @@ body::before {
 /* ===== TOAST NOTIFICATIONS ===== */
 .toast-container {
   position: fixed;
-  bottom: 100px;
+  bottom: 120px; /* Aumentada a distância da navbar */
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -1206,6 +1237,10 @@ body::before {
 .toast-close:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.toast-close:active {
+  transform: scale(0.95);
 }
 
 /* Remover as seções do tutorial antigo */
@@ -1306,7 +1341,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 90px;
+    bottom: 110px; /* Ajuste para mobile */
     max-width: 350px;
   }
   
@@ -1321,11 +1356,13 @@ body::before {
   
   .search-input-expanded {
     font-size: 16px;
+    padding: 0 45px 0 0;
   }
   
   .close-search-expanded {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
   }
 }
 
@@ -1415,7 +1452,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 85px;
+    bottom: 100px; /* Ajuste para mobile pequeno */
     max-width: 300px;
   }
   
@@ -1436,13 +1473,14 @@ body::before {
   
   .search-input-expanded {
     font-size: 16px;
-    padding: 0 35px 0 0;
+    padding: 0 40px 0 0;
   }
   
   .close-search-expanded {
-    width: 25px;
-    height: 25px;
+    width: 32px;
+    height: 32px;
     right: 8px;
+    font-size: 1.1rem;
   }
   
   .search-input-container {
