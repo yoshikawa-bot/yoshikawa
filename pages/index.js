@@ -279,7 +279,7 @@ export default function Home() {
   const SearchResults = () => (
     <div className="search-results-section active">
       <div className="search-results-header">
-        <h2 className="page-title-home">Resultados para "{searchQuery}"</h2>
+        <h2 className="page-title-home">Resultados</h2>
         <button 
           className="clear-search-btn"
           onClick={clearSearchResults}
