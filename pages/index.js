@@ -281,7 +281,7 @@ export default function Home() {
                   e.stopPropagation() 
                   toggleFavorite(item)
                 }}
-                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+                title={isFav ? "Removido dos Favoritos" : "Adicionar aos Favoritos"}
               >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
@@ -389,32 +389,21 @@ export default function Home() {
               </button>
             </>
           ) : (
-            <div className="search-container active">
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const formData = new FormData(e.target)
-                  const query = formData.get('search')
-                  if (query.trim()) {
-                    handleSearch(query)
+            <div className="search-input-container">
+              <input 
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                autoFocus
+                defaultValue={searchQuery}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch(e.target.value)
                   }
                 }}
-                className="search-form"
-              >
-                <input 
-                  type="text" 
-                  name="search"
-                  className="search-input" 
-                  placeholder="Pesquisar filmes e séries..."
-                  autoFocus
-                  defaultValue={searchQuery}
-                />
-                <button type="submit" className="search-button">
-                  <i className="fas fa-search"></i>
-                </button>
-              </form>
+              />
               <button 
-                className="close-search"
+                className="close-search-expanded"
                 onClick={() => {
                   setSearchActive(false)
                   if (searchResults.length > 0) {
@@ -428,14 +417,12 @@ export default function Home() {
           )}
         </div>
         
-        {!searchActive && (
-          <button 
-            className="search-circle"
-            onClick={() => setSearchActive(true)}
-          >
-            <i className="fas fa-search"></i>
-          </button>
-        )}
+        <button 
+          className={`search-circle ${searchActive ? 'active' : ''}`}
+          onClick={() => setSearchActive(true)}
+        >
+          <i className="fas fa-search"></i>
+        </button>
       </div>
     </>
   )
@@ -459,4 +446,4 @@ const Header = () => {
       </div>
     </header>
   )
-        }
+}
