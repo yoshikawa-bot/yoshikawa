@@ -17,7 +17,6 @@ export default function TVShow() {
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [toasts, setToasts] = useState([])
-  const [showServerTutorial, setShowServerTutorial] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
@@ -42,14 +41,10 @@ export default function TVShow() {
       loadTvShow(id)
       checkIfFavorite()
       
-      // Mostrar tutorial do servidor apenas na primeira vez
-      const hasSeenTutorial = localStorage.getItem('hasSeenServerTutorial')
-      if (!hasSeenTutorial) {
-        setTimeout(() => {
-          setShowServerTutorial(true)
-          localStorage.setItem('hasSeenServerTutorial', 'true')
-        }, 1000)
-      }
+      // Mostrar notificação sobre troca de servidor sempre que a página for aberta
+      setTimeout(() => {
+        showToast('use o botao direito para alterar o servidor', 'info')
+      }, 1000)
     }
   }, [id])
 
@@ -138,7 +133,7 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .server-tutorial-overlay.active');
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -159,12 +154,6 @@ export default function TVShow() {
   const handleSelectorOverlayClick = (e) => {
     if (e.target.classList.contains('player-selector-overlay')) {
       closePopup(setShowPlayerSelector);
-    }
-  };
-
-  const handleServerTutorialClick = (e) => {
-    if (e.target.classList.contains('server-tutorial-overlay')) {
-      closePopup(setShowServerTutorial);
     }
   };
   
@@ -300,32 +289,6 @@ export default function TVShow() {
             {currentEpisode?.overview || tvShow.overview || 'Descrição não disponível'}
           </p>
         </div>
-
-        {/* Tutorial do Servidor */}
-        {showServerTutorial && (
-          <div className="server-tutorial-overlay active" onClick={handleServerTutorialClick}>
-            <div className="server-tutorial-content">
-              <div className="server-tutorial-icon">
-                <i className="fas fa-exchange-alt"></i>
-              </div>
-              <h2 className="server-tutorial-title">Troque de Servidor</h2>
-              <p className="server-tutorial-text">
-                Use o botão abaixo para alternar entre diferentes servidores de streaming.
-              </p>
-              <div className="server-tutorial-highlight">
-                <i className="fas fa-film"></i> SuperFlix - Dublado
-                <br />
-                <i className="fas fa-bolt"></i> VidSrc - Legendado
-              </div>
-              <button 
-                className="server-tutorial-button"
-                onClick={() => closePopup(setShowServerTutorial)}
-              >
-                Entendi!
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Overlay para o Seletor de Player */}
         {showPlayerSelector && (
