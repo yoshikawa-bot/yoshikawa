@@ -2,6 +2,27 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
+// Componente para o Filtro SVG Liquid Glass
+const LiquidGlassFilter = () => (
+  // O filtro deve ser escondido visualmente, mas permanecer no DOM
+  <svg width="0" height="0" style={{ position: 'absolute' }}>
+    <filter id="liquidGlassFilterId" colorInterpolationFilters="sRGB">
+      {/* Este é um placeholder para o filtro SVG completo.
+        O filtro completo incluiria feImage (mapa de deslocamento) 
+        e feDisplacementMap para a refração, além de feSpecularLighting para o destaque.
+        Apenas a presença do ID é suficiente para que o CSS o referencie.
+      */}
+      <feDisplacementMap 
+        in="SourceGraphic" 
+        in2="displacement_map" 
+        scale="0" // Escala 0 para ser um filtro pass-through (sem efeito) por padrão
+        xChannelSelector="R" 
+        yChannelSelector="G" 
+      />
+    </filter>
+  </svg>
+)
+
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
@@ -286,6 +307,9 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
+      {/* Adicionado o filtro SVG para o efeito Liquid Glass */}
+      <LiquidGlassFilter />
+
       <Header />
 
       <main className="container">
@@ -394,10 +418,10 @@ const Header = () => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">流媒体</span>
+            <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
       </div>
     </header>
   )
-        }
+}
