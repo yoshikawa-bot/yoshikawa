@@ -874,7 +874,7 @@ body::before {
   background-color: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
   border-radius: 25px;
-  padding: 0.5rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   color: var(--text);
   width: 140px;
   transition: all 0.3s ease;
@@ -1512,4 +1512,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+  }
