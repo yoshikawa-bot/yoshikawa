@@ -13,14 +13,40 @@ export default function Movie() {
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [toasts, setToasts] = useState([])
+  const [showServerTutorial, setShowServerTutorial] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
+
+  // Sistema de Toast Notifications
+  const showToast = (message, type = 'info') => {
+    const id = Date.now()
+    const toast = { id, message, type }
+    setToasts(prev => [...prev, toast])
+    
+    setTimeout(() => {
+      removeToast(id)
+    }, 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
 
   useEffect(() => {
     if (id) {
       loadMovie(id)
       checkIfFavorite()
+      
+      // Mostrar tutorial do servidor apenas na primeira vez
+      const hasSeenTutorial = localStorage.getItem('hasSeenServerTutorial')
+      if (!hasSeenTutorial) {
+        setTimeout(() => {
+          setShowServerTutorial(true)
+          localStorage.setItem('hasSeenServerTutorial', 'true')
+        }, 1000)
+      }
     }
   }, [id])
 
@@ -65,6 +91,7 @@ export default function Movie() {
         const newFavorites = favorites.filter(fav => !(fav.id === parseInt(id) && fav.media_type === 'movie'))
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
         setIsFavorite(false)
+        showToast('Removido dos favoritos', 'info')
       } else {
         const newFavorite = {
           id: parseInt(id),
@@ -77,9 +104,11 @@ export default function Movie() {
         const newFavorites = [...favorites, newFavorite]
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
         setIsFavorite(true)
+        showToast('Adicionado aos favoritos!', 'success')
       }
     } catch (error) {
       console.error('Erro ao alternar favoritos:', error)
+      showToast('Erro ao salvar favorito', 'info')
     }
   }
 
@@ -93,7 +122,7 @@ export default function Movie() {
   }
   
   const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .server-tutorial-overlay.active');
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -116,6 +145,18 @@ export default function Movie() {
       closePopup(setShowPlayerSelector);
     }
   };
+
+  const handleServerTutorialClick = (e) => {
+    if (e.target.classList.contains('server-tutorial-overlay')) {
+      closePopup(setShowServerTutorial);
+    }
+  };
+
+  const handlePlayerChange = (player) => {
+    setSelectedPlayer(player)
+    closePopup(setShowPlayerSelector)
+    showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
+  }
 
   if (loading) {
     return (
@@ -144,11 +185,33 @@ export default function Movie() {
 
   if (!movie) return null
 
+  const ToastContainer = () => (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <>
       <Head>
         <title>{movie.title} - Yoshikawa Player</title>
-        {/* Importação direta do Font Awesome */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -183,6 +246,32 @@ export default function Movie() {
           </p>
         </div>
 
+        {/* Tutorial do Servidor */}
+        {showServerTutorial && (
+          <div className="server-tutorial-overlay active" onClick={handleServerTutorialClick}>
+            <div className="server-tutorial-content">
+              <div className="server-tutorial-icon">
+                <i className="fas fa-exchange-alt"></i>
+              </div>
+              <h2 className="server-tutorial-title">Troque de Servidor</h2>
+              <p className="server-tutorial-text">
+                Use o botão abaixo para alternar entre diferentes servidores de streaming.
+              </p>
+              <div className="server-tutorial-highlight">
+                <i className="fas fa-film"></i> SuperFlix - Dublado
+                <br />
+                <i className="fas fa-bolt"></i> VidSrc - Legendado
+              </div>
+              <button 
+                className="server-tutorial-button"
+                onClick={() => closePopup(setShowServerTutorial)}
+              >
+                Entendi!
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Overlay para o Seletor de Player */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
@@ -193,10 +282,7 @@ export default function Movie() {
                     <div className="player-options-bubble">
                         <div 
                             className="player-option-bubble"
-                            onClick={() => {
-                                setSelectedPlayer('superflix')
-                                closePopup(setShowPlayerSelector)
-                            }}
+                            onClick={() => handlePlayerChange('superflix')}
                         >
                             <div className="option-main-line">
                                 <i className="fas fa-film"></i>
@@ -207,10 +293,7 @@ export default function Movie() {
                         </div>
                         <div 
                             className="player-option-bubble"
-                            onClick={() => {
-                                setSelectedPlayer('vidsrc')
-                                closePopup(setShowPlayerSelector)
-                            }}
+                            onClick={() => handlePlayerChange('vidsrc')}
                         >
                             <div className="option-main-line">
                                 <i className="fas fa-bolt"></i>
@@ -266,6 +349,8 @@ export default function Movie() {
         </div>
       </main>
 
+      <ToastContainer />
+
       <BottomNav 
         selectedPlayer={selectedPlayer}
         onPlayerChange={() => setShowPlayerSelector(true)}
@@ -288,7 +373,7 @@ const Header = () => (
         />
         <div className="logo-text">
           <span className="logo-name">Yoshikawa</span>
-          <span className="beta-tag">流媒体</span>
+          <span className="beta-tag">STREAMING</span>
         </div>
       </Link>
     </div>
@@ -296,8 +381,7 @@ const Header = () => (
 )
 
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  // ✅ REMOVIDA a classe streaming-mode - usando as mesmas classes da página inicial
-  <div className="bottom-nav-container reproduction-mode">
+  <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
       <Link href="/" className="nav-item">
         <i className="fas fa-home"></i>
@@ -315,7 +399,6 @@ const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorit
       </button>
     </div>
     
-    {/* ✅ Trocado para player-circle (igual ao search-circle da página inicial) */}
     <button className="player-circle" onClick={onPlayerChange}>
       <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
     </button>
