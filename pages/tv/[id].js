@@ -249,7 +249,7 @@ export default function TVShow() {
   return (
     <>
       <Head>
-        <title>{tvShow.name} {season > 0 ? `S${season}` : ''} {episode > 0 ? `E${episode}` : ''} - Yoshikawa Player</title>
+        <title>{tvShow.name} S{season} E{episode} - Yoshikawa Player</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -263,7 +263,7 @@ export default function TVShow() {
               allow="autoplay; encrypted-media; picture-in-picture" 
               allowFullScreen 
               loading="lazy" 
-              title={`Yoshikawa Player - ${tvShow.name} ${season > 0 ? `S${season}` : ''} ${episode > 0 ? `E${episode}` : ''}`}
+              title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
             ></iframe>
           </div>
         </div>
@@ -283,7 +283,7 @@ export default function TVShow() {
               >
                 {availableSeasons.map(season => (
                   <option key={season.season_number} value={season.season_number}>
-                    Temporada {season.season_number}
+                    TP {season.season_number}
                   </option>
                 ))}
               </select>
@@ -298,7 +298,7 @@ export default function TVShow() {
               >
                 {seasonDetails?.episodes?.map(ep => (
                   <option key={ep.episode_number} value={ep.episode_number}>
-                    Episódio {ep.episode_number} - {ep.name || `Ep ${ep.episode_number}`}
+                    EP {ep.episode_number}
                   </option>
                 )) || <option value={1}>Carregando...</option>}
               </select>
