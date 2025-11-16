@@ -43,7 +43,7 @@ export default function TVShow() {
       
       // Mostrar notificação sobre troca de servidor sempre que a página for aberta
       setTimeout(() => {
-        showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
+        showToast('use o botao direito para alterar o servidor', 'info')
       }, 1000)
     }
   }, [id])
@@ -59,6 +59,15 @@ export default function TVShow() {
       const tvData = await tvResponse.json()
       setTvShow(tvData)
       
+      // Carregar detalhes da primeira temporada automaticamente
+      if (tvData.seasons && tvData.seasons.length > 0) {
+        const firstSeason = tvData.seasons.find(s => s.season_number > 0) || tvData.seasons[0]
+        if (firstSeason) {
+          setSeason(firstSeason.season_number)
+          await loadSeasonDetails(firstSeason.season_number)
+        }
+      }
+      
     } catch (err) {
       setError(err.message)
     } finally {
@@ -68,15 +77,27 @@ export default function TVShow() {
 
   const loadSeasonDetails = async (seasonNumber) => {
     try {
+      setLoading(true)
       const seasonUrl = `https://api.themoviedb.org/3/tv/${id}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=pt-BR`
       const seasonResponse = await fetch(seasonUrl)
       
       if (seasonResponse.ok) {
         const seasonData = await seasonResponse.json()
         setSeasonDetails(seasonData)
+        
+        // Resetar para o primeiro episódio quando mudar de temporada
+        if (seasonData.episodes && seasonData.episodes.length > 0) {
+          setEpisode(1)
+        }
+      } else {
+        console.error('Erro ao carregar temporada')
+        setSeasonDetails(null)
       }
     } catch (err) {
       console.error('Erro ao carregar temporada:', err)
+      setSeasonDetails(null)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -157,9 +178,9 @@ export default function TVShow() {
     }
   };
   
-  const handleSeasonChange = (newSeason) => {
+  const handleSeasonChange = async (newSeason) => {
     setSeason(newSeason)
-    setEpisode(1)
+    await loadSeasonDetails(newSeason)
   }
 
   const handleEpisodeChange = (newEpisode) => {
@@ -200,6 +221,7 @@ export default function TVShow() {
   if (!tvShow) return null
 
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
+  const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
   const ToastContainer = () => (
     <div className="toast-container">
@@ -227,7 +249,7 @@ export default function TVShow() {
   return (
     <>
       <Head>
-        <title>{tvShow.name} S{season} E{episode} - Yoshikawa Player</title>
+        <title>{tvShow.name} {season > 0 ? `S${season}` : ''} {episode > 0 ? `E${episode}` : ''} - Yoshikawa Player</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -241,7 +263,7 @@ export default function TVShow() {
               allow="autoplay; encrypted-media; picture-in-picture" 
               allowFullScreen 
               loading="lazy" 
-              title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
+              title={`Yoshikawa Player - ${tvShow.name} ${season > 0 ? `S${season}` : ''} ${episode > 0 ? `E${episode}` : ''}`}
             ></iframe>
           </div>
         </div>
@@ -259,14 +281,11 @@ export default function TVShow() {
                 value={season}
                 onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
               >
-                {tvShow.seasons
-                  .filter(s => s.season_number > 0 && s.episode_count > 0)
-                  .map(season => (
-                    <option key={season.season_number} value={season.season_number}>
-                      T{season.season_number}
-                    </option>
-                  ))
-                }
+                {availableSeasons.map(season => (
+                  <option key={season.season_number} value={season.season_number}>
+                    Temporada {season.season_number}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="selector-group-streaming">
@@ -275,12 +294,13 @@ export default function TVShow() {
                 className="selector-select-streaming" 
                 value={episode}
                 onChange={(e) => handleEpisodeChange(parseInt(e.target.value))}
+                disabled={!seasonDetails?.episodes || seasonDetails.episodes.length === 0}
               >
                 {seasonDetails?.episodes?.map(ep => (
                   <option key={ep.episode_number} value={ep.episode_number}>
-                    E{ep.episode_number}
+                    Episódio {ep.episode_number} - {ep.name || `Ep ${ep.episode_number}`}
                   </option>
-                ))}
+                )) || <option value={1}>Carregando...</option>}
               </select>
             </div>
           </div>
