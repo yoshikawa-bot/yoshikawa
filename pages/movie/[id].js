@@ -40,7 +40,7 @@ export default function Movie() {
       
       // Mostrar notificação sobre troca de servidor sempre que a página for aberta
       setTimeout(() => {
-        showToast('use o botao direito para alterar o servidor', 'info')
+        showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
     }
   }, [id])
