@@ -11,11 +11,27 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
+  const [toasts, setToasts] = useState([])
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
+
+  // Sistema de Toast Notifications
+  const showToast = (message, type = 'info') => {
+    const id = Date.now()
+    const toast = { id, message, type }
+    setToasts(prev => [...prev, toast])
+    
+    setTimeout(() => {
+      removeToast(id)
+    }, 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
 
   useEffect(() => {
     loadHomeContent()
@@ -78,8 +94,11 @@ export default function Home() {
   const toggleFavorite = (item) => {
     setFavorites(prevFavorites => {
       let newFavorites
-      if (isFavorite(item)) {
+      const wasFavorite = isFavorite(item)
+      
+      if (wasFavorite) {
         newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
+        showToast('Removido dos favoritos', 'info')
       } else {
         const favoriteItem = {
           id: item.id,
@@ -91,12 +110,14 @@ export default function Home() {
           overview: item.overview
         }
         newFavorites = [...prevFavorites, favoriteItem]
+        showToast('Adicionado aos favoritos!', 'success')
       }
       
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
         console.error('Erro ao salvar favoritos:', error)
+        showToast('Erro ao salvar favoritos', 'info')
       }
 
       return newFavorites
@@ -127,8 +148,13 @@ export default function Home() {
        .slice(0, 30)
 
       setSearchResults(allResults)
+      
+      if (allResults.length === 0) {
+        showToast('Nenhum resultado encontrado', 'info')
+      }
     } catch (error) {
       console.error('Erro na busca:', error)
+      showToast('Erro na busca', 'info')
     } finally {
       setLoading(false)
     }
@@ -137,6 +163,7 @@ export default function Home() {
   const clearSearchResults = () => {
     setSearchResults([])
     setSearchQuery('')
+    showToast('Busca limpa', 'info')
   }
 
   const getActiveItems = () => {
@@ -222,7 +249,7 @@ export default function Home() {
   const SearchResults = () => (
     <div className="search-results-section active">
       <div className="search-results-header">
-        <h2 className="page-title-home">Resultados</h2>
+        <h2 className="page-title-home">Resultados para "{searchQuery}"</h2>
         <button 
           className="clear-search-btn"
           onClick={clearSearchResults}
@@ -276,6 +303,29 @@ export default function Home() {
     </div>
   )
 
+  const ToastContainer = () => (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <>
       <Head>
@@ -310,9 +360,11 @@ export default function Home() {
         )}
       </main>
 
+      <ToastContainer />
+
       <div className="bottom-nav-container">
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-          {!searchActive && (
+          {!searchActive ? (
             <>
               <button 
                 className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
@@ -336,37 +388,44 @@ export default function Home() {
                 <span>Favoritos</span>
               </button>
             </>
-          )}
-          
-          <div className={`search-container ${searchActive ? 'active' : ''}`}>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.target)
-                handleSearch(formData.get('search'))
-              }}
-              className="search-form"
-            >
-              <input 
-                type="text" 
-                name="search"
-                className="search-input" 
-                placeholder="Pesquisar conteúdo"
-                autoFocus={searchActive}
-              />
-              <button type="submit" className="search-button">
-                <i className="fas fa-search"></i>
-              </button>
-            </form>
-            {searchActive && (
+          ) : (
+            <div className="search-container active">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const formData = new FormData(e.target)
+                  const query = formData.get('search')
+                  if (query.trim()) {
+                    handleSearch(query)
+                  }
+                }}
+                className="search-form"
+              >
+                <input 
+                  type="text" 
+                  name="search"
+                  className="search-input" 
+                  placeholder="Pesquisar filmes e séries..."
+                  autoFocus
+                  defaultValue={searchQuery}
+                />
+                <button type="submit" className="search-button">
+                  <i className="fas fa-search"></i>
+                </button>
+              </form>
               <button 
                 className="close-search"
-                onClick={() => setSearchActive(false)}
+                onClick={() => {
+                  setSearchActive(false)
+                  if (searchResults.length > 0) {
+                    clearSearchResults()
+                  }
+                }}
               >
                 <i className="fas fa-times"></i>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         
         {!searchActive && (
@@ -394,7 +453,7 @@ const Header = () => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">流媒体</span>
+            <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
       </div>
