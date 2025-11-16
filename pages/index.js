@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
@@ -13,6 +13,7 @@ export default function Home() {
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
 
+  const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'
 
@@ -37,6 +38,13 @@ export default function Home() {
     loadHomeContent()
     loadFavorites()
   }, [])
+
+  useEffect(() => {
+    // Focar no input quando a search ficar ativa
+    if (searchActive && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [searchActive])
 
   const loadHomeContent = async () => {
     try {
@@ -125,7 +133,10 @@ export default function Home() {
   }
 
   const handleSearch = async (query) => {
-    if (!query.trim()) return
+    if (!query.trim()) {
+      showToast('Digite algo para pesquisar', 'info')
+      return
+    }
     
     setLoading(true)
     setSearchQuery(query)
@@ -151,6 +162,8 @@ export default function Home() {
       
       if (allResults.length === 0) {
         showToast('Nenhum resultado encontrado', 'info')
+      } else {
+        showToast(`Encontrados ${allResults.length} resultados`, 'success')
       }
     } catch (error) {
       console.error('Erro na busca:', error)
@@ -164,6 +177,23 @@ export default function Home() {
     setSearchResults([])
     setSearchQuery('')
     showToast('Busca limpa', 'info')
+  }
+
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        handleSearch(query)
+      } else {
+        showToast('Digite algo para pesquisar', 'info')
+      }
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit()
+    }
   }
 
   const getActiveItems = () => {
@@ -281,7 +311,7 @@ export default function Home() {
                   e.stopPropagation() 
                   toggleFavorite(item)
                 }}
-                title={isFav ? "Removido dos Favoritos" : "Adicionar aos Favoritos"}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
               >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
@@ -391,16 +421,12 @@ export default function Home() {
           ) : (
             <div className="search-input-container">
               <input 
+                ref={searchInputRef}
                 type="text"
                 className="search-input-expanded" 
                 placeholder="Pesquisar..."
-                autoFocus
                 defaultValue={searchQuery}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch(e.target.value)
-                  }
-                }}
+                onKeyPress={handleKeyPress}
               />
               <button 
                 className="close-search-expanded"
@@ -419,7 +445,15 @@ export default function Home() {
         
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
-          onClick={() => setSearchActive(true)}
+          onClick={() => {
+            if (searchActive) {
+              // Se a search já está ativa, clicar no botão executa a pesquisa
+              handleSearchSubmit()
+            } else {
+              // Se a search não está ativa, clicar ativa a barra de pesquisa
+              setSearchActive(true)
+            }
+          }}
         >
           <i className="fas fa-search"></i>
         </button>
@@ -446,4 +480,4 @@ const Header = () => {
       </div>
     </header>
   )
-  }
+}
