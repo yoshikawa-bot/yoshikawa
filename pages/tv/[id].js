@@ -270,12 +270,12 @@ export default function TVShow() {
 
         <div className="content-info-streaming">
           <h1 className="content-title-streaming">
-            {tvShow.name} - {currentEpisode?.name || `Episódio ${episode}`}
+            {tvShow.name} - {currentEpisode?.name || `EP ${episode}`}
           </h1>
           
           <div className={`episode-selector-streaming ${tvShow ? 'active' : ''}`}>
             <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Temporada:</span>
+              <span className="selector-label-streaming">TP:</span>
               <select 
                 className="selector-select-streaming" 
                 value={season}
@@ -289,7 +289,7 @@ export default function TVShow() {
               </select>
             </div>
             <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Episódio:</span>
+              <span className="selector-label-streaming">EP:</span>
               <select 
                 className="selector-select-streaming" 
                 value={episode}
