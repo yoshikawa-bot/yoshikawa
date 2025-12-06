@@ -330,7 +330,7 @@ const Header = () => (
     <div className="header-content">
       <Link href="/" className="logo-container">
         <img 
-          src="https://yoshikawa-bot.github.io/cache/images/47126171.jpg" 
+          src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
           alt="Yoshikawa Bot" 
           className="logo-image"
         />
