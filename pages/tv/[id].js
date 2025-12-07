@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-
+/
 export default function TVShow() {
   const router = useRouter()
   const { id } = router.query
