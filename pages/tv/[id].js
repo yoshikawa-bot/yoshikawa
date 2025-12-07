@@ -12,16 +12,17 @@ export default function TVShow() {
   const [seasonDetails, setSeasonDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedPlayer, setSelectedPlayer] = useState('vidsrc')
+  
+  // MUDANÇA: Player padrão agora é superflix
+  const [selectedPlayer, setSelectedPlayer] = useState('superflix')
+  
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
-  // Alterado para um único objeto em vez de array para garantir apenas uma notificação
   const [toast, setToast] = useState(null)
-  const toastTimeoutRef = useRef(null) // Ref para controlar o timer da notificação
+  const toastTimeoutRef = useRef(null)
 
-  // Estado para controlar a sinopse
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
@@ -29,17 +30,16 @@ export default function TVShow() {
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
-  // Novo sistema de notificação única
   const showToast = (message, type = 'info') => {
-    // Se houver um timer pendente, limpa ele
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current)
     }
 
+    // Usamos o Date.now() como key para forçar o React a recriar o DOM
+    // e reiniciar a animação CSS a cada nova notificação
     const newToast = { message, type, id: Date.now() }
     setToast(newToast)
 
-    // Define novo timer para remover
     toastTimeoutRef.current = setTimeout(() => {
       setToast(null)
       toastTimeoutRef.current = null
@@ -57,13 +57,10 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
-      // Pequeno delay para garantir que a UI carregou antes do toast inicial
       setTimeout(() => {
         showToast('Use o botão circular para trocar o player', 'info')
       }, 1000)
     }
-    
-    // Cleanup ao desmontar
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
@@ -222,7 +219,7 @@ export default function TVShow() {
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
-  // Componente de Toast Único
+  // Componente de Toast Único com Animação
   const SingleToast = () => {
     if (!toast) return null;
     return (
@@ -240,6 +237,74 @@ export default function TVShow() {
                 <i className="fas fa-times"></i>
             </button>
         </div>
+        <style jsx>{`
+          .toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            width: 90%;
+            max-width: 400px;
+            pointer-events: none;
+          }
+          
+          .toast {
+            pointer-events: auto;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 14px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            
+            /* ANIMAÇÃO DE ENTRADA SUAVE */
+            animation: toast-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+
+          @keyframes toast-enter {
+            0% { 
+              opacity: 0; 
+              transform: translateY(20px) scale(0.95); 
+            }
+            100% { 
+              opacity: 1; 
+              transform: translateY(0) scale(1); 
+            }
+          }
+
+          .toast-icon {
+            color: var(--primary);
+            font-size: 1.1rem;
+          }
+
+          .toast-success .toast-icon { color: #4ade80; }
+          .toast-error .toast-icon { color: #f87171; }
+
+          .toast-content {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+          }
+
+          .toast-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1rem;
+            transition: color 0.2s;
+          }
+
+          .toast-close:hover {
+            color: #fff;
+          }
+        `}</style>
       </div>
     )
   }
@@ -294,7 +359,7 @@ export default function TVShow() {
              {currentEpisode?.name || `Episódio ${episode}`}
           </h1>
 
-          {/* Sinopse Retrátil (Toggle) */}
+          {/* Sinopse Retrátil */}
           <div className="synopsis-wrapper">
             {showSynopsis && (
                 <p className="content-description-streaming fade-in">
@@ -348,20 +413,35 @@ export default function TVShow() {
           </div>
         </div>
 
-        {/* OVERLAYS (Player Selector & Info) */}
+        {/* OVERLAYS (Player Selector - AGORA IGUAL AO DE FILMES) */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
-                <div className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`} onClick={(e) => e.stopPropagation()}>
+                <div 
+                    className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <div className="player-options-bubble">
-                        <div className="player-option-bubble" onClick={() => handlePlayerChange('superflix')}>
+                        <div 
+                            className="player-option-bubble"
+                            onClick={() => handlePlayerChange('superflix')}
+                        >
                             <div className="option-main-line">
-                                <i className="fas fa-film"></i> <span>SuperFlix</span> <span className="player-tag-bubble player-tag-dub">DUB</span>
+                                <i className="fas fa-film"></i>
+                                <span className="option-name">SuperFlix</span>
+                                <span className="player-tag-bubble player-tag-dub">DUB</span>
                             </div>
+                            <span className="option-details">Lento, mas possui dublagem.</span>
                         </div>
-                        <div className="player-option-bubble" onClick={() => handlePlayerChange('vidsrc')}>
+                        <div 
+                            className="player-option-bubble"
+                            onClick={() => handlePlayerChange('vidsrc')}
+                        >
                             <div className="option-main-line">
-                                <i className="fas fa-bolt"></i> <span>VidSrc</span> <span className="player-tag-bubble player-tag-sub">LEG</span>
+                                <i className="fas fa-bolt"></i>
+                                <span className="option-name">VidSrc</span>
+                                <span className="player-tag-bubble player-tag-sub">LEG</span>
                             </div>
+                            <span className="option-details">Mais rápido, mas apenas legendado.</span>
                         </div>
                     </div>
                 </div>
@@ -394,7 +474,6 @@ export default function TVShow() {
       />
 
       <style jsx>{`
-        /* HEADER INFO */
         .meta-header-row {
             display: flex;
             justify-content: space-between;
@@ -436,7 +515,6 @@ export default function TVShow() {
             color: var(--text);
         }
 
-        /* TÍTULO E SINOPSE */
         .clean-episode-title {
             font-size: 1.3rem;
             color: var(--text);
@@ -483,7 +561,6 @@ export default function TVShow() {
             to { opacity: 1; }
         }
 
-        /* LISTA DE EPISÓDIOS (SCROLLER) */
         .episodes-list-container {
             width: 100%;
         }
@@ -500,7 +577,6 @@ export default function TVShow() {
             display: none;
         }
 
-        /* CARD EPISÓDIO */
         .episode-card {
             min-width: 130px;
             width: 130px;
