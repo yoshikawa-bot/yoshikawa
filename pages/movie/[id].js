@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
@@ -13,24 +13,39 @@ export default function Movie() {
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [toasts, setToasts] = useState([])
+  
+  // Controle de Notificação Única
+  const [toast, setToast] = useState(null)
+  const toastTimeoutRef = useRef(null)
+
+  // Controle de Sinopse (Igual à página de Séries)
+  const [showSynopsis, setShowSynopsis] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Single Instance
   const showToast = (message, type = 'info') => {
-    const id = Date.now()
-    const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
-    
-    setTimeout(() => {
-      removeToast(id)
+    // Limpa timer anterior se existir
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+
+    // Define nova notificação
+    setToast({ message, type, id: Date.now() })
+
+    // Inicia novo timer
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null)
+      toastTimeoutRef.current = null
     }, 3000)
   }
 
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
+  const removeToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast(null)
   }
 
   useEffect(() => {
@@ -38,10 +53,13 @@ export default function Movie() {
       loadMovie(id)
       checkIfFavorite()
       
-      // Mostrar notificação sobre troca de servidor sempre que a página for aberta
       setTimeout(() => {
         showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
+    }
+
+    return () => {
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
 
@@ -174,9 +192,10 @@ export default function Movie() {
 
   if (!movie) return null
 
-  const ToastContainer = () => (
-    <div className="toast-container">
-      {toasts.map(toast => (
+  const SingleToast = () => {
+    if (!toast) return null;
+    return (
+      <div className="toast-container">
         <div key={toast.id} className={`toast toast-${toast.type} show`}>
           <div className="toast-icon">
             <i className={`fas ${
@@ -188,14 +207,14 @@ export default function Movie() {
           <div className="toast-content">{toast.message}</div>
           <button 
             className="toast-close"
-            onClick={() => removeToast(toast.id)}
+            onClick={removeToast}
           >
             <i className="fas fa-times"></i>
           </button>
         </div>
-      ))}
-    </div>
-  )
+      </div>
+    )
+  }
 
   return (
     <>
@@ -220,19 +239,36 @@ export default function Movie() {
         </div>
 
         <div className="content-info-streaming">
-          <h1 className="content-title-streaming">
+          
+          {/* Título Estilo Séries */}
+          <h1 className="clean-episode-title">
             {movie.title}
           </h1>
           
-          <div className="content-meta-streaming">
-            <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
-            <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
-            <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
+          <div className="meta-header-row" style={{marginBottom: '1rem', color: 'var(--secondary)', fontSize: '0.9rem'}}>
+            <span style={{marginRight: '15px'}}><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
+            <span style={{marginRight: '15px'}}><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
+            <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).slice(0, 3).join(', ') : ''}</span>
           </div>
 
-          <p className="content-description-streaming">
-            {movie.overview || 'Descrição não disponível.'}
-          </p>
+          {/* Sinopse Retrátil (Copiada de Series) */}
+          <div className="synopsis-wrapper">
+            {showSynopsis && (
+                <p className="content-description-streaming fade-in">
+                    {movie.overview || 'Descrição não disponível.'}
+                </p>
+            )}
+            <button 
+                className="synopsis-toggle-btn"
+                onClick={() => setShowSynopsis(!showSynopsis)}
+            >
+                {showSynopsis ? (
+                    <span><i className="fas fa-chevron-up"></i> Ocultar Sinopse</span>
+                ) : (
+                    <span><i className="fas fa-align-left"></i> Ler Sinopse</span>
+                )}
+            </button>
+          </div>
         </div>
 
         {/* Overlay para o Seletor de Player */}
@@ -312,7 +348,7 @@ export default function Movie() {
         </div>
       </main>
 
-      <ToastContainer />
+      <SingleToast />
 
       <BottomNav 
         selectedPlayer={selectedPlayer}
@@ -321,6 +357,56 @@ export default function Movie() {
         onToggleFavorite={toggleFavorite}
         onShowInfo={() => setShowInfoPopup(true)}
       />
+
+      <style jsx>{`
+        /* ESTILOS COPIADOS DE SERIES PARA MANTER PADRÃO */
+        .clean-episode-title {
+            font-size: 1.5rem;
+            color: var(--text);
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .synopsis-wrapper {
+            margin-bottom: 1.2rem;
+            margin-top: 1rem;
+        }
+        
+        .synopsis-toggle-btn {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: none;
+            font-weight: 500;
+        }
+        
+        .synopsis-toggle-btn:hover {
+            color: var(--secondary);
+        }
+
+        .content-description-streaming {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+      `}</style>
     </>
   )
 }
