@@ -367,5 +367,3 @@ const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorit
     </button>
   </div>
 )
-
-envie completo atualizado
