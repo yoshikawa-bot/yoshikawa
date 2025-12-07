@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
@@ -17,6 +17,9 @@ export default function TVShow() {
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [toasts, setToasts] = useState([])
+  
+  // Ref para rolar a lista até o episódio atual
+  const episodeListRef = useRef(null)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
@@ -41,12 +44,21 @@ export default function TVShow() {
       loadTvShow(id)
       checkIfFavorite()
       
-      // Mostrar notificação sobre troca de servidor sempre que a página for aberta
       setTimeout(() => {
         showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
     }
   }, [id])
+
+  // Efeito para rolar até o episódio selecionado quando a lista carregar
+  useEffect(() => {
+    if (episodeListRef.current && seasonDetails) {
+      const activeCard = episodeListRef.current.querySelector('.episode-card.active')
+      if (activeCard) {
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+  }, [episode, seasonDetails])
 
   const loadTvShow = async (tvId) => {
     try {
@@ -59,7 +71,6 @@ export default function TVShow() {
       const tvData = await tvResponse.json()
       setTvShow(tvData)
       
-      // Carregar detalhes da primeira temporada automaticamente
       if (tvData.seasons && tvData.seasons.length > 0) {
         const firstSeason = tvData.seasons.find(s => s.season_number > 0) || tvData.seasons[0]
         if (firstSeason) {
@@ -85,7 +96,6 @@ export default function TVShow() {
         const seasonData = await seasonResponse.json()
         setSeasonDetails(seasonData)
         
-        // Resetar para o primeiro episódio quando mudar de temporada
         if (seasonData.episodes && seasonData.episodes.length > 0) {
           setEpisode(1)
         }
@@ -185,6 +195,8 @@ export default function TVShow() {
 
   const handleEpisodeChange = (newEpisode) => {
     setEpisode(newEpisode)
+    // Scroll suave para o player
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handlePlayerChange = (player) => {
@@ -205,14 +217,10 @@ export default function TVShow() {
   if (error) {
     return (
       <div className="error-message active">
-        <h3>
-          <i className="fas fa-exclamation-triangle"></i>
-          Ocorreu um erro
-        </h3>
+        <h3><i className="fas fa-exclamation-triangle"></i> Ocorreu um erro</h3>
         <p>{error}</p>
         <Link href="/" className="clear-search-btn" style={{marginTop: '1rem'}}>
-          <i className="fas fa-home"></i>
-          Voltar para Home
+          <i className="fas fa-home"></i> Voltar para Home
         </Link>
       </div>
     )
@@ -228,17 +236,10 @@ export default function TVShow() {
       {toasts.map(toast => (
         <div key={toast.id} className={`toast toast-${toast.type} show`}>
           <div className="toast-icon">
-            <i className={`fas ${
-              toast.type === 'success' ? 'fa-check' : 
-              toast.type === 'error' ? 'fa-exclamation-triangle' : 
-              'fa-info'
-            }`}></i>
+            <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
           </div>
           <div className="toast-content">{toast.message}</div>
-          <button 
-            className="toast-close"
-            onClick={() => removeToast(toast.id)}
-          >
+          <button className="toast-close" onClick={() => removeToast(toast.id)}>
             <i className="fas fa-times"></i>
           </button>
         </div>
@@ -256,6 +257,7 @@ export default function TVShow() {
       <Header />
 
       <main className="streaming-container">
+        {/* PLAYER AREA */}
         <div className="player-container">
           <div className="player-wrapper">
             <iframe 
@@ -268,46 +270,76 @@ export default function TVShow() {
           </div>
         </div>
 
+        {/* INFO & NAVIGATION AREA */}
         <div className="content-info-streaming">
-          <h1 className="content-title-streaming">
-            {tvShow.name} - {currentEpisode?.name || `Episódio ${episode}`}
-          </h1>
-          
-          <div className={`episode-selector-streaming ${tvShow ? 'active' : ''}`}>
-            <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Temporada:</span>
-              <select 
-                className="selector-select-streaming" 
-                value={season}
-                onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
-              >
-                {availableSeasons.map(season => (
-                  <option key={season.season_number} value={season.season_number}>
-                    TP {season.season_number}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="selector-group-streaming">
-              <span className="selector-label-streaming">Episódio:</span>
-              <select 
-                className="selector-select-streaming" 
-                value={episode}
-                onChange={(e) => handleEpisodeChange(parseInt(e.target.value))}
-                disabled={!seasonDetails?.episodes || seasonDetails.episodes.length === 0}
-              >
-                {seasonDetails?.episodes?.map(ep => (
-                  <option key={ep.episode_number} value={ep.episode_number}>
-                    EP {ep.episode_number}
-                  </option>
-                )) || <option value={1}>Carregando...</option>}
-              </select>
+          <div className="episode-header-row">
+            <h1 className="content-title-streaming">
+                {tvShow.name}
+            </h1>
+            
+            {/* Seletor de Temporada Novo */}
+            <div className="season-selector-wrapper">
+                <select 
+                    className="modern-season-select"
+                    value={season}
+                    onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
+                >
+                    {availableSeasons.map(s => (
+                        <option key={s.season_number} value={s.season_number}>
+                            Temporada {s.season_number}
+                        </option>
+                    ))}
+                </select>
             </div>
           </div>
+          
+          <h2 className="current-ep-title">
+             S{season}:E{episode} - {currentEpisode?.name || `Episódio ${episode}`}
+          </h2>
 
           <p className="content-description-streaming">
             {currentEpisode?.overview || tvShow.overview || 'Descrição não disponível'}
           </p>
+
+          {/* NOVA LISTA DE EPISÓDIOS (Horizontal Scroller) */}
+          <div className="episodes-list-container">
+            <h3 className="section-title">Episódios da Temporada {season}</h3>
+            <div className="episodes-scroller" ref={episodeListRef}>
+                {seasonDetails?.episodes?.map(ep => (
+                    <div 
+                        key={ep.episode_number}
+                        className={`episode-card ${ep.episode_number === episode ? 'active' : ''}`}
+                        onClick={() => handleEpisodeChange(ep.episode_number)}
+                    >
+                        <div className="episode-thumbnail">
+                            {ep.still_path ? (
+                                <img 
+                                    src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} 
+                                    alt={`Episódio ${ep.episode_number}`}
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="no-thumbnail">
+                                    <i className="fas fa-play"></i>
+                                </div>
+                            )}
+                            <div className="episode-number-badge">EP {ep.episode_number}</div>
+                            {ep.episode_number === episode && (
+                                <div className="playing-indicator">
+                                    <i className="fas fa-play"></i> Tocando
+                                </div>
+                            )}
+                        </div>
+                        <div className="episode-info-mini">
+                            <span className="ep-title">{ep.name}</span>
+                            <span className="ep-duration">
+                                {ep.runtime ? `${ep.runtime} min` : ''}
+                            </span>
+                        </div>
+                    </div>
+                )) || <div className="loading-eps">Carregando episódios...</div>}
+            </div>
+          </div>
         </div>
 
         {/* Overlay para o Seletor de Player */}
@@ -396,6 +428,179 @@ export default function TVShow() {
         onToggleFavorite={toggleFavorite}
         onShowInfo={() => setShowInfoPopup(true)}
       />
+
+      {/* ESTILOS ESPECÍFICOS PARA A NOVA NAVEGAÇÃO */}
+      <style jsx>{`
+        .episode-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .current-ep-title {
+            font-size: 1.1rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+            font-weight: normal;
+        }
+
+        .season-selector-wrapper {
+            position: relative;
+        }
+
+        .modern-season-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            padding-right: 30px;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 10px;
+        }
+
+        .episodes-list-container {
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            color: #aaa;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .episodes-scroller {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            /* Scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: #666 #111;
+        }
+
+        .episodes-scroller::-webkit-scrollbar {
+            height: 8px;
+        }
+        .episodes-scroller::-webkit-scrollbar-track {
+            background: #111;
+        }
+        .episodes-scroller::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 4px;
+        }
+
+        .episode-card {
+            min-width: 160px;
+            width: 160px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            opacity: 0.7;
+        }
+
+        .episode-card:hover {
+            opacity: 1;
+            transform: translateY(-5px);
+        }
+
+        .episode-card.active {
+            opacity: 1;
+        }
+
+        .episode-thumbnail {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #222;
+            margin-bottom: 8px;
+            border: 2px solid transparent;
+        }
+
+        .episode-card.active .episode-thumbnail {
+            border-color: #e50914; /* Cor de destaque */
+        }
+
+        .episode-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-thumbnail {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #333;
+            color: #555;
+            font-size: 2rem;
+        }
+
+        .episode-number-badge {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .playing-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(229, 9, 20, 0.8);
+            color: white;
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 3px;
+        }
+
+        .episode-info-mini {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ep-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+        }
+
+        .ep-duration {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .episode-card {
+                min-width: 140px;
+                width: 140px;
+            }
+        }
+      `}</style>
     </>
   )
 }
