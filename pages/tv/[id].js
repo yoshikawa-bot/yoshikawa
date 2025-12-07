@@ -57,7 +57,7 @@ export default function TVShow() {
       loadTvShow(id)
       checkIfFavorite()
       setTimeout(() => {
-        showToast('Use o botão circular no canto inferior direito para alterar o provedor de conteúdo', 'info')
+        showToast('Use o botão circular no canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
     }
     return () => {
