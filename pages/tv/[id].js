@@ -26,11 +26,15 @@ export default function TVShow() {
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
+  // Sistema de Toast Notifications (Voltou ao padrão global)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
     setToasts(prev => [...prev, toast])
-    setTimeout(() => removeToast(id), 3000)
+    
+    setTimeout(() => {
+      removeToast(id)
+    }, 3000)
   }
 
   const removeToast = (id) => {
@@ -41,8 +45,9 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
+      
       setTimeout(() => {
-        showToast('Use o botão circular para trocar o player', 'info')
+        showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
     }
   }, [id])
@@ -154,12 +159,12 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
+    // Usando as classes globais para animação de fechamento
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active');
     if (element) {
-        element.classList.add('closing');
+        // Remoção da classe 'active' lida pela transição CSS global
         setTimeout(() => {
             setter(false);
-            element.classList.remove('closing');
         }, 300);
     } else {
         setter(false);
@@ -168,13 +173,13 @@ export default function TVShow() {
   
   const handleInfoOverlayClick = (e) => {
     if (e.target.classList.contains('info-popup-overlay')) {
-      closePopup(setShowInfoPopup);
+      setShowInfoPopup(false);
     }
   };
   
   const handleSelectorOverlayClick = (e) => {
     if (e.target.classList.contains('player-selector-overlay')) {
-      closePopup(setShowPlayerSelector);
+      setShowPlayerSelector(false);
     }
   };
   
@@ -190,12 +195,36 @@ export default function TVShow() {
 
   const handlePlayerChange = (player) => {
     setSelectedPlayer(player)
-    closePopup(setShowPlayerSelector)
+    // Fechar o seletor (deixando a animação CSS global fazer o trabalho)
+    setShowPlayerSelector(false)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
   }
 
-  if (loading) return <div className="loading active"><div className="spinner"></div><p>Carregando...</p></div>
-  if (error) return <div className="error-message active"><h3>Erro</h3><p>{error}</p><Link href="/">Voltar</Link></div>
+  if (loading) {
+    return (
+      <div className="loading active">
+        <div className="spinner"></div>
+        <p>Carregando série...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="error-message active">
+        <h3>
+          <i className="fas fa-exclamation-triangle"></i>
+          Ocorreu um erro
+        </h3>
+        <p>{error}</p>
+        <Link href="/" className="clear-search-btn" style={{marginTop: '1rem'}}>
+          <i className="fas fa-home"></i>
+          Voltar para Home
+        </Link>
+      </div>
+    )
+  }
+
   if (!tvShow) return null
 
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
@@ -204,8 +233,22 @@ export default function TVShow() {
   const ToastContainer = () => (
     <div className="toast-container">
       {toasts.map(toast => (
+        // Usando as classes globais: toast, toast-success/info/error, show
         <div key={toast.id} className={`toast toast-${toast.type} show`}>
-            <div className="toast-content">{toast.message}</div>
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
         </div>
       ))}
     </div>
@@ -214,7 +257,7 @@ export default function TVShow() {
   return (
     <>
       <Head>
-        <title>{tvShow.name} - Yoshikawa</title>
+        <title>{tvShow.name} - Yoshikawa Player</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
@@ -229,7 +272,7 @@ export default function TVShow() {
               allow="autoplay; encrypted-media; picture-in-picture" 
               allowFullScreen 
               loading="lazy" 
-              title={`Player`}
+              title={`Yoshikawa Player - ${tvShow.name} S${season} E${episode}`}
             ></iframe>
           </div>
         </div>
@@ -242,10 +285,12 @@ export default function TVShow() {
             <span className="episode-label-simple">Episódio {episode}</span>
             
             <div className="season-selector-wrapper">
+                {/* Usando a classe global do seletor */}
                 <select 
-                    className="modern-season-select"
+                    className="selector-select-streaming"
                     value={season}
                     onChange={(e) => handleSeasonChange(parseInt(e.target.value))}
+                    style={{width: 'auto', minWidth: '120px'}}
                 >
                     {availableSeasons.map(s => (
                         <option key={s.season_number} value={s.season_number}>
@@ -282,6 +327,7 @@ export default function TVShow() {
 
           {/* LISTA DE EPISÓDIOS */}
           <div className="episodes-list-container">
+            <h3 className="section-title">Temporada {season}</h3>
             <div className="episodes-scroller" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
                     <div 
@@ -310,253 +356,22 @@ export default function TVShow() {
                             <span className="ep-title">{ep.name}</span>
                         </div>
                     </div>
-                )) || <div className="loading-eps">Carregando...</div>}
+                )) || <div className="loading-eps">Carregando episódios...</div>}
             </div>
           </div>
         </div>
 
-        {/* OVERLAYS (Player Selector & Info) */}
+        {/* Overlay para o Seletor de Player (Voltou ao padrão global) */}
         {showPlayerSelector && (
-            <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
-                <div className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className="player-selector-overlay active" onClick={handleSelectorOverlayClick}>
+                <div 
+                    className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <div className="player-options-bubble">
-                        <div className="player-option-bubble" onClick={() => handlePlayerChange('superflix')}>
+                        <div 
+                            className="player-option-bubble"
+                            onClick={() => handlePlayerChange('superflix')}
+                        >
                             <div className="option-main-line">
-                                <i className="fas fa-film"></i> <span>SuperFlix</span> <span className="player-tag-bubble player-tag-dub">DUB</span>
-                            </div>
-                        </div>
-                        <div className="player-option-bubble" onClick={() => handlePlayerChange('vidsrc')}>
-                            <div className="option-main-line">
-                                <i className="fas fa-bolt"></i> <span>VidSrc</span> <span className="player-tag-bubble player-tag-sub">LEG</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {showInfoPopup && (
-            <div className="info-popup-overlay active" onClick={handleInfoOverlayClick}>
-              <div className="info-popup-content" onClick={(e) => e.stopPropagation()}>
-                <div className="info-popup-header">
-                  <img src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w200${tvShow.poster_path}` : ''} className="info-poster" />
-                  <div className="info-details">
-                    <h2 className="info-title">{tvShow.name}</h2>
-                    <p>{tvShow.overview}</p>
-                  </div>
-                </div>
-                <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
-              </div>
-            </div>
-        )}
-      </main>
-
-      <ToastContainer />
-      <BottomNav 
-        selectedPlayer={selectedPlayer}
-        onPlayerChange={() => setShowPlayerSelector(true)}
-        isFavorite={isFavorite}
-        onToggleFavorite={toggleFavorite}
-        onShowInfo={() => setShowInfoPopup(true)}
-      />
-
-      <style jsx>{`
-        .meta-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.2rem;
-        }
-
-        .episode-label-simple {
-            color: #888;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-
-        .season-selector-wrapper select {
-            background: transparent;
-            color: #e50914; /* Cor de destaque para a temporada */
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 0.85rem;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .clean-episode-title {
-            font-size: 1.3rem;
-            color: #fff;
-            margin: 0 0 1rem 0;
-            font-weight: 500;
-            line-height: 1.3;
-        }
-
-        /* Sinopse Toggle */
-        .synopsis-wrapper {
-            margin-bottom: 1.5rem;
-        }
-        
-        .synopsis-toggle-btn {
-            background: none;
-            border: none;
-            color: #aaa;
-            font-size: 0.85rem;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.3s;
-        }
-        
-        .synopsis-toggle-btn:hover {
-            color: #fff;
-        }
-
-        .content-description-streaming {
-            margin-bottom: 0.8rem;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            color: #ccc;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Lista de Episódios */
-        .episodes-list-container {
-            width: 100%;
-        }
-
-        .episodes-scroller {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: none; /* Firefox */
-        }
-        .episodes-scroller::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
-        }
-
-        .episode-card {
-            min-width: 140px;
-            width: 140px;
-            cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 0.2s; /* Sem transform */
-        }
-
-        .episode-card.active {
-            opacity: 1;
-        }
-
-        .episode-thumbnail {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #222;
-            margin-bottom: 6px;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
-        }
-
-        .episode-card.active .episode-thumbnail {
-            border-color: #e50914; /* Borda indica seleção */
-        }
-
-        .episode-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .no-thumbnail {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #333;
-            color: #555;
-        }
-
-        .episode-number-badge {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 1px 5px;
-            font-size: 0.7rem;
-            border-radius: 3px;
-        }
-
-        .playing-indicator {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(229, 9, 20, 0.9);
-            color: white;
-            font-size: 0.6rem;
-            text-align: center;
-            padding: 2px;
-        }
-
-        .ep-title {
-            font-size: 0.85rem;
-            color: #ddd;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.2;
-        }
-
-        .episode-card.active .ep-title {
-            color: #fff;
-            font-weight: 500;
-        }
-      `}</style>
-    </>
-  )
-}
-
-const Header = () => (
-  <header className="github-header">
-    <div className="header-content">
-      <Link href="/" className="logo-container">
-        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="logo-image" />
-        <div className="logo-text"><span className="logo-name">Yoshikawa</span><span className="beta-tag">STREAMING</span></div>
-      </Link>
-    </div>
-  </header>
-)
-
-const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  <div className="bottom-nav-container streaming-mode">
-    <div className="main-nav-bar">
-      <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
-      <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
-      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
-        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
-      </button>
-    </div>
-    <button className="player-circle" onClick={onPlayerChange}>
-      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
-    </button>
-  </div>
-)
+                                <i className="fas fa-
