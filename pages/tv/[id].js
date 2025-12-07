@@ -361,126 +361,185 @@ export default function TVShow() {
       />
 
       <style jsx>{`
+        /* HEADER E META INFO */
         .meta-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .episode-label-simple {
-            color: #888;
+            color: var(--primary); /* Usando a cor primária do tema */
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-weight: 600;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
         }
 
+        /* SELETOR DE TEMPORADA - ESTILO GLASS */
         .season-selector-wrapper select {
-            background: transparent;
-            color: #e50914; /* Cor de destaque para a temporada */
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 0.85rem;
+            appearance: none;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.9rem;
             outline: none;
             cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
 
+        .season-selector-wrapper select:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .season-selector-wrapper select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+        }
+
+        .season-selector-wrapper select option {
+            background: #1a1a1a; /* Fallback escuro para options */
+            color: var(--text);
+        }
+
+        /* TÍTULO E SINOPSE */
         .clean-episode-title {
-            font-size: 1.3rem;
-            color: #fff;
+            font-size: 1.4rem;
+            color: var(--text);
             margin: 0 0 1rem 0;
-            font-weight: 500;
+            font-weight: 600;
             line-height: 1.3;
         }
 
-        /* Sinopse Toggle */
         .synopsis-wrapper {
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            background: rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid transparent;
         }
-        
+
         .synopsis-toggle-btn {
             background: none;
             border: none;
-            color: #aaa;
+            color: var(--secondary);
             font-size: 0.85rem;
             cursor: pointer;
-            padding: 0;
+            padding: 5px 0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             transition: color 0.3s;
+            font-weight: 500;
         }
         
         .synopsis-toggle-btn:hover {
-            color: #fff;
+            color: var(--primary);
         }
 
         .content-description-streaming {
             margin-bottom: 0.8rem;
             font-size: 0.95rem;
-            line-height: 1.5;
-            color: #ccc;
+            line-height: 1.6;
+            color: var(--text);
+            opacity: 0.9;
         }
 
         .fade-in {
-            animation: fadeIn 0.3s ease-in;
+            animation: fadeIn 0.4s ease-out;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Lista de Episódios */
+        /* LISTA DE EPISÓDIOS (SCROLLER) */
         .episodes-list-container {
             width: 100%;
+            margin-top: 1rem;
         }
 
         .episodes-scroller {
             display: flex;
-            gap: 12px;
+            gap: 15px;
             overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: none; /* Firefox */
-        }
-        .episodes-scroller::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
+            padding: 10px 5px 20px 5px;
+            
+            /* Estilização da barra de rolagem */
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
         }
 
+        .episodes-scroller::-webkit-scrollbar {
+            height: 6px;
+        }
+        .episodes-scroller::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .episodes-scroller::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* CARD DO EPISÓDIO */
         .episode-card {
-            min-width: 140px;
-            width: 140px;
+            min-width: 160px;
+            width: 160px;
             cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 0.2s; /* Sem transform */
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .episode-card:hover {
+            opacity: 1;
+            transform: translateY(-5px);
         }
 
         .episode-card.active {
             opacity: 1;
+            transform: scale(1.02);
         }
 
         .episode-thumbnail {
             position: relative;
             width: 100%;
             aspect-ratio: 16/9;
-            border-radius: 6px;
+            border-radius: 12px;
             overflow: hidden;
-            background: #222;
-            margin-bottom: 6px;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
+            background: var(--card-bg);
+            margin-bottom: 8px;
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
 
+        /* Borda e Brilho quando ativo */
         .episode-card.active .episode-thumbnail {
-            border-color: #e50914; /* Borda indica seleção */
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
         }
 
         .episode-thumbnail img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .episode-card:hover .episode-thumbnail img {
+            transform: scale(1.1);
         }
 
         .no-thumbnail {
@@ -489,46 +548,83 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #333;
-            color: #555;
+            background: var(--card-bg);
+            color: var(--secondary);
+            backdrop-filter: blur(5px);
         }
 
+        /* BADGES */
         .episode-number-badge {
             position: absolute;
-            top: 4px;
-            left: 4px;
-            background: rgba(0,0,0,0.8);
+            top: 6px;
+            left: 6px;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 1px 5px;
-            font-size: 0.7rem;
-            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .playing-indicator {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(229, 9, 20, 0.9);
-            color: white;
-            font-size: 0.6rem;
-            text-align: center;
-            padding: 2px;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.5rem;
+            backdrop-filter: blur(2px);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; text-shadow: 0 0 10px var(--primary); }
+            100% { opacity: 0.8; }
+        }
+
+        .episode-info-mini {
+            padding: 0 2px;
         }
 
         .ep-title {
             font-size: 0.85rem;
-            color: #ddd;
+            color: var(--secondary);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.2;
+            line-height: 1.3;
+            transition: color 0.3s;
         }
 
         .episode-card.active .ep-title {
-            color: #fff;
-            font-weight: 500;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .episode-card:hover .ep-title {
+            color: var(--text);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .clean-episode-title {
+                font-size: 1.2rem;
+            }
+            
+            .episode-card {
+                min-width: 140px;
+                width: 140px;
+            }
+            
+            .meta-header-row {
+                margin-bottom: 0.5rem;
+            }
         }
       `}</style>
     </>
