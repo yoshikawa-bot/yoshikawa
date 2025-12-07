@@ -13,13 +13,14 @@ export default function TVShow() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   
-  // MUDANÇA: Player padrão agora é superflix
+  // Padrão SuperFlix
   const [selectedPlayer, setSelectedPlayer] = useState('superflix')
   
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
+  // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
 
@@ -35,10 +36,8 @@ export default function TVShow() {
       clearTimeout(toastTimeoutRef.current)
     }
 
-    // Usamos o Date.now() como key para forçar o React a recriar o DOM
-    // e reiniciar a animação CSS a cada nova notificação
-    const newToast = { message, type, id: Date.now() }
-    setToast(newToast)
+    // Usamos Date.now() para garantir que o componente remonte e a animação toque novamente
+    setToast({ message, type, id: Date.now() })
 
     toastTimeoutRef.current = setTimeout(() => {
       setToast(null)
@@ -219,12 +218,17 @@ export default function TVShow() {
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
-  // Componente de Toast Único com Animação
+  // Componente de Notificação usando as classes globais originais
+  // Apenas adicionamos style={{ animation: ... }}
   const SingleToast = () => {
     if (!toast) return null;
     return (
       <div className="toast-container">
-        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+        <div 
+            key={toast.id} 
+            className={`toast toast-${toast.type} show`}
+            style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        >
             <div className="toast-icon">
                 <i className={`fas ${
                   toast.type === 'success' ? 'fa-check' : 
@@ -237,74 +241,6 @@ export default function TVShow() {
                 <i className="fas fa-times"></i>
             </button>
         </div>
-        <style jsx>{`
-          .toast-container {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            width: 90%;
-            max-width: 400px;
-            pointer-events: none;
-          }
-          
-          .toast {
-            pointer-events: auto;
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
-            padding: 14px 18px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            
-            /* ANIMAÇÃO DE ENTRADA SUAVE */
-            animation: toast-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-
-          @keyframes toast-enter {
-            0% { 
-              opacity: 0; 
-              transform: translateY(20px) scale(0.95); 
-            }
-            100% { 
-              opacity: 1; 
-              transform: translateY(0) scale(1); 
-            }
-          }
-
-          .toast-icon {
-            color: var(--primary);
-            font-size: 1.1rem;
-          }
-
-          .toast-success .toast-icon { color: #4ade80; }
-          .toast-error .toast-icon { color: #f87171; }
-
-          .toast-content {
-            flex: 1;
-            font-size: 0.9rem;
-            font-weight: 500;
-          }
-
-          .toast-close {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.5);
-            cursor: pointer;
-            padding: 4px;
-            font-size: 1rem;
-            transition: color 0.2s;
-          }
-
-          .toast-close:hover {
-            color: #fff;
-          }
-        `}</style>
       </div>
     )
   }
@@ -413,7 +349,7 @@ export default function TVShow() {
           </div>
         </div>
 
-        {/* OVERLAYS (Player Selector - AGORA IGUAL AO DE FILMES) */}
+        {/* OVERLAYS (Player Selector - IDÊNTICO AO DE FILMES) */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -474,6 +410,18 @@ export default function TVShow() {
       />
 
       <style jsx>{`
+        /* APENAS KEYFRAMES DA ANIMAÇÃO, SEM ESTILIZAR O TOAST EM SI */
+        @keyframes toast-slide-up {
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.95); 
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+          }
+        }
+
         .meta-header-row {
             display: flex;
             justify-content: space-between;
