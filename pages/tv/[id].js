@@ -377,26 +377,29 @@ export default function TVShow() {
             font-weight: 700;
         }
 
-        /* SELETOR DE TEMPORADA - Compacto e no tema */
+        /* SELETOR DE TEMPORADA - Neutralizado e no tema */
         .season-selector-wrapper select {
-            appearance: none; /* Remove estilo padrão do navegador */
+            appearance: none;
             background: var(--card-bg);
             color: var(--text);
             border: 1px solid var(--border);
-            border-radius: 8px; /* Bordas levemente arredondadas */
-            padding: 4px 12px; /* Padding compacto */
+            border-radius: 8px;
+            padding: 4px 12px;
             font-size: 0.85rem;
             outline: none;
             cursor: pointer;
             backdrop-filter: blur(5px);
             font-family: 'Inter', sans-serif;
+            transition: none; /* Remove transição de cor */
         }
 
-        .season-selector-wrapper select:focus {
-            border-color: var(--primary);
+        /* Não muda a cor ao focar ou passar o mouse */
+        .season-selector-wrapper select:focus,
+        .season-selector-wrapper select:hover {
+            border-color: var(--border); /* Mantém a cor da borda original */
+            box-shadow: none; /* Remove qualquer sombra de foco */
         }
         
-        /* Opções do select com fundo escuro para contraste */
         .season-selector-wrapper select option {
             background: #1a1a1a; 
             color: var(--text);
@@ -418,19 +421,20 @@ export default function TVShow() {
         .synopsis-toggle-btn {
             background: none;
             border: none;
-            color: var(--secondary);
+            color: var(--secondary); /* Cor secundária (neutra) */
             font-size: 0.85rem;
             cursor: pointer;
             padding: 0;
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: color 0.2s;
+            transition: none; /* Remove transição de cor */
             font-weight: 500;
         }
         
+        /* Não muda a cor ao passar o mouse */
         .synopsis-toggle-btn:hover {
-            color: var(--primary);
+            color: var(--secondary);
         }
 
         .content-description-streaming {
@@ -441,7 +445,6 @@ export default function TVShow() {
             opacity: 0.9;
         }
 
-        /* Animação simples de fade para a sinopse */
         .fade-in {
             animation: fadeIn 0.2s ease-in;
         }
@@ -450,32 +453,28 @@ export default function TVShow() {
             to { opacity: 1; }
         }
 
-        /* LISTA DE EPISÓDIOS */
+        /* LISTA DE EPISÓDIOS (SCROLLER) */
         .episodes-list-container {
             width: 100%;
         }
 
         .episodes-scroller {
             display: flex;
-            gap: 10px; /* Espaçamento compacto */
+            gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
-            /* Scrollbar fina no tema */
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) transparent;
+            
+            /* REMOÇÃO DO INDICADOR DE ROLAGEM */
+            scrollbar-width: none; /* Firefox */
         }
         
         .episodes-scroller::-webkit-scrollbar {
-            height: 4px;
-        }
-        .episodes-scroller::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 4px;
+            display: none; /* Chrome, Safari, Opera */
         }
 
-        /* CARD EPISÓDIO - Simples */
+        /* CARD EPISÓDIO */
         .episode-card {
-            min-width: 130px; /* Um pouco mais compacto */
+            min-width: 130px;
             width: 130px;
             cursor: pointer;
             opacity: 0.6;
@@ -497,9 +496,9 @@ export default function TVShow() {
             border: 2px solid var(--border);
         }
 
-        /* Borda ativa na cor primária */
+        /* Borda ativa na cor de destaque (--primary) */
         .episode-card.active .episode-thumbnail {
-            border-color: var(--primary);
+            border-color: var(--primary); 
         }
 
         .episode-thumbnail img {
@@ -530,13 +529,12 @@ export default function TVShow() {
             font-weight: 600;
         }
 
-        /* Indicador "Reproduzindo" simples */
         .playing-indicator {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--primary); /* Usa a cor primária */
+            background: var(--primary);
             color: white;
             font-size: 0.65rem;
             text-align: center;
@@ -555,7 +553,7 @@ export default function TVShow() {
         }
 
         .episode-card.active .ep-title {
-            color: var(--text); /* Título ativo fica claro */
+            color: var(--text);
             font-weight: 600;
         }
       `}</style>
