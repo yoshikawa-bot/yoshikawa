@@ -9,32 +9,30 @@ export default function Movie() {
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  
+  // Player Padrão SuperFlix
   const [selectedPlayer, setSelectedPlayer] = useState('superflix')
+  
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
-  // Controle de Notificação Única
+  // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
 
-  // Controle de Sinopse (Igual à página de Séries)
   const [showSynopsis, setShowSynopsis] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
-  // Sistema de Toast Single Instance
   const showToast = (message, type = 'info') => {
-    // Limpa timer anterior se existir
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current)
     }
 
-    // Define nova notificação
     setToast({ message, type, id: Date.now() })
 
-    // Inicia novo timer
     toastTimeoutRef.current = setTimeout(() => {
       setToast(null)
       toastTimeoutRef.current = null
@@ -196,7 +194,11 @@ export default function Movie() {
     if (!toast) return null;
     return (
       <div className="toast-container">
-        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+        <div 
+            key={toast.id} 
+            className={`toast toast-${toast.type} show`}
+            style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        >
           <div className="toast-icon">
             <i className={`fas ${
               toast.type === 'success' ? 'fa-check' : 
@@ -240,7 +242,6 @@ export default function Movie() {
 
         <div className="content-info-streaming">
           
-          {/* Título Estilo Séries */}
           <h1 className="clean-episode-title">
             {movie.title}
           </h1>
@@ -251,7 +252,6 @@ export default function Movie() {
             <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).slice(0, 3).join(', ') : ''}</span>
           </div>
 
-          {/* Sinopse Retrátil (Copiada de Series) */}
           <div className="synopsis-wrapper">
             {showSynopsis && (
                 <p className="content-description-streaming fade-in">
@@ -359,7 +359,18 @@ export default function Movie() {
       />
 
       <style jsx>{`
-        /* ESTILOS COPIADOS DE SERIES PARA MANTER PADRÃO */
+        /* APENAS KEYFRAMES */
+        @keyframes toast-slide-up {
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.95); 
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+          }
+        }
+
         .clean-episode-title {
             font-size: 1.5rem;
             color: var(--text);
