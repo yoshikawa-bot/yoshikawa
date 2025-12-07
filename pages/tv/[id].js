@@ -302,7 +302,7 @@ export default function TVShow() {
                             <div className="episode-number-badge">{ep.episode_number}</div>
                             {ep.episode_number === episode && (
                                 <div className="playing-indicator">
-                                    <i className="fas fa-play"></i>
+                                    Reproduzindo
                                 </div>
                             )}
                         </div>
@@ -361,84 +361,71 @@ export default function TVShow() {
       />
 
       <style jsx>{`
-        /* HEADER E META INFO */
+        /* HEADER INFO */
         .meta-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 0.5rem;
         }
 
         .episode-label-simple {
-            color: var(--primary); /* Usando a cor primária do tema */
+            color: var(--primary); /* Usando a cor primária */
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
         }
 
-        /* SELETOR DE TEMPORADA - ESTILO GLASS */
+        /* SELETOR DE TEMPORADA - Compacto e no tema */
         .season-selector-wrapper select {
-            appearance: none;
+            appearance: none; /* Remove estilo padrão do navegador */
             background: var(--card-bg);
             color: var(--text);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 0.9rem;
+            border-radius: 8px; /* Bordas levemente arredondadas */
+            padding: 4px 12px; /* Padding compacto */
+            font-size: 0.85rem;
             outline: none;
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
             font-family: 'Inter', sans-serif;
         }
 
-        .season-selector-wrapper select:hover {
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
         .season-selector-wrapper select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
         }
-
+        
+        /* Opções do select com fundo escuro para contraste */
         .season-selector-wrapper select option {
-            background: #1a1a1a; /* Fallback escuro para options */
+            background: #1a1a1a; 
             color: var(--text);
         }
 
         /* TÍTULO E SINOPSE */
         .clean-episode-title {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             color: var(--text);
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.8rem 0;
             font-weight: 600;
             line-height: 1.3;
         }
 
         .synopsis-wrapper {
-            margin-bottom: 2rem;
-            background: rgba(0,0,0,0.1);
-            border-radius: 12px;
-            padding: 10px;
-            border: 1px solid transparent;
+            margin-bottom: 1.2rem;
         }
-
+        
         .synopsis-toggle-btn {
             background: none;
             border: none;
             color: var(--secondary);
             font-size: 0.85rem;
             cursor: pointer;
-            padding: 5px 0;
+            padding: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: color 0.3s;
+            gap: 6px;
+            transition: color 0.2s;
             font-weight: 500;
         }
         
@@ -448,98 +435,77 @@ export default function TVShow() {
 
         .content-description-streaming {
             margin-bottom: 0.8rem;
-            font-size: 0.95rem;
-            line-height: 1.6;
+            font-size: 0.9rem;
+            line-height: 1.5;
             color: var(--text);
             opacity: 0.9;
         }
 
+        /* Animação simples de fade para a sinopse */
         .fade-in {
-            animation: fadeIn 0.4s ease-out;
+            animation: fadeIn 0.2s ease-in;
         }
-        
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        /* LISTA DE EPISÓDIOS (SCROLLER) */
+        /* LISTA DE EPISÓDIOS */
         .episodes-list-container {
             width: 100%;
-            margin-top: 1rem;
         }
 
         .episodes-scroller {
             display: flex;
-            gap: 15px;
+            gap: 10px; /* Espaçamento compacto */
             overflow-x: auto;
-            padding: 10px 5px 20px 5px;
-            
-            /* Estilização da barra de rolagem */
+            padding-bottom: 8px;
+            /* Scrollbar fina no tema */
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
         }
-
+        
         .episodes-scroller::-webkit-scrollbar {
-            height: 6px;
-        }
-        .episodes-scroller::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            height: 4px;
         }
         .episodes-scroller::-webkit-scrollbar-thumb {
             background: var(--primary);
-            border-radius: 10px;
+            border-radius: 4px;
         }
 
-        /* CARD DO EPISÓDIO */
+        /* CARD EPISÓDIO - Simples */
         .episode-card {
-            min-width: 160px;
-            width: 160px;
+            min-width: 130px; /* Um pouco mais compacto */
+            width: 130px;
             cursor: pointer;
-            opacity: 0.7;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .episode-card:hover {
-            opacity: 1;
-            transform: translateY(-5px);
+            opacity: 0.6;
+            transition: opacity 0.2s;
         }
 
         .episode-card.active {
             opacity: 1;
-            transform: scale(1.02);
         }
 
         .episode-thumbnail {
             position: relative;
             width: 100%;
             aspect-ratio: 16/9;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             background: var(--card-bg);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             border: 2px solid var(--border);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
         }
 
-        /* Borda e Brilho quando ativo */
+        /* Borda ativa na cor primária */
         .episode-card.active .episode-thumbnail {
             border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
         }
 
         .episode-thumbnail img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .episode-card:hover .episode-thumbnail img {
-            transform: scale(1.1);
         }
 
         .no-thumbnail {
@@ -550,81 +516,47 @@ export default function TVShow() {
             justify-content: center;
             background: var(--card-bg);
             color: var(--secondary);
-            backdrop-filter: blur(5px);
         }
 
-        /* BADGES */
         .episode-number-badge {
             position: absolute;
-            top: 6px;
-            left: 6px;
-            background: rgba(0, 0, 0, 0.7);
+            top: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.7);
             color: white;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            border-radius: 6px;
-            backdrop-filter: blur(4px);
+            padding: 1px 5px;
+            font-size: 0.7rem;
+            border-radius: 4px;
             font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
         }
 
+        /* Indicador "Reproduzindo" simples */
         .playing-indicator {
             position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 1.5rem;
-            backdrop-filter: blur(2px);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; text-shadow: 0 0 10px var(--primary); }
-            100% { opacity: 0.8; }
-        }
-
-        .episode-info-mini {
-            padding: 0 2px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary); /* Usa a cor primária */
+            color: white;
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 2px 0;
+            font-weight: 600;
         }
 
         .ep-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--secondary);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.3;
-            transition: color 0.3s;
+            line-height: 1.2;
         }
 
         .episode-card.active .ep-title {
-            color: var(--primary);
+            color: var(--text); /* Título ativo fica claro */
             font-weight: 600;
-        }
-        
-        .episode-card:hover .ep-title {
-            color: var(--text);
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .clean-episode-title {
-                font-size: 1.2rem;
-            }
-            
-            .episode-card {
-                min-width: 140px;
-                width: 140px;
-            }
-            
-            .meta-header-row {
-                margin-bottom: 0.5rem;
-            }
         }
       `}</style>
     </>
