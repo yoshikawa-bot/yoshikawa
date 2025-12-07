@@ -16,9 +16,12 @@ export default function TVShow() {
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [toasts, setToasts] = useState([])
   
-  // Estado para controlar a sinopse (Expandida ou não)
+  // Alterado para um único objeto em vez de array para garantir apenas uma notificação
+  const [toast, setToast] = useState(null)
+  const toastTimeoutRef = useRef(null) // Ref para controlar o timer da notificação
+
+  // Estado para controlar a sinopse
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
@@ -26,24 +29,43 @@ export default function TVShow() {
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
+  // Novo sistema de notificação única
   const showToast = (message, type = 'info') => {
-    const id = Date.now()
-    const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
-    setTimeout(() => removeToast(id), 3000)
+    // Se houver um timer pendente, limpa ele
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+
+    const newToast = { message, type, id: Date.now() }
+    setToast(newToast)
+
+    // Define novo timer para remover
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null)
+      toastTimeoutRef.current = null
+    }, 3000)
   }
 
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
+  const removeToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast(null)
   }
 
   useEffect(() => {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
+      // Pequeno delay para garantir que a UI carregou antes do toast inicial
       setTimeout(() => {
         showToast('Use o botão circular para trocar o player', 'info')
       }, 1000)
+    }
+    
+    // Cleanup ao desmontar
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
 
@@ -56,7 +78,6 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Resetar a sinopse quando mudar de episódio
   useEffect(() => {
     setShowSynopsis(false)
   }, [episode, season])
@@ -201,15 +222,27 @@ export default function TVShow() {
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
-  const ToastContainer = () => (
-    <div className="toast-container">
-      {toasts.map(toast => (
+  // Componente de Toast Único
+  const SingleToast = () => {
+    if (!toast) return null;
+    return (
+      <div className="toast-container">
         <div key={toast.id} className={`toast toast-${toast.type} show`}>
+            <div className="toast-icon">
+                <i className={`fas ${
+                  toast.type === 'success' ? 'fa-check' : 
+                  toast.type === 'error' ? 'fa-exclamation-triangle' : 
+                  'fa-info'
+                }`}></i>
+            </div>
             <div className="toast-content">{toast.message}</div>
+            <button className="toast-close" onClick={removeToast}>
+                <i className="fas fa-times"></i>
+            </button>
         </div>
-      ))}
-    </div>
-  )
+      </div>
+    )
+  }
 
   return (
     <>
@@ -351,7 +384,7 @@ export default function TVShow() {
         )}
       </main>
 
-      <ToastContainer />
+      <SingleToast />
       <BottomNav 
         selectedPlayer={selectedPlayer}
         onPlayerChange={() => setShowPlayerSelector(true)}
@@ -370,14 +403,13 @@ export default function TVShow() {
         }
 
         .episode-label-simple {
-            color: var(--primary); /* Usando a cor primária */
+            color: var(--primary); 
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
         }
 
-        /* SELETOR DE TEMPORADA - Neutralizado e no tema */
         .season-selector-wrapper select {
             appearance: none;
             background: var(--card-bg);
@@ -390,14 +422,13 @@ export default function TVShow() {
             cursor: pointer;
             backdrop-filter: blur(5px);
             font-family: 'Inter', sans-serif;
-            transition: none; /* Remove transição de cor */
+            transition: none;
         }
 
-        /* Não muda a cor ao focar ou passar o mouse */
         .season-selector-wrapper select:focus,
         .season-selector-wrapper select:hover {
-            border-color: var(--border); /* Mantém a cor da borda original */
-            box-shadow: none; /* Remove qualquer sombra de foco */
+            border-color: var(--border);
+            box-shadow: none;
         }
         
         .season-selector-wrapper select option {
@@ -421,18 +452,17 @@ export default function TVShow() {
         .synopsis-toggle-btn {
             background: none;
             border: none;
-            color: var(--secondary); /* Cor secundária (neutra) */
+            color: var(--secondary);
             font-size: 0.85rem;
             cursor: pointer;
             padding: 0;
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: none; /* Remove transição de cor */
+            transition: none;
             font-weight: 500;
         }
         
-        /* Não muda a cor ao passar o mouse */
         .synopsis-toggle-btn:hover {
             color: var(--secondary);
         }
@@ -463,13 +493,11 @@ export default function TVShow() {
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
-            
-            /* REMOÇÃO DO INDICADOR DE ROLAGEM */
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
         
         .episodes-scroller::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
         }
 
         /* CARD EPISÓDIO */
@@ -496,7 +524,6 @@ export default function TVShow() {
             border: 2px solid var(--border);
         }
 
-        /* Borda ativa na cor de destaque (--primary) */
         .episode-card.active .episode-thumbnail {
             border-color: var(--primary); 
         }
