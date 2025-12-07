@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
@@ -12,13 +12,13 @@ export default function TVShow() {
   const [seasonDetails, setSeasonDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedPlayer, setSelectedPlayer] = useState('superflix') 
+  const [selectedPlayer, setSelectedPlayer] = useState('vidsrc')
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  // ALTERAÇÃO 2: Apenas um toast é mantido no estado
-  const [currentToast, setCurrentToast] = useState(null)
+  const [toasts, setToasts] = useState([])
   
+  // Estado para controlar a sinopse (Expandida ou não)
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
@@ -26,70 +26,23 @@ export default function TVShow() {
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
-  // ALTERAÇÃO 4: Função para forçar tela cheia
-  const toggleFullScreen = () => {
-    const doc = window.document.documentElement;
-    const isFullscreen = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-
-    if (!isFullscreen) {
-      if (doc.requestFullscreen) {
-        doc.requestFullscreen();
-      } else if (doc.mozRequestFullScreen) { /* Firefox */
-        doc.mozRequestFullScreen();
-      } else if (doc.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-        doc.webkitRequestFullscreen();
-      } else if (doc.msRequestFullscreen) { /* IE/Edge */
-        doc.msRequestFullscreen();
-      }
-    }
-    // Não remove a tela cheia automaticamente, apenas tenta iniciá-la
-  }
-  
-  // ALTERAÇÃO 2: Lógica de substituição e animação de toast
-  const showToast = useCallback((message, type = 'info') => {
+  const showToast = (message, type = 'info') => {
     const id = Date.now()
-    const iconMap = {
-      info: 'fas fa-info-circle',
-      success: 'fas fa-check-circle',
-      error: 'fas fa-times-circle',
-    }
-    const newToast = { id, message, type, icon: iconMap[type] }
-    
-    // Se já houver um toast, inicia a animação de saída
-    if (currentToast) {
-        // Marcamos o toast atual para iniciar a animação de saída
-        setCurrentToast(prev => ({ ...prev, closing: true }));
-        
-        // Espera a animação de saída (300ms) e então exibe o novo
-        setTimeout(() => {
-            setCurrentToast(newToast);
-            // Inicia o timer para remover o novo toast após 3 segundos
-            setTimeout(() => {
-                setCurrentToast(prev => prev ? { ...prev, closing: true } : null);
-                setTimeout(() => setCurrentToast(null), 300);
-            }, 3000);
-        }, 300);
-    } else {
-        // Se não houver toast, exibe imediatamente
-        setCurrentToast(newToast);
-        setTimeout(() => {
-            setCurrentToast(prev => prev ? { ...prev, closing: true } : null);
-            setTimeout(() => setCurrentToast(null), 300);
-        }, 3000);
-    }
-  }, [currentToast])
-  
-  // EFEITOS
+    const toast = { id, message, type }
+    setToasts(prev => [...prev, toast])
+    setTimeout(() => removeToast(id), 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
+
   useEffect(() => {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
-      
-      // Tenta entrar em tela cheia logo no início (depende da permissão do navegador)
-      toggleFullScreen() 
-      
       setTimeout(() => {
-        showToast('Player padrão definido: SuperFlix (DUB)', 'info')
+        showToast('Use o botão circular para trocar o player', 'info')
       }, 1000)
     }
   }, [id])
@@ -103,11 +56,11 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
+  // Resetar a sinopse quando mudar de episódio
   useEffect(() => {
     setShowSynopsis(false)
   }, [episode, season])
 
-  // Lógica de carregamento e favoritos (mantida)
   const loadTvShow = async (tvId) => {
     try {
       setLoading(true)
@@ -188,7 +141,7 @@ export default function TVShow() {
         showToast('Adicionado aos favoritos!', 'success')
       }
     } catch (error) {
-      showToast('Erro ao salvar favorito', 'error')
+      showToast('Erro ao salvar favorito', 'info')
     }
   }
 
@@ -247,20 +200,14 @@ export default function TVShow() {
 
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
-  
-  const backgroundImageUrl = tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : ''
 
   const ToastContainer = () => (
     <div className="toast-container">
-      {currentToast && (
-        <div 
-          key={currentToast.id} 
-          className={`toast toast-${currentToast.type} ${currentToast.closing ? 'closing' : 'show'}`}
-        >
-            <i className={currentToast.icon}></i>
-            <div className="toast-content">{currentToast.message}</div>
+      {toasts.map(toast => (
+        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+            <div className="toast-content">{toast.message}</div>
         </div>
-      )}
+      ))}
     </div>
   )
 
@@ -270,14 +217,6 @@ export default function TVShow() {
         <title>{tvShow.name} - Yoshikawa</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
-
-      {backgroundImageUrl && (
-        <>
-            <div className="background-image-cover" style={{ backgroundImage: `url(${backgroundImageUrl})` }}></div>
-            {/* ALTERAÇÃO 1: Overlay escuro */}
-            <div className="background-overlay"></div> 
-        </>
-      )}
 
       <Header />
 
@@ -298,6 +237,7 @@ export default function TVShow() {
         {/* INFO AREA */}
         <div className="content-info-streaming">
             
+          {/* Linha Topo: Label "Episódio" + Seletor de Temporada */}
           <div className="meta-header-row">
             <span className="episode-label-simple">Episódio {episode}</span>
             
@@ -316,10 +256,12 @@ export default function TVShow() {
             </div>
           </div>
           
+          {/* Título do Episódio Apenas */}
           <h1 className="clean-episode-title">
              {currentEpisode?.name || `Episódio ${episode}`}
           </h1>
 
+          {/* Sinopse Retrátil (Toggle) */}
           <div className="synopsis-wrapper">
             {showSynopsis && (
                 <p className="content-description-streaming fade-in">
@@ -338,6 +280,7 @@ export default function TVShow() {
             </button>
           </div>
 
+          {/* LISTA DE EPISÓDIOS */}
           <div className="episodes-list-container">
             <div className="episodes-scroller" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
@@ -417,118 +360,8 @@ export default function TVShow() {
         onShowInfo={() => setShowInfoPopup(true)}
       />
 
-      <style jsx global>{`
-        :root {
-            --primary: #FF6B6B; 
-            --card-bg: rgba(255, 255, 255, 0.1);
-            --text: #F8F8F8;
-            --secondary: #AAAAAA;
-            --border: rgba(255, 255, 255, 0.15);
-            --toast-info: #2096F3;
-            --toast-success: #4CAF50;
-            --toast-error: #F44336;
-        }
-
-        body, html, #__next {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        
-        /* ALTERAÇÃO 1: Imagem de fundo */
-        .background-image-cover {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            z-index: -2;
-        }
-
-        /* ALTERAÇÃO 1: Overlay escuro para melhorar contraste */
-        .background-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Escurecimento leve, mantendo a visibilidade da imagem */
-            background: rgba(0, 0, 0, 0.6); 
-            z-index: -1;
-        }
-      `}</style>
-      
       <style jsx>{`
-        /* ------------------------------------ */
-        /* TOAST CONTAINER (ALTERAÇÃO 2) */
-        /* ------------------------------------ */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        .toast {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.9rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            min-width: 250px;
-            pointer-events: auto;
-            /* Inicia fora da tela e com escala 0 */
-            opacity: 0;
-            transform: translateX(100%) scale(0.5);
-            transition: all 0.3s ease-in-out; 
-            /* Para quando o closing for aplicado, ter sua própria animação */
-            position: absolute; 
-            right: 0;
-            top: 0;
-        }
-        
-        /* Animação de Entrada: Aumenta e entra */
-        .toast.show {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-        }
-
-        /* Animação de Saída: Diminui e desaparece */
-        .toast.closing {
-            opacity: 0;
-            transform: translateX(0) scale(0.5);
-        }
-
-        /* Cores dos Tipos de Toast */
-        .toast-info {
-            background-color: var(--toast-info);
-            border-left: 5px solid #146EB4;
-        }
-        .toast-success {
-            background-color: var(--toast-success);
-            border-left: 5px solid #2E7D32;
-        }
-        .toast-error {
-            background-color: var(--toast-error);
-            border-left: 5px solid #C62828;
-        }
-        
-        .toast i {
-            font-size: 1.1rem;
-            margin-right: 5px;
-        }
-        
-        /* ------------------------------------ */
-        /* LAYOUT E COMPONENTES */
-        /* ------------------------------------ */
-
+        /* HEADER INFO */
         .meta-header-row {
             display: flex;
             justify-content: space-between;
@@ -537,13 +370,14 @@ export default function TVShow() {
         }
 
         .episode-label-simple {
-            color: var(--primary);
+            color: var(--primary); /* Usando a cor primária */
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
         }
 
+        /* SELETOR DE TEMPORADA - Neutralizado e no tema */
         .season-selector-wrapper select {
             appearance: none;
             background: var(--card-bg);
@@ -556,13 +390,14 @@ export default function TVShow() {
             cursor: pointer;
             backdrop-filter: blur(5px);
             font-family: 'Inter', sans-serif;
-            transition: none;
+            transition: none; /* Remove transição de cor */
         }
 
+        /* Não muda a cor ao focar ou passar o mouse */
         .season-selector-wrapper select:focus,
         .season-selector-wrapper select:hover {
-            border-color: var(--border);
-            box-shadow: none;
+            border-color: var(--border); /* Mantém a cor da borda original */
+            box-shadow: none; /* Remove qualquer sombra de foco */
         }
         
         .season-selector-wrapper select option {
@@ -570,8 +405,7 @@ export default function TVShow() {
             color: var(--text);
         }
 
-        /* ... outros estilos de sinopse e lista de episódios (mantidos) ... */
-        
+        /* TÍTULO E SINOPSE */
         .clean-episode-title {
             font-size: 1.3rem;
             color: var(--text);
@@ -587,17 +421,18 @@ export default function TVShow() {
         .synopsis-toggle-btn {
             background: none;
             border: none;
-            color: var(--secondary); 
+            color: var(--secondary); /* Cor secundária (neutra) */
             font-size: 0.85rem;
             cursor: pointer;
             padding: 0;
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: none;
+            transition: none; /* Remove transição de cor */
             font-weight: 500;
         }
         
+        /* Não muda a cor ao passar o mouse */
         .synopsis-toggle-btn:hover {
             color: var(--secondary);
         }
@@ -617,19 +452,27 @@ export default function TVShow() {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+
+        /* LISTA DE EPISÓDIOS (SCROLLER) */
+        .episodes-list-container {
+            width: 100%;
+        }
+
         .episodes-scroller {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
-            scrollbar-width: none;
+            
+            /* REMOÇÃO DO INDICADOR DE ROLAGEM */
+            scrollbar-width: none; /* Firefox */
         }
         
         .episodes-scroller::-webkit-scrollbar {
-            display: none;
+            display: none; /* Chrome, Safari, Opera */
         }
 
+        /* CARD EPISÓDIO */
         .episode-card {
             min-width: 130px;
             width: 130px;
@@ -653,8 +496,25 @@ export default function TVShow() {
             border: 2px solid var(--border);
         }
 
+        /* Borda ativa na cor de destaque (--primary) */
         .episode-card.active .episode-thumbnail {
             border-color: var(--primary); 
+        }
+
+        .episode-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-thumbnail {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            color: var(--secondary);
         }
 
         .episode-number-badge {
@@ -696,48 +556,6 @@ export default function TVShow() {
             color: var(--text);
             font-weight: 600;
         }
-
-        /* ------------------------------------ */
-        /* BOTTOM NAV (ALTERAÇÃO 3: Player ativo) */
-        /* ------------------------------------ */
-        .player-circle {
-            /* Adicione estilos visuais para indicar qual player está ativo */
-            position: absolute;
-            bottom: 40px;
-            right: 20px;
-            background: var(--primary);
-            color: white;
-            border: 5px solid ${selectedPlayer === 'superflix' ? 'var(--toast-info)' : 'var(--border)'}; /* Indica Superflix */
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            font-size: 1.1rem;
-        }
-
-        .player-circle i {
-            /* Ajuste o ícone para refletir o player ativo */
-            color: ${selectedPlayer === 'superflix' ? 'var(--text)' : 'var(--text)'};
-        }
-        
-        /* Indicador de Player Ativo */
-        .player-circle::after {
-            content: "${selectedPlayer === 'superflix' ? 'DUB' : 'LEG'}";
-            position: absolute;
-            top: -10px;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            background: ${selectedPlayer === 'superflix' ? 'var(--toast-info)' : 'var(--toast-success)'};
-            color: white;
-            white-space: nowrap;
-        }
       `}</style>
     </>
   )
@@ -754,73 +572,17 @@ const Header = () => (
   </header>
 )
 
-// O BottomNav agora tem um estilo dinâmico mais claro para o botão do player
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
       <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
       <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
-      <button className="nav-item favorite-btn" onClick={onToggleFavorite}>
+      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
         <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
       </button>
     </div>
-    
-    <button className="player-circle" onClick={onPlayerChange} data-player-active={selectedPlayer}>
-      {/* O ícone representa a função de trocar, o indicador de player ativo está no CSS via ::after */}
-      <i className="fas fa-sync-alt"></i> 
+    <button className="player-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
     </button>
-
-    <style jsx>{`
-      /* Estilos locais para o BottomNav, especialmente para o botão flutuante */
-      .player-circle {
-          position: fixed; /* Fixado em vez de absolute para manter a posição */
-          bottom: 20px; /* Ajuste para ficar acima da nav bar */
-          right: 20px;
-          
-          /* Cor e estilo geral */
-          background: var(--primary);
-          color: var(--text);
-          border: 3px solid ${selectedPlayer === 'superflix' ? 'var(--toast-info)' : 'var(--toast-success)'}; 
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-          font-size: 1.1rem;
-          z-index: 900; 
-      }
-
-      /* Indicador de Player Ativo (DUB/LEG) */
-      .player-circle::after {
-          content: attr(data-player-active) === 'superflix' ? 'DUB' : 'LEG';
-          position: absolute;
-          top: -10px;
-          padding: 2px 5px;
-          border-radius: 4px;
-          font-size: 0.6rem;
-          font-weight: 700;
-          /* Cor mais clara para o fundo da badge */
-          background: attr(data-player-active) === 'superflix' ? 'var(--toast-info)' : 'var(--toast-success)';
-          color: white;
-          white-space: nowrap;
-      }
-      
-      .player-circle:hover {
-          transform: scale(1.1);
-      }
-
-      /* Outros estilos do BottomNav */
-      .bottom-nav-container {
-        /* ... estilos existentes ... */
-      }
-      
-      .main-nav-bar {
-         /* ... estilos existentes ... */
-      }
-    `}</style>
   </div>
 )
