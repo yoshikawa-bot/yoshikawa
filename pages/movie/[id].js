@@ -197,6 +197,14 @@ export default function Movie() {
     </div>
   )
 
+  // Lógica para definir a imagem de fundo
+  // Prioriza o backdrop (horizontal), se não tiver, usa o poster
+  const backdropUrl = movie?.backdrop_path 
+    ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` 
+    : movie?.poster_path 
+      ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+      : null;
+
   return (
     <>
       <Head>
@@ -206,7 +214,18 @@ export default function Movie() {
 
       <Header />
 
-      <main className="streaming-container">
+      <main 
+        className="streaming-container"
+        style={{
+          // Aplica a imagem com um gradiente escuro por cima para manter a legibilidade
+          backgroundImage: backdropUrl ? `linear-gradient(to bottom, rgba(20, 20, 20, 0.5) 0%, rgba(20, 20, 20, 0.8) 50%, rgba(20, 20, 20, 1) 100%), url(${backdropUrl})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '100vh'
+        }}
+      >
         <div className="player-container">
           <div className="player-wrapper">
             <iframe 
