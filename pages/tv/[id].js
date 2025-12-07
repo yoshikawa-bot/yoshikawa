@@ -12,13 +12,13 @@ export default function TVShow() {
   const [seasonDetails, setSeasonDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedPlayer, setSelectedPlayer] = useState('vidsrc')
+  // ALTERAÇÃO 1: Player padrão definido como 'superflix'
+  const [selectedPlayer, setSelectedPlayer] = useState('superflix') 
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [toasts, setToasts] = useState([])
   
-  // Estado para controlar a sinopse (Expandida ou não)
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
@@ -26,10 +26,19 @@ export default function TVShow() {
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
 
+  // FUNÇÃO DE TOAST APRIMORADA PARA SUPORTAR ÍCONES
   const showToast = (message, type = 'info') => {
     const id = Date.now()
-    const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
+    const iconMap = {
+      info: 'fas fa-info-circle',
+      success: 'fas fa-check-circle',
+      error: 'fas fa-times-circle',
+    }
+    const toast = { id, message, type, icon: iconMap[type] }
+    
+    // Adiciona o novo toast no início para empilhar de cima para baixo
+    setToasts(prev => [toast, ...prev]) 
+    
     setTimeout(() => removeToast(id), 3000)
   }
 
@@ -42,7 +51,7 @@ export default function TVShow() {
       loadTvShow(id)
       checkIfFavorite()
       setTimeout(() => {
-        showToast('Use o botão circular para trocar o player', 'info')
+        showToast('Player padrão definido: SuperFlix (DUB)', 'info')
       }, 1000)
     }
   }, [id])
@@ -56,7 +65,6 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Resetar a sinopse quando mudar de episódio
   useEffect(() => {
     setShowSynopsis(false)
   }, [episode, season])
@@ -141,7 +149,7 @@ export default function TVShow() {
         showToast('Adicionado aos favoritos!', 'success')
       }
     } catch (error) {
-      showToast('Erro ao salvar favorito', 'info')
+      showToast('Erro ao salvar favorito', 'error')
     }
   }
 
@@ -200,11 +208,16 @@ export default function TVShow() {
 
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
+  
+  const backgroundImageUrl = tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : ''
 
+  // NOVO COMPONENTE TOAST CONTAINER
   const ToastContainer = () => (
     <div className="toast-container">
-      {toasts.map(toast => (
-        <div key={toast.id} className={`toast toast-${toast.type} show`}>
+      {toasts.map((toast, index) => (
+        // O estilo 'toast-stacked' vai empilhar as notificações com um pequeno offset
+        <div key={toast.id} className={`toast toast-${toast.type} show toast-stacked`} style={{ transform: `translateY(${index * 10}px)` }}>
+            <i className={toast.icon}></i>
             <div className="toast-content">{toast.message}</div>
         </div>
       ))}
@@ -217,6 +230,9 @@ export default function TVShow() {
         <title>{tvShow.name} - Yoshikawa</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
+
+      {/* NOVO ELEMENTO DE FUNDO TOTAL */}
+      {backgroundImageUrl && <div className="background-image-cover" style={{ backgroundImage: `url(${backgroundImageUrl})` }}></div>}
 
       <Header />
 
@@ -237,7 +253,6 @@ export default function TVShow() {
         {/* INFO AREA */}
         <div className="content-info-streaming">
             
-          {/* Linha Topo: Label "Episódio" + Seletor de Temporada */}
           <div className="meta-header-row">
             <span className="episode-label-simple">Episódio {episode}</span>
             
@@ -256,12 +271,10 @@ export default function TVShow() {
             </div>
           </div>
           
-          {/* Título do Episódio Apenas */}
           <h1 className="clean-episode-title">
              {currentEpisode?.name || `Episódio ${episode}`}
           </h1>
 
-          {/* Sinopse Retrátil (Toggle) */}
           <div className="synopsis-wrapper">
             {showSynopsis && (
                 <p className="content-description-streaming fade-in">
@@ -280,7 +293,6 @@ export default function TVShow() {
             </button>
           </div>
 
-          {/* LISTA DE EPISÓDIOS */}
           <div className="episodes-list-container">
             <div className="episodes-scroller" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
@@ -360,8 +372,115 @@ export default function TVShow() {
         onShowInfo={() => setShowInfoPopup(true)}
       />
 
+      <style jsx global>{`
+        /* ------------------------------------ */
+        /* ALTERAÇÃO 2: Fundo da página com a capa da série */
+        /* ------------------------------------ */
+        :root {
+            /* Certifique-se que estas variáveis globais estejam definidas em seu arquivo global.css */
+            --primary: #FF6B6B; /* Exemplo de cor de destaque */
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --text: #F8F8F8;
+            --secondary: #AAAAAA;
+            --border: rgba(255, 255, 255, 0.15);
+            --toast-info: #2096F3;
+            --toast-success: #4CAF50;
+            --toast-error: #F44336;
+        }
+
+        /* Aplica o fundo ao corpo da página ou ao contêiner principal */
+        body, html, #__next {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .background-image-cover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: -2; /* Fica atrás de tudo */
+        }
+        
+        /* O contêiner principal (o que envolve <Header> e <main>) deve ter um fundo translúcido para visibilidade */
+        .streaming-container {
+            position: relative;
+            z-index: 1; /* Garante que o conteúdo fique acima do fundo */
+            /* Aqui, você pode adicionar um gradiente escuro na parte inferior ou laterais para melhorar o contraste, se desejar. */
+        }
+      `}</style>
+      
       <style jsx>{`
-        /* HEADER INFO */
+        /* ------------------------------------ */
+        /* ESTILOS ESPECÍFICOS DO COMPONENTE */
+        /* ------------------------------------ */
+        
+        /* TOAST CONTAINER (ALTERAÇÃO 3) */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none; /* Permite clicar através do container */
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            min-width: 250px;
+            pointer-events: auto; /* Reativa o clique no próprio toast */
+            transition: all 0.3s ease-out;
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Empilhamento */
+        .toast-stacked {
+            position: relative;
+            margin-bottom: -10px; /* Sobrepõe levemente o anterior */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring effect */
+        }
+
+        /* Cores dos Tipos de Toast */
+        .toast-info {
+            background-color: var(--toast-info);
+            border-left: 5px solid #146EB4;
+        }
+        .toast-success {
+            background-color: var(--toast-success);
+            border-left: 5px solid #2E7D32;
+        }
+        .toast-error {
+            background-color: var(--toast-error);
+            border-left: 5px solid #C62828;
+        }
+        
+        .toast i {
+            font-size: 1.1rem;
+            margin-right: 5px;
+        }
+        
+        /* FIM TOASTS */
+
+
         .meta-header-row {
             display: flex;
             justify-content: space-between;
@@ -370,14 +489,14 @@ export default function TVShow() {
         }
 
         .episode-label-simple {
-            color: var(--primary); /* Usando a cor primária */
+            color: var(--primary);
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
         }
 
-        /* SELETOR DE TEMPORADA - Neutralizado e no tema */
+        /* SELETOR DE TEMPORADA - Neutralizado */
         .season-selector-wrapper select {
             appearance: none;
             background: var(--card-bg);
@@ -390,14 +509,13 @@ export default function TVShow() {
             cursor: pointer;
             backdrop-filter: blur(5px);
             font-family: 'Inter', sans-serif;
-            transition: none; /* Remove transição de cor */
+            transition: none;
         }
 
-        /* Não muda a cor ao focar ou passar o mouse */
         .season-selector-wrapper select:focus,
         .season-selector-wrapper select:hover {
-            border-color: var(--border); /* Mantém a cor da borda original */
-            box-shadow: none; /* Remove qualquer sombra de foco */
+            border-color: var(--border);
+            box-shadow: none;
         }
         
         .season-selector-wrapper select option {
@@ -428,13 +546,12 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: none; /* Remove transição de cor */
+            transition: none;
             font-weight: 500;
         }
         
-        /* Não muda a cor ao passar o mouse */
         .synopsis-toggle-btn:hover {
-            color: var(--secondary);
+            color: var(--secondary); /* Não muda a cor */
         }
 
         .content-description-streaming {
@@ -453,7 +570,7 @@ export default function TVShow() {
             to { opacity: 1; }
         }
 
-        /* LISTA DE EPISÓDIOS (SCROLLER) */
+        /* LISTA DE EPISÓDIOS (SCROLLER) - Sem indicador de rolagem */
         .episodes-list-container {
             width: 100%;
         }
@@ -464,7 +581,6 @@ export default function TVShow() {
             overflow-x: auto;
             padding-bottom: 8px;
             
-            /* REMOÇÃO DO INDICADOR DE ROLAGEM */
             scrollbar-width: none; /* Firefox */
         }
         
@@ -496,7 +612,7 @@ export default function TVShow() {
             border: 2px solid var(--border);
         }
 
-        /* Borda ativa na cor de destaque (--primary) */
+        /* Aro ativo (destaque) */
         .episode-card.active .episode-thumbnail {
             border-color: var(--primary); 
         }
