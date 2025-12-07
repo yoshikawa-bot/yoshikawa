@@ -147,6 +147,11 @@ export default function Movie() {
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
   }
 
+  // URL da imagem de fundo (Prioriza Backdrop, fallback para Poster)
+  const backdropUrl = movie 
+    ? `https://image.tmdb.org/t/p/original${movie.backdrop_path || movie.poster_path}` 
+    : null;
+
   if (loading) {
     return (
       <div className="loading active">
@@ -197,14 +202,6 @@ export default function Movie() {
     </div>
   )
 
-  // Lógica para definir a imagem de fundo
-  // Prioriza o backdrop (horizontal), se não tiver, usa o poster
-  const backdropUrl = movie?.backdrop_path 
-    ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` 
-    : movie?.poster_path 
-      ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
-      : null;
-
   return (
     <>
       <Head>
@@ -212,20 +209,75 @@ export default function Movie() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
+      {/* Background Image Container */}
+      <div className="movie-background-container">
+         <div className="movie-background-image" style={{ backgroundImage: `url(${backdropUrl})` }}></div>
+         <div className="movie-background-overlay"></div>
+      </div>
+
+      {/* Estilos Globais para garantir a transparência e posicionamento */}
+      <style jsx global>{`
+        body {
+            background-color: #111; /* Fallback */
+        }
+        
+        .movie-background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .movie-background-image {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center top;
+            /* Se quiser um leve zoom out animation, descomente abaixo */
+            /* animation: subtleZoom 20s infinite alternate; */
+        }
+
+        /* Gradiente suave para o texto ficar legível, mas mantendo a imagem clara */
+        .movie-background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.3) 0%,   /* Topo mais claro para ver a imagem */
+                rgba(0, 0, 0, 0.5) 50%,
+                rgba(17, 17, 17, 0.95) 100% /* Fundo da página escurece suavemente */
+            );
+        }
+
+        /* Header Transparente */
+        .github-header {
+            background: rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Container principal transparente */
+        .streaming-container {
+            background: transparent !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ajuste do player wrapper para não ficar "solto" */
+        .player-wrapper {
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+      `}</style>
+
       <Header />
 
-      <main 
-        className="streaming-container"
-        style={{
-          // Aplica a imagem com um gradiente escuro por cima para manter a legibilidade
-          backgroundImage: backdropUrl ? `linear-gradient(to bottom, rgba(20, 20, 20, 0.5) 0%, rgba(20, 20, 20, 0.8) 50%, rgba(20, 20, 20, 1) 100%), url(${backdropUrl})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
-          backgroundAttachment: 'fixed',
-          backgroundRepeat: 'no-repeat',
-          minHeight: '100vh'
-        }}
-      >
+      <main className="streaming-container">
         <div className="player-container">
           <div className="player-wrapper">
             <iframe 
@@ -239,17 +291,17 @@ export default function Movie() {
         </div>
 
         <div className="content-info-streaming">
-          <h1 className="content-title-streaming">
+          <h1 className="content-title-streaming" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
             {movie.title}
           </h1>
           
           <div className="content-meta-streaming">
-            <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
-            <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
-            <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
+            <span style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
+            <span style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
+            <span style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
           </div>
 
-          <p className="content-description-streaming">
+          <p className="content-description-streaming" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)', background: 'rgba(0,0,0,0.4)', padding: '15px', borderRadius: '10px' }}>
             {movie.overview || 'Descrição não disponível.'}
           </p>
         </div>
