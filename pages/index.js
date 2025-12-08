@@ -25,7 +25,6 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
-  // [REMOVIDO] const [showCoffeePopup, setShowCoffeePopup] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -33,14 +32,17 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Notifications (Corrigido: Substitui o anterior)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
+    
+    // Substitui o array inteiro apenas pelo novo toast
+    setToasts([toast])
     
     setTimeout(() => {
-      removeToast(id)
+      // Remove este toast específico se ele ainda estiver lá
+      setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
 
@@ -63,9 +65,6 @@ export default function Home() {
     }
   }, [searchActive])
   
-  // [REMOVIDO] Função closeCoffeePopup
-
-  // Função central de busca, agora usada pelo debounce
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -102,10 +101,8 @@ export default function Home() {
     }
   }
 
-  // Hook debounce aplicado à função de busca
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
-  // Novo handler para a mudança do input
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
@@ -118,7 +115,6 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // --- Funções de Carregamento de Conteúdo ---
   const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
@@ -254,8 +250,8 @@ export default function Home() {
   // --- Componentes ---
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
-    <section className="section">
-      <div className="content-grid main-grid"> {/* Classe main-grid adicionada */}
+    <section className="section-full-width">
+      <div className="content-grid main-grid">
         {items.length > 0 ? (
           items.map(item => {
             const isFav = isFavorite(item)
@@ -291,14 +287,11 @@ export default function Home() {
                      item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                   </div>
                 </div>
-                
-                <div className="content-info-card">
-                </div>
               </Link>
             )
           })
         ) : (
-          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
+          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
             {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
           </div>
         )}
@@ -355,9 +348,6 @@ export default function Home() {
                                item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                             </div>
                           </div>
-                          
-                          <div className="content-info-card">
-                          </div>
                         </Link>
                     )
                 })}
@@ -398,8 +388,6 @@ export default function Home() {
       ))}
     </div>
   )
-  
-  // [REMOVIDO] Componente CoffeePopup
 
   return (
     <>
@@ -411,10 +399,7 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* Header não precisa mais do prop onCoffeeClick */}
       <Header />
-
-      {/* [REMOVIDO] <CoffeePopup /> */}
       <ToastContainer />
 
       <main className="container">
@@ -508,30 +493,57 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* Animação para notificação (Toast) */
-        @keyframes toast-slide-up {
-          0% { 
-            opacity: 0; 
-            transform: translateY(20px) scale(0.95); 
-          }
-          100% { 
-            opacity: 1; 
-            transform: translateY(0) scale(1); 
-          }
-        }
-        
-        /* [REMOVIDO] Animação toast-slide-down */
-        
-        /* Estilos da nova grade de conteúdo principal */
-        .content-grid.main-grid {
-            /* AJUSTE AQUI: Mudado para 105px para igualar a densidade de busca (3 cols mobile) */
-            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-            gap: 10px; /* Reduzido de 12px para 10px */
+        /* Remove paddings globais que possam estar limitando o container */
+        body {
+            margin: 0;
             padding: 0;
-            margin-top: 15px;
+            overflow-x: hidden;
         }
 
-        /* Estilos da grade de resultados da busca em tempo real */
+        /* Container Principal: Força padding pequeno nas laterais (10px) para igualar ao popup */
+        .container {
+            padding: 80px 10px 100px 10px !important; 
+            max-width: 100vw !important;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        /* Toast Animation */
+        @keyframes toast-slide-up {
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* GRADE PRINCIPAL E DE BUSCA UNIFICADAS */
+        .content-grid.main-grid,
+        .content-grid.live-grid {
+            display: grid;
+            /* 105px minmax garante 3 colunas na maioria dos mobiles, preenchendo o espaço */
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 8px; /* Espaçamento menor entre itens (tight) */
+            padding: 0;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* Garante que a imagem preencha o card */
+        .content-card {
+            width: 100%;
+            position: relative;
+            display: block;
+        }
+        
+        .content-poster {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+        }
+
+        /* Popup de Busca: Ajustado para ter o mesmo padding do container principal */
         .live-search-results {
             position: fixed;
             top: 70px;
@@ -539,7 +551,7 @@ export default function Home() {
             right: 0;
             bottom: 60px;
             z-index: 15;
-            padding: 10px;
+            padding: 10px; /* Igual ao .container */
             background-color: var(--background);
             overflow-y: auto;
             border-top: 1px solid var(--border);
@@ -553,13 +565,6 @@ export default function Home() {
             opacity: 1;
         }
         
-        .live-search-results .live-grid {
-            /* AJUSTE AQUI: Mantido igual ao main-grid para consistência */
-            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-            gap: 10px;
-            padding: 0;
-        }
-
         .live-search-loading, .no-results-live {
             display: flex;
             align-items: center;
@@ -582,17 +587,11 @@ export default function Home() {
             margin-bottom: 10px;
         }
 
-        /* [REMOVIDO] Estilos do Popup de Café */
-        /* [REMOVIDO] .coffee-popup-container, .coffee-close-btn, .coffee-text */
-
-        /* Ajuste do Header (remove o espaço reservado para o botão de café) */
         .header-content {
-            justify-content: flex-start; /* Alinha à esquerda */
+            justify-content: flex-start;
             width: auto; 
             padding-right: 0;
         }
-        
-        /* [REMOVIDO] .coffee-button */
 
         .main-nav-bar.search-active {
             padding: 0 10px;
@@ -602,7 +601,6 @@ export default function Home() {
   )
 }
 
-// Header simplificado
 const Header = () => {
   return (
     <header className="github-header">
@@ -618,7 +616,6 @@ const Header = () => {
             <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
-        {/* [REMOVIDO] Botão de Café */}
       </div>
     </header>
   )
