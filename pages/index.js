@@ -258,7 +258,7 @@ export default function Home() {
               key={getItemKey(item)}
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
-              onClick={() => { if(extraClass.includes('live-grid')) setSearchActive(false) }}
+              // Remove o onClick que fechava a busca para permitir navegação natural
             >
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -298,14 +298,12 @@ export default function Home() {
   )
 
   const LiveSearchResults = () => {
-    if (!searchActive || searchQuery.trim() === '') return null
+    // Se não tiver busca ativa, não renderiza nada
+    if (!searchActive) return null
     
     return (
-      <div className="live-search-results active">
-        {/* Título padronizado dentro da busca */}
-        <div className="search-header-internal">
-            <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
-        </div>
+      <div className="live-search-results">
+        <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
 
         {loading && (
             <div className="live-search-loading">
@@ -327,6 +325,12 @@ export default function Home() {
                 <p>Nenhum resultado encontrado para "{searchQuery}".</p>
             </div>
         ))}
+        
+        {!loading && searchQuery.trim() === '' && (
+            <div className="no-results-live">
+                <p>Comece a digitar para pesquisar...</p>
+            </div>
+        )}
       </div>
     )
   }
@@ -382,20 +386,21 @@ export default function Home() {
           </div>
         )}
 
-        <LiveSearchResults />
-
-        {!searchActive && (
-          <div className="home-sections">
-            <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
-            <section className="section">
-                <ContentGrid 
-                    items={getActiveItems()} 
-                    isFavorite={isFavorite} 
-                    toggleFavorite={toggleFavorite}
-                    extraClass="main-grid"
-                />
-            </section>
-          </div>
+        {/* Lógica de Renderização Condicional - Página Inteira */}
+        {searchActive ? (
+            <LiveSearchResults />
+        ) : (
+            <div className="home-sections">
+                <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
+                <section className="section">
+                    <ContentGrid 
+                        items={getActiveItems()} 
+                        isFavorite={isFavorite} 
+                        toggleFavorite={toggleFavorite}
+                        extraClass="main-grid"
+                    />
+                </section>
+            </div>
         )}
       </main>
 
@@ -472,14 +477,12 @@ export default function Home() {
         /* --- Padronização do Grid (Home e Busca) --- */
         .content-grid {
             display: grid;
-            /* Layout padrão para desktop */
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 12px;
             padding: 0;
             width: 100%;
         }
 
-        /* Padronização dos Cards e Imagens */
         .content-card {
            position: relative;
            display: block;
@@ -490,57 +493,51 @@ export default function Home() {
         .content-poster {
            width: 100%;
            height: auto;
-           aspect-ratio: 2/3; /* Força proporção exata para todos os posters */
+           aspect-ratio: 2/3; /* Proporção exata 2:3 */
            object-fit: cover;
            display: block;
            border-radius: 12px;
         }
 
-        /* Força exatamente 2 colunas em dispositivos móveis */
+        /* Mobile: 2 colunas exatas */
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
         }
 
-        /* --- Estilos da Busca (Live Search) --- */
+        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
-            position: fixed;
-            top: 70px;
-            left: 0;
-            right: 0;
-            bottom: 60px;
-            z-index: 15;
-            background-color: var(--background);
-            overflow-y: auto;
-            border-top: 1px solid var(--border);
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            
-            /* PADDING EXATO DA CONTAINER PRINCIPAL */
-            padding: 0 16px 20px 16px; 
+            /* Removido position fixed, top, bottom, etc. */
+            position: static;
+            width: 100%;
+            height: auto;
+            background-color: transparent;
+            /* Padding é controlado pelo .container agora */
+            padding: 0;
+            margin-bottom: 20px;
         }
 
-        .live-search-results.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .search-header-internal {
+        .page-title-home {
             margin-top: 20px;
             margin-bottom: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
         }
         
         .live-search-loading, .no-results-live {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 50vh;
+            min-height: 50vh; /* Ocupa altura mínima para estética */
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
             text-align: center;
+            width: 100%;
         }
         
         .live-search-loading i, .no-results-live i {
@@ -548,10 +545,11 @@ export default function Home() {
             font-size: 2rem;
         }
 
-        /* --- Container Principal Padding --- */
-        /* Garante que o padding lateral seja igual ao da busca */
+        /* --- Container Principal --- */
         .container {
-            padding: 0 16px 80px 16px;
+            /* Padding padrão para todas as páginas (Home e Busca) */
+            padding: 0 16px 100px 16px;
+            width: 100%;
         }
 
         /* --- Header Adjustments --- */
@@ -571,7 +569,7 @@ export default function Home() {
   )
 }
 
-// Header Restaurado
+// Header
 const Header = () => {
   return (
     <header className="github-header">
