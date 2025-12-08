@@ -500,18 +500,20 @@ export default function Home() {
             overflow-x: hidden;
         }
 
-        /* Container Principal */
+        /* Container Principal: AJUSTE PARA O ALINHAMENTO SUPERIOR */
         .container {
-            /* AJUSTE AQUI: Padding top reduzido para 60px para colar no header */
-            padding: 60px 10px 100px 10px !important; 
+            /* Padding top reduzido para 10px para puxar o conteúdo para perto do cabeçalho */
+            padding: 10px 10px 100px 10px !important; 
             max-width: 100vw !important;
             width: 100%;
             box-sizing: border-box;
             margin: 0;
+            /* Garante que o conteúdo role abaixo do cabeçalho fixo */
+            margin-top: 60px; 
         }
         
         .page-title-home {
-            margin-top: 5px; /* Margem pequena para alinhar próximo ao header */
+            margin-top: 0; /* Remove margem superior adicional */
             margin-bottom: 15px;
             font-size: 1.5rem;
             color: var(--text-primary);
@@ -559,18 +561,18 @@ export default function Home() {
             object-fit: cover;
         }
 
-        /* Popup de Busca */
+        /* Popup de Busca: AJUSTE PARA O NOVO ALINHAMENTO */
         .live-search-results {
             position: fixed;
-            top: 60px; /* Igual ao padding-top do container para alinhar igual */
+            top: 60px; /* Começa logo abaixo do cabeçalho fixo */
             left: 0;
             right: 0;
             bottom: 60px;
             z-index: 15;
-            padding: 0 10px 10px 10px; /* Padding ajustado para igualar o container */
+            padding: 10px; /* Padding interno para o conteúdo */
             background-color: var(--background);
             overflow-y: auto;
-            border-top: none; /* Remove borda para continuidade */
+            border-top: none;
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
