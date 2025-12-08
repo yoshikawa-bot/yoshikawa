@@ -32,14 +32,14 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast: Substitui a notificação anterior imediatamente
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts([toast]) // Substitui o array pelo novo toast
+    setToasts(prev => [...prev, toast])
     
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
+      removeToast(id)
     }, 3000)
   }
 
@@ -62,6 +62,7 @@ export default function Home() {
     }
   }, [searchActive])
   
+  // Função central de busca, agora usada pelo debounce
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -98,8 +99,10 @@ export default function Home() {
     }
   }
 
+  // Hook debounce aplicado à função de busca
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
+  // Novo handler para a mudança do input
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
@@ -112,6 +115,7 @@ export default function Home() {
     debouncedSearch(query)
   }
 
+  // --- Funções de Carregamento de Conteúdo ---
   const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
@@ -247,8 +251,8 @@ export default function Home() {
   // --- Componentes ---
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
-    <section className="section-full-width">
-      <div className="content-grid main-grid">
+    <section className="section">
+      <div className="content-grid main-grid"> {/* Aplica a classe main-grid */}
         {items.length > 0 ? (
           items.map(item => {
             const isFav = isFavorite(item)
@@ -284,11 +288,14 @@ export default function Home() {
                      item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                   </div>
                 </div>
+                
+                <div className="content-info-card">
+                </div>
               </Link>
             )
           })
         ) : (
-          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
+          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
             {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
           </div>
         )}
@@ -301,9 +308,6 @@ export default function Home() {
     
     return (
       <div className="live-search-results active">
-        {/* Título adicionado para igualar às outras páginas */}
-        <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
-
         {loading && (
             <div className="live-search-loading">
                 <i className="fas fa-spinner fa-spin"></i>
@@ -312,7 +316,7 @@ export default function Home() {
         )}
         
         {!loading && searchResults.length > 0 ? (
-            <div className="content-grid live-grid">
+            <div className="content-grid live-grid"> {/* Classe live-grid */}
                 {searchResults.map(item => {
                     const isFav = isFavorite(item)
                     return (
@@ -347,6 +351,9 @@ export default function Home() {
                               {item.release_date ? new Date(item.release_date).getFullYear() : 
                                item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                             </div>
+                          </div>
+                          
+                          <div className="content-info-card">
                           </div>
                         </Link>
                     )
@@ -388,6 +395,7 @@ export default function Home() {
       ))}
     </div>
   )
+  
 
   return (
     <>
@@ -400,6 +408,7 @@ export default function Home() {
       </Head>
 
       <Header />
+
       <ToastContainer />
 
       <main className="container">
@@ -493,86 +502,39 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* Remove paddings globais que possam estar limitando o container */
-        body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* Container Principal: AJUSTE PARA O ALINHAMENTO SUPERIOR */
-        .container {
-            /* Padding top reduzido para 10px para puxar o conteúdo para perto do cabeçalho */
-            padding: 10px 10px 100px 10px !important; 
-            max-width: 100vw !important;
-            width: 100%;
-            box-sizing: border-box;
-            margin: 0;
-            /* Garante que o conteúdo role abaixo do cabeçalho fixo */
-            margin-top: 60px; 
-        }
-        
-        .page-title-home {
-            margin-top: 0; /* Remove margem superior adicional */
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-            color: var(--text-primary);
-        }
-
-        /* Toast Animation */
+        /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
-          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+          0% { 
+            opacity: 0; 
+            transform: translateY(20px) scale(0.95); 
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+          }
         }
         
-        /* GRADE PRINCIPAL E DE BUSCA */
-        .content-grid.main-grid,
-        .content-grid.live-grid {
-            display: grid;
+        /* Estilos da grade de conteúdo principal (Home sections) */
+        .content-grid.main-grid {
+            /* Aplica a grade de 130px de min-width para o conteúdo principal */
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 10px;
+            gap: 12px; /* Espaçamento de 12px como a grade de busca */
             padding: 0;
-            width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
-        /* AJUSTE MOBILE: Fixar em 2 colunas lado a lado */
-        @media (max-width: 600px) {
-            .content-grid.main-grid,
-            .content-grid.live-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 8px;
-            }
-        }
-
-        /* Garante que a imagem preencha o card */
-        .content-card {
-            width: 100%;
-            position: relative;
-            display: block;
-        }
-        
-        .content-poster {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 8px;
-            aspect-ratio: 2/3;
-            object-fit: cover;
-        }
-
-        /* Popup de Busca: AJUSTE PARA O NOVO ALINHAMENTO */
+        /* Estilos da grade de resultados da busca em tempo real */
         .live-search-results {
             position: fixed;
-            top: 60px; /* Começa logo abaixo do cabeçalho fixo */
+            top: 70px;
             left: 0;
             right: 0;
             bottom: 60px;
             z-index: 15;
-            padding: 10px; /* Padding interno para o conteúdo */
+            padding: 10px;
             background-color: var(--background);
             overflow-y: auto;
-            border-top: none;
+            border-top: 1px solid var(--border);
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
@@ -583,6 +545,13 @@ export default function Home() {
             opacity: 1;
         }
         
+        .live-search-results .live-grid {
+            /* Garante que o grid de live search use o mesmo padrão */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px; /* Espaçamento de 12px */
+            padding: 0;
+        }
+
         .live-search-loading, .no-results-live {
             display: flex;
             align-items: center;
@@ -605,6 +574,7 @@ export default function Home() {
             margin-bottom: 10px;
         }
 
+        /* Ajuste do Header */
         .header-content {
             justify-content: flex-start;
             width: auto; 
@@ -619,6 +589,7 @@ export default function Home() {
   )
 }
 
+// Header simplificado
 const Header = () => {
   return (
     <header className="github-header">
