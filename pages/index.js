@@ -32,7 +32,7 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (APENAS UM VISÍVEL)
+  // Sistema de Toast Notifications (Apenas um visível)
   const showToast = (message, type = 'info') => {
     // Garante que a notificação anterior desapareça imediatamente
     setToasts([]) 
@@ -502,17 +502,42 @@ export default function Home() {
            border-radius: 12px;
         }
 
-        /* Fundo preto opaco para o título e ano do card */
+        /* 1. Container principal do texto: apenas posicionado, sem fundo */
         .floating-text-wrapper {
             position: absolute;
             bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 8px;
-            background: rgba(0, 0, 0, 1); /* PRETO TOTALMENTE OPACO */
+            left: 8px; /* Move o texto para dentro do card */
+            right: 8px; /* Move o texto para dentro do card */
+            padding: 0 0 8px 0; /* Espaço para o final do card */
+            background: transparent; /* Fundo transparente aqui */
             color: white;
             z-index: 5;
-            transition: background 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        /* 2. Aplica fundo preto opaco (tarja) APENAS aos blocos de texto */
+        .content-title-card, .content-year {
+            background: #000; /* Fundo Preto OPACO */
+            display: inline-block; 
+            padding: 4px 8px; 
+            margin: 0;
+            line-height: 1.2;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        /* Ajuste de espaçamento visual entre os textos */
+        .content-title-card {
+            margin-bottom: 2px;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .content-year {
+            font-size: 0.75rem;
+            color: #ccc;
+            border-radius: 0 0 4px 4px;
         }
 
         /* Mobile: 2 colunas exatas */
