@@ -32,11 +32,16 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Notifications (APENAS UM VISÍVEL)
   const showToast = (message, type = 'info') => {
+    // Garante que a notificação anterior desapareça imediatamente
+    setToasts([]) 
+
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
+    
+    // Adiciona apenas a nova notificação
+    setToasts([toast])
     
     setTimeout(() => {
       removeToast(id)
@@ -258,7 +263,6 @@ export default function Home() {
               key={getItemKey(item)}
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
-              // Remove o onClick que fechava a busca para permitir navegação natural
             >
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -298,7 +302,6 @@ export default function Home() {
   )
 
   const LiveSearchResults = () => {
-    // Se não tiver busca ativa, não renderiza nada
     if (!searchActive) return null
     
     return (
@@ -499,6 +502,19 @@ export default function Home() {
            border-radius: 12px;
         }
 
+        /* Fundo preto opaco para o título e ano do card */
+        .floating-text-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 1); /* PRETO TOTALMENTE OPACO */
+            color: white;
+            z-index: 5;
+            transition: background 0.3s;
+        }
+
         /* Mobile: 2 colunas exatas */
         @media (max-width: 768px) {
             .content-grid {
@@ -508,12 +524,10 @@ export default function Home() {
 
         /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
-            /* Removido position fixed, top, bottom, etc. */
             position: static;
             width: 100%;
             height: auto;
             background-color: transparent;
-            /* Padding é controlado pelo .container agora */
             padding: 0;
             margin-bottom: 20px;
         }
@@ -532,7 +546,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh; /* Ocupa altura mínima para estética */
+            min-height: 50vh; 
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -547,7 +561,6 @@ export default function Home() {
 
         /* --- Container Principal --- */
         .container {
-            /* Padding padrão para todas as páginas (Home e Busca) */
             padding: 0 16px 100px 16px;
             width: 100%;
         }
