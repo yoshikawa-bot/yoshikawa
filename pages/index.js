@@ -32,16 +32,11 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Apenas um visível)
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
-    // Garante que a notificação anterior desapareça imediatamente
-    setToasts([]) 
-
     const id = Date.now()
     const toast = { id, message, type }
-    
-    // Adiciona apenas a nova notificação
-    setToasts([toast])
+    setToasts(prev => [...prev, toast])
     
     setTimeout(() => {
       removeToast(id)
@@ -263,6 +258,7 @@ export default function Home() {
               key={getItemKey(item)}
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
+              // Remove o onClick que fechava a busca para permitir navegação natural
             >
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -302,6 +298,7 @@ export default function Home() {
   )
 
   const LiveSearchResults = () => {
+    // Se não tiver busca ativa, não renderiza nada
     if (!searchActive) return null
     
     return (
@@ -502,44 +499,6 @@ export default function Home() {
            border-radius: 12px;
         }
 
-        /* 1. Container principal do texto: apenas posicionado, sem fundo */
-        .floating-text-wrapper {
-            position: absolute;
-            bottom: 0;
-            left: 8px; /* Move o texto para dentro do card */
-            right: 8px; /* Move o texto para dentro do card */
-            padding: 0 0 8px 0; /* Espaço para o final do card */
-            background: transparent; /* Fundo transparente aqui */
-            color: white;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        /* 2. Aplica fundo preto opaco (tarja) APENAS aos blocos de texto */
-        .content-title-card, .content-year {
-            background: #000; /* Fundo Preto OPACO */
-            display: inline-block; 
-            padding: 4px 8px; 
-            margin: 0;
-            line-height: 1.2;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        /* Ajuste de espaçamento visual entre os textos */
-        .content-title-card {
-            margin-bottom: 2px;
-            border-radius: 4px 4px 0 0;
-        }
-        
-        .content-year {
-            font-size: 0.75rem;
-            color: #ccc;
-            border-radius: 0 0 4px 4px;
-        }
-
         /* Mobile: 2 colunas exatas */
         @media (max-width: 768px) {
             .content-grid {
@@ -549,10 +508,12 @@ export default function Home() {
 
         /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
+            /* Removido position fixed, top, bottom, etc. */
             position: static;
             width: 100%;
             height: auto;
             background-color: transparent;
+            /* Padding é controlado pelo .container agora */
             padding: 0;
             margin-bottom: 20px;
         }
@@ -571,7 +532,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh; 
+            min-height: 50vh; /* Ocupa altura mínima para estética */
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -586,6 +547,7 @@ export default function Home() {
 
         /* --- Container Principal --- */
         .container {
+            /* Padding padrão para todas as páginas (Home e Busca) */
             padding: 0 16px 100px 16px;
             width: 100%;
         }
