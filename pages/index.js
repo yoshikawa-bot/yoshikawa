@@ -25,6 +25,7 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
+  // [REMOVIDO] const [showCoffeePopup, setShowCoffeePopup] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -62,6 +63,8 @@ export default function Home() {
     }
   }, [searchActive])
   
+  // [REMOVIDO] Função closeCoffeePopup
+
   // Função central de busca, agora usada pelo debounce
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
@@ -252,7 +255,7 @@ export default function Home() {
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
     <section className="section">
-      <div className="content-grid main-grid"> {/* Aplica a classe main-grid */}
+      <div className="content-grid main-grid"> {/* Classe main-grid adicionada */}
         {items.length > 0 ? (
           items.map(item => {
             const isFav = isFavorite(item)
@@ -316,7 +319,7 @@ export default function Home() {
         )}
         
         {!loading && searchResults.length > 0 ? (
-            <div className="content-grid live-grid"> {/* Classe live-grid */}
+            <div className="content-grid live-grid">
                 {searchResults.map(item => {
                     const isFav = isFavorite(item)
                     return (
@@ -396,6 +399,7 @@ export default function Home() {
     </div>
   )
   
+  // [REMOVIDO] Componente CoffeePopup
 
   return (
     <>
@@ -407,8 +411,10 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
+      {/* Header não precisa mais do prop onCoffeeClick */}
       <Header />
 
+      {/* [REMOVIDO] <CoffeePopup /> */}
       <ToastContainer />
 
       <main className="container">
@@ -514,11 +520,13 @@ export default function Home() {
           }
         }
         
-        /* Estilos da grade de conteúdo principal (Home sections) */
+        /* [REMOVIDO] Animação toast-slide-down */
+        
+        /* Estilos da nova grade de conteúdo principal */
         .content-grid.main-grid {
-            /* Aplica a grade de 130px de min-width para o conteúdo principal */
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px; /* Espaçamento de 12px como a grade de busca */
+            /* AJUSTE AQUI: Mudado para 105px para igualar a densidade de busca (3 cols mobile) */
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 10px; /* Reduzido de 12px para 10px */
             padding: 0;
             margin-top: 15px;
         }
@@ -546,9 +554,9 @@ export default function Home() {
         }
         
         .live-search-results .live-grid {
-            /* Garante que o grid de live search use o mesmo padrão */
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px; /* Espaçamento de 12px */
+            /* AJUSTE AQUI: Mantido igual ao main-grid para consistência */
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 10px;
             padding: 0;
         }
 
@@ -574,12 +582,17 @@ export default function Home() {
             margin-bottom: 10px;
         }
 
-        /* Ajuste do Header */
+        /* [REMOVIDO] Estilos do Popup de Café */
+        /* [REMOVIDO] .coffee-popup-container, .coffee-close-btn, .coffee-text */
+
+        /* Ajuste do Header (remove o espaço reservado para o botão de café) */
         .header-content {
-            justify-content: flex-start;
+            justify-content: flex-start; /* Alinha à esquerda */
             width: auto; 
             padding-right: 0;
         }
+        
+        /* [REMOVIDO] .coffee-button */
 
         .main-nav-bar.search-active {
             padding: 0 10px;
@@ -605,6 +618,7 @@ const Header = () => {
             <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
+        {/* [REMOVIDO] Botão de Café */}
       </div>
     </header>
   )
