@@ -32,16 +32,13 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Corrigido: Substitui o anterior)
+  // Sistema de Toast: Substitui a notificação anterior imediatamente
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    
-    // Substitui o array inteiro apenas pelo novo toast
-    setToasts([toast])
+    setToasts([toast]) // Substitui o array pelo novo toast
     
     setTimeout(() => {
-      // Remove este toast específico se ele ainda estiver lá
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
@@ -304,6 +301,9 @@ export default function Home() {
     
     return (
       <div className="live-search-results active">
+        {/* Título adicionado para igualar às outras páginas */}
+        <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
+
         {loading && (
             <div className="live-search-loading">
                 <i className="fas fa-spinner fa-spin"></i>
@@ -500,13 +500,21 @@ export default function Home() {
             overflow-x: hidden;
         }
 
-        /* Container Principal: Força padding pequeno nas laterais (10px) para igualar ao popup */
+        /* Container Principal */
         .container {
-            padding: 80px 10px 100px 10px !important; 
+            /* AJUSTE AQUI: Padding top reduzido para 60px para colar no header */
+            padding: 60px 10px 100px 10px !important; 
             max-width: 100vw !important;
             width: 100%;
             box-sizing: border-box;
             margin: 0;
+        }
+        
+        .page-title-home {
+            margin-top: 5px; /* Margem pequena para alinhar próximo ao header */
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: var(--text-primary);
         }
 
         /* Toast Animation */
@@ -515,16 +523,24 @@ export default function Home() {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* GRADE PRINCIPAL E DE BUSCA UNIFICADAS */
+        /* GRADE PRINCIPAL E DE BUSCA */
         .content-grid.main-grid,
         .content-grid.live-grid {
             display: grid;
-            /* 105px minmax garante 3 colunas na maioria dos mobiles, preenchendo o espaço */
-            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-            gap: 8px; /* Espaçamento menor entre itens (tight) */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
             padding: 0;
             width: 100%;
             margin-top: 10px;
+        }
+
+        /* AJUSTE MOBILE: Fixar em 2 colunas lado a lado */
+        @media (max-width: 600px) {
+            .content-grid.main-grid,
+            .content-grid.live-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px;
+            }
         }
 
         /* Garante que a imagem preencha o card */
@@ -543,18 +559,18 @@ export default function Home() {
             object-fit: cover;
         }
 
-        /* Popup de Busca: Ajustado para ter o mesmo padding do container principal */
+        /* Popup de Busca */
         .live-search-results {
             position: fixed;
-            top: 70px;
+            top: 60px; /* Igual ao padding-top do container para alinhar igual */
             left: 0;
             right: 0;
             bottom: 60px;
             z-index: 15;
-            padding: 10px; /* Igual ao .container */
+            padding: 0 10px 10px 10px; /* Padding ajustado para igualar o container */
             background-color: var(--background);
             overflow-y: auto;
-            border-top: 1px solid var(--border);
+            border-top: none; /* Remove borda para continuidade */
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
