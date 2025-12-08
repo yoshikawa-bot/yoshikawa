@@ -25,9 +25,6 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
-  
-  // Estado específico para o popup de créditos
-  const [showCredits, setShowCredits] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -48,14 +45,6 @@ export default function Home() {
 
   const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
-
-  // Função para abrir o pop-up de créditos
-  const handleCoffeeClick = () => {
-    setShowCredits(true)
-    setTimeout(() => {
-        setShowCredits(false)
-    }, 3000)
   }
 
   useEffect(() => {
@@ -369,17 +358,6 @@ export default function Home() {
     </div>
   )
   
-  // Componente Popup de Créditos (Estilo Notificação no Topo)
-  const CreditsPopup = () => (
-      <div className={`credits-popup ${showCredits ? 'show' : ''}`}>
-          <div className="toast toast-info">
-              <div className="toast-icon">
-                  <i className="fas fa-code"></i>
-              </div>
-              <div className="toast-content">software by @kawalyansky</div>
-          </div>
-      </div>
-  )
 
   return (
     <>
@@ -391,10 +369,8 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* Passando a função do clique do café para o Header */}
-      <Header onCoffeeClick={handleCoffeeClick} />
+      <Header />
       
-      <CreditsPopup />
       <ToastContainer />
 
       <main className="container">
@@ -492,18 +468,32 @@ export default function Home() {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        @keyframes popup-slide-down {
-          0% { opacity: 0; transform: translateY(-20px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
         
         /* --- Padronização do Grid (Home e Busca) --- */
         .content-grid {
             display: grid;
+            /* Layout padrão para desktop */
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 12px;
             padding: 0;
             width: 100%;
+        }
+
+        /* Padronização dos Cards e Imagens */
+        .content-card {
+           position: relative;
+           display: block;
+           overflow: hidden;
+           border-radius: 12px;
+        }
+
+        .content-poster {
+           width: 100%;
+           height: auto;
+           aspect-ratio: 2/3; /* Força proporção exata para todos os posters */
+           object-fit: cover;
+           display: block;
+           border-radius: 12px;
         }
 
         /* Força exatamente 2 colunas em dispositivos móveis */
@@ -527,7 +517,9 @@ export default function Home() {
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
-            padding: 0 16px 20px 16px; /* Padding igual ao container principal */
+            
+            /* PADDING EXATO DA CONTAINER PRINCIPAL */
+            padding: 0 16px 20px 16px; 
         }
 
         .live-search-results.active {
@@ -556,62 +548,21 @@ export default function Home() {
             font-size: 2rem;
         }
 
+        /* --- Container Principal Padding --- */
+        /* Garante que o padding lateral seja igual ao da busca */
+        .container {
+            padding: 0 16px 80px 16px;
+        }
+
         /* --- Header Adjustments --- */
         .header-content {
             display: flex;
-            justify-content: space-between; /* Separa Logo e Botão */
+            justify-content: flex-start;
             align-items: center;
             width: 100%;
             padding: 0 16px;
         }
         
-        .coffee-btn {
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-        .coffee-btn:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: var(--primary);
-        }
-
-        /* --- Credits Popup --- */
-        .credits-popup {
-            position: fixed;
-            top: 80px; /* Logo abaixo do cabeçalho */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            width: 90%;
-            max-width: 400px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .credits-popup.show {
-            opacity: 1;
-            animation: popup-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        
-        /* Reutiliza estilo do toast mas remove absolute positioning interno */
-        .credits-popup .toast {
-            position: relative;
-            bottom: auto;
-            right: auto;
-            width: 100%;
-            margin: 0;
-            background-color: var(--surface); /* Garante fundo sólido */
-            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-        }
-
         .main-nav-bar.search-active {
             padding: 0 10px;
         }
@@ -620,8 +571,8 @@ export default function Home() {
   )
 }
 
-// Header atualizado com prop onCoffeeClick
-const Header = ({ onCoffeeClick }) => {
+// Header Restaurado
+const Header = () => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -633,14 +584,9 @@ const Header = ({ onCoffeeClick }) => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            {/* Removido a tag STREAMING conforme pedido */}
+            <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
-        
-        {/* Botão de Café */}
-        <button className="coffee-btn" onClick={onCoffeeClick} aria-label="Créditos">
-            <i className="fas fa-coffee"></i>
-        </button>
       </div>
     </header>
   )
