@@ -25,6 +25,9 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
+  
+  // Estado específico para o popup de créditos
+  const [showCredits, setShowCredits] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -47,6 +50,14 @@ export default function Home() {
     setToasts(prev => prev.filter(toast => toast.id !== id))
   }
 
+  // Função para abrir o pop-up de créditos
+  const handleCoffeeClick = () => {
+    setShowCredits(true)
+    setTimeout(() => {
+        setShowCredits(false)
+    }, 3000)
+  }
+
   useEffect(() => {
     loadHomeContent()
     loadFavorites()
@@ -62,7 +73,7 @@ export default function Home() {
     }
   }, [searchActive])
   
-  // Função central de busca, agora usada pelo debounce
+  // Função central de busca
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -99,10 +110,8 @@ export default function Home() {
     }
   }
 
-  // Hook debounce aplicado à função de busca
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
-  // Novo handler para a mudança do input
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
@@ -250,57 +259,53 @@ export default function Home() {
 
   // --- Componentes ---
 
-  const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
-    <section className="section">
-      <div className="content-grid main-grid"> {/* Aplica a classe main-grid */}
-        {items.length > 0 ? (
-          items.map(item => {
-            const isFav = isFavorite(item)
-            return (
-              <Link 
-                key={getItemKey(item)}
-                href={`/${item.media_type}/${item.id}`}
-                className="content-card"
+  const ContentGrid = ({ items, isFavorite, toggleFavorite, extraClass = '' }) => (
+    <div className={`content-grid ${extraClass}`}>
+      {items.length > 0 ? (
+        items.map(item => {
+          const isFav = isFavorite(item)
+          return (
+            <Link 
+              key={getItemKey(item)}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+              onClick={() => { if(extraClass.includes('live-grid')) setSearchActive(false) }}
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+                loading="lazy"
+              />
+              
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
               >
-                <img 
-                  src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-                  alt={item.title || item.name}
-                  className="content-poster"
-                  loading="lazy"
-                />
-                
-                <button 
-                  className={`favorite-btn ${isFav ? 'active' : ''}`}
-                  onClick={(e) => {
-                    e.preventDefault() 
-                    e.stopPropagation() 
-                    toggleFavorite(item)
-                  }}
-                  title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
-                >
-                  <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
-                </button>
+                <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+              </button>
 
-                <div className="floating-text-wrapper">
-                  <div className="content-title-card">{item.title || item.name}</div>
-                  <div className="content-year">
-                    {item.release_date ? new Date(item.release_date).getFullYear() : 
-                     item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                  </div>
+              <div className="floating-text-wrapper">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                 </div>
-                
-                <div className="content-info-card">
-                </div>
-              </Link>
-            )
-          })
-        ) : (
-          <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%'}}>
-            {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
-          </div>
-        )}
-      </div>
-    </section>
+              </div>
+            </Link>
+          )
+        })
+      ) : (
+        <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
+          {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
+        </div>
+      )}
+    </div>
   )
 
   const LiveSearchResults = () => {
@@ -308,6 +313,11 @@ export default function Home() {
     
     return (
       <div className="live-search-results active">
+        {/* Título padronizado dentro da busca */}
+        <div className="search-header-internal">
+            <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
+        </div>
+
         {loading && (
             <div className="live-search-loading">
                 <i className="fas fa-spinner fa-spin"></i>
@@ -316,49 +326,12 @@ export default function Home() {
         )}
         
         {!loading && searchResults.length > 0 ? (
-            <div className="content-grid live-grid"> {/* Classe live-grid */}
-                {searchResults.map(item => {
-                    const isFav = isFavorite(item)
-                    return (
-                        <Link 
-                          key={getItemKey(item)}
-                          href={`/${item.media_type}/${item.id}`}
-                          className="content-card"
-                          onClick={() => setSearchActive(false)}
-                        >
-                          <img 
-                            src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-                            alt={item.title || item.name}
-                            className="content-poster"
-                            loading="lazy"
-                          />
-                          
-                          <button 
-                            className={`favorite-btn ${isFav ? 'active' : ''}`}
-                            onClick={(e) => {
-                              e.preventDefault() 
-                              e.stopPropagation() 
-                              toggleFavorite(item)
-                            }}
-                            title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
-                          >
-                            <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
-                          </button>
-
-                          <div className="floating-text-wrapper">
-                            <div className="content-title-card">{item.title || item.name}</div>
-                            <div className="content-year">
-                              {item.release_date ? new Date(item.release_date).getFullYear() : 
-                               item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                            </div>
-                          </div>
-                          
-                          <div className="content-info-card">
-                          </div>
-                        </Link>
-                    )
-                })}
-            </div>
+            <ContentGrid 
+                items={searchResults}
+                isFavorite={isFavorite}
+                toggleFavorite={toggleFavorite}
+                extraClass="live-grid"
+            />
         ) : (!loading && searchQuery.trim() !== '' && (
             <div className="no-results-live">
                 <i className="fas fa-ghost"></i>
@@ -396,6 +369,17 @@ export default function Home() {
     </div>
   )
   
+  // Componente Popup de Créditos (Estilo Notificação no Topo)
+  const CreditsPopup = () => (
+      <div className={`credits-popup ${showCredits ? 'show' : ''}`}>
+          <div className="toast toast-info">
+              <div className="toast-icon">
+                  <i className="fas fa-code"></i>
+              </div>
+              <div className="toast-content">software by @kawalyansky</div>
+          </div>
+      </div>
+  )
 
   return (
     <>
@@ -407,8 +391,10 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header />
-
+      {/* Passando a função do clique do café para o Header */}
+      <Header onCoffeeClick={handleCoffeeClick} />
+      
+      <CreditsPopup />
       <ToastContainer />
 
       <main className="container">
@@ -425,11 +411,14 @@ export default function Home() {
         {!searchActive && (
           <div className="home-sections">
             <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
-            <ContentGrid 
-                items={getActiveItems()} 
-                isFavorite={isFavorite} 
-                toggleFavorite={toggleFavorite} 
-            />
+            <section className="section">
+                <ContentGrid 
+                    items={getActiveItems()} 
+                    isFavorite={isFavorite} 
+                    toggleFavorite={toggleFavorite}
+                    extraClass="main-grid"
+                />
+            </section>
           </div>
         )}
       </main>
@@ -487,11 +476,7 @@ export default function Home() {
           className={`search-circle ${searchActive ? 'active' : ''}`}
           onClick={() => {
             if (searchActive) {
-              if (searchQuery.trim()) {
-                 setSearchActive(false);
-              } else {
-                 setSearchActive(false);
-              }
+               setSearchActive(false);
             } else {
               setSearchActive(true)
             }
@@ -504,26 +489,31 @@ export default function Home() {
       <style jsx global>{`
         /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
-          0% { 
-            opacity: 0; 
-            transform: translateY(20px) scale(0.95); 
-          }
-          100% { 
-            opacity: 1; 
-            transform: translateY(0) scale(1); 
-          }
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes popup-slide-down {
+          0% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* Estilos da grade de conteúdo principal (Home sections) */
-        .content-grid.main-grid {
-            /* Aplica a grade de 130px de min-width para o conteúdo principal */
+        /* --- Padronização do Grid (Home e Busca) --- */
+        .content-grid {
+            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px; /* Espaçamento de 12px como a grade de busca */
+            gap: 12px;
             padding: 0;
-            margin-top: 15px;
+            width: 100%;
         }
 
-        /* Estilos da grade de resultados da busca em tempo real */
+        /* Força exatamente 2 colunas em dispositivos móveis */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        /* --- Estilos da Busca (Live Search) --- */
         .live-search-results {
             position: fixed;
             top: 70px;
@@ -531,54 +521,95 @@ export default function Home() {
             right: 0;
             bottom: 60px;
             z-index: 15;
-            padding: 10px;
             background-color: var(--background);
             overflow-y: auto;
             border-top: 1px solid var(--border);
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
+            padding: 0 16px 20px 16px; /* Padding igual ao container principal */
         }
 
         .live-search-results.active {
             visibility: visible;
             opacity: 1;
         }
-        
-        .live-search-results .live-grid {
-            /* Garante que o grid de live search use o mesmo padrão */
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px; /* Espaçamento de 12px */
-            padding: 0;
-        }
 
+        .search-header-internal {
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        
         .live-search-loading, .no-results-live {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            height: 50vh;
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
-            padding-top: 50px;
             text-align: center;
         }
         
-        .live-search-loading i {
-            margin-right: 8px;
-            font-size: 1.5rem;
-        }
-        
-        .no-results-live i {
-            font-size: 2rem;
+        .live-search-loading i, .no-results-live i {
             margin-bottom: 10px;
+            font-size: 2rem;
         }
 
-        /* Ajuste do Header */
+        /* --- Header Adjustments --- */
         .header-content {
-            justify-content: flex-start;
-            width: auto; 
-            padding-right: 0;
+            display: flex;
+            justify-content: space-between; /* Separa Logo e Botão */
+            align-items: center;
+            width: 100%;
+            padding: 0 16px;
+        }
+        
+        .coffee-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .coffee-btn:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: var(--primary);
+        }
+
+        /* --- Credits Popup --- */
+        .credits-popup {
+            position: fixed;
+            top: 80px; /* Logo abaixo do cabeçalho */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .credits-popup.show {
+            opacity: 1;
+            animation: popup-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* Reutiliza estilo do toast mas remove absolute positioning interno */
+        .credits-popup .toast {
+            position: relative;
+            bottom: auto;
+            right: auto;
+            width: 100%;
+            margin: 0;
+            background-color: var(--surface); /* Garante fundo sólido */
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
 
         .main-nav-bar.search-active {
@@ -589,8 +620,8 @@ export default function Home() {
   )
 }
 
-// Header simplificado
-const Header = () => {
+// Header atualizado com prop onCoffeeClick
+const Header = ({ onCoffeeClick }) => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -602,9 +633,14 @@ const Header = () => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
+            {/* Removido a tag STREAMING conforme pedido */}
           </div>
         </Link>
+        
+        {/* Botão de Café */}
+        <button className="coffee-btn" onClick={onCoffeeClick} aria-label="Créditos">
+            <i className="fas fa-coffee"></i>
+        </button>
       </div>
     </header>
   )
