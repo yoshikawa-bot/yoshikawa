@@ -25,7 +25,7 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
-  const [showCoffeePopup, setShowCoffeePopup] = useState(false) // Novo estado para o popup de café
+  // [REMOVIDO] const [showCoffeePopup, setShowCoffeePopup] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -33,11 +33,10 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Atualizado com lógica de animação)
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    // Usando Date.now() no ID garante que o componente remonte e a animação toque.
     setToasts(prev => [...prev, toast])
     
     setTimeout(() => {
@@ -58,26 +57,13 @@ export default function Home() {
     if (searchActive && searchInputRef.current) {
       searchInputRef.current.focus()
     }
-    // Limpa resultados ao desativar a busca (modo de live search)
     if (!searchActive) {
         setSearchResults([])
         setSearchQuery('')
     }
   }, [searchActive])
   
-  // Função para fechar o pop-up de café com animação
-  const closeCoffeePopup = () => {
-    const element = document.querySelector('.coffee-popup-container.active');
-    if (element) {
-        element.classList.add('closing');
-        setTimeout(() => {
-            setShowCoffeePopup(false);
-            element.classList.remove('closing');
-        }, 300);
-    } else {
-        setShowCoffeePopup(false);
-    }
-  };
+  // [REMOVIDO] Função closeCoffeePopup
 
   // Função central de busca, agora usada pelo debounce
   const fetchSearchResults = async (query) => {
@@ -123,7 +109,6 @@ export default function Home() {
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
-    // Limpa os resultados instantaneamente se a query for vazia
     if (query.trim() === '') {
         setSearchResults([])
         setLoading(false)
@@ -134,7 +119,7 @@ export default function Home() {
   }
 
   // --- Funções de Carregamento de Conteúdo ---
-  const loadHomeContent = async () => { /* ... (Mantido o mesmo) ... */
+  const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
@@ -172,7 +157,7 @@ export default function Home() {
     }
   }
 
-  const loadFavorites = () => { /* ... (Mantido o mesmo) ... */
+  const loadFavorites = () => {
     try {
       const savedFavorites = localStorage.getItem('yoshikawaFavorites')
       const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
@@ -183,11 +168,11 @@ export default function Home() {
     }
   }
   
-  const isFavorite = (item) => { /* ... (Mantido o mesmo) ... */
+  const isFavorite = (item) => {
     return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type);
   }
 
-  const toggleFavorite = (item) => { /* ... (Mantido o mesmo) ... */
+  const toggleFavorite = (item) => {
     setFavorites(prevFavorites => {
       let newFavorites
       const wasFavorite = isFavorite(item)
@@ -220,13 +205,10 @@ export default function Home() {
     })
   }
   
-  // Função de busca antiga (mantida apenas para a lógica Enter, mas não deve ser usada no live search)
   const handleSearchSubmit = () => {
     if (searchInputRef.current) {
       const query = searchInputRef.current.value.trim()
       if (query) {
-        // Agora, em vez de carregar a página, apenas garante que o debounce foi disparado.
-        // Se o usuário clicar Enter, o live search já deve ter iniciado.
         debouncedSearch(query)
       } else {
         setSearchResults([])
@@ -237,7 +219,6 @@ export default function Home() {
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      // Força a execução da busca imediatamente ao pressionar Enter
       handleSearchSubmit()
     }
   }
@@ -274,7 +255,7 @@ export default function Home() {
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite }) => (
     <section className="section">
-      <div className="content-grid">
+      <div className="content-grid main-grid"> {/* Classe main-grid adicionada */}
         {items.length > 0 ? (
           items.map(item => {
             const isFav = isFavorite(item)
@@ -325,7 +306,6 @@ export default function Home() {
     </section>
   )
 
-  // Novo componente para resultados da busca em tempo real
   const LiveSearchResults = () => {
     if (!searchActive || searchQuery.trim() === '') return null
     
@@ -347,7 +327,7 @@ export default function Home() {
                           key={getItemKey(item)}
                           href={`/${item.media_type}/${item.id}`}
                           className="content-card"
-                          onClick={() => setSearchActive(false)} // Fecha ao clicar no resultado
+                          onClick={() => setSearchActive(false)}
                         >
                           <img 
                             src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -392,7 +372,6 @@ export default function Home() {
     )
   }
 
-  // Componente de Notificação com Animação
   const ToastContainer = () => (
     <div className="toast-container">
       {toasts.map(toast => (
@@ -420,22 +399,7 @@ export default function Home() {
     </div>
   )
   
-  // Novo componente Pop-up de Café
-  const CoffeePopup = () => {
-    if (!showCoffeePopup) return null
-    return (
-      <div 
-        className="coffee-popup-container active"
-        style={{ animation: 'toast-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-        onClick={closeCoffeePopup}
-      >
-        <span className="coffee-text">Sistema by: **@kawalyansky**</span>
-        <button className="coffee-close-btn" onClick={closeCoffeePopup}>
-          <i className="fas fa-times"></i>
-        </button>
-      </div>
-    )
-  }
+  // [REMOVIDO] Componente CoffeePopup
 
   return (
     <>
@@ -447,20 +411,14 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header onCoffeeClick={() => {
-          if (showCoffeePopup) {
-              closeCoffeePopup();
-          } else {
-              setShowCoffeePopup(true);
-          }
-      }} />
+      {/* Header não precisa mais do prop onCoffeeClick */}
+      <Header />
 
-      <CoffeePopup />
+      {/* [REMOVIDO] <CoffeePopup /> */}
       <ToastContainer />
 
       <main className="container">
         
-        {/* Mostra a tela de loading global apenas se não estiver na busca live */}
         {loading && !searchActive && (
           <div className="loading active">
             <div className="spinner"></div>
@@ -468,10 +426,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Live Search Results (Pop-up) */}
         <LiveSearchResults />
 
-        {/* Home Sections (Escondido se a busca estiver ativa) */}
         {!searchActive && (
           <div className="home-sections">
             <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
@@ -517,8 +473,8 @@ export default function Home() {
                 type="text"
                 className="search-input-expanded" 
                 placeholder="Pesquisar..."
-                value={searchQuery} // Controlado pelo estado
-                onChange={handleSearchChange} // Dispara live search
+                value={searchQuery}
+                onChange={handleSearchChange}
                 onKeyPress={handleKeyPress}
               />
               <button 
@@ -537,14 +493,12 @@ export default function Home() {
           className={`search-circle ${searchActive ? 'active' : ''}`}
           onClick={() => {
             if (searchActive) {
-              // Já ativo: clica no botão principal de busca, que agora apenas limpa se já tiver resultados
               if (searchQuery.trim()) {
                  setSearchActive(false);
               } else {
                  setSearchActive(false);
               }
             } else {
-              // Não ativo: ativa a barra de pesquisa
               setSearchActive(true)
             }
           }}
@@ -553,7 +507,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* --- ESTILOS --- */}
       <style jsx global>{`
         /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
@@ -567,31 +520,29 @@ export default function Home() {
           }
         }
         
-        /* Animação para popup de café (Slide Down) */
-        @keyframes toast-slide-down {
-          0% {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        /* [REMOVIDO] Animação toast-slide-down */
         
-        /* Estilos do Live Search Popup */
+        /* Estilos da nova grade de conteúdo principal */
+        .content-grid.main-grid {
+            /* Aplica a grade de 130px de min-width para o conteúdo principal */
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        /* Estilos da grade de resultados da busca em tempo real */
         .live-search-results {
             position: fixed;
-            top: 70px; /* Abaixo do header */
+            top: 70px;
             left: 0;
             right: 0;
-            bottom: 60px; /* Acima do bottom nav */
+            bottom: 60px;
             z-index: 15;
             padding: 10px;
             background-color: var(--background);
             overflow-y: auto;
             border-top: 1px solid var(--border);
-            /* Garante que não apareça na Home se a search não estiver ativa */
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
@@ -603,6 +554,7 @@ export default function Home() {
         }
         
         .live-search-results .live-grid {
+            /* Garante que o grid de live search use o mesmo padrão */
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 12px;
             padding: 0;
@@ -630,69 +582,18 @@ export default function Home() {
             margin-bottom: 10px;
         }
 
-        /* Estilos do Popup de Café */
-        .coffee-popup-container {
-            position: fixed;
-            top: 70px; /* Abaixo do header (50px) + margem */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            background-color: var(--card-bg);
-            border: 1px solid var(--primary);
-            color: var(--text);
-            padding: 8px 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-            /* Início da transição de fechar */
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        
-        .coffee-popup-container.closing {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-        }
-        
-        .coffee-text {
-            white-space: nowrap;
-        }
+        /* [REMOVIDO] Estilos do Popup de Café */
+        /* [REMOVIDO] .coffee-popup-container, .coffee-close-btn, .coffee-text */
 
-        .coffee-close-btn {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .coffee-close-btn:hover {
-            color: var(--text);
-        }
-
-        /* Ajuste do Header para o botão de café */
+        /* Ajuste do Header (remove o espaço reservado para o botão de café) */
         .header-content {
-            justify-content: space-between;
-            width: 100%;
-            padding-right: 15px;
+            justify-content: flex-start; /* Alinha à esquerda */
+            width: auto; 
+            padding-right: 0;
         }
         
-        .coffee-button {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .coffee-button:hover {
-            color: var(--primary);
-        }
+        /* [REMOVIDO] .coffee-button */
 
-        /* Ajuste no NavBar para não ter espaçamento quando o Live Search está ativo */
         .main-nav-bar.search-active {
             padding: 0 10px;
         }
@@ -701,8 +602,8 @@ export default function Home() {
   )
 }
 
-// Header atualizado para incluir o botão de café
-const Header = ({ onCoffeeClick }) => {
+// Header simplificado
+const Header = () => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -717,9 +618,7 @@ const Header = ({ onCoffeeClick }) => {
             <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
-        <button className="coffee-button" onClick={onCoffeeClick} title="Sistema By">
-          <i className="fas fa-mug-saucer"></i> {/* Ícone de xícara de café */}
-        </button>
+        {/* [REMOVIDO] Botão de Café */}
       </div>
     </header>
   )
