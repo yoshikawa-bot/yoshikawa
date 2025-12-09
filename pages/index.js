@@ -44,10 +44,11 @@ export default function Home() {
 
     setActiveToast({ message, type })
     
+    // MUDANÇA 1: Duração reduzida pela metade (de 4000ms para 2000ms)
     toastTimeoutRef.current = setTimeout(() => {
       setActiveToast(null)
       toastTimeoutRef.current = null
-    }, 4000)
+    }, 2000)
   }
 
   const dismissToast = () => {
@@ -297,7 +298,8 @@ export default function Home() {
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''} ${activeToast ? 'notification-active' : ''}`}>
           
           {activeToast ? (
-             <div className="nav-notification-text">
+             // MUDANÇA 2: Adição da classe dinâmica para cores
+             <div className={`nav-notification-text toast-type-${activeToast.type}`}>
                  <i className={`fas ${activeToast.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}`}></i>
                  <span>{activeToast.message}</span>
              </div>
@@ -374,9 +376,14 @@ export default function Home() {
         }
         
         .nav-notification-text i {
-            color: var(--primary);
+            color: var(--primary); /* Cor padrão (vermelho/primary) para info e erro (negativo) */
             font-size: 1.2rem;
             flex-shrink: 0; /* Ícone não encolhe */
+        }
+        
+        /* MUDANÇA 3: Cor para Notificação de Sucesso (Verde Positivo) */
+        .toast-type-success i {
+            color: #4CAF50; /* Verde forte para sucesso */
         }
 
         .nav-notification-text span {
