@@ -19,7 +19,7 @@ export default function TVShow() {
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
   
-  // NOVO: Estado para controlar o Pop-up do Vídeo
+  // Estado para controlar o Pop-up do Vídeo
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
 
   const [isFavorite, setIsFavorite] = useState(false)
@@ -174,7 +174,8 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
-    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-fullscreen-overlay.active');
+    // Adicionado .video-overlay-wrapper na lista de elementos para fechar com animação
+    const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -198,23 +199,21 @@ export default function TVShow() {
     }
   };
 
-  // NOVO: Handle para fechar o player de vídeo
+  // Handle para fechar o player de vídeo ao clicar no fundo borrado
   const handleVideoOverlayClick = (e) => {
-    // Fecha apenas se clicar fora do iframe (se houver padding) ou se for explicitamente o overlay
-    // Como é 1x1 full, geralmente só vamos fechar pelo botão X, mas deixamos a lógica aqui
-    if (e.target.classList.contains('video-fullscreen-overlay')) {
+    if (e.target.classList.contains('video-overlay-wrapper')) {
         closePopup(setShowVideoPlayer);
     }
   }
   
   const handleSeasonChange = async (newSeason) => {
-    setShowVideoPlayer(false) // Fecha o player ao mudar temporada
+    setShowVideoPlayer(false)
     setSeason(newSeason)
     await loadSeasonDetails(newSeason)
   }
 
   const handleEpisodeChange = (newEpisode) => {
-    setShowVideoPlayer(false) // Fecha o player e mostra a capa do novo episódio
+    setShowVideoPlayer(false)
     setEpisode(newEpisode)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -232,7 +231,7 @@ export default function TVShow() {
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
-  // Define a imagem de capa (prioridade: episodio > serie backdrop > serie poster)
+  // Define a imagem de capa
   const coverImage = currentEpisode?.still_path 
     ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}`
     : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
@@ -273,20 +272,18 @@ export default function TVShow() {
 
       <main className="streaming-container">
         
-        {/* ÁREA DA CAPA / BOTÃO DE PLAY (SUBSTITUIU O IFRAME DIRETO) */}
+        {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
         <div className="player-container">
           <div className="player-wrapper">
-             <div className="episode-cover-placeholder">
+             <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
                 {coverImage ? (
                     <img src={coverImage} alt="Episode Cover" className="cover-img" />
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                <div className="play-overlay">
-                    <button className="big-play-btn" onClick={() => setShowVideoPlayer(true)}>
-                        <i className="fas fa-play"></i>
-                    </button>
-                    <span className="play-hint">Assistir Episódio</span>
+                {/* Botão de Play Simples (Círculo branco com ícone) */}
+                <div className="simple-play-circle">
+                    <i className="fas fa-play"></i>
                 </div>
              </div>
           </div>
@@ -369,13 +366,16 @@ export default function TVShow() {
           </div>
         </div>
 
-        {/* OVERLAY DO VIDEO PLAYER (POPUP 1x1) */}
+        {/* NOVO OVERLAY DO VIDEO PLAYER (QUADRADO FLUTUANTE COM BLUR) */}
         {showVideoPlayer && (
-            <div className="video-fullscreen-overlay active" onClick={handleVideoOverlayClick}>
-                <button className="close-video-btn" onClick={() => closePopup(setShowVideoPlayer)}>
+            <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
+                {/* Botão de fechar fixo no canto superior direito FORA do quadrado */}
+                <button className="fixed-close-video-btn" onClick={() => closePopup(setShowVideoPlayer)}>
                     <i className="fas fa-times"></i>
                 </button>
-                <div className="video-fullscreen-content">
+
+                {/* O Quadrado 1x1 flutuante */}
+                <div className="video-floating-square">
                     <iframe 
                         src={getPlayerUrl()}
                         allow="autoplay; encrypted-media; picture-in-picture" 
@@ -447,7 +447,7 @@ export default function TVShow() {
       />
 
       <style jsx>{`
-        /* ESTILOS DA CAPA E BOTÃO PLAY */
+        /* ESTILOS DA CAPA E BOTÃO PLAY SIMPLES */
         .episode-cover-placeholder {
             position: absolute;
             top: 0;
@@ -459,6 +459,7 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer; /* Adicionado cursor pointer em toda a área */
         }
 
         .cover-img {
@@ -466,114 +467,94 @@ export default function TVShow() {
             height: 100%;
             object-fit: cover;
             opacity: 0.6;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s;
         }
         
         .episode-cover-placeholder:hover .cover-img {
             opacity: 0.4;
+            transform: scale(1.02);
         }
 
-        .play-overlay {
+        /* Novo botão play simples: Círculo branco com ícone centralizado */
+        .simple-play-circle {
             position: absolute;
             z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .big-play-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            font-size: 2rem;
-            cursor: pointer;
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            background: rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding-left: 6px; /* Ajuste visual para o ícone play */
-            box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: pulse-play 2s infinite;
-        }
-
-        .big-play-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(229, 9, 20, 0.6);
-        }
-
-        .play-hint {
             color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-size: 1.8rem;
+            padding-left: 5px; /* Ajuste ótico para centralizar o ícone de play */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s, background 0.3s, border-color 0.3s;
         }
 
-        @keyframes pulse-play {
-            0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(229, 9, 20, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); }
+        .episode-cover-placeholder:hover .simple-play-circle {
+            transform: scale(1.1);
+            background: rgba(0,0,0,0.5);
+            border-color: white;
         }
 
-        /* ESTILOS DO POPUP DE VIDEO (FULLSCREEN) */
-        .video-fullscreen-overlay {
+        /* ESTILOS DO NOVO POPUP (WRAPPER COM BLUR + QUADRADO 1x1) */
+        .video-overlay-wrapper {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
+            inset: 0; /* Top, right, bottom, left: 0 */
+            background: rgba(0, 0, 0, 0.7); /* Fundo escuro semi-transparente */
+            backdrop-filter: blur(15px); /* O BLUR SOLICITADO */
+            -webkit-backdrop-filter: blur(15px); /* Suporte Safari */
             z-index: 9999;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             animation: fadeIn 0.3s ease;
         }
 
-        .video-fullscreen-overlay.closing {
+        .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
-        .video-fullscreen-content {
-            flex: 1;
-            width: 100%;
-            height: 100%;
+        /* O Quadrado Flutuante 1x1 */
+        .video-floating-square {
+            /* A mágica para ser quadrado e caber na tela: usa 90% da menor dimensão da viewport */
+            width: min(90vw, 90vh);
+            aspect-ratio: 1 / 1; 
+            background: #000;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
             position: relative;
         }
 
-        .video-fullscreen-content iframe {
+        .video-floating-square iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        .close-video-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        /* Botão Fechar Fixo no canto superior direito da tela */
+        .fixed-close-video-btn {
+            position: fixed;
+            top: 25px;
+            right: 25px;
             z-index: 10000;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.2rem;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 2.5rem;
             cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: color 0.2s, transform 0.2s;
+            padding: 10px;
+            line-height: 1;
         }
 
-        .close-video-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
+        .fixed-close-video-btn:hover {
+            color: white;
+            transform: scale(1.1);
         }
         
         @keyframes fadeOut {
@@ -581,7 +562,7 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
-        /* RESTO DOS ESTILOS ANTERIORES */
+        /* RESTO DOS ESTILOS ANTERIORES (Mantidos para funcionamento da página) */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
