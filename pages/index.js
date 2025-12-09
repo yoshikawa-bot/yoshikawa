@@ -342,17 +342,35 @@ export default function Home() {
       <style jsx global>{`
         /* --- ESTILO DA NAVBAR AJUSTÁVEL --- */
         .bottom-nav-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
             display: flex;
             align-items: flex-end; /* Alinha o botão circular e a barra pela base */
-            padding-bottom: 20px; /* Espaço inferior padrão */
+            padding: 0 16px 20px 16px; /* Espaço inferior padrão e lateral */
+            box-sizing: border-box;
+            pointer-events: none; /* Permite cliques "através" do container, só os filhos respondem */
         }
-
+        
         .main-nav-bar {
-            height: auto; /* Permite crescer */
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px;
             min-height: 60px; /* Altura mínima original */
             padding: 0 10px;
-            /* Se tiver notificação, usamos padding maior para o texto não colar */
+            width: calc(100% - 70px); /* Deixa espaço para o botão circular */
+            position: relative;
+            z-index: 10;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: auto; /* Reativa cliques */
+            overflow: hidden;
+            border: 2px solid transparent;
         }
 
         .main-nav-bar.notification-active {
@@ -362,6 +380,8 @@ export default function Home() {
             /* border-color: var(--primary); REMOVIDO PARA TIRAR A BORDA COLORIDA */
             width: calc(100% - 70px);
             align-items: center;
+            height: auto;
+            min-height: 60px;
         }
 
         .nav-notification-text {
@@ -381,14 +401,50 @@ export default function Home() {
             flex-shrink: 0; /* Ícone não encolhe */
         }
         
-        /* MUDANÇA 3: Cor para Notificação de Sucesso (Verde Positivo) */
+        /* MUDANÇA 3: Cor para Notificação de Sucesso (Verde Positivo Pastel) */
         .toast-type-success i {
-            color: #4CAF50; /* Verde forte para sucesso */
+            color: #A7D7C5; /* Verde Pastel Claro */
+        }
+
+        /* MUDANÇA 4: Cor para Notificação de Info/Erro (Azul Pastel Negativo) */
+        .toast-type-info i, .toast-type-error i { /* info e error usam a cor do ícone padrão agora */
+            color: #A2C4D5; /* Azul Pastel */
         }
 
         .nav-notification-text span {
             white-space: normal; /* Permite quebra de linha */
             word-break: break-word;
+        }
+        
+        /* Botão Circular (Search Circle) */
+        .search-circle {
+            position: absolute; /* Posição absoluta dentro do container */
+            right: 16px; /* Ajusta para a lateral do container */
+            bottom: 20px; /* Alinha com o padding-bottom do container */
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            z-index: 20;
+            pointer-events: auto; /* Reativa cliques */
+            
+            /* MUDANÇA 5: Garantir que o botão circular nunca fique colorido */
+            background-color: var(--card-bg); /* Cor de fundo padrão (sempre cinza) */
+            color: var(--text); /* Cor do ícone */
+            box-shadow: var(--shadow-xl);
+            transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* MUDANÇA 6: O botão ativo não tem cor de fundo diferente */
+        .search-circle.active {
+            transform: scale(1.05);
+            background-color: var(--card-bg); /* Garante que fique cinza/escuro */
+            color: var(--text); /* Cor do ícone */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
         /* Ajuste do container de busca para ocupar tudo sem o botão X interno */
@@ -408,6 +464,77 @@ export default function Home() {
         .live-search-loading i, .no-results-live i { margin-bottom: 10px; font-size: 2rem; }
         .container { padding: 0 16px 100px 16px; width: 100%; }
         .header-content { display: flex; justify-content: flex-start; align-items: center; width: 100%; padding: 0 16px; }
+        
+        /* Estilos adicionais para a navbar removidos para brevidade, mas que devem estar no código original */
+        .nav-item { pointer-events: auto; }
+        .search-input-expanded {
+             background: transparent;
+             border: none;
+             color: var(--text);
+             font-size: 1rem;
+             width: 100%;
+             outline: none;
+             padding: 0;
+             margin: 0;
+        }
+        
+        .main-nav-bar.search-active {
+            justify-content: flex-start;
+            padding: 0 20px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 5px 0;
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 3px;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            transition: background 0.2s;
+        }
+
+        .favorite-btn i {
+            color: #fff;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .favorite-btn.active i {
+            color: var(--primary);
+        }
       `}</style>
     </>
   )
