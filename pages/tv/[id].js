@@ -29,6 +29,8 @@ export default function TVShow() {
   // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
+  // Estado para garantir que a notificação mobile apareça apenas uma vez
+  const [mobileTipShown, setMobileTipShown] = useState(false)
 
   const [showSynopsis, setShowSynopsis] = useState(false)
   
@@ -36,6 +38,8 @@ export default function TVShow() {
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
+
+  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const showToast = (message, type = 'info') => {
     if (toastTimeoutRef.current) {
@@ -69,6 +73,23 @@ export default function TVShow() {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
+  
+  // NOVO: Exibe a dica mobile ao abrir o pop-up
+  useEffect(() => {
+    if (showVideoPlayer && isMobile() && !mobileTipShown) {
+        showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
+        setMobileTipShown(true);
+    }
+    
+    // NOVO: Bloqueia a rolagem quando o player está aberto
+    document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
+
+    // Limpeza para garantir que a rolagem volte
+    return () => {
+        document.body.style.overflow = 'auto';
+    };
+
+  }, [showVideoPlayer, mobileTipShown]) // Depende de showVideoPlayer e mobileTipShown
 
   useEffect(() => {
     if (episodeListRef.current && seasonDetails) {
@@ -188,8 +209,10 @@ export default function TVShow() {
   }
 
   const getPlayerUrl = () => {
+    // Adiciona &fullScreen=false para tentar evitar o fullscreen automático
+    const fullScreenParam = '&fullScreen=false' 
     if (selectedPlayer === 'superflix') {
-      return `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent#noBackground`
+      return `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent#noBackground${fullScreenParam}`
     } else {
       return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
     }
@@ -220,10 +243,13 @@ export default function TVShow() {
     }
   };
 
+  // NOVO: Remove a funcionalidade de fechar ao clicar no fundo
   const handleVideoOverlayClick = (e) => {
-    if (e.target.classList.contains('video-overlay-wrapper')) {
-        closePopup(setShowVideoPlayer);
-    }
+    // Agora, não faz nada ao clicar no fundo (Impede o fechamento)
+    // if (e.target.classList.contains('video-overlay-wrapper')) {
+    //     closePopup(setShowVideoPlayer);
+    // }
+    e.stopPropagation(); // Garante que cliques no fundo não vazem
   }
   
   const toggleVideoFormat = () => {
@@ -246,6 +272,11 @@ export default function TVShow() {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
+     // Recarrega o player se estiver aberto
+    if (showVideoPlayer) {
+        setShowVideoPlayer(false)
+        setTimeout(() => setShowVideoPlayer(true), 100); 
+    }
   }
 
   if (loading) return <div className="loading active"><div className="spinner"></div><p>Carregando...</p></div>
@@ -395,7 +426,7 @@ export default function TVShow() {
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
                 {/* Grupo: Barra de Ferramentas + Player */}
-                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     
                     {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
@@ -835,7 +866,7 @@ export default function TVShow() {
   )
 }
 
-const Header = () => (
+const Header = ({}) => (
   <header className="github-header">
     <div className="header-content">
       <Link href="/" className="logo-container">
