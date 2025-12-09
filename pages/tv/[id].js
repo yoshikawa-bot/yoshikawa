@@ -36,7 +36,6 @@ export default function TVShow() {
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
-  const playerWrapperRef = useRef(null) // Referência para Fullscreen
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
@@ -90,6 +89,8 @@ export default function TVShow() {
       document.body.style.overflow = 'hidden';
       
       const handleResize = () => {
+        // Se a largura for maior que a altura, ativa modo widescreen (Paisagem)
+        // Se a altura for maior, ativa modo quadrado (Retrato)
         if (window.innerWidth > window.innerHeight) {
             setIsWideScreen(true);
         } else {
@@ -97,7 +98,9 @@ export default function TVShow() {
         }
       };
       
+      // Executa na montagem
       handleResize();
+      
       window.addEventListener('resize', handleResize);
       return () => {
           window.removeEventListener('resize', handleResize);
@@ -205,11 +208,6 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
-    // Se estiver em fullscreen nativo, sair primeiro
-    if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-    }
-
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
     if (element) {
         element.classList.add('closing');
@@ -241,21 +239,9 @@ export default function TVShow() {
     }
   }
   
+  // Função para mudar formato manualmente (se o usuário quiser forçar)
   const toggleVideoFormat = () => {
     setIsWideScreen(!isWideScreen);
-  }
-
-  // Função para Fullscreen Nativo do Navegador
-  const toggleNativeFullscreen = () => {
-    if (!playerWrapperRef.current) return;
-
-    if (!document.fullscreenElement) {
-        playerWrapperRef.current.requestFullscreen().catch(err => {
-            console.log(`Erro ao entrar em fullscreen: ${err.message}`);
-        });
-    } else {
-        document.exitFullscreen();
-    }
   }
 
   // Função para recarregar o iframe (Reload)
@@ -431,7 +417,6 @@ export default function TVShow() {
                 {/* Grupo: Barra de Ferramentas + Player */}
                 <div 
                     className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}
-                    ref={playerWrapperRef}
                 >
                     
                     {/* Barra de Controles Flutuante */}
@@ -440,12 +425,8 @@ export default function TVShow() {
                             <i className="fas fa-sync-alt"></i>
                         </button>
 
-                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Formato CSS">
-                            <i className={`fas ${isWideScreen ? 'fa-mobile-alt' : 'fa-tablet-alt'}`}></i>
-                        </button>
-                        
-                        <button className="toolbar-btn" onClick={toggleNativeFullscreen} title="Tela Cheia (Nativo)">
-                            <i className="fas fa-expand"></i>
+                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Ajustar Formato">
+                            <i className={`fas ${isWideScreen ? 'fa-mobile-alt' : 'fa-tv'}`}></i>
                         </button>
                         
                         <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
@@ -544,7 +525,7 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border-radius: 12px; /* Suavizar bordas na capa */
+            border-radius: 12px;
         }
 
         .cover-img {
@@ -587,7 +568,7 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.9); /* Fundo mais escuro para imersão */
+            background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 9999;
@@ -608,25 +589,31 @@ export default function TVShow() {
             gap: 12px;
             position: relative;
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            max-height: 95vh;
             width: 100%;
+            justify-content: center;
         }
 
-        /* MODO QUADRADO (Padrão) */
+        /* MODO 1x1 (RETRATO/SQUARE) - Padrão Mobile em pé */
         .video-player-group.square {
-            width: min(100%, 600px);
+            width: 100%;
+            max-width: 500px; /* Limita largura em telas grandes */
         }
         .video-player-group.square .video-floating-container {
-            aspect-ratio: 16 / 9; /* Força 16:9 no mobile portrait também */
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-height: 60vh; /* Garante que não estoure a tela na vertical */
         }
 
-        /* MODO WIDESCREEN */
+        /* MODO WIDESCREEN (PAISAGEM) - Ativa quando vira a tela */
         .video-player-group.widescreen {
-            width: 95vw;
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1000px;
         }
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            max-height: 85vh; 
+            width: 100%;
+            max-height: 85vh; /* Ajuste para não cortar controles */
         }
 
         .video-floating-container {
@@ -638,6 +625,7 @@ export default function TVShow() {
             position: relative;
             transition: aspect-ratio 0.4s ease;
             border: 1px solid #333;
+            margin: 0 auto;
         }
 
         /* Loader atrás do Iframe */
@@ -670,22 +658,23 @@ export default function TVShow() {
         /* Barra de Ferramentas */
         .video-controls-toolbar {
             display: flex;
-            justify-content: center; /* Centraliza no mobile */
+            justify-content: center;
             gap: 15px;
             padding: 8px 16px;
-            background: rgba(20, 20, 20, 0.8);
+            background: rgba(30, 30, 30, 0.9);
             backdrop-filter: blur(10px);
             border-radius: 50px;
             border: 1px solid rgba(255,255,255,0.1);
             width: fit-content;
-            margin: 0 auto; /* Centraliza horizontalmente */
+            margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 10;
         }
 
         .toolbar-btn {
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -704,47 +693,18 @@ export default function TVShow() {
         }
 
         .toolbar-btn.close-btn {
-            background: rgba(255, 59, 48, 0.2);
-            color: #ff3b30;
+            background: rgba(255, 59, 48, 0.15);
+            color: #ff453a;
         }
         .toolbar-btn.close-btn:hover {
-            background: rgba(255, 59, 48, 0.4);
+            background: rgba(255, 59, 48, 0.3);
         }
         
         @keyframes fadeOut {
             from { opacity: 1; }
             to { opacity: 0; }
         }
-
-        /* Fullscreen Nativo Ajustes */
-        .video-player-group:fullscreen {
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-        }
-        .video-player-group:fullscreen .video-floating-container {
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            border: none;
-        }
-        .video-player-group:fullscreen .video-controls-toolbar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .video-player-group:fullscreen:hover .video-controls-toolbar {
-            opacity: 1;
-        }
-
+        
         /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
