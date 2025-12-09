@@ -268,16 +268,13 @@ export default function Movie() {
   const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
     
-    // Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
+    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
     if (showVideoPlayer && toast.type !== 'info') {
         return null; 
     }
 
-    // Se a notificação for 'info' E o player estiver aberto, ela é a notificação de rotação.
-    const isRotationToast = showVideoPlayer && toast.type === 'info';
-
     return (
-      <div className={`toast-container ${isRotationToast ? 'rotation-toast' : ''}`}>
+      <div className="toast-container">
         <div 
             key={toast.id} 
             className={`toast toast-${toast.type} show`}
@@ -477,7 +474,7 @@ export default function Movie() {
         onShowInfo={() => setShowInfoPopup(true)}
       />
 
-      {/* ESTILOS */}
+      {/* ESTILOS (Os estilos do pop-up já estavam na versão anterior e funcionam) */}
       <style jsx>{`
         /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
@@ -637,11 +634,33 @@ export default function Movie() {
             to { opacity: 0; }
         }
 
-        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO (PRIORIDADE MÁXIMA) --- */
+        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
+        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
+        .video-overlay-wrapper .toast-container {
+            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
+            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
+            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
+            pointer-events: none; /* Não deve bloquear interações com o player */
+        }
+        
+        /* Ajuste de altura e posicionamento da notificação de rotação */
+        .video-overlay-wrapper .toast-container .toast {
+            top: auto; /* Remove o posicionamento top padrão */
+            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Oculta as outras notificações quando o player estiver aberto */
+        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
+        .video-overlay-wrapper ~ .toast-container {
+            display: none !important;
+        }
+
+        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
         .toast-container {
-            /* Posição padrão quando o player está fechado */
             position: fixed;
-            top: 10px; 
+            top: 10px; /* Posição padrão quando o player está fechado */
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
@@ -649,29 +668,6 @@ export default function Movie() {
             max-width: 350px;
             padding: 0 10px;
             pointer-events: none;
-        }
-
-        .rotation-toast {
-            /* Prioridade Máxima para a notificação de rotação */
-            z-index: 99999 !important; 
-            /* Ocupa toda a tela para posicionar o toast filho corretamente */
-            position: fixed; 
-            inset: 0; 
-            pointer-events: none;
-        }
-
-        /* Ajuste de altura e posicionamento da notificação de rotação */
-        .rotation-toast .toast {
-            top: auto; /* Remove o posicionamento top padrão */
-            bottom: 10px; /* NOVO: Posição alinhada com a navbar pilula */
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        /* Oculta as outras notificações quando o player estiver aberto */
-        /* Usa o seletor mais específico para garantir que apenas a rotation-toast seja vista */
-        .video-overlay-wrapper ~ .toast-container:not(.rotation-toast) {
-            display: none !important;
         }
         
         .toast {
