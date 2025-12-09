@@ -15,22 +15,24 @@ export default function Movie() {
   
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
-  
-  // ESTADOS NOVOS PARA O POP-UP DE VÍDEO (IDÊNTICOS AO TVShow)
-  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
-  const [isWideScreen, setIsWideScreen] = useState(false)
-  // FIM DOS NOVOS ESTADOS
-
   const [isFavorite, setIsFavorite] = useState(false)
   
+  // Estados para o Pop-up de Vídeo
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [isWideScreen, setIsWideScreen] = useState(false)
+
   // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
+  // Estado para garantir que a notificação mobile apareça apenas uma vez (mantido por consistência, mas a lógica de exibição está no useEffect)
+  const [mobileTipShown, setMobileTipShown] = useState(false) 
 
   const [showSynopsis, setShowSynopsis] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
+
+  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const showToast = (message, type = 'info') => {
     if (toastTimeoutRef.current) {
@@ -67,11 +69,37 @@ export default function Movie() {
     }
   }, [id])
   
-  // NOVO useEffect para detectar orientação da tela (IDÊNTICO AO TVShow)
+  // ATUALIZADO: Exibe a dica mobile (sempre que o player abrir) e controla o overflow do body
+  useEffect(() => {
+    if (showVideoPlayer) {
+        // NOVO: Exibe a dica mobile SEMPRE que o player abre no celular
+        if (isMobile()) {
+            // Define como true para evitar que a dica de provedor (se demorar a aparecer) substitua a de rotação.
+            setMobileTipShown(true); 
+            // NOVO: Exibe a notificação de rotação
+            showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
+        } else {
+             // Limpa a notificação de rotação se for desktop e o player abriu
+             removeToast();
+        }
+    } else {
+        // Se o player for fechado, permite que outras dicas (como a de provedor) voltem a aparecer.
+        setMobileTipShown(false); 
+    }
+    
+    // Bloqueia a rolagem quando o player está aberto
+    document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
+
+    // Limpeza para garantir que a rolagem volte
+    return () => {
+        document.body.style.overflow = 'auto';
+    };
+  }, [showVideoPlayer]); // Remove a dependência de mobileTipShown
+
+  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
     if (showVideoPlayer) {
       const handleResize = () => {
-        // Se a largura for maior que a altura, sugere modo widescreen
         if (window.innerWidth > window.innerHeight) {
             setIsWideScreen(true);
         } else {
@@ -79,14 +107,12 @@ export default function Movie() {
         }
       };
       
-      // Checa ao abrir
       handleResize();
       
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }
   }, [showVideoPlayer]);
-  // FIM do NOVO useEffect
 
   const loadMovie = async (movieId) => {
     try {
@@ -152,15 +178,15 @@ export default function Movie() {
 
   const getPlayerUrl = () => {
     const identifier = movie?.external_ids?.imdb_id || id
-    // Adiciona #transparent#noBackground ao player superflix para o pop-up
+    // Adiciona &fullScreen=false para tentar evitar o fullscreen automático
+    const fullScreenParam = '&fullScreen=false' 
     if (selectedPlayer === 'superflix') {
-      return `${STREAM_BASE_URL}/filme/${identifier}#noLink#transparent#noBackground`
+      return `${STREAM_BASE_URL}/filme/${identifier}#noLink#transparent#noBackground${fullScreenParam}`
     } else {
       return `https://vidsrc.to/embed/movie/${identifier}`
     }
   }
   
-  // FUNÇÃO closePopup REESCRITA (IDÊNTICA AO TVShow)
   const closePopup = (setter) => {
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
     if (element) {
@@ -173,8 +199,7 @@ export default function Movie() {
         setter(false);
     }
   };
-  // FIM closePopup REESCRITA
-
+  
   const handleInfoOverlayClick = (e) => {
     if (e.target.classList.contains('info-popup-overlay')) {
       closePopup(setShowInfoPopup);
@@ -186,31 +211,23 @@ export default function Movie() {
       closePopup(setShowPlayerSelector);
     }
   };
-  
-  // NOVA FUNÇÃO para fechar o pop-up de vídeo (IDÊNTICA AO TVShow)
+
+  // Mantido: Impede o fechamento ao clicar no fundo
   const handleVideoOverlayClick = (e) => {
-    if (e.target.classList.contains('video-overlay-wrapper')) {
-        closePopup(setShowVideoPlayer);
-    }
+    e.stopPropagation(); // Garante que cliques no fundo não vazem
   }
-  // FIM NOVA FUNÇÃO
   
-  // NOVA FUNÇÃO para alternar formato (IDÊNTICA AO TVShow)
   const toggleVideoFormat = () => {
     setIsWideScreen(!isWideScreen);
   }
-  // FIM NOVA FUNÇÃO
 
   const handlePlayerChange = (player) => {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
-    
-    // Fecha o player se estiver aberto para recarregar com o novo servidor
+     // Recarrega o player se estiver aberto
     if (showVideoPlayer) {
-        // Força recarregar o iframe do player
         setShowVideoPlayer(false)
-        // Pequeno delay para garantir que o estado mudou antes de reabrir
         setTimeout(() => setShowVideoPlayer(true), 100); 
     }
   }
@@ -248,8 +265,14 @@ export default function Movie() {
     : (movie.poster_path ? `https://image.tmdb.org/t/p/original${movie.poster_path}` : null);
 
 
-  const SingleToast = () => {
+  const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
+    
+    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
+    if (showVideoPlayer && toast.type !== 'info') {
+        return null; 
+    }
+
     return (
       <div className="toast-container">
         <div 
@@ -286,7 +309,7 @@ export default function Movie() {
       <Header />
 
       <main className="streaming-container">
-        {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES (IDÊNTICO AO TVShow) */}
+        {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
         <div className="player-container">
           <div className="player-wrapper">
              <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
@@ -302,7 +325,6 @@ export default function Movie() {
              </div>
           </div>
         </div>
-        {/* FIM DA ÁREA DA CAPA */}
 
         <div className="content-info-streaming">
           
@@ -335,12 +357,12 @@ export default function Movie() {
           </div>
         </div>
 
-        {/* NOVO: OVERLAY DO VIDEO PLAYER (POPUP) (IDÊNTICO AO TVShow) */}
+        {/* OVERLAY DO VIDEO PLAYER (POPUP) */}
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
                 {/* Grupo: Barra de Ferramentas + Player */}
-                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     
                     {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
@@ -364,8 +386,6 @@ export default function Movie() {
                 </div>
             </div>
         )}
-        {/* FIM NOVO POPUP DE VÍDEO */}
-
 
         {/* Overlay para o Seletor de Player (Manter o mesmo) */}
         {showPlayerSelector && (
@@ -444,7 +464,7 @@ export default function Movie() {
         </div>
       </main>
 
-      <SingleToast />
+      <SingleToast showVideoPlayer={showVideoPlayer} />
 
       <BottomNav 
         selectedPlayer={selectedPlayer}
@@ -454,7 +474,7 @@ export default function Movie() {
         onShowInfo={() => setShowInfoPopup(true)}
       />
 
-      {/* ESTILOS NOVOS DO TVShow */}
+      {/* ESTILOS (Os estilos do pop-up já estavam na versão anterior e funcionam) */}
       <style jsx>{`
         /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
@@ -508,7 +528,7 @@ export default function Movie() {
             background: rgba(0,0,0,0.3);
         }
 
-        /* --- ESTILOS DO POPUP DE VÍDEO (IDÊNTICOS AO TVShow) --- */
+        /* --- ESTILOS DO POPUP DE VÍDEO --- */
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
@@ -613,7 +633,58 @@ export default function Movie() {
             from { opacity: 1; }
             to { opacity: 0; }
         }
+
+        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
+        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
+        .video-overlay-wrapper .toast-container {
+            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
+            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
+            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
+            pointer-events: none; /* Não deve bloquear interações com o player */
+        }
         
+        /* Ajuste de altura e posicionamento da notificação de rotação */
+        .video-overlay-wrapper .toast-container .toast {
+            top: auto; /* Remove o posicionamento top padrão */
+            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Oculta as outras notificações quando o player estiver aberto */
+        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
+        .video-overlay-wrapper ~ .toast-container {
+            display: none !important;
+        }
+
+        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
+        .toast-container {
+            position: fixed;
+            top: 10px; /* Posição padrão quando o player está fechado */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            /* Manter estilos existentes do .toast */
+            top: 0; /* Usa o topo do toast-container */
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            max-width: 100%;
+            pointer-events: auto;
+        }
+
         /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { 
