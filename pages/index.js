@@ -345,7 +345,7 @@ export default function Home() {
 
         .main-nav-bar {
             height: auto;
-            min-height: 60px;
+            min-height: 60px; /* Altura mantida */
             padding: 0 10px;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
@@ -369,23 +369,22 @@ export default function Home() {
             line-height: 1.4;
         }
         
-        /* ICONS DE NOTIFICAÇÃO (CORES PASTEL) */
+        /* ICONS DE NOTIFICAÇÃO (CORES VIVAS/CLARAS) */
         
-        /* Caso padrão (caso escape) */
         .nav-notification-text i {
             font-size: 1.2rem;
             flex-shrink: 0;
         }
         
-        /* Verde Pastel Claro para Sucesso */
+        /* Verde Vivo/Claro para Sucesso */
         .toast-type-success i {
-            color: #81c784 !important; /* Pastel Green */
+            color: #00e676 !important; /* Vivid Bright Green */
         }
 
-        /* Azul Pastel para Info/Erro (conforme pedido) */
+        /* Azul Vivo/Claro para Info/Erro */
         .toast-type-info i,
         .toast-type-error i {
-            color: #90caf9 !important; /* Pastel Blue */
+            color: #2979ff !important; /* Vivid Bright Blue */
         }
 
         .nav-notification-text span {
@@ -398,14 +397,14 @@ export default function Home() {
             padding-right: 0;
         }
 
-        /* --- BOTÃO REDONDO (NEUTRALIZAÇÃO DE COR) --- */
+        /* --- BOTÃO REDONDO (SEM BORDA E COR) --- */
         
-        /* Assegura que o botão circular nunca fique com cor de destaque (vermelho), mesmo ativo */
+        /* Força a ausência de borda colorida e mantém o fundo neutro */
         .search-circle.active {
-            background-color: var(--card-bg) !important; /* Mantém neutro/escuro */
-            color: var(--text) !important; /* Mantém texto branco/claro */
-            /* Opcional: um leve brilho neutro para indicar que está "apertado" */
-            background-color: #333 !important; 
+            background-color: #333 !important; /* Cinza escuro neutro */
+            color: #fff !important;
+            border: none !important; /* Garante que não tenha borda */
+            box-shadow: none !important;
         }
 
         /* --- RESTANTE DO CSS --- */
