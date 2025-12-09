@@ -21,6 +21,8 @@ export default function TVShow() {
   
   // Estado para controlar o Pop-up do Vídeo
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9)
+  const [isWideScreen, setIsWideScreen] = useState(false)
 
   const [isFavorite, setIsFavorite] = useState(false)
   
@@ -76,6 +78,26 @@ export default function TVShow() {
       }
     }
   }, [episode, seasonDetails])
+
+  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
+  useEffect(() => {
+    if (showVideoPlayer) {
+      const handleResize = () => {
+        // Se a largura for maior que a altura, sugere modo widescreen
+        if (window.innerWidth > window.innerHeight) {
+            setIsWideScreen(true);
+        } else {
+            setIsWideScreen(false);
+        }
+      };
+      
+      // Checa ao abrir
+      handleResize();
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [showVideoPlayer]);
 
   useEffect(() => {
     setShowSynopsis(false)
@@ -174,7 +196,6 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
-    // Adicionado .video-overlay-wrapper na lista de elementos para fechar com animação
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
     if (element) {
         element.classList.add('closing');
@@ -199,11 +220,14 @@ export default function TVShow() {
     }
   };
 
-  // Handle para fechar o player de vídeo ao clicar no fundo borrado
   const handleVideoOverlayClick = (e) => {
     if (e.target.classList.contains('video-overlay-wrapper')) {
         closePopup(setShowVideoPlayer);
     }
+  }
+  
+  const toggleVideoFormat = () => {
+    setIsWideScreen(!isWideScreen);
   }
   
   const handleSeasonChange = async (newSeason) => {
@@ -281,7 +305,7 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Círculo branco com ícone) */}
+                {/* Botão de Play Simples (Círculo BRANCO) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -366,27 +390,37 @@ export default function TVShow() {
           </div>
         </div>
 
-        {/* NOVO OVERLAY DO VIDEO PLAYER (QUADRADO FLUTUANTE COM BLUR) */}
+        {/* OVERLAY DO VIDEO PLAYER (POPUP) */}
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
-                {/* Botão de fechar fixo no canto superior direito FORA do quadrado */}
-                <button className="fixed-close-video-btn" onClick={() => closePopup(setShowVideoPlayer)}>
-                    <i className="fas fa-times"></i>
-                </button>
+                
+                {/* Grupo: Barra de Ferramentas + Player */}
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
+                    
+                    {/* Barra de Controles Flutuante logo acima do player */}
+                    <div className="video-controls-toolbar">
+                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
+                            <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                        </button>
+                        <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
 
-                {/* O Quadrado 1x1 flutuante */}
-                <div className="video-floating-square">
-                    <iframe 
-                        src={getPlayerUrl()}
-                        allow="autoplay; encrypted-media; picture-in-picture" 
-                        allowFullScreen 
-                        title={`Player`}
-                    ></iframe>
+                    {/* O Container do Vídeo */}
+                    <div className="video-floating-container">
+                        <iframe 
+                            src={getPlayerUrl()}
+                            allow="autoplay; encrypted-media; picture-in-picture" 
+                            allowFullScreen 
+                            title={`Player`}
+                        ></iframe>
+                    </div>
                 </div>
             </div>
         )}
 
-        {/* OUTROS OVERLAYS (Selector, Info) */}
+        {/* OUTROS OVERLAYS */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -447,7 +481,7 @@ export default function TVShow() {
       />
 
       <style jsx>{`
-        /* ESTILOS DA CAPA E BOTÃO PLAY SIMPLES */
+        /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
             position: absolute;
             top: 0;
@@ -459,7 +493,7 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer; /* Adicionado cursor pointer em toda a área */
+            cursor: pointer;
         }
 
         .cover-img {
@@ -475,86 +509,129 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Novo botão play simples: Círculo branco com ícone centralizado */
+        /* Botão play simples: Círculo BRANCO */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.9);
-            background: rgba(0,0,0,0.3);
+            border: 4px solid #ffffff; /* Borda branca sólida */
+            background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #ffffff;
             font-size: 1.8rem;
-            padding-left: 5px; /* Ajuste ótico para centralizar o ícone de play */
+            padding-left: 5px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.3s, background 0.3s, border-color 0.3s;
+            transition: transform 0.3s, background 0.3s;
         }
 
         .episode-cover-placeholder:hover .simple-play-circle {
             transform: scale(1.1);
-            background: rgba(0,0,0,0.5);
-            border-color: white;
+            background: rgba(0,0,0,0.3);
         }
 
-        /* ESTILOS DO NOVO POPUP (WRAPPER COM BLUR + QUADRADO 1x1) */
+        /* --- ESTILOS DO POPUP DE VÍDEO --- */
         .video-overlay-wrapper {
             position: fixed;
-            inset: 0; /* Top, right, bottom, left: 0 */
-            background: rgba(0, 0, 0, 0.7); /* Fundo escuro semi-transparente */
-            backdrop-filter: blur(15px); /* O BLUR SOLICITADO */
-            -webkit-backdrop-filter: blur(15px); /* Suporte Safari */
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
+            padding: 20px; /* Margem de segurança */
         }
 
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
-        /* O Quadrado Flutuante 1x1 */
-        .video-floating-square {
-            /* A mágica para ser quadrado e caber na tela: usa 90% da menor dimensão da viewport */
-            width: min(90vw, 90vh);
-            aspect-ratio: 1 / 1; 
-            background: #000;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            border-radius: 12px;
-            overflow: hidden;
+        /* Grupo que contém a barra de ferramentas + o vídeo */
+        .video-player-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             position: relative;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        .video-floating-square iframe {
+        /* MODO QUADRADO (Padrão/Vertical) */
+        .video-player-group.square {
+            width: min(90vw, 90vh);
+            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
+            max-width: 600px; 
+        }
+
+        .video-player-group.square .video-floating-container {
+            aspect-ratio: 1 / 1;
+        }
+
+        /* MODO WIDESCREEN (Horizontal/Virado) */
+        .video-player-group.widescreen {
+            width: 90vw;
+            max-width: 1200px;
+        }
+
+        .video-player-group.widescreen .video-floating-container {
+            aspect-ratio: 16 / 9;
+            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
+        }
+
+        /* Container do Iframe (Estilo visual) */
+        .video-floating-container {
+            width: 100%;
+            background: #000;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            border-radius: 24px; /* Cantos bem arredondados */
+            overflow: hidden;
+            position: relative;
+            transition: aspect-ratio 0.4s ease;
+        }
+
+        .video-floating-container iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        /* Botão Fechar Fixo no canto superior direito da tela */
-        .fixed-close-video-btn {
-            position: fixed;
-            top: 25px;
-            right: 25px;
-            z-index: 10000;
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.7);
-            font-size: 2.5rem;
-            cursor: pointer;
-            transition: color 0.2s, transform 0.2s;
-            padding: 10px;
-            line-height: 1;
+        /* Barra de Ferramentas (Botões pertinho do popup) */
+        .video-controls-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding-right: 8px;
         }
 
-        .fixed-close-video-btn:hover {
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
             transform: scale(1.1);
+        }
+
+        .toolbar-btn.close-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
         }
         
         @keyframes fadeOut {
@@ -562,7 +639,7 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
-        /* RESTO DOS ESTILOS ANTERIORES (Mantidos para funcionamento da página) */
+        /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
