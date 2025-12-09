@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// Define a função debounce
+// Define a função debounce para limitar chamadas de API
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -37,20 +37,27 @@ export default function Home() {
 
   // Sistema de Toast Integrado na Navbar
   const showToast = (message, type = 'info') => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
     
-    if (searchActive) setSearchActive(false)
+    // Se a busca estiver ativa, fechamos para mostrar a notificação
+    if (searchActive) {
+        setSearchActive(false)
+    }
 
     setActiveToast({ message, type })
     
     toastTimeoutRef.current = setTimeout(() => {
       setActiveToast(null)
       toastTimeoutRef.current = null
-    }, 2000)
+    }, 4000)
   }
 
   const dismissToast = () => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
     setActiveToast(null)
   }
 
@@ -78,12 +85,15 @@ export default function Home() {
       setLoading(false)
       return
     }
+    
     setLoading(true)
+    
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
         fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`)
       ])
+
       const moviesData = await moviesResponse.json()
       const tvData = await tvResponse.json()
 
@@ -95,7 +105,9 @@ export default function Home() {
        .slice(0, 30)
 
       setSearchResults(allResults)
+      
     } catch (error) {
+      console.error('Erro na busca:', error)
       showToast('Erro na busca em tempo real', 'error')
       setSearchResults([])
     } finally {
@@ -134,20 +146,24 @@ export default function Home() {
       const allReleases = [
         ...(moviesData.results || []).map(item => ({...item, media_type: 'movie'})),
         ...(tvData.results || []).map(item => ({...item, media_type: 'tv'}))
-      ].filter(item => item.poster_path)
-       .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
-       .slice(0, 15)
+      ]
+        .filter(item => item.poster_path)
+        .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
+        .slice(0, 15)
 
       const allPopular = [
         ...(popularMoviesData.results || []).map(item => ({...item, media_type: 'movie'})),
         ...(popularTvData.results || []).map(item => ({...item, media_type: 'tv'}))
-      ].filter(item => item.poster_path)
-       .sort(() => 0.5 - Math.random())
-       .slice(0, 15)
+      ]
+        .filter(item => item.poster_path)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 15)
 
       setReleases(allReleases)
       setRecommendations(allPopular)
+
     } catch (error) {
+      console.error('Erro ao carregar conteúdo:', error)
       showToast('Erro ao carregar conteúdo', 'error')
     }
   }
@@ -162,12 +178,15 @@ export default function Home() {
     }
   }
   
-  const isFavorite = (item) => favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type)
+  const isFavorite = (item) => {
+    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type);
+  }
 
   const toggleFavorite = (item) => {
     setFavorites(prevFavorites => {
       let newFavorites
       const wasFavorite = isFavorite(item)
+      
       if (wasFavorite) {
         newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
         showToast('Removido dos favoritos', 'info')
@@ -184,18 +203,32 @@ export default function Home() {
         newFavorites = [...prevFavorites, favoriteItem]
         showToast('Adicionado aos favoritos!', 'success')
       }
-      localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      
+      try {
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      } catch (error) {
+        showToast('Erro ao salvar favoritos', 'error')
+      }
+
       return newFavorites
     })
   }
   
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        debouncedSearch(query)
+      } else {
+        setSearchResults([])
+        showToast('Digite algo para pesquisar', 'info')
+      }
+    }
+  }
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-       if (searchInputRef.current) {
-          const query = searchInputRef.current.value.trim()
-          if (query) debouncedSearch(query)
-          else showToast('Digite algo para pesquisar', 'info')
-       }
+      handleSearchSubmit()
     }
   }
 
@@ -225,15 +258,32 @@ export default function Home() {
         items.map(item => {
           const isFav = isFavorite(item)
           return (
-            <Link key={getItemKey(item)} href={`/${item.media_type}/${item.id}`} className="content-card">
-              <img src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy"/>
-              <button className={`favorite-btn ${isFav ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item) }}>
+            <Link 
+              key={getItemKey(item)}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+                loading="lazy"
+              />
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+              >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
               <div className="floating-text-wrapper">
                 <div className="content-title-card">{item.title || item.name}</div>
                 <div className="content-year">
-                  {item.release_date ? new Date(item.release_date).getFullYear() : item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                 </div>
               </div>
             </Link>
@@ -292,11 +342,11 @@ export default function Home() {
       </main>
 
       <div className="bottom-nav-container">
-        {/* Navbar ajustável */}
+        {/* Lógica unificada: Se tem Toast, mostra Notificação. Se não, mostra Search ou Menu Normal */}
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''} ${activeToast ? 'notification-active' : ''}`}>
           
           {activeToast ? (
-             <div className={`nav-notification-text toast-type-${activeToast.type}`}>
+             <div className="nav-notification-text">
                  <i className={`fas ${activeToast.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}`}></i>
                  <span>{activeToast.message}</span>
              </div>
@@ -306,6 +356,9 @@ export default function Home() {
                 ref={searchInputRef} type="text" className="search-input-expanded" placeholder="Pesquisar..."
                 value={searchQuery} onChange={handleSearchChange} onKeyPress={handleKeyPress}
               />
+              <button className="close-search-expanded" onClick={() => setSearchActive(false)}>
+                <i className="fas fa-times"></i>
+              </button>
             </div>
           ) : (
             <>
@@ -322,13 +375,17 @@ export default function Home() {
           )}
         </div>
         
-        {/* Botão circular que controla tudo */}
+        {/* O botão circular vira X se tiver Toast OU Search, senão é Lupa */}
         <button 
           className={`search-circle ${(searchActive || activeToast) ? 'active' : ''}`}
           onClick={() => {
-            if (activeToast) dismissToast();
-            else if (searchActive) setSearchActive(false);
-            else setSearchActive(true)
+            if (activeToast) {
+                dismissToast();
+            } else if (searchActive) {
+               setSearchActive(false);
+            } else {
+              setSearchActive(true)
+            }
           }}
         >
           <i className={`fas ${activeToast ? 'fa-times' : (searchActive ? 'fa-times' : 'fa-search')}`}></i>
@@ -336,159 +393,60 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* --- ESTILO DA NAVBAR AJUSTÁVEL --- */
-        .bottom-nav-container {
-            display: flex;
-            align-items: flex-end;
-            padding-bottom: 20px;
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            pointer-events: none; /* Permite clicar através da area transparente */
-            justify-content: center;
-        }
-
-        .main-nav-bar {
-            height: 60px !important; /* Altura forçada fixa */
-            padding: 0 10px;
-            
-            /* EFEITO BLUR PERMANENTE */
-            background: rgba(20, 20, 20, 0.8) !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            
-            /* Layout */
-            display: flex;
-            align-items: center;
-            border-radius: 30px; /* Arredondado nas pontas */
-            margin-right: 10px;
-            pointer-events: auto; /* Reativa cliques */
-            
-            /* Transição apenas de largura, nunca de cor/altura */
-            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            
-            width: calc(100% - 90px); /* Largura padrão */
-            max-width: 500px;
-        }
-
-        /* Mesmo com notificação, mantemos a estrutura visual idêntica */
+        /* CSS para a notificação na navbar */
         .main-nav-bar.notification-active {
-            width: calc(100% - 90px);
+            padding: 0 15px;
             justify-content: flex-start;
+            background: var(--card-bg);
+            border-color: var(--primary);
+            width: calc(100% - 70px); /* Garante espaço para o botão circular */
+            height: auto;
+            min-height: 50px;
         }
 
         .nav-notification-text {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: var(--text);
             font-size: 0.9rem;
             width: 100%;
             animation: fadeIn 0.3s ease;
-            line-height: 1.4;
-            height: 100%; /* Ocupa altura total para centralizar */
         }
         
-        /* CORES VIVAS (ICONES) */
         .nav-notification-text i {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        
-        /* Verde Neon Vivo para Sucesso */
-        .toast-type-success i {
-            color: #00E676 !important; 
-        }
-
-        /* Azul Neon Vivo para Info/Erro */
-        .toast-type-info i,
-        .toast-type-error i {
-            color: #2979FF !important; 
+            color: var(--primary);
+            font-size: 1.1rem;
         }
 
         .nav-notification-text span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            line-height: 1.2;
+            padding: 5px 0;
         }
-
-        .search-input-container {
+        
+        /* Grid e Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            padding: 0;
             width: 100%;
-            padding-right: 0;
-            height: 100%;
-            display: flex;
-            align-items: center;
         }
-
-        .search-input-expanded {
-             background: transparent;
-             border: none;
-             color: white;
-             width: 100%;
-             height: 100%;
-             font-size: 1rem;
-             outline: none;
-        }
-
-        /* --- BOTÃO REDONDO (FUNDO BLUR SEMPRE) --- */
-        
-        .search-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            
-            /* EFEITO BLUR PERMANENTE (Igual navbar) */
-            background: rgba(20, 20, 20, 0.8) !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: white;
-            cursor: pointer;
-            pointer-events: auto;
-            border: none !important; /* Sem borda nunca */
-            box-shadow: none !important; /* Sem sombra colorida */
-            transition: transform 0.2s ease;
-        }
-        
-        /* Estado ativo apenas muda o ícone ou escala leve, NUNCA cor */
-        .search-circle.active {
-            transform: scale(0.95);
-        }
-
-        /* --- RESTANTE DO CSS (Itens de navegação) --- */
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: none;
-            color: #aaa;
-            height: 100%;
-            font-size: 0.75rem;
-            cursor: pointer;
-            gap: 4px;
-        }
-        .nav-item.active { color: white; }
-        .nav-item i { font-size: 1.2rem; }
-
-        .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 0; width: 100%; }
         .content-card { position: relative; display: block; overflow: hidden; border-radius: 12px; }
         .content-poster { width: 100%; height: auto; aspect-ratio: 2/3; object-fit: cover; display: block; border-radius: 12px; }
-        @media (max-width: 768px) { .content-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+        
+        @media (max-width: 768px) {
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        
         .live-search-results { position: static; width: 100%; height: auto; padding: 0; margin-bottom: 20px; }
         .page-title-home { margin-top: 20px; margin-bottom: 15px; font-size: 1.5rem; font-weight: 700; color: var(--text); display: flex; align-items: center; }
         .live-search-loading, .no-results-live { display: flex; align-items: center; justify-content: center; min-height: 50vh; color: var(--secondary); font-size: 1rem; flex-direction: column; text-align: center; width: 100%; }
         .live-search-loading i, .no-results-live i { margin-bottom: 10px; font-size: 2rem; }
         .container { padding: 0 16px 100px 16px; width: 100%; }
         .header-content { display: flex; justify-content: flex-start; align-items: center; width: 100%; padding: 0 16px; }
+        .main-nav-bar.search-active { padding: 0 10px; }
       `}</style>
     </>
   )
