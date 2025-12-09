@@ -24,7 +24,10 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
-  const [toasts, setToasts] = useState([])
+  
+  // Sistema de Notificação na Navbar
+  const [activeToast, setActiveToast] = useState(null)
+  const toastTimeoutRef = useRef(null)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -32,24 +35,38 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Integrado na Navbar
   const showToast = (message, type = 'info') => {
-    const id = Date.now()
-    const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
     
-    setTimeout(() => {
-      removeToast(id)
-    }, 3000)
+    // Se a busca estiver ativa, fechamos para mostrar a notificação
+    if (searchActive) {
+        setSearchActive(false)
+    }
+
+    setActiveToast({ message, type })
+    
+    toastTimeoutRef.current = setTimeout(() => {
+      setActiveToast(null)
+      toastTimeoutRef.current = null
+    }, 4000)
   }
 
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
+  const dismissToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setActiveToast(null)
   }
 
   useEffect(() => {
     loadHomeContent()
     loadFavorites()
+    return () => {
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -62,7 +79,6 @@ export default function Home() {
     }
   }, [searchActive])
   
-  // Função central de busca
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -113,7 +129,6 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // --- Funções de Carregamento de Conteúdo ---
   const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
@@ -149,6 +164,7 @@ export default function Home() {
 
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error)
+      showToast('Erro ao carregar conteúdo', 'error')
     }
   }
 
@@ -158,7 +174,6 @@ export default function Home() {
       const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
       setFavorites(initialFavorites)
     } catch (error) {
-      console.error('Erro ao carregar favoritos:', error)
       setFavorites([])
     }
   }
@@ -192,7 +207,6 @@ export default function Home() {
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
         showToast('Erro ao salvar favoritos', 'error')
       }
 
@@ -220,33 +234,23 @@ export default function Home() {
 
   const getActiveItems = () => {
     switch (activeSection) {
-      case 'releases':
-        return releases
-      case 'recommendations':
-        return recommendations
-      case 'favorites':
-        return favorites
-      default:
-        return releases
+      case 'releases': return releases
+      case 'recommendations': return recommendations
+      case 'favorites': return favorites
+      default: return releases
     }
   }
   
   const getActiveSectionDetails = () => {
     switch (activeSection) {
-      case 'releases':
-        return { title: 'Lançamentos', icon: 'fas fa-film' }
-      case 'recommendations':
-        return { title: 'Populares', icon: 'fas fa-fire' }
-      case 'favorites':
-        return { title: 'Favoritos', icon: 'fas fa-heart' }
-      default:
-        return { title: 'Conteúdo', icon: 'fas fa-tv' }
+      case 'releases': return { title: 'Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations': return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites': return { title: 'Favoritos', icon: 'fas fa-heart' }
+      default: return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
   }
   
   const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
-
-  // --- Componentes ---
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite, extraClass = '' }) => (
     <div className={`content-grid ${extraClass}`}>
@@ -258,7 +262,6 @@ export default function Home() {
               key={getItemKey(item)}
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
-              // Remove o onClick que fechava a busca para permitir navegação natural
             >
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -266,7 +269,6 @@ export default function Home() {
                 className="content-poster"
                 loading="lazy"
               />
-              
               <button 
                 className={`favorite-btn ${isFav ? 'active' : ''}`}
                 onClick={(e) => {
@@ -274,11 +276,9 @@ export default function Home() {
                   e.stopPropagation() 
                   toggleFavorite(item)
                 }}
-                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
               >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
-
               <div className="floating-text-wrapper">
                 <div className="content-title-card">{item.title || item.name}</div>
                 <div className="content-year">
@@ -298,70 +298,20 @@ export default function Home() {
   )
 
   const LiveSearchResults = () => {
-    // Se não tiver busca ativa, não renderiza nada
     if (!searchActive) return null
-    
     return (
       <div className="live-search-results">
         <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
-
-        {loading && (
-            <div className="live-search-loading">
-                <i className="fas fa-spinner fa-spin"></i>
-                <span> Buscando...</span>
-            </div>
-        )}
-        
+        {loading && <div className="live-search-loading"><i className="fas fa-spinner fa-spin"></i><span> Buscando...</span></div>}
         {!loading && searchResults.length > 0 ? (
-            <ContentGrid 
-                items={searchResults}
-                isFavorite={isFavorite}
-                toggleFavorite={toggleFavorite}
-                extraClass="live-grid"
-            />
+            <ContentGrid items={searchResults} isFavorite={isFavorite} toggleFavorite={toggleFavorite} extraClass="live-grid" />
         ) : (!loading && searchQuery.trim() !== '' && (
-            <div className="no-results-live">
-                <i className="fas fa-ghost"></i>
-                <p>Nenhum resultado encontrado para "{searchQuery}".</p>
-            </div>
+            <div className="no-results-live"><i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}".</p></div>
         ))}
-        
-        {!loading && searchQuery.trim() === '' && (
-            <div className="no-results-live">
-                <p>Comece a digitar para pesquisar...</p>
-            </div>
-        )}
+        {!loading && searchQuery.trim() === '' && <div className="no-results-live"><p>Comece a digitar para pesquisar...</p></div>}
       </div>
     )
   }
-
-  const ToastContainer = () => (
-    <div className="toast-container">
-      {toasts.map(toast => (
-        <div 
-          key={toast.id} 
-          className={`toast toast-${toast.type} show`}
-          style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-        >
-          <div className="toast-icon">
-            <i className={`fas ${
-              toast.type === 'success' ? 'fa-check' : 
-              toast.type === 'error' ? 'fa-exclamation-triangle' : 
-              'fa-info'
-            }`}></i>
-          </div>
-          <div className="toast-content">{toast.message}</div>
-          <button 
-            className="toast-close"
-            onClick={() => removeToast(toast.id)}
-          >
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-  
 
   return (
     <>
@@ -375,106 +325,107 @@ export default function Home() {
 
       <Header />
       
-      <ToastContainer />
-
       <main className="container">
-        
         {loading && !searchActive && (
-          <div className="loading active">
-            <div className="spinner"></div>
-            <p>Carregando conteúdo...</p>
-          </div>
+          <div className="loading active"><div className="spinner"></div><p>Carregando conteúdo...</p></div>
         )}
-
-        {/* Lógica de Renderização Condicional - Página Inteira */}
         {searchActive ? (
             <LiveSearchResults />
         ) : (
             <div className="home-sections">
                 <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
                 <section className="section">
-                    <ContentGrid 
-                        items={getActiveItems()} 
-                        isFavorite={isFavorite} 
-                        toggleFavorite={toggleFavorite}
-                        extraClass="main-grid"
-                    />
+                    <ContentGrid items={getActiveItems()} isFavorite={isFavorite} toggleFavorite={toggleFavorite} extraClass="main-grid" />
                 </section>
             </div>
         )}
       </main>
 
       <div className="bottom-nav-container">
-        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-          {!searchActive ? (
-            <>
-              <button 
-                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                onClick={() => setActiveSection('releases')}
-              >
-                <i className="fas fa-film"></i>
-                <span>Lançamentos</span>
-              </button>
-              <button 
-                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                onClick={() => setActiveSection('recommendations')}
-              >
-                <i className="fas fa-fire"></i>
-                <span>Populares</span>
-              </button>
-              <button 
-                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                onClick={() => setActiveSection('favorites')}
-              >
-                <i className="fas fa-heart"></i>
-                <span>Favoritos</span>
-              </button>
-            </>
-          ) : (
+        {/* Lógica unificada: Se tem Toast, mostra Notificação. Se não, mostra Search ou Menu Normal */}
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''} ${activeToast ? 'notification-active' : ''}`}>
+          
+          {activeToast ? (
+             <div className="nav-notification-text">
+                 <i className={`fas ${activeToast.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}`}></i>
+                 <span>{activeToast.message}</span>
+             </div>
+          ) : searchActive ? (
             <div className="search-input-container">
               <input 
-                ref={searchInputRef}
-                type="text"
-                className="search-input-expanded" 
-                placeholder="Pesquisar..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyPress={handleKeyPress}
+                ref={searchInputRef} type="text" className="search-input-expanded" placeholder="Pesquisar..."
+                value={searchQuery} onChange={handleSearchChange} onKeyPress={handleKeyPress}
               />
-              <button 
-                className="close-search-expanded"
-                onClick={() => {
-                  setSearchActive(false)
-                }}
-              >
+              <button className="close-search-expanded" onClick={() => setSearchActive(false)}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
+          ) : (
+            <>
+              <button className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
+                <i className="fas fa-film"></i><span>Lançamentos</span>
+              </button>
+              <button className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
+                <i className="fas fa-fire"></i><span>Populares</span>
+              </button>
+              <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+                <i className="fas fa-heart"></i><span>Favoritos</span>
+              </button>
+            </>
           )}
         </div>
         
+        {/* O botão circular vira X se tiver Toast OU Search, senão é Lupa */}
         <button 
-          className={`search-circle ${searchActive ? 'active' : ''}`}
+          className={`search-circle ${(searchActive || activeToast) ? 'active' : ''}`}
           onClick={() => {
-            if (searchActive) {
+            if (activeToast) {
+                dismissToast();
+            } else if (searchActive) {
                setSearchActive(false);
             } else {
               setSearchActive(true)
             }
           }}
         >
-          <i className="fas fa-search"></i>
+          <i className={`fas ${activeToast ? 'fa-times' : (searchActive ? 'fa-times' : 'fa-search')}`}></i>
         </button>
       </div>
 
       <style jsx global>{`
-        /* Animação para notificação (Toast) */
-        @keyframes toast-slide-up {
-          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        /* CSS para a notificação na navbar */
+        .main-nav-bar.notification-active {
+            padding: 0 15px;
+            justify-content: flex-start;
+            background: var(--card-bg);
+            border-color: var(--primary);
+            width: calc(100% - 70px); /* Garante espaço para o botão circular */
+            height: auto;
+            min-height: 50px;
+        }
+
+        .nav-notification-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
         }
         
-        /* --- Padronização do Grid (Home e Busca) --- */
+        .nav-notification-text i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .nav-notification-text span {
+            white-space: normal;
+            line-height: 1.2;
+            padding: 5px 0;
+        }
+        
+        /* Grid e Layout */
         .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -482,110 +433,32 @@ export default function Home() {
             padding: 0;
             width: 100%;
         }
-
-        .content-card {
-           position: relative;
-           display: block;
-           overflow: hidden;
-           border-radius: 12px;
-        }
-
-        .content-poster {
-           width: 100%;
-           height: auto;
-           aspect-ratio: 2/3; /* Proporção exata 2:3 */
-           object-fit: cover;
-           display: block;
-           border-radius: 12px;
-        }
-
-        /* Mobile: 2 colunas exatas */
+        .content-card { position: relative; display: block; overflow: hidden; border-radius: 12px; }
+        .content-poster { width: 100%; height: auto; aspect-ratio: 2/3; object-fit: cover; display: block; border-radius: 12px; }
+        
         @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
-        }
-
-        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
-        .live-search-results {
-            /* Removido position fixed, top, bottom, etc. */
-            position: static;
-            width: 100%;
-            height: auto;
-            background-color: transparent;
-            /* Padding é controlado pelo .container agora */
-            padding: 0;
-            margin-bottom: 20px;
-        }
-
-        .page-title-home {
-            margin-top: 20px;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text);
-            display: flex;
-            align-items: center;
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
         
-        .live-search-loading, .no-results-live {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 50vh; /* Ocupa altura mínima para estética */
-            color: var(--secondary);
-            font-size: 1rem;
-            flex-direction: column;
-            text-align: center;
-            width: 100%;
-        }
-        
-        .live-search-loading i, .no-results-live i {
-            margin-bottom: 10px;
-            font-size: 2rem;
-        }
-
-        /* --- Container Principal --- */
-        .container {
-            /* Padding padrão para todas as páginas (Home e Busca) */
-            padding: 0 16px 100px 16px;
-            width: 100%;
-        }
-
-        /* --- Header Adjustments --- */
-        .header-content {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            width: 100%;
-            padding: 0 16px;
-        }
-        
-        .main-nav-bar.search-active {
-            padding: 0 10px;
-        }
+        .live-search-results { position: static; width: 100%; height: auto; padding: 0; margin-bottom: 20px; }
+        .page-title-home { margin-top: 20px; margin-bottom: 15px; font-size: 1.5rem; font-weight: 700; color: var(--text); display: flex; align-items: center; }
+        .live-search-loading, .no-results-live { display: flex; align-items: center; justify-content: center; min-height: 50vh; color: var(--secondary); font-size: 1rem; flex-direction: column; text-align: center; width: 100%; }
+        .live-search-loading i, .no-results-live i { margin-bottom: 10px; font-size: 2rem; }
+        .container { padding: 0 16px 100px 16px; width: 100%; }
+        .header-content { display: flex; justify-content: flex-start; align-items: center; width: 100%; padding: 0 16px; }
+        .main-nav-bar.search-active { padding: 0 10px; }
       `}</style>
     </>
   )
 }
 
-// Header
-const Header = () => {
-  return (
-    <header className="github-header">
-      <div className="header-content">
-        <Link href="/" className="logo-container">
-          <img 
-            src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
-            alt="Yoshikawa Bot" 
-            className="logo-image"
-          />
-          <div className="logo-text">
-            <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
-          </div>
-        </Link>
-      </div>
-    </header>
-  )
-}
+const Header = () => (
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa Bot" className="logo-image" />
+        <div className="logo-text"><span className="logo-name">Yoshikawa</span><span className="beta-tag">STREAMING</span></div>
+      </Link>
+    </div>
+  </header>
+)
