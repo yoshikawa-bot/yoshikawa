@@ -33,6 +33,9 @@ export default function TVShow() {
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
+  
+  // REF PARA O CONTAINER DO VÍDEO (Para tela cheia)
+  const videoContainerRef = useRef(null)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
@@ -79,25 +82,41 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
+  // --- LÓGICA DE TELA CHEIA E ROTAÇÃO AUTOMÁTICA ---
   useEffect(() => {
-    if (showVideoPlayer) {
-      const handleResize = () => {
-        // Se a largura for maior que a altura, sugere modo widescreen
-        if (window.innerWidth > window.innerHeight) {
-            setIsWideScreen(true);
-        } else {
-            setIsWideScreen(false);
-        }
-      };
+    if (showVideoPlayer && videoContainerRef.current) {
+      const elem = videoContainerRef.current;
       
-      // Checa ao abrir
-      handleResize();
+      // 1. Tentar entrar em Fullscreen no container do iframe
+      const requestFS = elem.requestFullscreen || 
+                        elem.webkitRequestFullscreen || 
+                        elem.mozRequestFullScreen || 
+                        elem.msRequestFullscreen;
       
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      if (requestFS) {
+        // Pequeno delay para garantir renderização
+        setTimeout(() => {
+            requestFS.call(elem).catch(err => console.log('Erro ao entrar em fullscreen:', err));
+        }, 100);
+      }
+
+      // 2. Tentar travar a orientação em Paisagem (Landscape)
+      // Nota: Nem todos os navegadores suportam isso (principalmente iOS Safari bloqueia)
+      if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch((err) => {
+              // Falha silenciosa ou log (comum em desktop ou se o navegador bloquear)
+              console.log('Orientação automática não suportada ou bloqueada:', err);
+          });
+      }
+
+      // Ajusta layout widescreen automaticamente se a tela for maior na largura
+      if (window.innerWidth > window.innerHeight) {
+          setIsWideScreen(true);
+      } else {
+          setIsWideScreen(false);
+      }
     }
-  }, [showVideoPlayer]);
+  }, [showVideoPlayer]); // Dispara sempre que o player abre
 
   useEffect(() => {
     setShowSynopsis(false)
@@ -197,6 +216,19 @@ export default function TVShow() {
   
   const closePopup = (setter) => {
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
+    
+    // Sair do Fullscreen
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    }
+
+    // Desbloquear orientação
+    if (screen.orientation && screen.orientation.unlock) {
+        try { screen.orientation.unlock(); } catch(e){}
+    }
+
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
@@ -231,13 +263,13 @@ export default function TVShow() {
   }
   
   const handleSeasonChange = async (newSeason) => {
-    setShowVideoPlayer(false)
+    closePopup(setShowVideoPlayer) // Garante que fecha se estiver aberto
     setSeason(newSeason)
     await loadSeasonDetails(newSeason)
   }
 
   const handleEpisodeChange = (newEpisode) => {
-    setShowVideoPlayer(false)
+    closePopup(setShowVideoPlayer) // Garante que fecha se estiver aberto
     setEpisode(newEpisode)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -246,6 +278,11 @@ export default function TVShow() {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
+  }
+
+  // Função dedicada ao Play para garantir chamada limpa
+  const handlePlayClick = () => {
+      setShowVideoPlayer(true);
   }
 
   if (loading) return <div className="loading active"><div className="spinner"></div><p>Carregando...</p></div>
@@ -299,7 +336,7 @@ export default function TVShow() {
         {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
         <div className="player-container">
           <div className="player-wrapper">
-             <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
+             <div className="episode-cover-placeholder" onClick={handlePlayClick}>
                 {coverImage ? (
                     <img src={coverImage} alt="Episode Cover" className="cover-img" />
                 ) : (
@@ -407,11 +444,11 @@ export default function TVShow() {
                         </button>
                     </div>
 
-                    {/* O Container do Vídeo */}
-                    <div className="video-floating-container">
+                    {/* O Container do Vídeo COM REF ADICIONADA */}
+                    <div className="video-floating-container" ref={videoContainerRef}>
                         <iframe 
                             src={getPlayerUrl()}
-                            allow="autoplay; encrypted-media; picture-in-picture" 
+                            allow="autoplay; encrypted-media; picture-in-picture; fullscreen" 
                             allowFullScreen 
                             title={`Player`}
                         ></iframe>
@@ -537,7 +574,7 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.9); /* Fundo mais escuro para o modo cinema */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
@@ -593,6 +630,14 @@ export default function TVShow() {
             position: relative;
             transition: aspect-ratio 0.4s ease;
         }
+        
+        /* Ajuste para quando estiver em Fullscreen Nativo */
+        .video-floating-container:fullscreen,
+        .video-floating-container:-webkit-full-screen {
+            border-radius: 0;
+            width: 100vw;
+            height: 100vh;
+        }
 
         .video-floating-container iframe {
             width: 100%;
@@ -606,6 +651,11 @@ export default function TVShow() {
             justify-content: flex-end;
             gap: 12px;
             padding-right: 8px;
+            position: absolute; /* Agora absoluto para ficar sobreposto se necessário */
+            top: -50px;
+            right: 0;
+            width: 100%;
+            z-index: 10;
         }
 
         .toolbar-btn {
