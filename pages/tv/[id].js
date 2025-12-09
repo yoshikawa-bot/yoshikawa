@@ -29,7 +29,7 @@ export default function TVShow() {
   // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
-  // Estado para garantir que a notificação mobile apareça apenas uma vez
+  // Estado para garantir que a notificação mobile apareça apenas uma vez (mantido por consistência, mas a lógica de exibição está no useEffect)
   const [mobileTipShown, setMobileTipShown] = useState(false)
 
   const [showSynopsis, setShowSynopsis] = useState(false)
@@ -74,14 +74,25 @@ export default function TVShow() {
     }
   }, [id])
   
-  // NOVO: Exibe a dica mobile ao abrir o pop-up
+  // ATUALIZADO: Exibe a dica mobile (sempre que o player abrir) e controla o overflow do body
   useEffect(() => {
-    if (showVideoPlayer && isMobile() && !mobileTipShown) {
-        showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
-        setMobileTipShown(true);
+    if (showVideoPlayer) {
+        // NOVO: Exibe a dica mobile SEMPRE que o player abre no celular
+        if (isMobile()) {
+            // Define como true para evitar que a dica de provedor (se demorar a aparecer) substitua a de rotação.
+            setMobileTipShown(true); 
+            // NOVO: Exibe a notificação de rotação
+            showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
+        } else {
+             // Limpa a notificação de rotação se for desktop e o player abriu
+             removeToast();
+        }
+    } else {
+        // Se o player for fechado, permite que outras dicas (como a de provedor) voltem a aparecer.
+        setMobileTipShown(false); 
     }
     
-    // NOVO: Bloqueia a rolagem quando o player está aberto
+    // Bloqueia a rolagem quando o player está aberto
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
 
     // Limpeza para garantir que a rolagem volte
@@ -89,7 +100,7 @@ export default function TVShow() {
         document.body.style.overflow = 'auto';
     };
 
-  }, [showVideoPlayer, mobileTipShown]) // Depende de showVideoPlayer e mobileTipShown
+  }, [showVideoPlayer]) // Removida a dependência de mobileTipShown
 
   useEffect(() => {
     if (episodeListRef.current && seasonDetails) {
@@ -243,12 +254,8 @@ export default function TVShow() {
     }
   };
 
-  // NOVO: Remove a funcionalidade de fechar ao clicar no fundo
+  // Mantido: Impede o fechamento ao clicar no fundo
   const handleVideoOverlayClick = (e) => {
-    // Agora, não faz nada ao clicar no fundo (Impede o fechamento)
-    // if (e.target.classList.contains('video-overlay-wrapper')) {
-    //     closePopup(setShowVideoPlayer);
-    // }
     e.stopPropagation(); // Garante que cliques no fundo não vazem
   }
   
@@ -291,8 +298,14 @@ export default function TVShow() {
     ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}`
     : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
 
-  const SingleToast = () => {
+  const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
+    
+    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
+    if (showVideoPlayer && toast.type !== 'info') {
+        return null; 
+    }
+
     return (
       <div className="toast-container">
         <div 
@@ -502,7 +515,7 @@ export default function TVShow() {
         )}
       </main>
 
-      <SingleToast />
+      <SingleToast showVideoPlayer={showVideoPlayer} />
       <BottomNav 
         selectedPlayer={selectedPlayer}
         onPlayerChange={() => setShowPlayerSelector(true)}
@@ -668,6 +681,57 @@ export default function TVShow() {
         @keyframes fadeOut {
             from { opacity: 1; }
             to { opacity: 0; }
+        }
+
+        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
+        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
+        .video-overlay-wrapper .toast-container {
+            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
+            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
+            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
+            pointer-events: none; /* Não deve bloquear interações com o player */
+        }
+        
+        /* Ajuste de altura e posicionamento da notificação de rotação */
+        .video-overlay-wrapper .toast-container .toast {
+            top: auto; /* Remove o posicionamento top padrão */
+            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Oculta as outras notificações quando o player estiver aberto */
+        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
+        .video-overlay-wrapper ~ .toast-container {
+            display: none !important;
+        }
+
+        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
+        .toast-container {
+            position: fixed;
+            top: 10px; /* Posição padrão quando o player está fechado */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            /* Manter estilos existentes do .toast */
+            top: 0; /* Usa o topo do toast-container */
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            max-width: 100%;
+            pointer-events: auto;
         }
 
         /* RESTO DOS ESTILOS ANTERIORES */
