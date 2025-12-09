@@ -21,10 +21,7 @@ export default function TVShow() {
   
   // Estado para controlar o Pop-up do Vídeo
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
-  // Estado para recarregar o iframe (Reload)
-  const [playerKey, setPlayerKey] = useState(0)
-  
-  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9 via CSS)
+  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9)
   const [isWideScreen, setIsWideScreen] = useState(false)
 
   const [isFavorite, setIsFavorite] = useState(false)
@@ -82,15 +79,11 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Gerenciamento de Orientação e Body Scroll Lock
+  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
     if (showVideoPlayer) {
-      // Trava o scroll do corpo
-      document.body.style.overflow = 'hidden';
-      
       const handleResize = () => {
-        // Se a largura for maior que a altura, ativa modo widescreen (Paisagem)
-        // Se a altura for maior, ativa modo quadrado (Retrato)
+        // Se a largura for maior que a altura, sugere modo widescreen
         if (window.innerWidth > window.innerHeight) {
             setIsWideScreen(true);
         } else {
@@ -98,16 +91,11 @@ export default function TVShow() {
         }
       };
       
-      // Executa na montagem
+      // Checa ao abrir
       handleResize();
       
       window.addEventListener('resize', handleResize);
-      return () => {
-          window.removeEventListener('resize', handleResize);
-          document.body.style.overflow = ''; // Destrava ao sair
-      }
-    } else {
-        document.body.style.overflow = '';
+      return () => window.removeEventListener('resize', handleResize);
     }
   }, [showVideoPlayer]);
 
@@ -214,7 +202,6 @@ export default function TVShow() {
         setTimeout(() => {
             setter(false);
             element.classList.remove('closing');
-            setPlayerKey(0); // Reseta a key ao fechar
         }, 300);
     } else {
         setter(false);
@@ -239,14 +226,8 @@ export default function TVShow() {
     }
   }
   
-  // Função para mudar formato manualmente (se o usuário quiser forçar)
   const toggleVideoFormat = () => {
     setIsWideScreen(!isWideScreen);
-  }
-
-  // Função para recarregar o iframe (Reload)
-  const reloadPlayer = () => {
-    setPlayerKey(prev => prev + 1);
   }
   
   const handleSeasonChange = async (newSeason) => {
@@ -258,7 +239,6 @@ export default function TVShow() {
   const handleEpisodeChange = (newEpisode) => {
     setShowVideoPlayer(false)
     setEpisode(newEpisode)
-    setPlayerKey(0) // Reseta key ao trocar ep
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -310,7 +290,6 @@ export default function TVShow() {
       <Head>
         <title>{tvShow.name} - Yoshikawa</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <meta name="theme-color" content="#000000" />
       </Head>
 
       <Header />
@@ -326,6 +305,7 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
+                {/* Botão de Play Simples (Círculo BRANCO) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -415,20 +395,13 @@ export default function TVShow() {
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
                 {/* Grupo: Barra de Ferramentas + Player */}
-                <div 
-                    className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}
-                >
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
                     
-                    {/* Barra de Controles Flutuante */}
+                    {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
-                        <button className="toolbar-btn" onClick={reloadPlayer} title="Recarregar Player">
-                            <i className="fas fa-sync-alt"></i>
+                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
+                            <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
                         </button>
-
-                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Ajustar Formato">
-                            <i className={`fas ${isWideScreen ? 'fa-mobile-alt' : 'fa-tv'}`}></i>
-                        </button>
-                        
                         <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
                             <i className="fas fa-times"></i>
                         </button>
@@ -436,13 +409,9 @@ export default function TVShow() {
 
                     {/* O Container do Vídeo */}
                     <div className="video-floating-container">
-                        <div className="iframe-loader">
-                            <div className="spinner-mini"></div>
-                        </div>
                         <iframe 
-                            key={playerKey} // Key muda para forçar reload
                             src={getPlayerUrl()}
-                            allow="autoplay; encrypted-media; picture-in-picture; fullscreen" 
+                            allow="autoplay; encrypted-media; picture-in-picture" 
                             allowFullScreen 
                             title={`Player`}
                         ></iframe>
@@ -525,7 +494,6 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border-radius: 12px;
         }
 
         .cover-img {
@@ -541,13 +509,14 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
+        /* Botão play simples: Círculo BRANCO */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            border: 4px solid #ffffff; 
+            border: 4px solid #ffffff; /* Borda branca sólida */
             background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
@@ -568,118 +537,87 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 10px;
+            padding: 20px; /* Margem de segurança */
         }
 
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
+        /* Grupo que contém a barra de ferramentas + o vídeo */
         .video-player-group {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             position: relative;
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            max-height: 95vh;
-            width: 100%;
-            justify-content: center;
         }
 
-        /* MODO 1x1 (RETRATO/SQUARE) - Padrão Mobile em pé */
+        /* MODO QUADRADO (Padrão/Vertical) */
         .video-player-group.square {
-            width: 100%;
-            max-width: 500px; /* Limita largura em telas grandes */
+            width: min(90vw, 90vh);
+            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
+            max-width: 600px; 
         }
+
         .video-player-group.square .video-floating-container {
             aspect-ratio: 1 / 1;
-            width: 100%;
-            max-height: 60vh; /* Garante que não estoure a tela na vertical */
         }
 
-        /* MODO WIDESCREEN (PAISAGEM) - Ativa quando vira a tela */
+        /* MODO WIDESCREEN (Horizontal/Virado) */
         .video-player-group.widescreen {
-            width: 100%;
-            max-width: 1000px;
+            width: 90vw;
+            max-width: 1200px;
         }
+
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            width: 100%;
-            max-height: 85vh; /* Ajuste para não cortar controles */
+            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
         }
 
+        /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 16px;
+            border-radius: 24px; /* Cantos bem arredondados */
             overflow: hidden;
             position: relative;
             transition: aspect-ratio 0.4s ease;
-            border: 1px solid #333;
-            margin: 0 auto;
-        }
-
-        /* Loader atrás do Iframe */
-        .iframe-loader {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #0a0a0a;
-            z-index: 0;
-        }
-        .spinner-mini {
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
         }
 
         .video-floating-container iframe {
-            position: relative;
-            z-index: 1;
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        /* Barra de Ferramentas */
+        /* Barra de Ferramentas (Botões pertinho do popup) */
         .video-controls-toolbar {
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            padding: 8px 16px;
-            background: rgba(30, 30, 30, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: fit-content;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 10;
+            justify-content: flex-end;
+            gap: 12px;
+            padding-right: 8px;
         }
 
         .toolbar-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.8);
-            width: 40px;
-            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             cursor: pointer;
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -687,31 +625,25 @@ export default function TVShow() {
         }
 
         .toolbar-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(255, 255, 255, 0.25);
             transform: scale(1.1);
         }
 
-        .toolbar-btn.close-btn {
-            background: rgba(255, 59, 48, 0.15);
-            color: #ff453a;
-        }
         .toolbar-btn.close-btn:hover {
-            background: rgba(255, 59, 48, 0.3);
+            background: var(--primary);
+            border-color: var(--primary);
         }
         
         @keyframes fadeOut {
             from { opacity: 1; }
             to { opacity: 0; }
         }
-        
+
         /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .meta-header-row {
             display: flex;
