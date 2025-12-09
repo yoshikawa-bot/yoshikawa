@@ -341,21 +341,42 @@ export default function Home() {
             display: flex;
             align-items: flex-end;
             padding-bottom: 20px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            pointer-events: none; /* Permite clicar através da area transparente */
+            justify-content: center;
         }
 
         .main-nav-bar {
-            height: auto;
-            min-height: 60px; /* Altura mantida */
+            height: 60px !important; /* Altura forçada fixa */
             padding: 0 10px;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            /* EFEITO BLUR PERMANENTE */
+            background: rgba(20, 20, 20, 0.8) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            
+            /* Layout */
+            display: flex;
+            align-items: center;
+            border-radius: 30px; /* Arredondado nas pontas */
+            margin-right: 10px;
+            pointer-events: auto; /* Reativa cliques */
+            
+            /* Transição apenas de largura, nunca de cor/altura */
+            transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            width: calc(100% - 90px); /* Largura padrão */
+            max-width: 500px;
         }
 
+        /* Mesmo com notificação, mantemos a estrutura visual idêntica */
         .main-nav-bar.notification-active {
-            padding: 12px 20px;
+            width: calc(100% - 90px);
             justify-content: flex-start;
-            background: var(--card-bg);
-            width: calc(100% - 70px);
-            align-items: center;
         }
 
         .nav-notification-text {
@@ -367,47 +388,97 @@ export default function Home() {
             width: 100%;
             animation: fadeIn 0.3s ease;
             line-height: 1.4;
+            height: 100%; /* Ocupa altura total para centralizar */
         }
         
-        /* ICONS DE NOTIFICAÇÃO (CORES VIVAS/CLARAS) */
-        
+        /* CORES VIVAS (ICONES) */
         .nav-notification-text i {
             font-size: 1.2rem;
             flex-shrink: 0;
         }
         
-        /* Verde Vivo/Claro para Sucesso */
+        /* Verde Neon Vivo para Sucesso */
         .toast-type-success i {
-            color: #00e676 !important; /* Vivid Bright Green */
+            color: #00E676 !important; 
         }
 
-        /* Azul Vivo/Claro para Info/Erro */
+        /* Azul Neon Vivo para Info/Erro */
         .toast-type-info i,
         .toast-type-error i {
-            color: #2979ff !important; /* Vivid Bright Blue */
+            color: #2979FF !important; 
         }
 
         .nav-notification-text span {
-            white-space: normal;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .search-input-container {
             width: 100%;
             padding-right: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
 
-        /* --- BOTÃO REDONDO (SEM BORDA E COR) --- */
+        .search-input-expanded {
+             background: transparent;
+             border: none;
+             color: white;
+             width: 100%;
+             height: 100%;
+             font-size: 1rem;
+             outline: none;
+        }
+
+        /* --- BOTÃO REDONDO (FUNDO BLUR SEMPRE) --- */
         
-        /* Força a ausência de borda colorida e mantém o fundo neutro */
+        .search-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            
+            /* EFEITO BLUR PERMANENTE (Igual navbar) */
+            background: rgba(20, 20, 20, 0.8) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            pointer-events: auto;
+            border: none !important; /* Sem borda nunca */
+            box-shadow: none !important; /* Sem sombra colorida */
+            transition: transform 0.2s ease;
+        }
+        
+        /* Estado ativo apenas muda o ícone ou escala leve, NUNCA cor */
         .search-circle.active {
-            background-color: #333 !important; /* Cinza escuro neutro */
-            color: #fff !important;
-            border: none !important; /* Garante que não tenha borda */
-            box-shadow: none !important;
+            transform: scale(0.95);
         }
 
-        /* --- RESTANTE DO CSS --- */
+        /* --- RESTANTE DO CSS (Itens de navegação) --- */
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            height: 100%;
+            font-size: 0.75rem;
+            cursor: pointer;
+            gap: 4px;
+        }
+        .nav-item.active { color: white; }
+        .nav-item i { font-size: 1.2rem; }
+
         .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 0; width: 100%; }
         .content-card { position: relative; display: block; overflow: hidden; border-radius: 12px; }
         .content-poster { width: 100%; height: auto; aspect-ratio: 2/3; object-fit: cover; display: block; border-radius: 12px; }
