@@ -21,7 +21,10 @@ export default function TVShow() {
   
   // Estado para controlar o Pop-up do Vídeo
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
-  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9)
+  // Estado para recarregar o iframe (Reload)
+  const [playerKey, setPlayerKey] = useState(0)
+  
+  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9 via CSS)
   const [isWideScreen, setIsWideScreen] = useState(false)
 
   const [isFavorite, setIsFavorite] = useState(false)
@@ -33,9 +36,7 @@ export default function TVShow() {
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
-  
-  // REF PARA O CONTAINER DO VÍDEO (Para tela cheia)
-  const videoContainerRef = useRef(null)
+  const playerWrapperRef = useRef(null) // Referência para Fullscreen
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
@@ -82,41 +83,30 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // --- LÓGICA DE TELA CHEIA E ROTAÇÃO AUTOMÁTICA ---
+  // Gerenciamento de Orientação e Body Scroll Lock
   useEffect(() => {
-    if (showVideoPlayer && videoContainerRef.current) {
-      const elem = videoContainerRef.current;
+    if (showVideoPlayer) {
+      // Trava o scroll do corpo
+      document.body.style.overflow = 'hidden';
       
-      // 1. Tentar entrar em Fullscreen no container do iframe
-      const requestFS = elem.requestFullscreen || 
-                        elem.webkitRequestFullscreen || 
-                        elem.mozRequestFullScreen || 
-                        elem.msRequestFullscreen;
+      const handleResize = () => {
+        if (window.innerWidth > window.innerHeight) {
+            setIsWideScreen(true);
+        } else {
+            setIsWideScreen(false);
+        }
+      };
       
-      if (requestFS) {
-        // Pequeno delay para garantir renderização
-        setTimeout(() => {
-            requestFS.call(elem).catch(err => console.log('Erro ao entrar em fullscreen:', err));
-        }, 100);
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => {
+          window.removeEventListener('resize', handleResize);
+          document.body.style.overflow = ''; // Destrava ao sair
       }
-
-      // 2. Tentar travar a orientação em Paisagem (Landscape)
-      // Nota: Nem todos os navegadores suportam isso (principalmente iOS Safari bloqueia)
-      if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch((err) => {
-              // Falha silenciosa ou log (comum em desktop ou se o navegador bloquear)
-              console.log('Orientação automática não suportada ou bloqueada:', err);
-          });
-      }
-
-      // Ajusta layout widescreen automaticamente se a tela for maior na largura
-      if (window.innerWidth > window.innerHeight) {
-          setIsWideScreen(true);
-      } else {
-          setIsWideScreen(false);
-      }
+    } else {
+        document.body.style.overflow = '';
     }
-  }, [showVideoPlayer]); // Dispara sempre que o player abre
+  }, [showVideoPlayer]);
 
   useEffect(() => {
     setShowSynopsis(false)
@@ -215,25 +205,18 @@ export default function TVShow() {
   }
   
   const closePopup = (setter) => {
+    // Se estiver em fullscreen nativo, sair primeiro
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+
     const element = document.querySelector('.info-popup-overlay.active, .player-selector-bubble.active, .video-overlay-wrapper.active');
-    
-    // Sair do Fullscreen
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement) {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-    }
-
-    // Desbloquear orientação
-    if (screen.orientation && screen.orientation.unlock) {
-        try { screen.orientation.unlock(); } catch(e){}
-    }
-
     if (element) {
         element.classList.add('closing');
         setTimeout(() => {
             setter(false);
             element.classList.remove('closing');
+            setPlayerKey(0); // Reseta a key ao fechar
         }, 300);
     } else {
         setter(false);
@@ -261,16 +244,35 @@ export default function TVShow() {
   const toggleVideoFormat = () => {
     setIsWideScreen(!isWideScreen);
   }
+
+  // Função para Fullscreen Nativo do Navegador
+  const toggleNativeFullscreen = () => {
+    if (!playerWrapperRef.current) return;
+
+    if (!document.fullscreenElement) {
+        playerWrapperRef.current.requestFullscreen().catch(err => {
+            console.log(`Erro ao entrar em fullscreen: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+  }
+
+  // Função para recarregar o iframe (Reload)
+  const reloadPlayer = () => {
+    setPlayerKey(prev => prev + 1);
+  }
   
   const handleSeasonChange = async (newSeason) => {
-    closePopup(setShowVideoPlayer) // Garante que fecha se estiver aberto
+    setShowVideoPlayer(false)
     setSeason(newSeason)
     await loadSeasonDetails(newSeason)
   }
 
   const handleEpisodeChange = (newEpisode) => {
-    closePopup(setShowVideoPlayer) // Garante que fecha se estiver aberto
+    setShowVideoPlayer(false)
     setEpisode(newEpisode)
+    setPlayerKey(0) // Reseta key ao trocar ep
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -278,11 +280,6 @@ export default function TVShow() {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
-  }
-
-  // Função dedicada ao Play para garantir chamada limpa
-  const handlePlayClick = () => {
-      setShowVideoPlayer(true);
   }
 
   if (loading) return <div className="loading active"><div className="spinner"></div><p>Carregando...</p></div>
@@ -327,6 +324,7 @@ export default function TVShow() {
       <Head>
         <title>{tvShow.name} - Yoshikawa</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <meta name="theme-color" content="#000000" />
       </Head>
 
       <Header />
@@ -336,13 +334,12 @@ export default function TVShow() {
         {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
         <div className="player-container">
           <div className="player-wrapper">
-             <div className="episode-cover-placeholder" onClick={handlePlayClick}>
+             <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
                 {coverImage ? (
                     <img src={coverImage} alt="Episode Cover" className="cover-img" />
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Círculo BRANCO) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -432,21 +429,37 @@ export default function TVShow() {
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
                 {/* Grupo: Barra de Ferramentas + Player */}
-                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
+                <div 
+                    className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}
+                    ref={playerWrapperRef}
+                >
                     
-                    {/* Barra de Controles Flutuante logo acima do player */}
+                    {/* Barra de Controles Flutuante */}
                     <div className="video-controls-toolbar">
-                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
-                            <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                        <button className="toolbar-btn" onClick={reloadPlayer} title="Recarregar Player">
+                            <i className="fas fa-sync-alt"></i>
                         </button>
+
+                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Formato CSS">
+                            <i className={`fas ${isWideScreen ? 'fa-mobile-alt' : 'fa-tablet-alt'}`}></i>
+                        </button>
+                        
+                        <button className="toolbar-btn" onClick={toggleNativeFullscreen} title="Tela Cheia (Nativo)">
+                            <i className="fas fa-expand"></i>
+                        </button>
+                        
                         <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
                             <i className="fas fa-times"></i>
                         </button>
                     </div>
 
-                    {/* O Container do Vídeo COM REF ADICIONADA */}
-                    <div className="video-floating-container" ref={videoContainerRef}>
+                    {/* O Container do Vídeo */}
+                    <div className="video-floating-container">
+                        <div className="iframe-loader">
+                            <div className="spinner-mini"></div>
+                        </div>
                         <iframe 
+                            key={playerKey} // Key muda para forçar reload
                             src={getPlayerUrl()}
                             allow="autoplay; encrypted-media; picture-in-picture; fullscreen" 
                             allowFullScreen 
@@ -531,6 +544,7 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            border-radius: 12px; /* Suavizar bordas na capa */
         }
 
         .cover-img {
@@ -546,14 +560,13 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: Círculo BRANCO */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            border: 4px solid #ffffff; /* Borda branca sólida */
+            border: 4px solid #ffffff; 
             background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
@@ -574,100 +587,110 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.9); /* Fundo mais escuro para o modo cinema */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0.9); /* Fundo mais escuro para imersão */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 20px; /* Margem de segurança */
+            padding: 10px;
         }
 
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
-        /* Grupo que contém a barra de ferramentas + o vídeo */
         .video-player-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             position: relative;
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 100%;
         }
 
-        /* MODO QUADRADO (Padrão/Vertical) */
+        /* MODO QUADRADO (Padrão) */
         .video-player-group.square {
-            width: min(90vw, 90vh);
-            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
-            max-width: 600px; 
+            width: min(100%, 600px);
         }
-
         .video-player-group.square .video-floating-container {
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 16 / 9; /* Força 16:9 no mobile portrait também */
         }
 
-        /* MODO WIDESCREEN (Horizontal/Virado) */
+        /* MODO WIDESCREEN */
         .video-player-group.widescreen {
-            width: 90vw;
-            max-width: 1200px;
+            width: 95vw;
+            max-width: 1400px;
         }
-
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
+            max-height: 85vh; 
         }
 
-        /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 24px; /* Cantos bem arredondados */
+            border-radius: 16px;
             overflow: hidden;
             position: relative;
             transition: aspect-ratio 0.4s ease;
+            border: 1px solid #333;
         }
-        
-        /* Ajuste para quando estiver em Fullscreen Nativo */
-        .video-floating-container:fullscreen,
-        .video-floating-container:-webkit-full-screen {
-            border-radius: 0;
-            width: 100vw;
-            height: 100vh;
+
+        /* Loader atrás do Iframe */
+        .iframe-loader {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a0a;
+            z-index: 0;
+        }
+        .spinner-mini {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
         .video-floating-container iframe {
+            position: relative;
+            z-index: 1;
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        /* Barra de Ferramentas (Botões pertinho do popup) */
+        /* Barra de Ferramentas */
         .video-controls-toolbar {
             display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding-right: 8px;
-            position: absolute; /* Agora absoluto para ficar sobreposto se necessário */
-            top: -50px;
-            right: 0;
-            width: 100%;
-            z-index: 10;
+            justify-content: center; /* Centraliza no mobile */
+            gap: 15px;
+            padding: 8px 16px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: fit-content;
+            margin: 0 auto; /* Centraliza horizontalmente */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .toolbar-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            width: 44px;
-            height: 44px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             cursor: pointer;
-            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -675,13 +698,17 @@ export default function TVShow() {
         }
 
         .toolbar-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
             transform: scale(1.1);
         }
 
+        .toolbar-btn.close-btn {
+            background: rgba(255, 59, 48, 0.2);
+            color: #ff3b30;
+        }
         .toolbar-btn.close-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: rgba(255, 59, 48, 0.4);
         }
         
         @keyframes fadeOut {
@@ -689,11 +716,42 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
+        /* Fullscreen Nativo Ajustes */
+        .video-player-group:fullscreen {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        .video-player-group:fullscreen .video-floating-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            border: none;
+        }
+        .video-player-group:fullscreen .video-controls-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .video-player-group:fullscreen:hover .video-controls-toolbar {
+            opacity: 1;
+        }
+
         /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .meta-header-row {
             display: flex;
