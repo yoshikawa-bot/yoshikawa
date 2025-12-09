@@ -26,10 +26,11 @@ export default function TVShow() {
 
   const [isFavorite, setIsFavorite] = useState(false)
   
-  // Estado para notificação na navbar
-  const [navbarNotification, setNavbarNotification] = useState(null)
-  const notificationTimeoutRef = useRef(null)
-  const [notificationVisible, setNotificationVisible] = useState(false)
+  // Estado para notificação única
+  const [toast, setToast] = useState(null)
+  const toastTimeoutRef = useRef(null)
+  // Estado para garantir que a notificação mobile apareça apenas uma vez (mantido por consistência, mas a lógica de exibição está no useEffect)
+  const [mobileTipShown, setMobileTipShown] = useState(false)
 
   const [showSynopsis, setShowSynopsis] = useState(false)
   
@@ -40,36 +41,36 @@ export default function TVShow() {
 
   const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
-  const showNavbarNotification = (message, type = 'info') => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current)
+  const showToast = (message, type = 'info') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
     }
 
-    setNavbarNotification({ message, type, id: Date.now() })
-    setNotificationVisible(true)
+    setToast({ message, type, id: Date.now() })
 
-    notificationTimeoutRef.current = setTimeout(() => {
-      setNotificationVisible(false)
-      setTimeout(() => setNavbarNotification(null), 300)
-      notificationTimeoutRef.current = null
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null)
+      toastTimeoutRef.current = null
     }, 3000)
   }
 
-  const closeNotification = () => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current)
+  const removeToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
     }
-    setNotificationVisible(false)
-    setTimeout(() => setNavbarNotification(null), 300)
+    setToast(null)
   }
 
   useEffect(() => {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
+      setTimeout(() => {
+        showToast('Use o botão circular no canto direito para alterar o provedor de conteúdo', 'info')
+      }, 1000)
     }
     return () => {
-      if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current)
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
   
@@ -78,9 +79,17 @@ export default function TVShow() {
     if (showVideoPlayer) {
         // NOVO: Exibe a dica mobile SEMPRE que o player abre no celular
         if (isMobile()) {
+            // Define como true para evitar que a dica de provedor (se demorar a aparecer) substitua a de rotação.
+            setMobileTipShown(true); 
             // NOVO: Exibe a notificação de rotação
-            showNavbarNotification('Para uma melhor experiência no mobile, vire a tela', 'info');
+            showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
+        } else {
+             // Limpa a notificação de rotação se for desktop e o player abriu
+             removeToast();
         }
+    } else {
+        // Se o player for fechado, permite que outras dicas (como a de provedor) voltem a aparecer.
+        setMobileTipShown(false); 
     }
     
     // Bloqueia a rolagem quando o player está aberto
@@ -91,7 +100,7 @@ export default function TVShow() {
         document.body.style.overflow = 'auto';
     };
 
-  }, [showVideoPlayer])
+  }, [showVideoPlayer]) // Removida a dependência de mobileTipShown
 
   useEffect(() => {
     if (episodeListRef.current && seasonDetails) {
@@ -190,7 +199,7 @@ export default function TVShow() {
         const newFavorites = favorites.filter(fav => !(fav.id === parseInt(id) && fav.media_type === 'tv'))
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
         setIsFavorite(false)
-        showNavbarNotification('Removido dos favoritos', 'info')
+        showToast('Removido dos favoritos', 'info')
       } else {
         const newFavorite = {
           id: parseInt(id),
@@ -203,10 +212,10 @@ export default function TVShow() {
         const newFavorites = [...favorites, newFavorite]
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
         setIsFavorite(true)
-        showNavbarNotification('Adicionado aos favoritos!', 'success')
+        showToast('Adicionado aos favoritos!', 'success')
       }
     } catch (error) {
-      showNavbarNotification('Erro ao salvar favorito', 'info')
+      showToast('Erro ao salvar favorito', 'info')
     }
   }
 
@@ -269,7 +278,7 @@ export default function TVShow() {
   const handlePlayerChange = (player) => {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
-    showNavbarNotification(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
+    showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
      // Recarrega o player se estiver aberto
     if (showVideoPlayer) {
         setShowVideoPlayer(false)
@@ -288,6 +297,37 @@ export default function TVShow() {
   const coverImage = currentEpisode?.still_path 
     ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}`
     : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
+
+  const SingleToast = ({ showVideoPlayer }) => {
+    if (!toast) return null;
+    
+    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
+    if (showVideoPlayer && toast.type !== 'info') {
+        return null; 
+    }
+
+    return (
+      <div className="toast-container">
+        <div 
+            key={toast.id} 
+            className={`toast toast-${toast.type} show`}
+            style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        >
+            <div className="toast-icon">
+                <i className={`fas ${
+                  toast.type === 'success' ? 'fa-check' : 
+                  toast.type === 'error' ? 'fa-exclamation-triangle' : 
+                  'fa-info'
+                }`}></i>
+            </div>
+            <div className="toast-content">{toast.message}</div>
+            <button className="toast-close" onClick={removeToast}>
+                <i className="fas fa-times"></i>
+            </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -475,15 +515,13 @@ export default function TVShow() {
         )}
       </main>
 
+      <SingleToast showVideoPlayer={showVideoPlayer} />
       <BottomNav 
         selectedPlayer={selectedPlayer}
         onPlayerChange={() => setShowPlayerSelector(true)}
         isFavorite={isFavorite}
         onToggleFavorite={toggleFavorite}
         onShowInfo={() => setShowInfoPopup(true)}
-        notification={navbarNotification}
-        notificationVisible={notificationVisible}
-        onCloseNotification={closeNotification}
       />
 
       <style jsx>{`
@@ -645,10 +683,61 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
+        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
+        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
+        .video-overlay-wrapper .toast-container {
+            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
+            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
+            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
+            pointer-events: none; /* Não deve bloquear interações com o player */
+        }
+        
+        /* Ajuste de altura e posicionamento da notificação de rotação */
+        .video-overlay-wrapper .toast-container .toast {
+            top: auto; /* Remove o posicionamento top padrão */
+            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Oculta as outras notificações quando o player estiver aberto */
+        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
+        .video-overlay-wrapper ~ .toast-container {
+            display: none !important;
+        }
+
+        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
+        .toast-container {
+            position: fixed;
+            top: 10px; /* Posição padrão quando o player está fechado */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            /* Manter estilos existentes do .toast */
+            top: 0; /* Usa o topo do toast-container */
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            max-width: 100%;
+            pointer-events: auto;
+        }
+
         /* RESTO DOS ESTILOS ANTERIORES */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        @keyframes toast-slide-up {
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .meta-header-row {
@@ -732,6 +821,10 @@ export default function TVShow() {
 
         .fade-in {
             animation: fadeIn 0.2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .episodes-list-container {
@@ -848,36 +941,17 @@ const Header = ({}) => (
   </header>
 )
 
-const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo, notification, notificationVisible, onCloseNotification }) => {
-  const hasNotification = notification && notificationVisible;
-  
-  return (
-    <div className={`bottom-nav-container streaming-mode ${hasNotification ? 'with-notification' : ''}`}>
-      {hasNotification && (
-        <div className={`navbar-notification notification-${notification.type} ${notificationVisible ? 'visible' : ''}`}>
-          <div className="notification-content">
-            <div className="notification-icon">
-              <i className={`fas ${
-                notification.type === 'success' ? 'fa-check' : 
-                notification.type === 'error' ? 'fa-exclamation-triangle' : 
-                'fa-info'
-              }`}></i>
-            </div>
-            <div className="notification-text">{notification.message}</div>
-          </div>
-        </div>
-      )}
-      
-      <div className="main-nav-bar">
-        <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
-        <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
-        <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
-          <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
-        </button>
-      </div>
-      <button className={`player-circle ${hasNotification ? 'notification-mode' : ''}`} onClick={hasNotification ? onCloseNotification : onPlayerChange}>
-        <i className={hasNotification ? 'fas fa-times' : (selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt')}></i>
+const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
+  <div className="bottom-nav-container streaming-mode">
+    <div className="main-nav-bar">
+      <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
+      <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
+      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
       </button>
     </div>
-  )
-      }
+    <button className="player-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+  </div>
+)
