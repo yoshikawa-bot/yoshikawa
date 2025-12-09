@@ -3,13 +3,6 @@ import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// Função utilitária para verificar se é um dispositivo móvel (simplificada)
-const isMobileDevice = () => {
-  return typeof window !== 'undefined' && 
-         /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-
 export default function TVShow() {
   const router = useRouter()
   const { id } = router.query
@@ -28,9 +21,8 @@ export default function TVShow() {
   
   // Estado para controlar o Pop-up do Vídeo
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
-  
-  // O estado isWideScreen foi removido, pois a adaptação será automática via CSS
-  // e priorizará o formato 16:9 ajustável.
+  // Estado para controlar formato (Quadrado 1:1 ou Wide 16:9)
+  const [isWideScreen, setIsWideScreen] = useState(false)
 
   const [isFavorite, setIsFavorite] = useState(false)
   
@@ -87,30 +79,25 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Lógica para mostrar notificação de "Virar Tela"
+  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
-    if (showVideoPlayer && isMobileDevice()) {
-      const checkOrientation = () => {
-        // Verifica se a largura é menor que a altura (modo retrato)
-        if (window.innerWidth < window.innerHeight) {
-          showToast('Vire a tela para melhor experiência!', 'info');
+    if (showVideoPlayer) {
+      const handleResize = () => {
+        // Se a largura for maior que a altura, sugere modo widescreen
+        if (window.innerWidth > window.innerHeight) {
+            setIsWideScreen(true);
         } else {
-          removeToast();
+            setIsWideScreen(false);
         }
       };
-
-      // Checa ao abrir o player
-      checkOrientation();
-
-      // Adiciona listener para mudanças de orientação (resize)
-      window.addEventListener('resize', checkOrientation);
       
-      return () => {
-        window.removeEventListener('resize', checkOrientation);
-        removeToast(); // Limpa o toast se o player for fechado
-      };
+      // Checa ao abrir
+      handleResize();
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
-  }, [showVideoPlayer]); // Roda quando o player é aberto/fechado
+  }, [showVideoPlayer]);
 
   useEffect(() => {
     setShowSynopsis(false)
@@ -239,8 +226,10 @@ export default function TVShow() {
     }
   }
   
-  // toggleVideoFormat foi removido
-
+  const toggleVideoFormat = () => {
+    setIsWideScreen(!isWideScreen);
+  }
+  
   const handleSeasonChange = async (newSeason) => {
     setShowVideoPlayer(false)
     setSeason(newSeason)
@@ -406,11 +395,13 @@ export default function TVShow() {
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
                 {/* Grupo: Barra de Ferramentas + Player */}
-                <div className="video-player-group auto-adapt">
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
                     
                     {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
-                        {/* Botão de rotação removido */}
+                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
+                            <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                        </button>
                         <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
                             <i className="fas fa-times"></i>
                         </button>
@@ -542,7 +533,7 @@ export default function TVShow() {
             background: rgba(0,0,0,0.3);
         }
 
-        /* --- ESTILOS DO POPUP DE VÍDEO (ADAPTAÇÃO AUTOMÁTICA) --- */
+        /* --- ESTILOS DO POPUP DE VÍDEO --- */
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
@@ -554,7 +545,7 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 20px;
+            padding: 20px; /* Margem de segurança */
         }
 
         .video-overlay-wrapper.closing {
@@ -567,39 +558,42 @@ export default function TVShow() {
             flex-direction: column;
             gap: 10px;
             position: relative;
-            /* Lógica de adaptação automática: usa largura máxima e altura máxima, priorizando o 16:9 */
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* MODO QUADRADO (Padrão/Vertical) */
+        .video-player-group.square {
+            width: min(90vw, 90vh);
+            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
+            max-width: 600px; 
+        }
+
+        .video-player-group.square .video-floating-container {
+            aspect-ratio: 1 / 1;
+        }
+
+        /* MODO WIDESCREEN (Horizontal/Virado) */
+        .video-player-group.widescreen {
             width: 90vw;
-            max-width: 1200px; /* Limite máximo para telas grandes */
-            max-height: 90vh;
-            /* Garante que o grupo não seja maior que a altura do viewport */
-            box-sizing: border-box; 
+            max-width: 1200px;
+        }
+
+        .video-player-group.widescreen .video-floating-container {
+            aspect-ratio: 16 / 9;
+            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
         }
 
         /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
-            /* Tenta usar 16:9, mas se a altura da tela for limitante, a altura será definida pelo max-height do pai */
-            aspect-ratio: 16 / 9; 
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 24px; 
+            border-radius: 24px; /* Cantos bem arredondados */
             overflow: hidden;
             position: relative;
+            transition: aspect-ratio 0.4s ease;
         }
-        
-        /* Ajuste para telas em modo retrato (mobile) */
-        @media (orientation: portrait) and (max-width: 600px) {
-            .video-player-group {
-                /* No modo portrait, garantimos que o vídeo não fique muito grande */
-                width: 90vw;
-            }
-            .video-floating-container {
-                /* Prioriza a largura, mas limita a altura para caber na tela */
-                max-height: calc(90vh - 100px); /* Ajusta a altura menos a barra de controle/padding */
-                /* O aspect-ratio 16/9 forçará a altura a ser pequena */
-            }
-        }
-        
+
         .video-floating-container iframe {
             width: 100%;
             height: 100%;
@@ -645,7 +639,197 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
-        /* RESTO DOS ESTILOS ANTERIORES (omitidos aqui por brevidade) */
+        /* RESTO DOS ESTILOS ANTERIORES */
+        @keyframes toast-slide-up {
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .meta-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .episode-label-simple {
+            color: var(--primary); 
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .season-selector-wrapper select {
+            appearance: none;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            font-family: 'Inter', sans-serif;
+            transition: none;
+        }
+
+        .season-selector-wrapper select:focus,
+        .season-selector-wrapper select:hover {
+            border-color: var(--border);
+            box-shadow: none;
+        }
+        
+        .season-selector-wrapper select option {
+            background: #1a1a1a; 
+            color: var(--text);
+        }
+
+        .clean-episode-title {
+            font-size: 1.3rem;
+            color: var(--text);
+            margin: 0 0 0.8rem 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .synopsis-wrapper {
+            margin-bottom: 1.2rem;
+        }
+        
+        .synopsis-toggle-btn {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: none;
+            font-weight: 500;
+        }
+        
+        .synopsis-toggle-btn:hover {
+            color: var(--secondary);
+        }
+
+        .content-description-streaming {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .episodes-list-container {
+            width: 100%;
+        }
+
+        .episodes-scroller {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+        
+        .episodes-scroller::-webkit-scrollbar {
+            display: none;
+        }
+
+        .episode-card {
+            min-width: 130px;
+            width: 130px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .episode-card.active {
+            opacity: 1;
+        }
+
+        .episode-thumbnail {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--card-bg);
+            margin-bottom: 4px;
+            border: 2px solid var(--border);
+        }
+
+        .episode-card.active .episode-thumbnail {
+            border-color: var(--primary); 
+        }
+
+        .episode-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-thumbnail {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            color: var(--secondary);
+        }
+
+        .episode-number-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 1px 5px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .playing-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 2px 0;
+            font-weight: 600;
+        }
+
+        .ep-title {
+            font-size: 0.8rem;
+            color: var(--secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.2;
+        }
+
+        .episode-card.active .ep-title {
+            color: var(--text);
+            font-weight: 600;
+        }
       `}</style>
     </>
   )
