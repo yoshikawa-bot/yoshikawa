@@ -25,15 +25,10 @@ export default function Movie() {
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
   
-  // Estado mantido apenas para compatibilidade, caso expanda lógica futura
-  const [mobileTipShown, setMobileTipShown] = useState(false) 
-
   const [showSynopsis, setShowSynopsis] = useState(false)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
-
-  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const showToast = (message, type = 'info') => {
     if (toastTimeoutRef.current) {
@@ -59,13 +54,6 @@ export default function Movie() {
     if (id) {
       loadMovie(id)
       checkIfFavorite()
-      
-      // REMOVIDO: Notificação sobre o botão de mudar o servidor
-      /*
-      setTimeout(() => {
-        showToast('Use o botão circular do canto direito para alterar o provedor de conteúdo', 'info')
-      }, 1000)
-      */
     }
 
     return () => {
@@ -73,35 +61,22 @@ export default function Movie() {
     }
   }, [id])
   
-  // ATUALIZADO: Removemos a notificação de rotação e mantemos apenas o controle de scroll
   useEffect(() => {
-    // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
         removeToast();
     }
-    
-    // Bloqueia a rolagem quando o player está aberto
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
-
-    // Limpeza para garantir que a rolagem volte
     return () => {
         document.body.style.overflow = 'auto';
     };
   }, [showVideoPlayer]); 
 
-  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
     if (showVideoPlayer) {
       const handleResize = () => {
-        if (window.innerWidth > window.innerHeight) {
-            setIsWideScreen(true);
-        } else {
-            setIsWideScreen(false);
-        }
+        setIsWideScreen(window.innerWidth > window.innerHeight);
       };
-      
       handleResize();
-      
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }
@@ -112,12 +87,9 @@ export default function Movie() {
       setLoading(true)
       const movieUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids,images`
       const movieResponse = await fetch(movieUrl)
-      
       if (!movieResponse.ok) throw new Error('Filme não encontrado')
-      
       const movieData = await movieResponse.json()
       setMovie(movieData)
-      
     } catch (err) {
       setError(err.message)
     } finally {
@@ -132,18 +104,15 @@ export default function Movie() {
       const isFav = favorites.some(fav => fav.id === parseInt(id) && fav.media_type === 'movie')
       setIsFavorite(isFav)
     } catch (error) {
-      console.error('Erro ao verificar favoritos:', error)
       setIsFavorite(false)
     }
   }
 
   const toggleFavorite = () => {
     if (!movie) return
-    
     try {
       const savedFavorites = localStorage.getItem('yoshikawaFavorites')
       const favorites = savedFavorites ? JSON.parse(savedFavorites) : []
-      
       if (isFavorite) {
         const newFavorites = favorites.filter(fav => !(fav.id === parseInt(id) && fav.media_type === 'movie'))
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
@@ -164,7 +133,6 @@ export default function Movie() {
         showToast('Adicionado aos favoritos!', 'success')
       }
     } catch (error) {
-      console.error('Erro ao alternar favoritos:', error)
       showToast('Erro ao salvar favorito', 'info')
     }
   }
@@ -204,13 +172,9 @@ export default function Movie() {
     }
   };
 
-  const handleVideoOverlayClick = (e) => {
-    e.stopPropagation(); 
-  }
+  const handleVideoOverlayClick = (e) => { e.stopPropagation(); }
   
-  const toggleVideoFormat = () => {
-    setIsWideScreen(!isWideScreen);
-  }
+  const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
 
   const handlePlayerChange = (player) => {
     setSelectedPlayer(player)
@@ -222,31 +186,8 @@ export default function Movie() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="loading active">
-        <div className="spinner"></div>
-        <p>Carregando filme...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="error-message active">
-        <h3>
-          <i className="fas fa-exclamation-triangle"></i>
-          Ocorreu um erro
-        </h3>
-        <p>{error}</p>
-        <Link href="/" className="clear-search-btn" style={{marginTop: '1rem'}}>
-          <i className="fas fa-home"></i>
-          Voltar para Home
-        </Link>
-      </div>
-    )
-  }
-
+  if (loading) return <div className="loading active"><div className="spinner"></div><p>Carregando filme...</p></div>
+  if (error) return <div className="error-message active"><h3>Erro</h3><p>{error}</p><Link href="/">Voltar</Link></div>
   if (!movie) return null
 
   const coverImage = movie.backdrop_path 
@@ -255,35 +196,15 @@ export default function Movie() {
 
 
   const SingleToast = ({ showVideoPlayer }) => {
-    if (!toast) return null;
-    
-    // Se o player estiver aberto, não mostramos toasts normais para não poluir
-    // (A menos que você queira reativar mensagens de erro críticas aqui)
-    if (showVideoPlayer) {
-        return null; 
-    }
-
+    if (!toast || showVideoPlayer) return null;
     return (
       <div className="toast-container">
-        <div 
-            key={toast.id} 
-            className={`toast toast-${toast.type} show`}
-            style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-        >
+        <div key={toast.id} className={`toast toast-${toast.type} show`} style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
           <div className="toast-icon">
-            <i className={`fas ${
-              toast.type === 'success' ? 'fa-check' : 
-              toast.type === 'error' ? 'fa-exclamation-triangle' : 
-              'fa-info'
-            }`}></i>
+            <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
           </div>
           <div className="toast-content">{toast.message}</div>
-          <button 
-            className="toast-close"
-            onClick={removeToast}
-          >
-            <i className="fas fa-times"></i>
-          </button>
+          <button className="toast-close" onClick={removeToast}><i className="fas fa-times"></i></button>
         </div>
       </div>
     )
@@ -299,18 +220,11 @@ export default function Movie() {
       <Header />
 
       <main className="streaming-container">
-        {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
         <div className="player-container">
           <div className="player-wrapper">
              <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
-                {coverImage ? (
-                    <img src={coverImage} alt="Movie Cover" className="cover-img" />
-                ) : (
-                    <div className="cover-fallback"></div>
-                )}
-                {/* Botão de Play Simples (Ícone central) */}
-                {/* CLASSE ALTERADA: simple-play-circle -> simple-play-icon-only */}
-                <div className="simple-play-icon-only">
+                {coverImage ? <img src={coverImage} alt="Movie Cover" className="cover-img" /> : <div className="cover-fallback"></div>}
+                <div className="play-btn-circle-thin">
                     <i className="fas fa-play"></i>
                 </div>
              </div>
@@ -318,11 +232,7 @@ export default function Movie() {
         </div>
 
         <div className="content-info-streaming">
-          
-          <h1 className="clean-episode-title">
-            {movie.title}
-          </h1>
-          
+          <h1 className="clean-episode-title">{movie.title}</h1>
           <div className="meta-header-row" style={{marginBottom: '1rem', color: 'var(--secondary)', fontSize: '0.9rem'}}>
             <span style={{marginRight: '15px'}}><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
             <span style={{marginRight: '15px'}}><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
@@ -335,77 +245,36 @@ export default function Movie() {
                     {movie.overview || 'Descrição não disponível.'}
                 </p>
             )}
-            <button 
-                className="synopsis-toggle-btn"
-                onClick={() => setShowSynopsis(!showSynopsis)}
-            >
-                {showSynopsis ? (
-                    <span><i className="fas fa-chevron-up"></i> Ocultar Sinopse</span>
-                ) : (
-                    <span><i className="fas fa-align-left"></i> Ler Sinopse</span>
-                )}
+            <button className="synopsis-toggle-btn" onClick={() => setShowSynopsis(!showSynopsis)}>
+                {showSynopsis ? <span><i className="fas fa-chevron-up"></i> Ocultar Sinopse</span> : <span><i className="fas fa-align-left"></i> Ler Sinopse</span>}
             </button>
           </div>
         </div>
 
-        {/* OVERLAY DO VIDEO PLAYER (POPUP) */}
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
-                
-                {/* Grupo: Barra de Ferramentas + Player */}
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
-                    
-                    {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
-                        <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
-                            <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
-                        </button>
-                        <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)} title="Fechar">
-                            <i className="fas fa-times"></i>
-                        </button>
+                        <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
+                        <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)}><i className="fas fa-times"></i></button>
                     </div>
-
-                    {/* O Container do Vídeo */}
                     <div className="video-floating-container">
-                        <iframe 
-                            src={getPlayerUrl()}
-                            allow="autoplay; encrypted-media; picture-in-picture" 
-                            allowFullScreen 
-                            title={`Player`}
-                        ></iframe>
+                        <iframe src={getPlayerUrl()} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title={`Player`}></iframe>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Overlay para o Seletor de Player */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
-                <div 
-                    className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`}
-                    onClick={(e) => e.stopPropagation()}
-                >
+                <div className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className="player-options-bubble">
-                        <div 
-                            className="player-option-bubble"
-                            onClick={() => handlePlayerChange('superflix')}
-                        >
-                            <div className="option-main-line">
-                                <i className="fas fa-film"></i>
-                                <span className="option-name">SuperFlix</span>
-                                <span className="player-tag-bubble player-tag-dub">DUB</span>
-                            </div>
+                        <div className="player-option-bubble" onClick={() => handlePlayerChange('superflix')}>
+                            <div className="option-main-line"><i className="fas fa-film"></i><span className="option-name">SuperFlix</span><span className="player-tag-bubble player-tag-dub">DUB</span></div>
                             <span className="option-details">Lento, mas possui dublagem.</span>
                         </div>
-                        <div 
-                            className="player-option-bubble"
-                            onClick={() => handlePlayerChange('vidsrc')}
-                        >
-                            <div className="option-main-line">
-                                <i className="fas fa-bolt"></i>
-                                <span className="option-name">VidSrc</span>
-                                <span className="player-tag-bubble player-tag-sub">LEG</span>
-                            </div>
+                        <div className="player-option-bubble" onClick={() => handlePlayerChange('vidsrc')}>
+                            <div className="option-main-line"><i className="fas fa-bolt"></i><span className="option-name">VidSrc</span><span className="player-tag-bubble player-tag-sub">LEG</span></div>
                             <span className="option-details">Mais rápido, mas apenas legendado.</span>
                         </div>
                     </div>
@@ -413,60 +282,32 @@ export default function Movie() {
             </div>
         )}
 
-        {/* Popup de Informações */}
-        <div 
-            className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`}
-            onClick={handleInfoOverlayClick}
-        >
-          <div 
-              className="info-popup-content"
-              onClick={(e) => e.stopPropagation()}
-          >
+        <div className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`} onClick={handleInfoOverlayClick}>
+          <div className="info-popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="info-popup-header">
-              <img 
-                src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'}
-                alt={movie.title}
-                className="info-poster"
-              />
+              <img src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://yoshikawa-bot.github.io/cache/images/6e595b38.jpg'} alt={movie.title} className="info-poster" />
               <div className="info-details">
                 <h2 className="info-title">{movie.title}</h2>
                 <div className="info-meta">
                   <span><i className="fas fa-calendar"></i> {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
                   <span><i className="fas fa-star"></i> {movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
-                  <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).join(', ') : ''}</span>
+                  <span><i className="fas fa-tags"></i> {movie.genres ? movie.genres.map(g => g.name).slice(0, 2).join(', ') : ''}</span>
                 </div>
                 <div className="info-meta">
-                  <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} minutos` : ''}</span>
-                  <span><i className="fas fa-language"></i> {movie.original_language ? movie.original_language.toUpperCase() : ''}</span>
+                  <span><i className="fas fa-clock"></i> {movie.runtime ? `${movie.runtime} min` : ''}</span>
+                  <span><i className="fas fa-language"></i> {movie.original_language?.toUpperCase()}</span>
                 </div>
               </div>
             </div>
-            <p className="info-description">
-              {movie.overview || 'Descrição não disponível.'}
-            </p>
-            <button 
-              className="close-popup-btn"
-              onClick={() => closePopup(setShowInfoPopup)}
-            >
-              <i className="fas fa-times"></i>
-              Fechar
-            </button>
+            <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}><i className="fas fa-times"></i> Fechar</button>
           </div>
         </div>
       </main>
 
       <SingleToast showVideoPlayer={showVideoPlayer} />
-
-      <BottomNav 
-        selectedPlayer={selectedPlayer}
-        onPlayerChange={() => setShowPlayerSelector(true)}
-        isFavorite={isFavorite}
-        onToggleFavorite={toggleFavorite}
-        onShowInfo={() => setShowInfoPopup(true)}
-      />
+      <BottomNav selectedPlayer={selectedPlayer} onPlayerChange={() => setShowPlayerSelector(true)} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onShowInfo={() => setShowInfoPopup(true)} />
 
       <style jsx>{`
-        /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
             position: absolute;
             top: 0;
@@ -494,38 +335,34 @@ export default function Movie() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: APENAS ÍCONE BRANCO (sem borda/fundo) */
-        /* CLASSE NOVA: Mantém o tamanho e foco, mas sem o círculo */
-        .simple-play-icon-only {
+        .play-btn-circle-thin {
             position: absolute;
             z-index: 2;
-            /* Tamanho ajustado para que o ícone pareça do mesmo tamanho do original */
-            font-size: 3rem; 
+            width: 65px;
+            height: 65px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #ffffff;
-            opacity: 0.95;
-            transition: transform 0.3s, opacity 0.3s;
-            /* Reset de estilos da versão com círculo */
-            width: auto;
-            height: auto;
-            border-radius: 0;
-            border: none;
-            background: none;
-            padding-left: 0; 
-            box-shadow: none;
+            font-size: 1.4rem;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(2px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding-left: 4px;
         }
 
-        .episode-cover-placeholder:hover .simple-play-icon-only {
+        .episode-cover-placeholder:hover .play-btn-circle-thin {
             transform: scale(1.1);
-            opacity: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-color: #fff;
         }
 
-        /* --- ESTILOS DO POPUP DE VÍDEO --- */
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            /* Fundo transparente conforme solicitado */
             background: transparent; 
-            /* Blur mantido */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
@@ -536,9 +373,7 @@ export default function Movie() {
             padding: 20px;
         }
 
-        .video-overlay-wrapper.closing {
-            animation: fadeOut 0.3s ease forwards;
-        }
+        .video-overlay-wrapper.closing { animation: fadeOut 0.3s ease forwards; }
 
         .video-player-group {
             display: flex;
@@ -548,24 +383,10 @@ export default function Movie() {
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        .video-player-group.square {
-            width: min(90vw, 90vh);
-            max-width: 600px; 
-        }
-
-        .video-player-group.square .video-floating-container {
-            aspect-ratio: 1 / 1;
-        }
-
-        .video-player-group.widescreen {
-            width: 90vw;
-            max-width: 1200px;
-        }
-
-        .video-player-group.widescreen .video-floating-container {
-            aspect-ratio: 16 / 9;
-            max-height: 80vh;
-        }
+        .video-player-group.square { width: min(90vw, 90vh); max-width: 600px; }
+        .video-player-group.square .video-floating-container { aspect-ratio: 1 / 1; }
+        .video-player-group.widescreen { width: 90vw; max-width: 1200px; }
+        .video-player-group.widescreen .video-floating-container { aspect-ratio: 16 / 9; max-height: 80vh; }
 
         .video-floating-container {
             width: 100%;
@@ -577,18 +398,8 @@ export default function Movie() {
             transition: aspect-ratio 0.4s ease;
         }
 
-        .video-floating-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .video-controls-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding-right: 8px;
-        }
+        .video-floating-container iframe { width: 100%; height: 100%; border: none; }
+        .video-controls-toolbar { display: flex; justify-content: flex-end; gap: 12px; padding-right: 8px; }
 
         .toolbar-btn {
             background: rgba(255, 255, 255, 0.1);
@@ -606,20 +417,9 @@ export default function Movie() {
             transition: all 0.2s ease;
         }
 
-        .toolbar-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.1);
-        }
-
-        .toolbar-btn.close-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
+        .toolbar-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.1); }
+        .toolbar-btn.close-btn:hover { background: var(--primary); border-color: var(--primary); }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
         .toast-container {
             position: fixed;
@@ -634,7 +434,6 @@ export default function Movie() {
         }
         
         .toast {
-            top: 0;
             background: var(--card-bg);
             border: 1px solid var(--border);
             color: var(--text);
@@ -647,63 +446,12 @@ export default function Movie() {
             pointer-events: auto;
         }
 
-        @keyframes toast-slide-up {
-          0% { 
-            opacity: 0; 
-            transform: translateY(20px) scale(0.95); 
-          }
-          100% { 
-            opacity: 1; 
-            transform: translateY(0) scale(1); 
-          }
-        }
-
-        .clean-episode-title {
-            font-size: 1.5rem;
-            color: var(--text);
-            margin: 0 0 0.5rem 0;
-            font-weight: 600;
-            line-height: 1.3;
-        }
-
-        .synopsis-wrapper {
-            margin-bottom: 1.2rem;
-            margin-top: 1rem;
-        }
-        
-        .synopsis-toggle-btn {
-            background: none;
-            border: none;
-            color: var(--secondary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: none;
-            font-weight: 500;
-        }
-        
-        .synopsis-toggle-btn:hover {
-            color: var(--secondary);
-        }
-
-        .content-description-streaming {
-            margin-bottom: 0.8rem;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            color: var(--text);
-            opacity: 0.9;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.2s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        .clean-episode-title { font-size: 1.5rem; color: var(--text); margin: 0 0 0.5rem 0; font-weight: 600; line-height: 1.3; }
+        .synopsis-wrapper { margin-bottom: 1.2rem; margin-top: 1rem; }
+        .synopsis-toggle-btn { background: none; border: none; color: var(--secondary); font-size: 0.85rem; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+        .content-description-streaming { margin-bottom: 0.8rem; font-size: 0.9rem; line-height: 1.5; color: var(--text); opacity: 0.9; }
+        .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </>
   )
@@ -713,11 +461,7 @@ const Header = () => (
   <header className="github-header">
     <div className="header-content">
       <Link href="/" className="logo-container">
-        <img 
-          src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
-          alt="Yoshikawa Bot" 
-          className="logo-image"
-        />
+        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa Bot" className="logo-image" />
         <div className="logo-text">
           <span className="logo-name">Yoshikawa</span>
           <span className="beta-tag">STREAMING</span>
@@ -730,22 +474,12 @@ const Header = () => (
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
-      <Link href="/" className="nav-item">
-        <i className="fas fa-home"></i>
-        <span>Início</span>
-      </Link>
-      
-      <button className="nav-item" onClick={onShowInfo}>
-        <i className="fas fa-info-circle"></i>
-        <span>Info</span>
-      </button>
-      
+      <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
+      <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
-        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
-        <span>Favorito</span>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
       </button>
     </div>
-    
     <button className="player-circle" onClick={onPlayerChange}>
       <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
     </button>
