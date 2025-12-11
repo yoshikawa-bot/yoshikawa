@@ -29,7 +29,8 @@ export default function TVShow() {
   // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
-  // Estado para garantir que a notificação mobile apareça apenas uma vez (mantido por consistência, mas a lógica de exibição está no useEffect)
+  
+  // Mantido apenas por compatibilidade de estado, mas sem uso lógico de UI
   const [mobileTipShown, setMobileTipShown] = useState(false)
 
   const [showSynopsis, setShowSynopsis] = useState(false)
@@ -74,22 +75,11 @@ export default function TVShow() {
     }
   }, [id])
   
-  // ATUALIZADO: Exibe a dica mobile (sempre que o player abrir) e controla o overflow do body
+  // ATUALIZADO: Removemos a notificação de rotação e mantemos apenas o controle de scroll
   useEffect(() => {
+    // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
-        // NOVO: Exibe a dica mobile SEMPRE que o player abre no celular
-        if (isMobile()) {
-            // Define como true para evitar que a dica de provedor (se demorar a aparecer) substitua a de rotação.
-            setMobileTipShown(true); 
-            // NOVO: Exibe a notificação de rotação
-            showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
-        } else {
-             // Limpa a notificação de rotação se for desktop e o player abriu
-             removeToast();
-        }
-    } else {
-        // Se o player for fechado, permite que outras dicas (como a de provedor) voltem a aparecer.
-        setMobileTipShown(false); 
+        removeToast();
     }
     
     // Bloqueia a rolagem quando o player está aberto
@@ -100,7 +90,7 @@ export default function TVShow() {
         document.body.style.overflow = 'auto';
     };
 
-  }, [showVideoPlayer]) // Removida a dependência de mobileTipShown
+  }, [showVideoPlayer]) 
 
   useEffect(() => {
     if (episodeListRef.current && seasonDetails) {
@@ -220,7 +210,6 @@ export default function TVShow() {
   }
 
   const getPlayerUrl = () => {
-    // Adiciona &fullScreen=false para tentar evitar o fullscreen automático
     const fullScreenParam = '&fullScreen=false' 
     if (selectedPlayer === 'superflix') {
       return `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent#noBackground${fullScreenParam}`
@@ -254,9 +243,8 @@ export default function TVShow() {
     }
   };
 
-  // Mantido: Impede o fechamento ao clicar no fundo
   const handleVideoOverlayClick = (e) => {
-    e.stopPropagation(); // Garante que cliques no fundo não vazem
+    e.stopPropagation(); 
   }
   
   const toggleVideoFormat = () => {
@@ -279,7 +267,6 @@ export default function TVShow() {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
-     // Recarrega o player se estiver aberto
     if (showVideoPlayer) {
         setShowVideoPlayer(false)
         setTimeout(() => setShowVideoPlayer(true), 100); 
@@ -293,7 +280,6 @@ export default function TVShow() {
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
-  // Define a imagem de capa
   const coverImage = currentEpisode?.still_path 
     ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}`
     : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
@@ -301,8 +287,8 @@ export default function TVShow() {
   const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
     
-    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
-    if (showVideoPlayer && toast.type !== 'info') {
+    // Se o player estiver aberto, não mostramos toasts para manter a tela limpa
+    if (showVideoPlayer) {
         return null; 
     }
 
@@ -581,7 +567,9 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            /* Fundo transparente conforme solicitado */
+            background: transparent;
+            /* Blur mantido */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
@@ -683,30 +671,6 @@ export default function TVShow() {
             to { opacity: 0; }
         }
 
-        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
-        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
-        .video-overlay-wrapper .toast-container {
-            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
-            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
-            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
-            pointer-events: none; /* Não deve bloquear interações com o player */
-        }
-        
-        /* Ajuste de altura e posicionamento da notificação de rotação */
-        .video-overlay-wrapper .toast-container .toast {
-            top: auto; /* Remove o posicionamento top padrão */
-            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        /* Oculta as outras notificações quando o player estiver aberto */
-        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
-        .video-overlay-wrapper ~ .toast-container {
-            display: none !important;
-        }
-
-        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
         .toast-container {
             position: fixed;
             top: 10px; /* Posição padrão quando o player está fechado */
@@ -734,7 +698,6 @@ export default function TVShow() {
             pointer-events: auto;
         }
 
-        /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
