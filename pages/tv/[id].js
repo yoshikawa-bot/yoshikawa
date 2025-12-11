@@ -30,12 +30,17 @@ export default function TVShow() {
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
   
+  // Mantido apenas por compatibilidade de estado, mas sem uso lógico de UI
+  const [mobileTipShown, setMobileTipShown] = useState(false)
+
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
+
+  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const showToast = (message, type = 'info') => {
     if (toastTimeoutRef.current) {
@@ -61,20 +66,30 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
+      setTimeout(() => {
+        showToast('Use o botão circular no canto direito para alterar o provedor de conteúdo', 'info')
+      }, 1000)
     }
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
   
+  // ATUALIZADO: Removemos a notificação de rotação e mantemos apenas o controle de scroll
   useEffect(() => {
+    // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
         removeToast();
     }
+    
+    // Bloqueia a rolagem quando o player está aberto
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
+
+    // Limpeza para garantir que a rolagem volte
     return () => {
         document.body.style.overflow = 'auto';
     };
+
   }, [showVideoPlayer]) 
 
   useEffect(() => {
@@ -86,16 +101,21 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
+  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
     if (showVideoPlayer) {
       const handleResize = () => {
+        // Se a largura for maior que a altura, sugere modo widescreen
         if (window.innerWidth > window.innerHeight) {
             setIsWideScreen(true);
         } else {
             setIsWideScreen(false);
         }
       };
+      
+      // Checa ao abrir
       handleResize();
+      
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }
@@ -266,7 +286,11 @@ export default function TVShow() {
 
   const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
-    if (showVideoPlayer) return null; 
+    
+    // Se o player estiver aberto, não mostramos toasts para manter a tela limpa
+    if (showVideoPlayer) {
+        return null; 
+    }
 
     return (
       <div className="toast-container">
@@ -298,6 +322,8 @@ export default function TVShow() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
+      <Header />
+
       <main className="streaming-container">
         
         {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
@@ -309,7 +335,7 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Sem círculo, ícone menor) */}
+                {/* Botão de Play Simples (Círculo BRANCO) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -398,8 +424,10 @@ export default function TVShow() {
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
+                {/* Grupo: Barra de Ferramentas + Player */}
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     
+                    {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
                         <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
                             <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
@@ -409,6 +437,7 @@ export default function TVShow() {
                         </button>
                     </div>
 
+                    {/* O Container do Vídeo */}
                     <div className="video-floating-container">
                         <iframe 
                             src={getPlayerUrl()}
@@ -421,7 +450,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* SELETOR DE PLAYER - FUNDO 100% TRANSPARENTE, BLUR SÓ NO BUBBLE */}
+        {/* OUTROS OVERLAYS */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -456,44 +485,17 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* POPUP DE INFO - FUNDO 100% TRANSPARENTE, BLUR SÓ NO CARD */}
         {showInfoPopup && (
             <div className="info-popup-overlay active" onClick={handleInfoOverlayClick}>
-              <div className="info-popup-content technical-info" onClick={(e) => e.stopPropagation()}>
-                <div className="info-popup-header-tech">
-                    <h2 className="info-title-tech">Informações Técnicas</h2>
+              <div className="info-popup-content" onClick={(e) => e.stopPropagation()}>
+                <div className="info-popup-header">
+                  <img src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w200${tvShow.poster_path}` : ''} className="info-poster" />
+                  <div className="info-details">
+                    <h2 className="info-title">{tvShow.name}</h2>
+                    <p>{tvShow.overview}</p>
+                  </div>
                 </div>
-                <div className="tech-info-list">
-                    <div className="tech-item">
-                        <span className="tech-label">Título Original:</span>
-                        <span className="tech-value">{tvShow.original_name}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Lançamento:</span>
-                        <span className="tech-value">{tvShow.first_air_date ? new Date(tvShow.first_air_date).toLocaleDateString('pt-BR') : 'N/A'}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Gêneros:</span>
-                        <span className="tech-value">{tvShow.genres?.map(g => g.name).join(', ')}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Temporadas:</span>
-                        <span className="tech-value">{tvShow.number_of_seasons}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Episódios:</span>
-                        <span className="tech-value">{tvShow.number_of_episodes}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Nota (TMDB):</span>
-                        <span className="tech-value"><i className="fas fa-star" style={{color: '#ffd700', marginRight: '5px'}}></i>{tvShow.vote_average?.toFixed(1)}</span>
-                    </div>
-                    <div className="tech-item">
-                        <span className="tech-label">Status:</span>
-                        <span className="tech-value">{tvShow.status}</span>
-                    </div>
-                </div>
-                <button className="close-popup-btn tech-close" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
+                <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
               </div>
             </div>
         )}
@@ -537,129 +539,52 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Botão play ajustado: Menor e sem fundo */
+        /* Botão play simples: Círculo BRANCO */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid #ffffff; /* Borda branca sólida */
+            background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 2.5rem; /* Reduzido de 4rem */
-            text-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            transition: transform 0.3s;
+            font-size: 1.8rem;
+            padding-left: 5px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s, background 0.3s;
         }
 
         .episode-cover-placeholder:hover .simple-play-circle {
             transform: scale(1.1);
+            background: rgba(0,0,0,0.3);
         }
 
-        /* --- ESTILOS DOS POPUPS --- */
-        /* O fundo (overlay) é transparente e sem blur */
-        .video-overlay-wrapper,
-        .info-popup-overlay,
-        .player-selector-overlay {
+        /* --- ESTILOS DO POPUP DE VÍDEO --- */
+        .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: transparent !important;
-            backdrop-filter: none !important;
+            /* Fundo transparente conforme solicitado */
+            background: transparent;
+            /* Blur mantido */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 20px;
-        }
-        
-        /* Apenas o conteúdo (o card) tem blur e fundo semi-transparente */
-        .info-popup-content.technical-info {
-            background: rgba(18, 18, 18, 0.95); /* Fundo com opacidade para blur */
-            backdrop-filter: blur(20px); /* Blur aplicado aqui */
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border, #333);
-            border-radius: 12px;
-            padding: 25px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            color: var(--text);
-            text-align: left;
-        }
-        
-        /* Seletor de Player: Blur no Bubble */
-        .player-selector-bubble {
-            background: rgba(26, 26, 26, 0.95); /* Fundo semi-transparente */
-            backdrop-filter: blur(20px); /* Blur aplicado aqui */
-            -webkit-backdrop-filter: blur(20px);
-            /* ... (outros estilos herdados globalmente ou definidos aqui se necessário) ... */
-            border-radius: 16px;
-            border: 1px solid var(--border, #333);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            padding: 20px; /* Margem de segurança */
         }
 
-        .info-popup-header-tech {
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border, #333);
-            padding-bottom: 10px;
-        }
-
-        .info-title-tech {
-            font-size: 1.4rem;
-            color: var(--text);
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .tech-info-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .tech-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 8px;
-        }
-
-        .tech-label {
-            color: var(--secondary, #aaa);
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        .tech-value {
-            color: var(--text, #fff);
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-align: right;
-            max-width: 60%;
-        }
-
-        .close-popup-btn.tech-close {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary, #e50914);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        
-        .close-popup-btn.tech-close:hover {
-            opacity: 0.9;
-        }
-
-        /* --- RESTANTE DO CSS --- */
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
+        /* Grupo que contém a barra de ferramentas + o vídeo */
         .video-player-group {
             display: flex;
             flex-direction: column;
@@ -668,8 +593,10 @@ export default function TVShow() {
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
+        /* MODO QUADRADO (Padrão/Vertical) */
         .video-player-group.square {
             width: min(90vw, 90vh);
+            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
             max-width: 600px; 
         }
 
@@ -677,6 +604,7 @@ export default function TVShow() {
             aspect-ratio: 1 / 1;
         }
 
+        /* MODO WIDESCREEN (Horizontal/Virado) */
         .video-player-group.widescreen {
             width: 90vw;
             max-width: 1200px;
@@ -684,14 +612,15 @@ export default function TVShow() {
 
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            max-height: 80vh; 
+            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
         }
 
+        /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 24px; 
+            border-radius: 24px; /* Cantos bem arredondados */
             overflow: hidden;
             position: relative;
             transition: aspect-ratio 0.4s ease;
@@ -703,6 +632,7 @@ export default function TVShow() {
             border: none;
         }
 
+        /* Barra de Ferramentas (Botões pertinho do popup) */
         .video-controls-toolbar {
             display: flex;
             justify-content: flex-end;
@@ -743,7 +673,7 @@ export default function TVShow() {
 
         .toast-container {
             position: fixed;
-            top: 10px; 
+            top: 10px; /* Posição padrão quando o player está fechado */
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
@@ -754,7 +684,8 @@ export default function TVShow() {
         }
         
         .toast {
-            top: 0; 
+            /* Manter estilos existentes do .toast */
+            top: 0; /* Usa o topo do toast-container */
             background: var(--card-bg);
             border: 1px solid var(--border);
             color: var(--text);
@@ -961,6 +892,17 @@ export default function TVShow() {
     </>
   )
 }
+
+const Header = ({}) => (
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="logo-image" />
+        <div className="logo-text"><span className="logo-name">Yoshikawa</span><span className="beta-tag">STREAMING</span></div>
+      </Link>
+    </div>
+  </header>
+)
 
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
