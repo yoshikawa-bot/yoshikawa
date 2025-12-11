@@ -66,9 +66,12 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
+      // REMOVIDO: Notificação sobre o botão de mudar o servidor
+      /*
       setTimeout(() => {
         showToast('Use o botão circular no canto direito para alterar o provedor de conteúdo', 'info')
       }, 1000)
+      */
     }
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
@@ -335,8 +338,9 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Círculo BRANCO) */}
-                <div className="simple-play-circle">
+                {/* Botão de Play Simples (Ícone central) */}
+                {/* CLASSE ALTERADA: simple-play-circle -> simple-play-icon-only */}
+                <div className="simple-play-icon-only">
                     <i className="fas fa-play"></i>
                 </div>
              </div>
@@ -539,28 +543,29 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: Círculo BRANCO */
-        .simple-play-circle {
+        /* Botão play simples: APENAS ÍCONE BRANCO (sem borda/fundo) */
+        /* CLASSE NOVA: Mantém o tamanho e foco, mas sem o círculo */
+        .simple-play-icon-only {
             position: absolute;
             z-index: 2;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 4px solid #ffffff; /* Borda branca sólida */
-            background: rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            /* Tamanho ajustado para que o ícone pareça do mesmo tamanho do original */
+            font-size: 3rem; 
             color: #ffffff;
-            font-size: 1.8rem;
-            padding-left: 5px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.3s, background 0.3s;
+            opacity: 0.95;
+            transition: transform 0.3s, opacity 0.3s;
+            /* Reset de estilos da versão com círculo */
+            width: auto;
+            height: auto;
+            border-radius: 0;
+            border: none;
+            background: none;
+            padding-left: 0; 
+            box-shadow: none;
         }
 
-        .episode-cover-placeholder:hover .simple-play-circle {
+        .episode-cover-placeholder:hover .simple-play-icon-only {
             transform: scale(1.1);
-            background: rgba(0,0,0,0.3);
+            opacity: 1;
         }
 
         /* --- ESTILOS DO POPUP DE VÍDEO --- */
