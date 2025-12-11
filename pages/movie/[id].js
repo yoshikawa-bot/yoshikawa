@@ -24,7 +24,8 @@ export default function Movie() {
   // Estado para notificação única
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
-  // Estado para garantir que a notificação mobile apareça apenas uma vez (mantido por consistência, mas a lógica de exibição está no useEffect)
+  
+  // Estado mantido apenas para compatibilidade, caso expanda lógica futura
   const [mobileTipShown, setMobileTipShown] = useState(false) 
 
   const [showSynopsis, setShowSynopsis] = useState(false)
@@ -69,22 +70,11 @@ export default function Movie() {
     }
   }, [id])
   
-  // ATUALIZADO: Exibe a dica mobile (sempre que o player abrir) e controla o overflow do body
+  // ATUALIZADO: Removemos a notificação de rotação e mantemos apenas o controle de scroll
   useEffect(() => {
+    // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
-        // NOVO: Exibe a dica mobile SEMPRE que o player abre no celular
-        if (isMobile()) {
-            // Define como true para evitar que a dica de provedor (se demorar a aparecer) substitua a de rotação.
-            setMobileTipShown(true); 
-            // NOVO: Exibe a notificação de rotação
-            showToast('Para uma melhor experiência no mobile, vire a tela', 'info');
-        } else {
-             // Limpa a notificação de rotação se for desktop e o player abriu
-             removeToast();
-        }
-    } else {
-        // Se o player for fechado, permite que outras dicas (como a de provedor) voltem a aparecer.
-        setMobileTipShown(false); 
+        removeToast();
     }
     
     // Bloqueia a rolagem quando o player está aberto
@@ -94,7 +84,7 @@ export default function Movie() {
     return () => {
         document.body.style.overflow = 'auto';
     };
-  }, [showVideoPlayer]); // Remove a dependência de mobileTipShown
+  }, [showVideoPlayer]); 
 
   // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
@@ -178,7 +168,6 @@ export default function Movie() {
 
   const getPlayerUrl = () => {
     const identifier = movie?.external_ids?.imdb_id || id
-    // Adiciona &fullScreen=false para tentar evitar o fullscreen automático
     const fullScreenParam = '&fullScreen=false' 
     if (selectedPlayer === 'superflix') {
       return `${STREAM_BASE_URL}/filme/${identifier}#noLink#transparent#noBackground${fullScreenParam}`
@@ -212,9 +201,8 @@ export default function Movie() {
     }
   };
 
-  // Mantido: Impede o fechamento ao clicar no fundo
   const handleVideoOverlayClick = (e) => {
-    e.stopPropagation(); // Garante que cliques no fundo não vazem
+    e.stopPropagation(); 
   }
   
   const toggleVideoFormat = () => {
@@ -225,7 +213,6 @@ export default function Movie() {
     setSelectedPlayer(player)
     closePopup(setShowPlayerSelector)
     showToast(`Servidor alterado para ${player === 'superflix' ? 'SuperFlix (DUB)' : 'VidSrc (LEG)'}`, 'info')
-     // Recarrega o player se estiver aberto
     if (showVideoPlayer) {
         setShowVideoPlayer(false)
         setTimeout(() => setShowVideoPlayer(true), 100); 
@@ -259,7 +246,6 @@ export default function Movie() {
 
   if (!movie) return null
 
-  // Define a imagem de capa (backdrop_path)
   const coverImage = movie.backdrop_path 
     ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
     : (movie.poster_path ? `https://image.tmdb.org/t/p/original${movie.poster_path}` : null);
@@ -268,8 +254,9 @@ export default function Movie() {
   const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
     
-    // NOVO: Se o video player estiver aberto E a notificação NÃO for a de rotação/mobile ('info'), não renderiza.
-    if (showVideoPlayer && toast.type !== 'info') {
+    // Se o player estiver aberto, não mostramos toasts normais para não poluir
+    // (A menos que você queira reativar mensagens de erro críticas aqui)
+    if (showVideoPlayer) {
         return null; 
     }
 
@@ -387,7 +374,7 @@ export default function Movie() {
             </div>
         )}
 
-        {/* Overlay para o Seletor de Player (Manter o mesmo) */}
+        {/* Overlay para o Seletor de Player */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -422,7 +409,7 @@ export default function Movie() {
             </div>
         )}
 
-        {/* Popup de Informações (Manter o mesmo) */}
+        {/* Popup de Informações */}
         <div 
             className={`info-popup-overlay ${showInfoPopup ? 'active' : ''}`}
             onClick={handleInfoOverlayClick}
@@ -474,7 +461,6 @@ export default function Movie() {
         onShowInfo={() => setShowInfoPopup(true)}
       />
 
-      {/* ESTILOS (Os estilos do pop-up já estavam na versão anterior e funcionam) */}
       <style jsx>{`
         /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
@@ -504,14 +490,13 @@ export default function Movie() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: Círculo BRANCO */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            border: 4px solid #ffffff; /* Borda branca sólida */
+            border: 4px solid #ffffff;
             background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
@@ -532,7 +517,9 @@ export default function Movie() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            /* Fundo transparente conforme solicitado */
+            background: transparent; 
+            /* Blur mantido */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
@@ -540,14 +527,13 @@ export default function Movie() {
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 20px; /* Margem de segurança */
+            padding: 20px;
         }
 
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
-        /* Grupo que contém a barra de ferramentas + o vídeo */
         .video-player-group {
             display: flex;
             flex-direction: column;
@@ -556,10 +542,8 @@ export default function Movie() {
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* MODO QUADRADO (Padrão/Vertical) */
         .video-player-group.square {
             width: min(90vw, 90vh);
-            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
             max-width: 600px; 
         }
 
@@ -567,7 +551,6 @@ export default function Movie() {
             aspect-ratio: 1 / 1;
         }
 
-        /* MODO WIDESCREEN (Horizontal/Virado) */
         .video-player-group.widescreen {
             width: 90vw;
             max-width: 1200px;
@@ -575,15 +558,14 @@ export default function Movie() {
 
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
+            max-height: 80vh;
         }
 
-        /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 24px; /* Cantos bem arredondados */
+            border-radius: 24px;
             overflow: hidden;
             position: relative;
             transition: aspect-ratio 0.4s ease;
@@ -595,7 +577,6 @@ export default function Movie() {
             border: none;
         }
 
-        /* Barra de Ferramentas (Botões pertinho do popup) */
         .video-controls-toolbar {
             display: flex;
             justify-content: flex-end;
@@ -634,33 +615,9 @@ export default function Movie() {
             to { opacity: 0; }
         }
 
-        /* --- AJUSTES DO TOAST QUANDO O VÍDEO POPUP ESTÁ ABERTO --- */
-        /* Garante que o toast que é exibido no modo de vídeo (o de rotação) fique no topo */
-        .video-overlay-wrapper .toast-container {
-            z-index: 10000; /* Acima do z-index 9999 do pop-up do vídeo */
-            position: absolute; /* Para que o posicionamento seja relativo ao .video-overlay-wrapper */
-            inset: 0; /* Ocupa toda a área para posicionar corretamente o toast filho */
-            pointer-events: none; /* Não deve bloquear interações com o player */
-        }
-        
-        /* Ajuste de altura e posicionamento da notificação de rotação */
-        .video-overlay-wrapper .toast-container .toast {
-            top: auto; /* Remove o posicionamento top padrão */
-            bottom: 60px; /* NEW: Posição fixa acima da navbar pilula (BottomNav) */
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        /* Oculta as outras notificações quando o player estiver aberto */
-        /* Isso é garantido no JS (SingleToast), mas o CSS abaixo é um fallback de layout: */
-        .video-overlay-wrapper ~ .toast-container {
-            display: none !important;
-        }
-
-        /* O toast container padrão continua com os estilos para quando o player estiver fechado */
         .toast-container {
             position: fixed;
-            top: 10px; /* Posição padrão quando o player está fechado */
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
@@ -671,8 +628,7 @@ export default function Movie() {
         }
         
         .toast {
-            /* Manter estilos existentes do .toast */
-            top: 0; /* Usa o topo do toast-container */
+            top: 0;
             background: var(--card-bg);
             border: 1px solid var(--border);
             color: var(--text);
@@ -685,7 +641,6 @@ export default function Movie() {
             pointer-events: auto;
         }
 
-        /* RESTO DOS ESTILOS ANTERIORES */
         @keyframes toast-slide-up {
           0% { 
             opacity: 0; 
