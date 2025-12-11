@@ -61,7 +61,6 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
-      // Notificação sobre botão de servidor removida conforme solicitado
     }
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
@@ -299,8 +298,6 @@ export default function TVShow() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header />
-
       <main className="streaming-container">
         
         {/* ÁREA DA CAPA / BOTÃO DE PLAY SIMPLES */}
@@ -312,7 +309,7 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Sem círculo) */}
+                {/* Botão de Play Simples (Sem círculo, ícone menor) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -401,10 +398,8 @@ export default function TVShow() {
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 
-                {/* Grupo: Barra de Ferramentas + Player */}
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     
-                    {/* Barra de Controles Flutuante logo acima do player */}
                     <div className="video-controls-toolbar">
                         <button className="toolbar-btn" onClick={toggleVideoFormat} title="Girar / Alterar Formato">
                             <i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i>
@@ -414,7 +409,6 @@ export default function TVShow() {
                         </button>
                     </div>
 
-                    {/* O Container do Vídeo */}
                     <div className="video-floating-container">
                         <iframe 
                             src={getPlayerUrl()}
@@ -427,7 +421,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* OUTROS OVERLAYS - FUNDO TRANSPARENTE, APENAS BLUR */}
+        {/* SELETOR DE PLAYER - FUNDO 100% TRANSPARENTE, BLUR SÓ NO BUBBLE */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -462,7 +456,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* POPUP DE INFO - INFO TÉCNICA E ESTILO DE CONTAINER */}
+        {/* POPUP DE INFO - FUNDO 100% TRANSPARENTE, BLUR SÓ NO CARD */}
         {showInfoPopup && (
             <div className="info-popup-overlay active" onClick={handleInfoOverlayClick}>
               <div className="info-popup-content technical-info" onClick={(e) => e.stopPropagation()}>
@@ -543,7 +537,7 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: SEM CÍRCULO, APENAS ÍCONE */
+        /* Botão play ajustado: Menor e sem fundo */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
@@ -551,8 +545,8 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 4rem; /* Ícone maior */
-            text-shadow: 0 4px 20px rgba(0,0,0,0.6); /* Sombra para contraste */
+            font-size: 2.5rem; /* Reduzido de 4rem */
+            text-shadow: 0 4px 20px rgba(0,0,0,0.6);
             transition: transform 0.3s;
         }
 
@@ -560,15 +554,15 @@ export default function TVShow() {
             transform: scale(1.1);
         }
 
-        /* --- ESTILOS DOS POPUPS (FUNDO TRANSPARENTE) --- */
+        /* --- ESTILOS DOS POPUPS --- */
+        /* O fundo (overlay) é transparente e sem blur */
         .video-overlay-wrapper,
         .info-popup-overlay,
         .player-selector-overlay {
             position: fixed;
             inset: 0;
-            background: transparent !important; /* Remove escurecimento */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            background: transparent !important;
+            backdrop-filter: none !important;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -577,17 +571,30 @@ export default function TVShow() {
             padding: 20px;
         }
         
-        /* ESTILIZAÇÃO DO POPUP DE INFORMAÇÕES TÉCNICAS (Estilo Card) */
+        /* Apenas o conteúdo (o card) tem blur e fundo semi-transparente */
         .info-popup-content.technical-info {
-            background: var(--card-bg, #121212); /* Mesma cor dos cards */
-            border: 1px solid var(--border, #333); /* Mesma borda dos cards */
+            background: rgba(18, 18, 18, 0.95); /* Fundo com opacidade para blur */
+            backdrop-filter: blur(20px); /* Blur aplicado aqui */
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border, #333);
             border-radius: 12px;
             padding: 25px;
             width: 100%;
             max-width: 500px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             color: var(--text);
-            text-align: left; /* Alinhado à esquerda */
+            text-align: left;
+        }
+        
+        /* Seletor de Player: Blur no Bubble */
+        .player-selector-bubble {
+            background: rgba(26, 26, 26, 0.95); /* Fundo semi-transparente */
+            backdrop-filter: blur(20px); /* Blur aplicado aqui */
+            -webkit-backdrop-filter: blur(20px);
+            /* ... (outros estilos herdados globalmente ou definidos aqui se necessário) ... */
+            border-radius: 16px;
+            border: 1px solid var(--border, #333);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         .info-popup-header-tech {
@@ -648,7 +655,7 @@ export default function TVShow() {
             opacity: 0.9;
         }
 
-        /* --- RESTANTE DO CSS (MANTIDO) --- */
+        /* --- RESTANTE DO CSS --- */
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
@@ -954,36 +961,6 @@ export default function TVShow() {
     </>
   )
 }
-
-const Header = ({}) => (
-  <header className="github-header">
-    <div className="header-content">
-      <Link href="/" className="logo-container">
-        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="logo-image" />
-        <div className="logo-text"><span className="logo-name">Yoshikawa</span><span className="beta-tag">STREAMING</span></div>
-      </Link>
-    </div>
-    <style jsx>{`
-      .header-content {
-         width: 100%;
-         max-width: 1200px;
-         margin: 0 auto;
-         /* Alinhamento ajustado para a esquerda seguindo o grid */
-         padding: 15px 20px; 
-         display: flex;
-         align-items: center;
-         justify-content: flex-start;
-      }
-      .logo-container {
-         margin-left: 0;
-         display: flex;
-         align-items: center;
-         text-decoration: none;
-         gap: 10px;
-      }
-    `}</style>
-  </header>
-)
 
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
