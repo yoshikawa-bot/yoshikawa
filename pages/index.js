@@ -25,6 +25,10 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
+  
+  // Novos estados para o Filtro de Conteúdo
+  const [filterMode, setFilterMode] = useState('all') // 'all', 'default' (séries/filmes), 'anime'
+  const [showSettings, setShowSettings] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -32,14 +36,11 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Modificado para não acumular)
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    
-    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
     setToasts([toast])
-    
     setTimeout(() => {
       removeToast(id)
     }, 3000)
@@ -52,6 +53,7 @@ export default function Home() {
   useEffect(() => {
     loadHomeContent()
     loadFavorites()
+    loadUserPreferences()
   }, [])
 
   useEffect(() => {
@@ -63,6 +65,27 @@ export default function Home() {
         setSearchQuery('')
     }
   }, [searchActive])
+  
+  // Carregar preferência salva
+  const loadUserPreferences = () => {
+      const savedFilter = localStorage.getItem('yoshikawaContentFilter')
+      if (savedFilter) {
+          setFilterMode(savedFilter)
+      }
+  }
+
+  // Salvar e aplicar preferência
+  const handleFilterChange = (mode) => {
+      setFilterMode(mode)
+      localStorage.setItem('yoshikawaContentFilter', mode)
+      setShowSettings(false)
+      
+      let message = 'Exibindo todo o conteúdo'
+      if (mode === 'default') message = 'Exibindo Séries e Filmes'
+      if (mode === 'anime') message = 'Exibindo apenas Animes'
+      
+      showToast(message, 'success')
+  }
   
   // Função central de busca
   const fetchSearchResults = async (query) => {
@@ -130,13 +153,13 @@ export default function Home() {
       const popularMoviesData = await popularMoviesResponse.json()
       const popularTvData = await popularTvResponse.json()
 
+      // Carregamos mais itens inicialmente (slice maior) para permitir filtragem client-side sem esvaziar a lista
       const allReleases = [
         ...(moviesData.results || []).map(item => ({...item, media_type: 'movie'})),
         ...(tvData.results || []).map(item => ({...item, media_type: 'tv'}))
       ]
         .filter(item => item.poster_path)
         .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
-        .slice(0, 15)
 
       const allPopular = [
         ...(popularMoviesData.results || []).map(item => ({...item, media_type: 'movie'})),
@@ -144,7 +167,6 @@ export default function Home() {
       ]
         .filter(item => item.poster_path)
         .sort(() => 0.5 - Math.random())
-        .slice(0, 15)
 
       setReleases(allReleases)
       setRecommendations(allPopular)
@@ -185,7 +207,9 @@ export default function Home() {
           poster_path: item.poster_path,
           release_date: item.release_date,
           first_air_date: item.first_air_date,
-          overview: item.overview
+          overview: item.overview,
+          original_language: item.original_language,
+          genre_ids: item.genre_ids
         }
         newFavorites = [...prevFavorites, favoriteItem]
         showToast('Adicionado aos favoritos!', 'success')
@@ -202,35 +226,47 @@ export default function Home() {
     })
   }
   
-  const handleSearchSubmit = () => {
-    if (searchInputRef.current) {
-      const query = searchInputRef.current.value.trim()
-      if (query) {
-        debouncedSearch(query)
-      } else {
-        setSearchResults([])
-        showToast('Digite algo para pesquisar', 'info')
-      }
-    }
-  }
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      handleSearchSubmit()
+       if (searchInputRef.current) {
+          debouncedSearch(searchInputRef.current.value)
+       }
     }
+  }
+  
+  // --- LÓGICA DE FILTRAGEM ---
+  const getFilteredItems = (items) => {
+      if (!items) return [];
+
+      return items.filter(item => {
+          // Lógica para detectar Anime: Língua japonesa E (Gênero Animação OU Tipo TV)
+          // 16 é o ID de gênero para Animação no TMDB
+          const isAnime = item.original_language === 'ja' && (item.genre_ids?.includes(16) || item.media_type === 'tv');
+
+          if (filterMode === 'all') return true;
+          if (filterMode === 'anime') return isAnime;
+          if (filterMode === 'default') return !isAnime; // Exclui animes (apenas séries ocidentais e filmes)
+          
+          return true;
+      }).slice(0, 15); // Aplica o limite apenas APÓS filtrar para garantir que haja conteúdo
   }
 
   const getActiveItems = () => {
+    let items = [];
     switch (activeSection) {
       case 'releases':
-        return releases
+        items = releases
+        break;
       case 'recommendations':
-        return recommendations
+        items = recommendations
+        break;
       case 'favorites':
-        return favorites
+        items = favorites // Favoritos também obedecem o filtro visual, mas mantemos todos salvos
+        break;
       default:
-        return releases
+        items = releases
     }
+    return getFilteredItems(items);
   }
   
   const getActiveSectionDetails = () => {
@@ -292,7 +328,9 @@ export default function Home() {
         })
       ) : (
         <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
-          {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
+          {activeSection === 'favorites' 
+            ? 'Nenhum favorito encontrado neste modo.' 
+            : 'Nenhum conteúdo disponível com o filtro atual.'}
         </div>
       )}
     </div>
@@ -314,7 +352,7 @@ export default function Home() {
         
         {!loading && searchResults.length > 0 ? (
             <ContentGrid 
-                items={searchResults}
+                items={searchResults} // A busca retorna tudo, não obedece ao filtro de categoria (UX padrão)
                 isFavorite={isFavorite}
                 toggleFavorite={toggleFavorite}
                 extraClass="live-grid"
@@ -362,6 +400,63 @@ export default function Home() {
     </div>
   )
   
+  // Componente de Pop-up de Configurações
+  const SettingsPopup = () => {
+      if (!showSettings) return null;
+      
+      const closeSettings = () => {
+          const el = document.querySelector('.settings-overlay');
+          el.classList.add('closing');
+          setTimeout(() => setShowSettings(false), 300);
+      }
+
+      const handleOverlayClick = (e) => {
+        if(e.target.classList.contains('settings-overlay')) closeSettings();
+      }
+
+      return (
+          <div className="settings-overlay active" onClick={handleOverlayClick}>
+              <div className="settings-content">
+                  <div className="settings-header">
+                      <h3><i className="fas fa-cog"></i> Preferências</h3>
+                      <button className="close-popup-btn-simple" onClick={closeSettings}>
+                          <i className="fas fa-times"></i>
+                      </button>
+                  </div>
+                  <div className="settings-body">
+                      <p className="settings-label">Selecione o tipo de conteúdo:</p>
+                      
+                      <button 
+                        className={`setting-option ${filterMode === 'default' ? 'active' : ''}`}
+                        onClick={() => handleFilterChange('default')}
+                      >
+                        <i className="fas fa-film"></i>
+                        <span>Séries e Filmes</span>
+                        {filterMode === 'default' && <i className="fas fa-check check-icon"></i>}
+                      </button>
+
+                      <button 
+                        className={`setting-option ${filterMode === 'anime' ? 'active' : ''}`}
+                        onClick={() => handleFilterChange('anime')}
+                      >
+                        <i className="fas fa-dragon"></i>
+                        <span>Animes</span>
+                        {filterMode === 'anime' && <i className="fas fa-check check-icon"></i>}
+                      </button>
+
+                      <button 
+                        className={`setting-option ${filterMode === 'all' ? 'active' : ''}`}
+                        onClick={() => handleFilterChange('all')}
+                      >
+                        <i className="fas fa-globe"></i>
+                        <span>Todos</span>
+                        {filterMode === 'all' && <i className="fas fa-check check-icon"></i>}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )
+  }
 
   return (
     <>
@@ -373,9 +468,11 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header />
+      {/* Header Atualizado com botão de configurações */}
+      <Header onOpenSettings={() => setShowSettings(true)} />
       
       <ToastContainer />
+      <SettingsPopup />
 
       <main className="container">
         
@@ -386,7 +483,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Lógica de Renderização Condicional - Página Inteira */}
         {searchActive ? (
             <LiveSearchResults />
         ) : (
@@ -441,12 +537,10 @@ export default function Home() {
                 onChange={handleSearchChange}
                 onKeyPress={handleKeyPress}
               />
-              {/* Botão de fechar removido daqui */}
             </div>
           )}
         </div>
         
-        {/* Botão circular que vira X quando ativo */}
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
           onClick={() => setSearchActive(!searchActive)}
@@ -462,6 +556,118 @@ export default function Home() {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         
+        /* --- Settings Popup Styles --- */
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        }
+
+        .settings-overlay.closing {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        .settings-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 320px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .settings-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .settings-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-popup-btn-simple {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .settings-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-label {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .setting-option {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            padding: 15px;
+            border-radius: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .setting-option i {
+            width: 25px;
+            font-size: 1.1rem;
+        }
+
+        .setting-option span {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .setting-option:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .setting-option.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .check-icon {
+            margin-left: auto;
+            font-size: 0.9rem;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
         /* --- Padronização do Grid (Home e Busca) --- */
         .content-grid {
             display: grid;
@@ -481,20 +687,18 @@ export default function Home() {
         .content-poster {
            width: 100%;
            height: auto;
-           aspect-ratio: 2/3; /* Proporção exata 2:3 */
+           aspect-ratio: 2/3;
            object-fit: cover;
            display: block;
            border-radius: 12px;
         }
 
-        /* Mobile: 2 colunas exatas */
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
         }
 
-        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
             position: static;
             width: 100%;
@@ -518,7 +722,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh; /* Ocupa altura mínima para estética */
+            min-height: 50vh; 
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -531,37 +735,54 @@ export default function Home() {
             font-size: 2rem;
         }
 
-        /* --- Container Principal --- */
         .container {
             padding: 0 16px 100px 16px;
             width: 100%;
         }
 
-        /* --- Header Adjustments --- */
         .header-content {
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between; /* Alterado para space-between para acomodar a engrenagem */
             align-items: center;
             width: 100%;
             padding: 0 16px;
+        }
+
+        /* Estilo do botão de engrenagem no header */
+        .settings-header-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Apple style circle */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .settings-header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg);
         }
         
         .main-nav-bar.search-active {
             padding: 0 10px;
         }
 
-        /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
             width: 100%;
-            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
   )
 }
 
-// Header
-const Header = () => {
+// Header Atualizado
+const Header = ({ onOpenSettings }) => {
   return (
     <header className="github-header">
       <div className="header-content">
@@ -573,9 +794,14 @@ const Header = () => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
+            <span className="beta-tag">S</span> {/* Texto alterado para S */}
           </div>
         </Link>
+        
+        {/* Botão de Engrenagem */}
+        <button className="settings-header-btn" onClick={onOpenSettings}>
+            <i className="fas fa-cog"></i>
+        </button>
       </div>
     </header>
   )
