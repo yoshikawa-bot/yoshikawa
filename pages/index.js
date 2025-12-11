@@ -32,11 +32,13 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Notifications (Modificado para não acumular)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts(prev => [...prev, toast])
+    
+    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
+    setToasts([toast])
     
     setTimeout(() => {
       removeToast(id)
@@ -258,7 +260,6 @@ export default function Home() {
               key={getItemKey(item)}
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
-              // Remove o onClick que fechava a busca para permitir navegação natural
             >
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
@@ -298,7 +299,6 @@ export default function Home() {
   )
 
   const LiveSearchResults = () => {
-    // Se não tiver busca ativa, não renderiza nada
     if (!searchActive) return null
     
     return (
@@ -441,29 +441,17 @@ export default function Home() {
                 onChange={handleSearchChange}
                 onKeyPress={handleKeyPress}
               />
-              <button 
-                className="close-search-expanded"
-                onClick={() => {
-                  setSearchActive(false)
-                }}
-              >
-                <i className="fas fa-times"></i>
-              </button>
+              {/* Botão de fechar removido daqui */}
             </div>
           )}
         </div>
         
+        {/* Botão circular que vira X quando ativo */}
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
-          onClick={() => {
-            if (searchActive) {
-               setSearchActive(false);
-            } else {
-              setSearchActive(true)
-            }
-          }}
+          onClick={() => setSearchActive(!searchActive)}
         >
-          <i className="fas fa-search"></i>
+          <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
       </div>
 
@@ -508,12 +496,10 @@ export default function Home() {
 
         /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
-            /* Removido position fixed, top, bottom, etc. */
             position: static;
             width: 100%;
             height: auto;
             background-color: transparent;
-            /* Padding é controlado pelo .container agora */
             padding: 0;
             margin-bottom: 20px;
         }
@@ -547,7 +533,6 @@ export default function Home() {
 
         /* --- Container Principal --- */
         .container {
-            /* Padding padrão para todas as páginas (Home e Busca) */
             padding: 0 16px 100px 16px;
             width: 100%;
         }
@@ -563,6 +548,12 @@ export default function Home() {
         
         .main-nav-bar.search-active {
             padding: 0 10px;
+        }
+
+        /* Ajuste do input quando não há botão X interno */
+        .search-input-expanded {
+            width: 100%;
+            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
@@ -588,4 +579,4 @@ const Header = () => {
       </div>
     </header>
   )
-                                                       }
+}
