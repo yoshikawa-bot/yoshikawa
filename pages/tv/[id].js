@@ -66,16 +66,13 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
-      setTimeout(() => {
-        showToast('Use o botão circular no canto direito para alterar o provedor de conteúdo', 'info')
-      }, 1000)
+      // REMOVIDO: Notificação sobre o botão de mudar servidor
     }
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     }
   }, [id])
   
-  // ATUALIZADO: Removemos a notificação de rotação e mantemos apenas o controle de scroll
   useEffect(() => {
     // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
@@ -492,7 +489,15 @@ export default function TVShow() {
                   <img src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w200${tvShow.poster_path}` : ''} className="info-poster" />
                   <div className="info-details">
                     <h2 className="info-title">{tvShow.name}</h2>
-                    <p>{tvShow.overview}</p>
+                    <div className="tech-info-grid">
+                        <p><strong>Título Original:</strong> {tvShow.original_name}</p>
+                        <p><strong>Temporadas:</strong> {tvShow.number_of_seasons}</p>
+                        <p><strong>Episódios:</strong> {tvShow.number_of_episodes}</p>
+                        <p><strong>Status:</strong> {tvShow.status}</p>
+                        <p><strong>Lançamento:</strong> {new Date(tvShow.first_air_date).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Gêneros:</strong> {tvShow.genres?.map(g => g.name).join(', ')}</p>
+                        <p><strong>Nota:</strong> {tvShow.vote_average?.toFixed(1)}</p>
+                    </div>
                   </div>
                 </div>
                 <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
@@ -511,6 +516,13 @@ export default function TVShow() {
       />
 
       <style jsx>{`
+        /* ESTILO DO CABEÇALHO PARA ALINHAR À ESQUERDA */
+        :global(.header-content) {
+            max-width: 100%;
+            padding-left: 20px;
+            justify-content: flex-start;
+        }
+
         /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
             position: absolute;
@@ -578,6 +590,13 @@ export default function TVShow() {
             justify-content: center;
             animation: fadeIn 0.3s ease;
             padding: 20px; /* Margem de segurança */
+        }
+
+        /* POPUP DE INFO E SELETOR - FUNDO TRANSPARENTE */
+        .info-popup-overlay, .player-selector-overlay {
+            background: transparent !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
         }
 
         .video-overlay-wrapper.closing {
@@ -780,6 +799,18 @@ export default function TVShow() {
             line-height: 1.5;
             color: var(--text);
             opacity: 0.9;
+        }
+        
+        .tech-info-grid {
+            display: grid;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-top: 10px;
+        }
+        
+        .tech-info-grid p {
+            margin: 0;
         }
 
         .fade-in {
