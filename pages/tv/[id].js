@@ -30,17 +30,12 @@ export default function TVShow() {
   const [toast, setToast] = useState(null)
   const toastTimeoutRef = useRef(null)
   
-  // Mantido apenas por compatibilidade de estado, mas sem uso lógico de UI
-  const [mobileTipShown, setMobileTipShown] = useState(false)
-
   const [showSynopsis, setShowSynopsis] = useState(false)
   
   const episodeListRef = useRef(null)
 
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const STREAM_BASE_URL = 'https://superflixapi.blog'
-
-  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 768;
 
   const showToast = (message, type = 'info') => {
     if (toastTimeoutRef.current) {
@@ -66,7 +61,7 @@ export default function TVShow() {
     if (id) {
       loadTvShow(id)
       checkIfFavorite()
-      // REMOVIDO: Notificação sobre o botão de mudar servidor
+      // Notificação sobre botão de servidor removida conforme solicitado
     }
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
@@ -74,19 +69,13 @@ export default function TVShow() {
   }, [id])
   
   useEffect(() => {
-    // Se o player abrir, garantimos que qualquer toast anterior seja limpo para uma visão limpa
     if (showVideoPlayer) {
         removeToast();
     }
-    
-    // Bloqueia a rolagem quando o player está aberto
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto';
-
-    // Limpeza para garantir que a rolagem volte
     return () => {
         document.body.style.overflow = 'auto';
     };
-
   }, [showVideoPlayer]) 
 
   useEffect(() => {
@@ -98,21 +87,16 @@ export default function TVShow() {
     }
   }, [episode, seasonDetails])
 
-  // Detectar orientação da tela para ajustar o player automaticamente ao abrir
   useEffect(() => {
     if (showVideoPlayer) {
       const handleResize = () => {
-        // Se a largura for maior que a altura, sugere modo widescreen
         if (window.innerWidth > window.innerHeight) {
             setIsWideScreen(true);
         } else {
             setIsWideScreen(false);
         }
       };
-      
-      // Checa ao abrir
       handleResize();
-      
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }
@@ -283,11 +267,7 @@ export default function TVShow() {
 
   const SingleToast = ({ showVideoPlayer }) => {
     if (!toast) return null;
-    
-    // Se o player estiver aberto, não mostramos toasts para manter a tela limpa
-    if (showVideoPlayer) {
-        return null; 
-    }
+    if (showVideoPlayer) return null; 
 
     return (
       <div className="toast-container">
@@ -332,7 +312,7 @@ export default function TVShow() {
                 ) : (
                     <div className="cover-fallback"></div>
                 )}
-                {/* Botão de Play Simples (Círculo BRANCO) */}
+                {/* Botão de Play Simples (Sem círculo) */}
                 <div className="simple-play-circle">
                     <i className="fas fa-play"></i>
                 </div>
@@ -447,7 +427,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* OUTROS OVERLAYS */}
+        {/* OUTROS OVERLAYS - FUNDO TRANSPARENTE, APENAS BLUR */}
         {showPlayerSelector && (
             <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
                 <div 
@@ -482,25 +462,44 @@ export default function TVShow() {
             </div>
         )}
 
+        {/* POPUP DE INFO - INFO TÉCNICA E ESTILO DE CONTAINER */}
         {showInfoPopup && (
             <div className="info-popup-overlay active" onClick={handleInfoOverlayClick}>
-              <div className="info-popup-content" onClick={(e) => e.stopPropagation()}>
-                <div className="info-popup-header">
-                  <img src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w200${tvShow.poster_path}` : ''} className="info-poster" />
-                  <div className="info-details">
-                    <h2 className="info-title">{tvShow.name}</h2>
-                    <div className="tech-info-grid">
-                        <p><strong>Título Original:</strong> {tvShow.original_name}</p>
-                        <p><strong>Temporadas:</strong> {tvShow.number_of_seasons}</p>
-                        <p><strong>Episódios:</strong> {tvShow.number_of_episodes}</p>
-                        <p><strong>Status:</strong> {tvShow.status}</p>
-                        <p><strong>Lançamento:</strong> {new Date(tvShow.first_air_date).toLocaleDateString('pt-BR')}</p>
-                        <p><strong>Gêneros:</strong> {tvShow.genres?.map(g => g.name).join(', ')}</p>
-                        <p><strong>Nota:</strong> {tvShow.vote_average?.toFixed(1)}</p>
-                    </div>
-                  </div>
+              <div className="info-popup-content technical-info" onClick={(e) => e.stopPropagation()}>
+                <div className="info-popup-header-tech">
+                    <h2 className="info-title-tech">Informações Técnicas</h2>
                 </div>
-                <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
+                <div className="tech-info-list">
+                    <div className="tech-item">
+                        <span className="tech-label">Título Original:</span>
+                        <span className="tech-value">{tvShow.original_name}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Lançamento:</span>
+                        <span className="tech-value">{tvShow.first_air_date ? new Date(tvShow.first_air_date).toLocaleDateString('pt-BR') : 'N/A'}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Gêneros:</span>
+                        <span className="tech-value">{tvShow.genres?.map(g => g.name).join(', ')}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Temporadas:</span>
+                        <span className="tech-value">{tvShow.number_of_seasons}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Episódios:</span>
+                        <span className="tech-value">{tvShow.number_of_episodes}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Nota (TMDB):</span>
+                        <span className="tech-value"><i className="fas fa-star" style={{color: '#ffd700', marginRight: '5px'}}></i>{tvShow.vote_average?.toFixed(1)}</span>
+                    </div>
+                    <div className="tech-item">
+                        <span className="tech-label">Status:</span>
+                        <span className="tech-value">{tvShow.status}</span>
+                    </div>
+                </div>
+                <button className="close-popup-btn tech-close" onClick={() => closePopup(setShowInfoPopup)}>Fechar</button>
               </div>
             </div>
         )}
@@ -516,13 +515,6 @@ export default function TVShow() {
       />
 
       <style jsx>{`
-        /* ESTILO DO CABEÇALHO PARA ALINHAR À ESQUERDA */
-        :global(.header-content) {
-            max-width: 100%;
-            padding-left: 20px;
-            justify-content: flex-start;
-        }
-
         /* --- ESTILOS DA CAPA E BOTÃO PLAY SIMPLES --- */
         .episode-cover-placeholder {
             position: absolute;
@@ -551,37 +543,30 @@ export default function TVShow() {
             transform: scale(1.02);
         }
 
-        /* Botão play simples: Círculo BRANCO */
+        /* Botão play simples: SEM CÍRCULO, APENAS ÍCONE */
         .simple-play-circle {
             position: absolute;
             z-index: 2;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 4px solid #ffffff; /* Borda branca sólida */
-            background: rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 1.8rem;
-            padding-left: 5px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.3s, background 0.3s;
+            font-size: 4rem; /* Ícone maior */
+            text-shadow: 0 4px 20px rgba(0,0,0,0.6); /* Sombra para contraste */
+            transition: transform 0.3s;
         }
 
         .episode-cover-placeholder:hover .simple-play-circle {
             transform: scale(1.1);
-            background: rgba(0,0,0,0.3);
         }
 
-        /* --- ESTILOS DO POPUP DE VÍDEO --- */
-        .video-overlay-wrapper {
+        /* --- ESTILOS DOS POPUPS (FUNDO TRANSPARENTE) --- */
+        .video-overlay-wrapper,
+        .info-popup-overlay,
+        .player-selector-overlay {
             position: fixed;
             inset: 0;
-            /* Fundo transparente conforme solicitado */
-            background: transparent;
-            /* Blur mantido */
+            background: transparent !important; /* Remove escurecimento */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             z-index: 9999;
@@ -589,21 +574,85 @@ export default function TVShow() {
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
-            padding: 20px; /* Margem de segurança */
+            padding: 20px;
+        }
+        
+        /* ESTILIZAÇÃO DO POPUP DE INFORMAÇÕES TÉCNICAS (Estilo Card) */
+        .info-popup-content.technical-info {
+            background: var(--card-bg, #121212); /* Mesma cor dos cards */
+            border: 1px solid var(--border, #333); /* Mesma borda dos cards */
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            color: var(--text);
+            text-align: left; /* Alinhado à esquerda */
         }
 
-        /* POPUP DE INFO E SELETOR - FUNDO TRANSPARENTE */
-        .info-popup-overlay, .player-selector-overlay {
-            background: transparent !important;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+        .info-popup-header-tech {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border, #333);
+            padding-bottom: 10px;
         }
 
+        .info-title-tech {
+            font-size: 1.4rem;
+            color: var(--text);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .tech-info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tech-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 8px;
+        }
+
+        .tech-label {
+            color: var(--secondary, #aaa);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .tech-value {
+            color: var(--text, #fff);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .close-popup-btn.tech-close {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary, #e50914);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .close-popup-btn.tech-close:hover {
+            opacity: 0.9;
+        }
+
+        /* --- RESTANTE DO CSS (MANTIDO) --- */
         .video-overlay-wrapper.closing {
             animation: fadeOut 0.3s ease forwards;
         }
 
-        /* Grupo que contém a barra de ferramentas + o vídeo */
         .video-player-group {
             display: flex;
             flex-direction: column;
@@ -612,10 +661,8 @@ export default function TVShow() {
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* MODO QUADRADO (Padrão/Vertical) */
         .video-player-group.square {
             width: min(90vw, 90vh);
-            /* Garante aspect-ratio 1/1, mas respeita limites da tela */
             max-width: 600px; 
         }
 
@@ -623,7 +670,6 @@ export default function TVShow() {
             aspect-ratio: 1 / 1;
         }
 
-        /* MODO WIDESCREEN (Horizontal/Virado) */
         .video-player-group.widescreen {
             width: 90vw;
             max-width: 1200px;
@@ -631,15 +677,14 @@ export default function TVShow() {
 
         .video-player-group.widescreen .video-floating-container {
             aspect-ratio: 16 / 9;
-            max-height: 80vh; /* Para não estourar verticalmente em telas ultra-wide */
+            max-height: 80vh; 
         }
 
-        /* Container do Iframe (Estilo visual) */
         .video-floating-container {
             width: 100%;
             background: #000;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            border-radius: 24px; /* Cantos bem arredondados */
+            border-radius: 24px; 
             overflow: hidden;
             position: relative;
             transition: aspect-ratio 0.4s ease;
@@ -651,7 +696,6 @@ export default function TVShow() {
             border: none;
         }
 
-        /* Barra de Ferramentas (Botões pertinho do popup) */
         .video-controls-toolbar {
             display: flex;
             justify-content: flex-end;
@@ -692,7 +736,7 @@ export default function TVShow() {
 
         .toast-container {
             position: fixed;
-            top: 10px; /* Posição padrão quando o player está fechado */
+            top: 10px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
@@ -703,8 +747,7 @@ export default function TVShow() {
         }
         
         .toast {
-            /* Manter estilos existentes do .toast */
-            top: 0; /* Usa o topo do toast-container */
+            top: 0; 
             background: var(--card-bg);
             border: 1px solid var(--border);
             color: var(--text);
@@ -799,18 +842,6 @@ export default function TVShow() {
             line-height: 1.5;
             color: var(--text);
             opacity: 0.9;
-        }
-        
-        .tech-info-grid {
-            display: grid;
-            gap: 5px;
-            font-size: 0.9rem;
-            color: var(--text);
-            margin-top: 10px;
-        }
-        
-        .tech-info-grid p {
-            margin: 0;
         }
 
         .fade-in {
@@ -932,6 +963,25 @@ const Header = ({}) => (
         <div className="logo-text"><span className="logo-name">Yoshikawa</span><span className="beta-tag">STREAMING</span></div>
       </Link>
     </div>
+    <style jsx>{`
+      .header-content {
+         width: 100%;
+         max-width: 1200px;
+         margin: 0 auto;
+         /* Alinhamento ajustado para a esquerda seguindo o grid */
+         padding: 15px 20px; 
+         display: flex;
+         align-items: center;
+         justify-content: flex-start;
+      }
+      .logo-container {
+         margin-left: 0;
+         display: flex;
+         align-items: center;
+         text-decoration: none;
+         gap: 10px;
+      }
+    `}</style>
   </header>
 )
 
