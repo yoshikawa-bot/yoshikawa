@@ -391,6 +391,7 @@ export default function Home() {
             <LiveSearchResults />
         ) : (
             <div className="home-sections">
+                {/* O título da página é aqui */}
                 <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
                 <section className="section">
                     <ContentGrid 
@@ -455,7 +456,7 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* --- DEFINIÇÃO DO FUNDO --- */
+        /* --- DEFINIÇÃO DO FUNDO AJUSTADO --- */
         body, html {
             background-color: #000000 !important; /* Cor base preta */
             min-height: 100vh;
@@ -471,7 +472,12 @@ export default function Home() {
                 /* Layer de Ruído SVG */
                 url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E"),
                 /* Layer de Gradiente de Cor (Top Lima -> Azul Acinzentado -> Preto) */
-                linear-gradient(to bottom, #e3e9a8 0%, #70819a 25%, #2e3747 55%, #000000 100%) !important;
+                linear-gradient(to bottom, 
+                    #e3e9a8 0%, 
+                    #70819a 25%, 
+                    #2e3747 60%, 
+                    #000000 95% /* Fundo preto puro no final do gradiente */
+                ) !important;
             
             /* Mistura o ruído sobre o gradiente para o efeito granulado */
             background-blend-mode: overlay, normal !important;
@@ -480,11 +486,10 @@ export default function Home() {
             background-repeat: repeat, no-repeat !important;
             background-position: top center !important;
             
-            /* Define a altura do gradiente para 700px.
-               Como está no 'body' e não é 'fixed', ele rolará junto com a página,
-               desaparecendo ao rolar para baixo e revelando a cor de fundo preta.
+            /* Define a altura do gradiente para 400px.
+               Isso deve cobrir o cabeçalho e o título principal ('Lançamentos').
             */
-            background-size: auto, 100% 700px !important;
+            background-size: auto, 100% 400px !important;
             
             color: #ffffff;
         }
@@ -573,6 +578,11 @@ export default function Home() {
         }
 
         /* --- Header Adjustments --- */
+        .github-header {
+             /* Garante que o header não tenha fundo próprio que cubra o degrade */
+             background-color: transparent !important;
+        }
+        
         .header-content {
             display: flex;
             justify-content: flex-start;
