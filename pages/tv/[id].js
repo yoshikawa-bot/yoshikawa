@@ -225,7 +225,12 @@ export default function TVShow() {
   if (error) return <div className="error-message active"><h3>Erro</h3><p>{error}</p><Link href="/">Voltar</Link></div>
   if (!tvShow) return null
 
+  // Lógica para determinar Próximo e Anterior
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
+  const currentEpIndex = seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode)
+  const prevEp = currentEpIndex > 0 ? seasonDetails?.episodes[currentEpIndex - 1] : null
+  const nextEp = (currentEpIndex !== -1 && currentEpIndex < (seasonDetails?.episodes?.length - 1)) ? seasonDetails?.episodes[currentEpIndex + 1] : null
+
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
   const coverImage = currentEpisode?.still_path 
@@ -316,7 +321,26 @@ export default function TVShow() {
                         <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)}><i className="fas fa-times"></i></button>
                     </div>
                     <div className="video-floating-container">
-                        <iframe src={getPlayerUrl()} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title={`Player`}></iframe>
+                        <iframe key={episode} src={getPlayerUrl()} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title={`Player`}></iframe>
+                    </div>
+                    
+                    {/* Botões de Navegação no Popup */}
+                    <div className="player-navigation-bar">
+                        <button 
+                            className={`nav-control-btn ${!prevEp ? 'disabled' : ''}`} 
+                            onClick={() => prevEp && setEpisode(prevEp.episode_number)}
+                            disabled={!prevEp}
+                        >
+                            <i className="fas fa-step-backward"></i>
+                        </button>
+                        
+                        <button 
+                            className={`nav-control-btn ${!nextEp ? 'disabled' : ''}`} 
+                            onClick={() => nextEp && setEpisode(nextEp.episode_number)}
+                            disabled={!nextEp}
+                        >
+                            <i className="fas fa-step-forward"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -459,6 +483,44 @@ export default function TVShow() {
 
         .video-floating-container iframe { width: 100%; height: 100%; border: none; }
         .video-controls-toolbar { display: flex; justify-content: flex-end; gap: 12px; padding-right: 8px; }
+        
+        /* Nav Buttons Styling */
+        .player-navigation-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .nav-control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .nav-control-btn:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+
+        .nav-control-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
 
         .toolbar-btn {
             background: rgba(255, 255, 255, 0.1);
