@@ -455,26 +455,38 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* --- DEFINIÇÃO DO FUNDO COM DEGRADE --- */
+        /* --- DEFINIÇÃO DO FUNDO --- */
         body, html {
             background-color: #000000 !important; /* Cor base preta */
-            
-            /* Degrade linear do topo para baixo (to bottom).
-               Começa rosa (#ff0080), passa para roxo (#7928ca) e termina em preto puro (#000000).
-               Os pontos de parada (0%, 40%, 85%) ajudam a suavizar a transição para o preto.
-            */
-            background-image: linear-gradient(to bottom, #ff0080 0%, #7928ca 40%, #000000 85%) !important;
-            
-            background-repeat: no-repeat !important;
-            background-position: top center !important;
-            
-            /* Define a altura do degrade para 300px. O resto será a cor base preta. */
-            background-size: 100% 300px !important;
-            
-            color: #ffffff; /* Garante que o texto seja branco */
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+
+            /* Simulação do degrade da imagem com ruído (noise).
+               Usamos dois layers de background:
+               1. Um SVG data URI para gerar o ruído granulado.
+               2. O gradiente linear com as cores extraídas da imagem.
+            */
+            background-image: 
+                /* Layer de Ruído SVG */
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E"),
+                /* Layer de Gradiente de Cor (Top Lima -> Azul Acinzentado -> Preto) */
+                linear-gradient(to bottom, #e3e9a8 0%, #70819a 25%, #2e3747 55%, #000000 100%) !important;
+            
+            /* Mistura o ruído sobre o gradiente para o efeito granulado */
+            background-blend-mode: overlay, normal !important;
+
+            /* O ruído repete, o gradiente não */
+            background-repeat: repeat, no-repeat !important;
+            background-position: top center !important;
+            
+            /* Define a altura do gradiente para 700px.
+               Como está no 'body' e não é 'fixed', ele rolará junto com a página,
+               desaparecendo ao rolar para baixo e revelando a cor de fundo preta.
+            */
+            background-size: auto, 100% 700px !important;
+            
+            color: #ffffff;
         }
 
         /* Animação para notificação (Toast) */
