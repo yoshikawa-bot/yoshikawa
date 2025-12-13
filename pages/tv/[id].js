@@ -225,7 +225,6 @@ export default function TVShow() {
   if (error) return <div className="error-message active"><h3>Erro</h3><p>{error}</p><Link href="/">Voltar</Link></div>
   if (!tvShow) return null
 
-  // Lógica para determinar Próximo e Anterior
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
   const currentEpIndex = seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode)
   const prevEp = currentEpIndex > 0 ? seasonDetails?.episodes[currentEpIndex - 1] : null
@@ -316,15 +315,19 @@ export default function TVShow() {
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
+                    
                     <div className="video-controls-toolbar">
-                        <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
-                        <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)}><i className="fas fa-times"></i></button>
+                        <div className="video-ep-indicator">EP {episode < 10 ? `0${episode}` : episode}</div>
+                        <div className="video-controls-right">
+                            <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
+                            <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)}><i className="fas fa-times"></i></button>
+                        </div>
                     </div>
+                    
                     <div className="video-floating-container">
                         <iframe key={episode} src={getPlayerUrl()} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title={`Player`}></iframe>
                     </div>
                     
-                    {/* Botões de Navegação no Popup */}
                     <div className="player-navigation-bar">
                         <button 
                             className={`nav-control-btn ${!prevEp ? 'disabled' : ''}`} 
@@ -482,8 +485,26 @@ export default function TVShow() {
         }
 
         .video-floating-container iframe { width: 100%; height: 100%; border: none; }
-        .video-controls-toolbar { display: flex; justify-content: flex-end; gap: 12px; padding-right: 8px; }
         
+        /* Video Controls Toolbar Styling */
+        .video-controls-toolbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0 5px;
+        }
+        
+        .video-ep-indicator {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .video-controls-right { display: flex; gap: 12px; }
+
         /* Nav Buttons Styling */
         .player-navigation-bar {
             display: flex;
@@ -506,7 +527,8 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease, background 0.2s ease;
+            transform: scale(1);
         }
 
         .nav-control-btn:hover:not(.disabled) {
@@ -514,12 +536,17 @@ export default function TVShow() {
             transform: scale(1.1);
             border-color: #fff;
         }
+        
+        .nav-control-btn:active:not(.disabled) {
+            transform: scale(0.95);
+        }
 
         .nav-control-btn.disabled {
             opacity: 0.3;
             cursor: not-allowed;
             background: transparent;
             border-color: rgba(255, 255, 255, 0.05);
+            transform: scale(1);
         }
 
         .toolbar-btn {
