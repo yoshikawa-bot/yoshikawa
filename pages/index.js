@@ -455,13 +455,26 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* --- DEFINIÇÃO DO FUNDO PRETO --- */
+        /* --- DEFINIÇÃO DO FUNDO COM DEGRADE --- */
         body, html {
-            background-color: #000000 !important;
-            background: #000000 !important;
+            background-color: #000000 !important; /* Cor base preta */
+            
+            /* Degrade linear do topo para baixo (to bottom).
+               Começa rosa (#ff0080), passa para roxo (#7928ca) e termina em preto puro (#000000).
+               Os pontos de parada (0%, 40%, 85%) ajudam a suavizar a transição para o preto.
+            */
+            background-image: linear-gradient(to bottom, #ff0080 0%, #7928ca 40%, #000000 85%) !important;
+            
+            background-repeat: no-repeat !important;
+            background-position: top center !important;
+            
+            /* Define a altura do degrade para 300px. O resto será a cor base preta. */
+            background-size: 100% 300px !important;
+            
             color: #ffffff; /* Garante que o texto seja branco */
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
 
         /* Animação para notificação (Toast) */
@@ -520,6 +533,8 @@ export default function Home() {
             color: var(--text);
             display: flex;
             align-items: center;
+            /* Adiciona uma sombra sutil ao texto para melhor leitura sobre o degrade */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         
         .live-search-loading, .no-results-live {
@@ -552,6 +567,8 @@ export default function Home() {
             align-items: center;
             width: 100%;
             padding: 0 16px;
+            /* Adiciona uma sombra sutil ao texto do header para melhor leitura */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         
         .main-nav-bar.search-active {
