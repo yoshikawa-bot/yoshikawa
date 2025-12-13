@@ -441,7 +441,6 @@ export default function Home() {
                 onChange={handleSearchChange}
                 onKeyPress={handleKeyPress}
               />
-              {/* Botão de fechar removido daqui */}
             </div>
           )}
         </div>
@@ -456,6 +455,15 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
+        /* --- DEFINIÇÃO DO FUNDO PRETO --- */
+        body, html {
+            background-color: #000000 !important;
+            background: #000000 !important;
+            color: #ffffff; /* Garante que o texto seja branco */
+            margin: 0;
+            padding: 0;
+        }
+
         /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -553,7 +561,6 @@ export default function Home() {
         /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
             width: 100%;
-            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
@@ -579,4 +586,4 @@ const Header = () => {
       </div>
     </header>
   )
-        }
+}
