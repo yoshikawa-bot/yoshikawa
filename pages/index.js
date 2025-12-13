@@ -456,6 +456,33 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
+        /* --- ESTILOS GERAIS E FUNDO (ATUALIZADO) --- */
+        body {
+            background-color: #000000; /* Fundo preto puro */
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: white; /* Garante texto claro */
+            position: relative;
+        }
+
+        /* O degradê simulando a imagem fornecida */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 500px; /* Altura do degradê para cobrir o header e passar um pouco */
+            background: linear-gradient(180deg, 
+                rgba(225, 245, 170, 0.25) 0%, /* Tom amarelo/verde claro no topo */
+                rgba(90, 115, 180, 0.35) 45%, /* Tom azulado/roxo no meio */
+                rgba(0, 0, 0, 1) 100%         /* Fade para o preto total */
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+
         /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -579,4 +606,4 @@ const Header = () => {
       </div>
     </header>
   )
-        }
+}
