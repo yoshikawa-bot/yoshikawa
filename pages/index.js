@@ -473,11 +473,11 @@ export default function Home() {
             top: 0;
             left: 0;
             right: 0;
-            height: 250px; /* Altura REDUZIDA para ficar condensado no topo */
+            height: 120px; /* Altura MUITO REDUZIDA para ficar apenas no topo */
             background: linear-gradient(180deg, 
                 rgba(225, 245, 170, 0.25) 0%, /* Tom amarelo/verde claro no topo */
-                rgba(90, 115, 180, 0.35) 45%, /* Tom azulado/roxo no meio */
-                rgba(0, 0, 0, 1) 100%         /* Fade para o preto total */
+                rgba(90, 115, 180, 0.35) 30%, /* Tom azulado/roxo sobe para transição rápida */
+                rgba(0, 0, 0, 1) 100%         /* Fade para o preto total muito rápido */
             );
             z-index: -1;
             pointer-events: none;
