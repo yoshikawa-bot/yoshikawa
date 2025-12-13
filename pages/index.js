@@ -473,7 +473,7 @@ export default function Home() {
             top: 0;
             left: 0;
             right: 0;
-            height: 500px; /* Altura do degradê para cobrir o header e passar um pouco */
+            height: 250px; /* Altura REDUZIDA para ficar condensado no topo */
             background: linear-gradient(180deg, 
                 rgba(225, 245, 170, 0.25) 0%, /* Tom amarelo/verde claro no topo */
                 rgba(90, 115, 180, 0.35) 45%, /* Tom azulado/roxo no meio */
