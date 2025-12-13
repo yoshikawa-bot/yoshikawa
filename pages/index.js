@@ -15,16 +15,6 @@ const useDebounce = (callback, delay) => {
   }, [callback, delay])
 }
 
-const HeroImage = () => {
-    const imageUrl = "https://yoshikawa-bot.github.io/cache/images/e2fcc30e.jpg";
-    return (
-        // O container da imagem é posicionado de forma absoluta/fixa no fundo do topo
-        <div className="hero-image-container">
-            <img src={imageUrl} alt="Background Splash" className="hero-image" />
-        </div>
-    );
-}
-
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
@@ -383,15 +373,10 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* 1. Imagem de fundo flutuante */}
-      <HeroImage /> 
-      
-      {/* 2. Cabeçalho (flutua por cima da imagem) */}
       <Header />
       
       <ToastContainer />
 
-      {/* 3. Conteúdo principal, deslocado para baixo para não começar por cima do cabeçalho + imagem */}
       <main className="container">
         
         {loading && !searchActive && (
@@ -471,70 +456,6 @@ export default function Home() {
       </div>
 
       <style jsx global>{`
-        /* --- ESTILOS GLOBAIS/BASE (ATUALIZADOS) --- */
-        :root {
-            /* Adicionado uma variável para altura do cabeçalho + imagem para uso em padding */
-            --top-area-height: 330px; /* Altura do HeroImage (250px) + Altura do Header (aprox. 80px) */
-        }
-        body {
-            background-color: #000 !important; /* Fundo preto absoluto */
-            color: white; 
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* O cabeçalho deve manter-se no topo com z-index alto */
-        .github-header {
-            position: fixed; /* Usa fixed para garantir que ele flutue por cima */
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 200; /* Alto z-index para flutuar sobre a imagem (z-index: 10) */
-            background-color: transparent; /* Remove o fundo aqui, se o original for transparente/escuro */
-            /* Se o cabeçalho original tiver um fundo sólido, ele deve ser mantido */
-            /* Exemplo: background-color: #1a1a1a; */
-        }
-        
-        /* --- IMAGEM DE TOPO (POSICIONAMENTO ABSOLUTO/FIXO) --- */
-        .hero-image-container {
-            position: fixed; /* Fica por baixo de tudo no topo */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 250px; /* Altura da imagem (ajustável) */
-            overflow: hidden;
-            z-index: 10; /* Fica abaixo do cabeçalho (200) mas acima do conteúdo (1) */
-        }
-        
-        /* Adicionando um degradê preto suave por cima da imagem para melhor leitura do cabeçalho e transição */
-        .hero-image-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, #000000 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
-        }
-
-        .hero-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; 
-            object-position: top center; 
-            display: block;
-        }
-
-        /* Ajuste do container principal: forçar o conteúdo a começar abaixo da área de cabeçalho + imagem */
-        .container {
-            padding: var(--top-area-height) 16px 100px 16px; /* Adiciona padding-top igual à altura da área de topo */
-            width: 100%;
-            position: relative;
-            z-index: 50; /* Garante que o conteúdo flua por cima da imagem */
-        }
-        
-        /* --- O restante dos estilos permanece inalterado --- */
-        
         /* Animação para notificação (Toast) */
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -560,7 +481,7 @@ export default function Home() {
         .content-poster {
            width: 100%;
            height: auto;
-           aspect-ratio: 2/3; 
+           aspect-ratio: 2/3; /* Proporção exata 2:3 */
            object-fit: cover;
            display: block;
            border-radius: 12px;
@@ -570,12 +491,6 @@ export default function Home() {
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
-            }
-            .hero-image-container {
-                height: 200px;
-            }
-            :root {
-                --top-area-height: 280px; /* Reajusta a altura para mobile: 200px (imagem) + 80px (header) */
             }
         }
 
@@ -603,7 +518,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh;
+            min-height: 50vh; /* Ocupa altura mínima para estética */
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -614,6 +529,12 @@ export default function Home() {
         .live-search-loading i, .no-results-live i {
             margin-bottom: 10px;
             font-size: 2rem;
+        }
+
+        /* --- Container Principal --- */
+        .container {
+            padding: 0 16px 100px 16px;
+            width: 100%;
         }
 
         /* --- Header Adjustments --- */
@@ -632,6 +553,7 @@ export default function Home() {
         /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
             width: 100%;
+            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
@@ -657,4 +579,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
+        }
