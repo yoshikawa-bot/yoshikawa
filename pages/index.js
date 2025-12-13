@@ -32,14 +32,11 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Modificado para não acumular)
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    
-    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
     setToasts([toast])
-    
     setTimeout(() => {
       removeToast(id)
     }, 3000)
@@ -64,34 +61,27 @@ export default function Home() {
     }
   }, [searchActive])
   
-  // Função central de busca
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
       setLoading(false)
       return
     }
-    
     setLoading(true)
-    
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
         fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`)
       ])
-
       const moviesData = await moviesResponse.json()
       const tvData = await tvResponse.json()
-
       const allResults = [
         ...(moviesData.results || []).map(item => ({ ...item, media_type: 'movie' })),
         ...(tvData.results || []).map(item => ({ ...item, media_type: 'tv' }))
       ].filter(item => item.poster_path)
        .sort((a, b) => b.popularity - a.popularity)
        .slice(0, 30)
-
       setSearchResults(allResults)
-      
     } catch (error) {
       console.error('Erro na busca:', error)
       showToast('Erro na busca em tempo real', 'error')
@@ -115,7 +105,6 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // --- Funções de Carregamento de Conteúdo ---
   const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
@@ -124,7 +113,6 @@ export default function Home() {
         fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
         fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`)
       ])
-
       const moviesData = await moviesResponse.json()
       const tvData = await tvResponse.json()
       const popularMoviesData = await popularMoviesResponse.json()
@@ -148,7 +136,6 @@ export default function Home() {
 
       setReleases(allReleases)
       setRecommendations(allPopular)
-
     } catch (error) {
       console.error('Erro ao carregar conteúdo:', error)
     }
@@ -173,7 +160,6 @@ export default function Home() {
     setFavorites(prevFavorites => {
       let newFavorites
       const wasFavorite = isFavorite(item)
-      
       if (wasFavorite) {
         newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
         showToast('Removido dos favoritos', 'info')
@@ -190,14 +176,11 @@ export default function Home() {
         newFavorites = [...prevFavorites, favoriteItem]
         showToast('Adicionado aos favoritos!', 'success')
       }
-      
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
         console.error('Erro ao salvar favoritos:', error)
-        showToast('Erro ao salvar favoritos', 'error')
       }
-
       return newFavorites
     })
   }
@@ -205,81 +188,54 @@ export default function Home() {
   const handleSearchSubmit = () => {
     if (searchInputRef.current) {
       const query = searchInputRef.current.value.trim()
-      if (query) {
-        debouncedSearch(query)
-      } else {
-        setSearchResults([])
-        showToast('Digite algo para pesquisar', 'info')
-      }
+      if (query) debouncedSearch(query)
     }
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearchSubmit()
-    }
+    if (e.key === 'Enter') handleSearchSubmit()
   }
 
   const getActiveItems = () => {
     switch (activeSection) {
-      case 'releases':
-        return releases
-      case 'recommendations':
-        return recommendations
-      case 'favorites':
-        return favorites
-      default:
-        return releases
+      case 'releases': return releases
+      case 'recommendations': return recommendations
+      case 'favorites': return favorites
+      default: return releases
     }
   }
   
   const getActiveSectionDetails = () => {
     switch (activeSection) {
-      case 'releases':
-        return { title: 'Lançamentos', icon: 'fas fa-film' }
-      case 'recommendations':
-        return { title: 'Populares', icon: 'fas fa-fire' }
-      case 'favorites':
-        return { title: 'Favoritos', icon: 'fas fa-heart' }
-      default:
-        return { title: 'Conteúdo', icon: 'fas fa-tv' }
+      case 'releases': return { title: 'Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations': return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites': return { title: 'Favoritos', icon: 'fas fa-heart' }
+      default: return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
   }
   
   const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
-  // --- Componentes ---
-
+  // Componentes Internos
   const ContentGrid = ({ items, isFavorite, toggleFavorite, extraClass = '' }) => (
     <div className={`content-grid ${extraClass}`}>
       {items.length > 0 ? (
         items.map(item => {
           const isFav = isFavorite(item)
           return (
-            <Link 
-              key={getItemKey(item)}
-              href={`/${item.media_type}/${item.id}`}
-              className="content-card"
-            >
+            <Link key={getItemKey(item)} href={`/${item.media_type}/${item.id}`} className="content-card">
               <img 
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
                 alt={item.title || item.name}
                 className="content-poster"
                 loading="lazy"
               />
-              
               <button 
                 className={`favorite-btn ${isFav ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault() 
-                  e.stopPropagation() 
-                  toggleFavorite(item)
-                }}
-                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item) }}
               >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
-
               <div className="floating-text-wrapper">
                 <div className="content-title-card">{item.title || item.name}</div>
                 <div className="content-year">
@@ -291,114 +247,58 @@ export default function Home() {
           )
         })
       ) : (
-        <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
+        <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: '#888', width: '100%', gridColumn: '1 / -1'}}>
           {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
         </div>
       )}
     </div>
   )
 
-  const LiveSearchResults = () => {
-    if (!searchActive) return null
-    
-    return (
-      <div className="live-search-results">
-        <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
-
-        {loading && (
-            <div className="live-search-loading">
-                <i className="fas fa-spinner fa-spin"></i>
-                <span> Buscando...</span>
-            </div>
-        )}
-        
-        {!loading && searchResults.length > 0 ? (
-            <ContentGrid 
-                items={searchResults}
-                isFavorite={isFavorite}
-                toggleFavorite={toggleFavorite}
-                extraClass="live-grid"
-            />
-        ) : (!loading && searchQuery.trim() !== '' && (
-            <div className="no-results-live">
-                <i className="fas fa-ghost"></i>
-                <p>Nenhum resultado encontrado para "{searchQuery}".</p>
-            </div>
-        ))}
-        
-        {!loading && searchQuery.trim() === '' && (
-            <div className="no-results-live">
-                <p>Comece a digitar para pesquisar...</p>
-            </div>
-        )}
-      </div>
-    )
-  }
-
   const ToastContainer = () => (
     <div className="toast-container">
       {toasts.map(toast => (
-        <div 
-          key={toast.id} 
-          className={`toast toast-${toast.type} show`}
-          style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-        >
-          <div className="toast-icon">
-            <i className={`fas ${
-              toast.type === 'success' ? 'fa-check' : 
-              toast.type === 'error' ? 'fa-exclamation-triangle' : 
-              'fa-info'
-            }`}></i>
-          </div>
+        <div key={toast.id} className={`toast toast-${toast.type} show`}>
           <div className="toast-content">{toast.message}</div>
-          <button 
-            className="toast-close"
-            onClick={() => removeToast(toast.id)}
-          >
-            <i className="fas fa-times"></i>
-          </button>
         </div>
       ))}
     </div>
   )
-  
 
   return (
     <>
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="description" content="Yoshikawa Streaming Player" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <Header />
+      <header className="github-header">
+        <div className="header-content">
+          <Link href="/" className="logo-container">
+            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Logo" className="logo-image" />
+            <div className="logo-text">
+              <span className="logo-name">Yoshikawa</span>
+              <span className="beta-tag">STREAMING</span>
+            </div>
+          </Link>
+        </div>
+      </header>
       
       <ToastContainer />
 
       <main className="container">
-        
-        {loading && !searchActive && (
-          <div className="loading active">
-            <div className="spinner"></div>
-            <p>Carregando conteúdo...</p>
-          </div>
-        )}
-
-        {/* Lógica de Renderização Condicional - Página Inteira */}
+        {loading && !searchActive && <div className="loading">Carregando...</div>}
         {searchActive ? (
-            <LiveSearchResults />
+            <div className="live-search-results">
+                <h1 className="page-title-home"><i className="fas fa-search"></i> Resultados</h1>
+                <ContentGrid items={searchResults} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+            </div>
         ) : (
             <div className="home-sections">
-                <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
+                <h1 className="page-title-home"><i className={pageIcon}></i> {pageTitle}</h1>
                 <section className="section">
-                    <ContentGrid 
-                        items={getActiveItems()} 
-                        isFavorite={isFavorite} 
-                        toggleFavorite={toggleFavorite}
-                        extraClass="main-grid"
-                    />
+                    <ContentGrid items={getActiveItems()} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
                 </section>
             </div>
         )}
@@ -408,31 +308,18 @@ export default function Home() {
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
           {!searchActive ? (
             <>
-              <button 
-                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                onClick={() => setActiveSection('releases')}
-              >
-                <i className="fas fa-film"></i>
-                <span>Lançamentos</span>
+              <button className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
+                <i className="fas fa-film"></i><span>Lançamentos</span>
               </button>
-              <button 
-                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                onClick={() => setActiveSection('recommendations')}
-              >
-                <i className="fas fa-fire"></i>
-                <span>Populares</span>
+              <button className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
+                <i className="fas fa-fire"></i><span>Populares</span>
               </button>
-              <button 
-                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                onClick={() => setActiveSection('favorites')}
-              >
-                <i className="fas fa-heart"></i>
-                <span>Favoritos</span>
+              <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+                <i className="fas fa-heart"></i><span>Favoritos</span>
               </button>
             </>
           ) : (
-            <div className="search-input-container">
-              <input 
+            <input 
                 ref={searchInputRef}
                 type="text"
                 className="search-input-expanded" 
@@ -440,170 +327,187 @@ export default function Home() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onKeyPress={handleKeyPress}
-              />
-              {/* Botão de fechar removido daqui */}
-            </div>
+            />
           )}
         </div>
-        
-        {/* Botão circular que vira X quando ativo */}
-        <button 
-          className={`search-circle ${searchActive ? 'active' : ''}`}
-          onClick={() => setSearchActive(!searchActive)}
-        >
+        <button className={`search-circle ${searchActive ? 'active' : ''}`} onClick={() => setSearchActive(!searchActive)}>
           <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
       </div>
 
       <style jsx global>{`
-        /* --- ESTILOS GERAIS E FUNDO (ATUALIZADO) --- */
-        body {
-            background-color: #000000; /* Fundo preto puro */
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            color: white; /* Garante texto claro */
-            position: relative;
-        }
-
-        /* O degradê simulando a imagem fornecida */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 120px; /* Altura MUITO REDUZIDA para ficar apenas no topo */
-            background: linear-gradient(180deg, 
-                rgba(225, 245, 170, 0.25) 0%, /* Tom amarelo/verde claro no topo */
-                rgba(90, 115, 180, 0.35) 30%, /* Tom azulado/roxo sobe para transição rápida */
-                rgba(0, 0, 0, 1) 100%         /* Fade para o preto total muito rápido */
-            );
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* Animação para notificação (Toast) */
-        @keyframes toast-slide-up {
-          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
+        /* --- CONFIGURAÇÕES SOLICITADAS --- */
         
-        /* --- Padronização do Grid (Home e Busca) --- */
+        :root {
+            --primary: #ffffff;
+            --background: #000000; /* Preto absoluto */
+            --text: #ffffff;
+            --secondary: #888888;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: var(--background) !important; /* Garante fundo preto */
+          color: var(--text);
+          font-family: 'Inter', sans-serif;
+        }
+
+        .github-header {
+            position: relative;
+            width: 100%;
+            /* Imagem por trás do cabeçalho na proporção original */
+            background-image: url('https://yoshikawa-bot.github.io/cache/images/e2fcc30e.jpg');
+            background-size: contain; 
+            background-repeat: no-repeat;
+            background-position: center top;
+            padding: 60px 0; /* Espaçamento para dar altura ao header */
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background-color: #000000;
+        }
+
+        /* Mantém o conteúdo do logo legível sobre a imagem */
+        .header-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: linear-gradient(to right, rgba(0,0,0,0.7), transparent);
+            height: 100%;
+        }
+
+        /* --- ESTILOS ADICIONAIS --- */
+
+        .container { padding: 20px 16px 120px 16px; }
+        
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px;
-            padding: 0;
-            width: 100%;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid { grid-template-columns: repeat(2, 1fr); }
+            .github-header { padding: 40px 0; }
         }
 
         .content-card {
            position: relative;
-           display: block;
-           overflow: hidden;
            border-radius: 12px;
+           overflow: hidden;
+           background: #111;
+           transition: transform 0.2s;
         }
+
+        .content-card:hover { transform: scale(1.02); }
 
         .content-poster {
            width: 100%;
-           height: auto;
-           aspect-ratio: 2/3; /* Proporção exata 2:3 */
+           aspect-ratio: 2/3;
            object-fit: cover;
            display: block;
-           border-radius: 12px;
         }
 
-        /* Mobile: 2 colunas exatas */
-        @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
+        .floating-text-wrapper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
         }
 
-        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
-        .live-search-results {
-            position: static;
-            width: 100%;
-            height: auto;
-            background-color: transparent;
-            padding: 0;
-            margin-bottom: 20px;
-        }
+        .content-title-card { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .content-year { font-size: 0.75rem; color: #aaa; }
 
-        .page-title-home {
-            margin-top: 20px;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text);
+        .logo-container { display: flex; align-items: center; text-decoration: none; color: white; gap: 12px; }
+        .logo-image { width: 40px; height: 40px; border-radius: 8px; }
+        .logo-name { font-weight: 700; font-size: 1.2rem; display: block; }
+        .beta-tag { font-size: 0.6rem; background: #e50914; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
+
+        .page-title-home { font-size: 1.4rem; margin: 20px 0; display: flex; align-items: center; gap: 10px; }
+
+        /* Bottom Nav */
+        .bottom-nav-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
+            gap: 10px;
+            z-index: 100;
+            width: 90%;
+            max-width: 500px;
         }
-        
-        .live-search-loading, .no-results-live {
+
+        .main-nav-bar {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 8px 15px;
+            display: flex;
+            flex: 1;
+            justify-content: space-around;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: #888;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .nav-item.active { color: white; }
+        .nav-item i { font-size: 1.1rem; margin-bottom: 3px; }
+
+        .search-circle {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: white;
+            color: black;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh; /* Ocupa altura mínima para estética */
-            color: var(--secondary);
-            font-size: 1rem;
-            flex-direction: column;
-            text-align: center;
-            width: 100%;
-        }
-        
-        .live-search-loading i, .no-results-live i {
-            margin-bottom: 10px;
-            font-size: 2rem;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            cursor: pointer;
         }
 
-        /* --- Container Principal --- */
-        .container {
-            padding: 0 16px 100px 16px;
-            width: 100%;
-        }
-
-        /* --- Header Adjustments --- */
-        .header-content {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            width: 100%;
-            padding: 0 16px;
-        }
-        
-        .main-nav-bar.search-active {
-            padding: 0 10px;
-        }
-
-        /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
+            background: transparent;
+            border: none;
+            color: white;
             width: 100%;
-            /* Garante que o input ocupe todo o espaço disponível no container */
+            outline: none;
+            font-size: 1rem;
         }
+
+        .favorite-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 5;
+        }
+        .favorite-btn.active { color: #ff4757; }
       `}</style>
     </>
   )
 }
 
-// Header
-const Header = () => {
-  return (
-    <header className="github-header">
-      <div className="header-content">
-        <Link href="/" className="logo-container">
-          <img 
-            src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
-            alt="Yoshikawa Bot" 
-            className="logo-image"
-          />
-          <div className="logo-text">
-            <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
-          </div>
-        </Link>
-      </div>
-    </header>
-  )
-}
+const Header = () => null; // Removido pois já está no corpo principal
