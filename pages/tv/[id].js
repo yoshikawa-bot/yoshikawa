@@ -656,15 +656,50 @@ export default function TVShow() {
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* ESTILOS DA ROLAGEM DE EPISÓDIOS */
         .episodes-scroller {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
+            /* Oculto por padrão (mobile) */
             scrollbar-width: none;
         }
         
-        .episodes-scroller::-webkit-scrollbar { display: none; }
+        .episodes-scroller::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        /* Desktop: Exibe e estiliza scrollbar */
+        @media (min-width: 768px) {
+            .episodes-scroller {
+                scrollbar-width: thin;
+                scrollbar-color: var(--secondary) rgba(255, 255, 255, 0.05);
+                padding-bottom: 15px; /* Mais espaço para a barra */
+            }
+
+            .episodes-scroller::-webkit-scrollbar {
+                display: block;
+                height: 8px;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 4px;
+                margin: 0 5px;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-thumb {
+                background-color: var(--secondary, #555);
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-thumb:hover {
+                background-color: var(--primary, #777);
+            }
+        }
+
         .episode-card { min-width: 130px; width: 130px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
         .episode-card.active { opacity: 1; }
         .episode-thumbnail {
