@@ -164,12 +164,11 @@ export default function TVShow() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* NOVO HEADER */}
       <Header />
 
       <main className="content-container">
         
-        {/* Player Hero Section (Mantido do código original) */}
+        {/* Player Hero Section */}
         <div className="glass-card hero-player">
              <div className="cover-wrapper" onClick={() => setShowVideoPlayer(true)}>
                 {coverImage && <img src={coverImage} alt="Cover" className="cover-img" />}
@@ -180,7 +179,7 @@ export default function TVShow() {
              </div>
         </div>
 
-        {/* Info & Controls (Mantido do código original) */}
+        {/* Info & Controls */}
         <div className="glass-card info-section">
           <div className="info-header">
             <div className="season-control">
@@ -202,7 +201,7 @@ export default function TVShow() {
           </button>
         </div>
 
-        {/* Horizontal Episode List (Mantido do código original) */}
+        {/* Horizontal Episode List */}
         <div className="episode-scroller-container">
             <div className="episode-track" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
@@ -220,7 +219,7 @@ export default function TVShow() {
             </div>
         </div>
 
-        {/* Video Modal (Mantido do código original) */}
+        {/* Video Modal */}
         {showVideoPlayer && (
             <div className="modal-overlay" onClick={() => closePopup(setShowVideoPlayer)}>
                 <div className={`video-modal ${isWideScreen ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()}>
@@ -242,7 +241,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Player Selector Modal (Mantido do código original) */}
+        {/* Player Selector Modal */}
         {showPlayerSelector && (
             <div className="modal-overlay" onClick={() => setShowPlayerSelector(false)}>
                 <div className="glass-menu-up" onClick={(e) => e.stopPropagation()}>
@@ -261,7 +260,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Info Popup (Mantido do código original) */}
+        {/* Info Popup */}
         {showInfoPopup && (
             <div className="modal-overlay" onClick={() => setShowInfoPopup(false)}>
                 <div className="glass-card info-popup" onClick={(e) => e.stopPropagation()}>
@@ -280,7 +279,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Toast (Mantido do código original) */}
+        {/* Toast */}
         {toast && !showVideoPlayer && (
             <div className={`toast type-${toast.type}`}>
                 <i className="fas fa-info-circle"></i> {toast.message}
@@ -289,7 +288,6 @@ export default function TVShow() {
 
       </main>
 
-      {/* NOVA BOTTOM NAV */}
       <BottomNav 
         selectedPlayer={selectedPlayer} 
         onPlayerChange={() => setShowPlayerSelector(true)} 
@@ -303,15 +301,16 @@ export default function TVShow() {
             --bg-body: #050507;
             --glass-bg: rgba(30, 30, 32, 0.70);
             --glass-border: rgba(255, 255, 255, 0.08);
-            --accent: #0A84FF; /* Primary */
+            --accent: #0A84FF; /* Primary Blue */
+            --fav-color: #FF2D55; /* Solid Red for Favorites */
             --text-main: #F5F5F7;
             --text-sec: #86868b;
             
-            /* Variáveis para a nova Navbar/Header */
+            /* Variáveis para a Navbar/Header (Clean Glass) */
             --primary: #0A84FF;
             --secondary: #86868b;
             --card-bg: rgba(30, 30, 32, 0.85);
-            --border: rgba(255, 255, 255, 0.15);
+            --border: rgba(255, 255, 255, 0.1); /* Bordas mais sutis */
             --text: #F5F5F7;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -320,7 +319,7 @@ export default function TVShow() {
         .ios-page { padding-bottom: 90px; min-height: 100vh; }
         .content-container { padding: 80px 20px 20px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Glassmorphism Cards */
+        /* Glassmorphism Cards (Limpo, sem neon) */
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(25px) saturate(180%);
@@ -328,7 +327,7 @@ export default function TVShow() {
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4); /* Sombra escura padrão */
             transition: transform 0.2s;
         }
 
@@ -354,14 +353,15 @@ export default function TVShow() {
         .synopsis.expanded p { -webkit-line-clamp: unset; }
         .text-btn { background: none; border: none; color: var(--accent); padding: 0; font-size: 13px; font-weight: 500; cursor: pointer; align-self: flex-start; margin-top: -5px; }
 
-        /* Episode Scroller */
+        /* Episode Scroller (Limpo, sem neon na borda) */
         .episode-scroller-container { margin: 0 -20px; padding: 0 20px; }
         .episode-track { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; }
         .episode-track::-webkit-scrollbar { display: none; }
         .ep-card { min-width: 140px; width: 140px; cursor: pointer; opacity: 0.5; transition: all 0.3s; transform: scale(0.95); }
         .ep-card.active { opacity: 1; transform: scale(1); }
         .ep-img { width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; position: relative; border: 2px solid transparent; background: #1c1c1e; }
-        .ep-card.active .ep-img { border-color: var(--accent); box-shadow: 0 0 15px rgba(10, 132, 255, 0.3); }
+        /* Borda sólida, sem brilho */
+        .ep-card.active .ep-img { border-color: var(--accent); } 
         .ep-img img { width: 100%; height: 100%; object-fit: cover; }
         .no-img { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-sec); }
         .now-playing { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px; }
@@ -414,7 +414,7 @@ export default function TVShow() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-back { margin-top: 15px; padding: 10px 20px; background: #222; color: white; text-decoration: none; border-radius: 8px; }
 
-        /* --- STYLES FOR NEW HEADER --- */
+        /* --- HEADER STYLES (Clean Glass) --- */
         .github-header {
             position: fixed;
             top: 0;
@@ -452,9 +452,10 @@ export default function TVShow() {
         
         .logo-text { display: flex; flex-direction: column; line-height: 1; }
         .logo-name { font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
+        /* Atualizado para TV+ */
         .beta-tag { font-size: 9px; color: var(--primary); font-weight: 800; letter-spacing: 1px; margin-top: 2px; }
 
-        /* --- STYLES FOR NEW BOTTOM NAV --- */
+        /* --- BOTTOM NAV STYLES (Clean, No Neon, Exact Proportions) --- */
         .bottom-nav-container {
             position: fixed;
             bottom: 30px;
@@ -464,9 +465,9 @@ export default function TVShow() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 12px; /* Ajustado para a proporção correta */
             width: 100%;
-            max-width: 320px;
+            max-width: 340px; /* Largura total ajustada */
         }
 
         .main-nav-bar {
@@ -481,7 +482,8 @@ export default function TVShow() {
             align-items: center;
             justify-content: space-evenly;
             padding: 0 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            /* Sombra suave e escura, sem neon */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
         }
 
         .nav-item {
@@ -501,34 +503,36 @@ export default function TVShow() {
 
         .nav-item span { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; }
         .nav-item:hover { color: var(--text); }
-        .nav-item.active { color: #FF2D55; }
-        .nav-item.active i { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(255,45,85,0.4)); }
+        
+        /* Coração Vermelho Sólido, sem filtro de brilho */
+        .nav-item.active { color: var(--fav-color); }
 
         .player-circle {
             width: 60px;
             height: 60px;
             background: var(--primary);
             border-radius: 50%;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.1); /* Borda sutil em vez de brilho */
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 20px;
-            box-shadow: 0 10px 30px rgba(10, 132, 255, 0.4);
+            /* Sombra suave e escura, sem neon */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 801;
         }
 
-        .player-circle:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(10, 132, 255, 0.5); }
+        .player-circle:hover { transform: scale(1.05); }
         .player-circle:active { transform: scale(0.95); }
       `}</style>
     </div>
   )
 }
 
-// NOVO HEADER (Do segundo código)
+// HEADER ATUALIZADO (TV+)
 const Header = () => (
   <header className="github-header">
     <div className="header-content">
@@ -536,14 +540,14 @@ const Header = () => (
         <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa Bot" className="logo-image" />
         <div className="logo-text">
           <span className="logo-name">Yoshikawa</span>
-          <span className="beta-tag">STREAMING</span>
+          <span className="beta-tag">TV+</span>
         </div>
       </Link>
     </div>
   </header>
 )
 
-// NOVA BOTTOM NAV (Do segundo código)
+// BOTTOM NAV ATUALIZADA (Sem neon, proporções exatas)
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
   <div className="bottom-nav-container streaming-mode">
     <div className="main-nav-bar">
