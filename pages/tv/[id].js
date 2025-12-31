@@ -48,7 +48,7 @@ export default function TVShow() {
 
   useEffect(() => {
     if (episodeListRef.current && seasonDetails) {
-      const activeCard = episodeListRef.current.querySelector('.episode-card.active')
+      const activeCard = episodeListRef.current.querySelector('.episode-card.active, .ep-card.active')
       if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     }
   }, [episode, seasonDetails])
@@ -164,11 +164,12 @@ export default function TVShow() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
+      {/* NOVO HEADER */}
       <Header />
 
       <main className="content-container">
         
-        {/* Player Hero Section */}
+        {/* Player Hero Section (Mantido do código original) */}
         <div className="glass-card hero-player">
              <div className="cover-wrapper" onClick={() => setShowVideoPlayer(true)}>
                 {coverImage && <img src={coverImage} alt="Cover" className="cover-img" />}
@@ -179,7 +180,7 @@ export default function TVShow() {
              </div>
         </div>
 
-        {/* Info & Controls */}
+        {/* Info & Controls (Mantido do código original) */}
         <div className="glass-card info-section">
           <div className="info-header">
             <div className="season-control">
@@ -201,7 +202,7 @@ export default function TVShow() {
           </button>
         </div>
 
-        {/* Horizontal Episode List */}
+        {/* Horizontal Episode List (Mantido do código original) */}
         <div className="episode-scroller-container">
             <div className="episode-track" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
@@ -219,7 +220,7 @@ export default function TVShow() {
             </div>
         </div>
 
-        {/* Video Modal */}
+        {/* Video Modal (Mantido do código original) */}
         {showVideoPlayer && (
             <div className="modal-overlay" onClick={() => closePopup(setShowVideoPlayer)}>
                 <div className={`video-modal ${isWideScreen ? 'wide' : ''}`} onClick={(e) => e.stopPropagation()}>
@@ -241,7 +242,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Player Selector Modal */}
+        {/* Player Selector Modal (Mantido do código original) */}
         {showPlayerSelector && (
             <div className="modal-overlay" onClick={() => setShowPlayerSelector(false)}>
                 <div className="glass-menu-up" onClick={(e) => e.stopPropagation()}>
@@ -260,7 +261,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Info Popup */}
+        {/* Info Popup (Mantido do código original) */}
         {showInfoPopup && (
             <div className="modal-overlay" onClick={() => setShowInfoPopup(false)}>
                 <div className="glass-card info-popup" onClick={(e) => e.stopPropagation()}>
@@ -279,7 +280,7 @@ export default function TVShow() {
             </div>
         )}
 
-        {/* Toast */}
+        {/* Toast (Mantido do código original) */}
         {toast && !showVideoPlayer && (
             <div className={`toast type-${toast.type}`}>
                 <i className="fas fa-info-circle"></i> {toast.message}
@@ -288,6 +289,7 @@ export default function TVShow() {
 
       </main>
 
+      {/* NOVA BOTTOM NAV */}
       <BottomNav 
         selectedPlayer={selectedPlayer} 
         onPlayerChange={() => setShowPlayerSelector(true)} 
@@ -301,15 +303,22 @@ export default function TVShow() {
             --bg-body: #050507;
             --glass-bg: rgba(30, 30, 32, 0.70);
             --glass-border: rgba(255, 255, 255, 0.08);
-            --accent: #0A84FF;
+            --accent: #0A84FF; /* Primary */
             --text-main: #F5F5F7;
             --text-sec: #86868b;
+            
+            /* Variáveis para a nova Navbar/Header */
+            --primary: #0A84FF;
+            --secondary: #86868b;
+            --card-bg: rgba(30, 30, 32, 0.85);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #F5F5F7;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--bg-body); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text-main); }
         
         .ios-page { padding-bottom: 90px; min-height: 100vh; }
-        .content-container { padding: 100px 20px 20px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .content-container { padding: 80px 20px 20px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
         /* Glassmorphism Cards */
         .glass-card {
@@ -395,7 +404,7 @@ export default function TVShow() {
         .tags span { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-right: 5px; margin-bottom: 5px; }
         .btn-full { width: 100%; background: rgba(255,255,255,0.1); border: none; color: white; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; }
 
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(50,50,50,0.9); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 30px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 14px; z-index: 2000; border: 1px solid rgba(255,255,255,0.1); }
+        .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(50,50,50,0.9); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 30px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 14px; z-index: 2000; border: 1px solid rgba(255,255,255,0.1); }
         .toast.type-success { color: #32D74B; }
         .toast.type-info { color: white; }
 
@@ -404,47 +413,148 @@ export default function TVShow() {
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-back { margin-top: 15px; padding: 10px 20px; background: #222; color: white; text-decoration: none; border-radius: 8px; }
+
+        /* --- STYLES FOR NEW HEADER --- */
+        .github-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(5, 5, 7, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-content {
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+            transition: opacity 0.2s;
+        }
+        
+        .logo-container:hover { opacity: 0.8; }
+        .logo-image { width: 32px; height: 32px; border-radius: 8px; }
+        
+        .logo-text { display: flex; flex-direction: column; line-height: 1; }
+        .logo-name { font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
+        .beta-tag { font-size: 9px; color: var(--primary); font-weight: 800; letter-spacing: 1px; margin-top: 2px; }
+
+        /* --- STYLES FOR NEW BOTTOM NAV --- */
+        .bottom-nav-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .main-nav-bar {
+            flex: 1;
+            background: var(--card-bg);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--border);
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            padding: 0 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 60px;
+            transition: all 0.2s;
+        }
+
+        .nav-item span { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; }
+        .nav-item:hover { color: var(--text); }
+        .nav-item.active { color: #FF2D55; }
+        .nav-item.active i { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(255,45,85,0.4)); }
+
+        .player-circle {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 10px 30px rgba(10, 132, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 801;
+        }
+
+        .player-circle:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(10, 132, 255, 0.5); }
+        .player-circle:active { transform: scale(0.95); }
       `}</style>
     </div>
   )
 }
 
+// NOVO HEADER (Do segundo código)
 const Header = () => (
-  <header className="glass-header">
-    <div className="logo">
-      <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Logo" />
-      <span>Yoshikawa</span>
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa Bot" className="logo-image" />
+        <div className="logo-text">
+          <span className="logo-name">Yoshikawa</span>
+          <span className="beta-tag">STREAMING</span>
+        </div>
+      </Link>
     </div>
-    <style jsx>{`
-      .glass-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(5,5,7,0.7); backdrop-filter: blur(20px); z-index: 900; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-      .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: -0.5px; }
-      .logo img { width: 28px; height: 28px; border-radius: 8px; }
-    `}</style>
   </header>
 )
 
+// NOVA BOTTOM NAV (Do segundo código)
 const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
-  <nav className="glass-nav">
-    <Link href="/" className="nav-item"><i className="fas fa-house"></i></Link>
-    <button className={`nav-item ${isFavorite ? 'active-fav' : ''}`} onClick={onToggleFavorite}><i className={isFavorite ? "fas fa-heart" : "far fa-heart"}></i></button>
-    
-    <div className="center-action">
-        <button className="play-toggle" onClick={onPlayerChange}>
-            {selectedPlayer === 'superflix' ? 'DUB' : 'LEG'}
-        </button>
+  <div className="bottom-nav-container streaming-mode">
+    <div className="main-nav-bar">
+      <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
+      <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
+      <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
+      </button>
     </div>
-
-    <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info"></i></button>
-    <button className="nav-item disabled"><i className="fas fa-user"></i></button>
-
-    <style jsx>{`
-      .glass-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; height: 65px; background: rgba(30, 30, 32, 0.85); backdrop-filter: blur(30px) saturate(180%); border-radius: 35px; border: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-evenly; align-items: center; z-index: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-      .nav-item { background: none; border: none; color: #86868b; font-size: 20px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: color 0.3s; cursor: pointer; }
-      .nav-item:hover, .nav-item.active-fav { color: white; }
-      .nav-item.active-fav { color: #FF2D55; filter: drop-shadow(0 0 5px rgba(255,45,85,0.5)); }
-      .center-action { position: relative; top: -15px; }
-      .play-toggle { width: 56px; height: 56px; border-radius: 50%; background: #0A84FF; border: none; color: white; font-weight: 800; font-size: 13px; box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4); cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
-      .play-toggle:active { transform: scale(0.9); }
-    `}</style>
-  </nav>
+    <button className="player-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+  </div>
 )
