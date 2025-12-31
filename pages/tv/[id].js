@@ -77,6 +77,10 @@ export default function TVShow() {
     }
   }, [showVideoPlayer])
 
+  useEffect(() => {
+    setShowSynopsis(false)
+  }, [episode, season])
+
   const loadTvShow = async (tvId) => {
     try {
       setLoading(true)
@@ -111,6 +115,8 @@ export default function TVShow() {
         if (seasonData.episodes && seasonData.episodes.length > 0) {
           setEpisode(1)
         }
+      } else {
+        setSeasonDetails(null)
       }
     } catch (err) {
       setSeasonDetails(null)
@@ -180,6 +186,30 @@ export default function TVShow() {
         setter(false);
     }
   };
+  
+  const handleInfoOverlayClick = (e) => {
+    if (e.target.classList.contains('info-popup-overlay')) closePopup(setShowInfoPopup);
+  };
+  
+  const handleSelectorOverlayClick = (e) => {
+    if (e.target.classList.contains('player-selector-overlay')) closePopup(setShowPlayerSelector);
+  };
+
+  const handleVideoOverlayClick = (e) => { e.stopPropagation(); }
+  
+  const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
+  
+  const handleSeasonChange = async (newSeason) => {
+    setShowVideoPlayer(false)
+    setSeason(newSeason)
+    await loadSeasonDetails(newSeason)
+  }
+
+  const handleEpisodeChange = (newEpisode) => {
+    setShowVideoPlayer(false)
+    setEpisode(newEpisode)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handlePlayerChange = (player) => {
     setSelectedPlayer(player)
@@ -196,38 +226,58 @@ export default function TVShow() {
   if (!tvShow) return null
 
   const currentEpisode = seasonDetails?.episodes?.find(ep => ep.episode_number === episode)
-  const prevEp = seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode) > 0 ? seasonDetails?.episodes[seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode) - 1] : null
-  const nextEp = (seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode) !== -1 && seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode) < (seasonDetails?.episodes?.length - 1)) ? seasonDetails?.episodes[seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode) + 1] : null
+  const currentEpIndex = seasonDetails?.episodes?.findIndex(ep => ep.episode_number === episode)
+  const prevEp = currentEpIndex > 0 ? seasonDetails?.episodes[currentEpIndex - 1] : null
+  const nextEp = (currentEpIndex !== -1 && currentEpIndex < (seasonDetails?.episodes?.length - 1)) ? seasonDetails?.episodes[currentEpIndex + 1] : null
 
   const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
-  const coverImage = currentEpisode?.still_path ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}` : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
+
+  const coverImage = currentEpisode?.still_path 
+    ? `https://image.tmdb.org/t/p/original${currentEpisode.still_path}`
+    : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : null);
+
+  const SingleToast = ({ showVideoPlayer }) => {
+    if (!toast || showVideoPlayer) return null;
+    return (
+      <div className="toast-container">
+        <div key={toast.id} className={`toast toast-${toast.type} show`} style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+            <div className="toast-icon">
+                <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
+            </div>
+            <div className="toast-content">{toast.message}</div>
+            <button className="toast-close" onClick={removeToast}><i className="fas fa-times"></i></button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
       <Head>
-        <title>{tvShow.name} - Yoshikawa TV+</title>
+        <title>{tvShow.name} - Yoshikawa</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
       <Header />
 
       <main className="streaming-container">
-        {/* Player Section */}
+        
         <div className="player-container">
           <div className="player-wrapper">
              <div className="episode-cover-placeholder" onClick={() => setShowVideoPlayer(true)}>
-                {coverImage ? <img src={coverImage} alt="Cover" className="cover-img" /> : <div className="cover-fallback"></div>}
-                <div className="play-btn-circle-thin"><i className="fas fa-play"></i></div>
+                {coverImage ? <img src={coverImage} alt="Episode Cover" className="cover-img" /> : <div className="cover-fallback"></div>}
+                <div className="play-btn-circle-thin">
+                    <i className="fas fa-play"></i>
+                </div>
              </div>
           </div>
         </div>
 
-        {/* Info Section */}
         <div className="content-info-streaming">
           <div className="meta-header-row">
             <span className="episode-label-simple">Episódio {episode}</span>
             <div className="season-selector-wrapper">
-                <select className="modern-season-select" value={season} onChange={(e) => { setSeason(parseInt(e.target.value)); loadSeasonDetails(e.target.value); }}>
+                <select className="modern-season-select" value={season} onChange={(e) => handleSeasonChange(parseInt(e.target.value))}>
                     {availableSeasons.map(s => <option key={s.season_number} value={s.season_number}>Temporada {s.season_number}</option>)}
                 </select>
             </div>
@@ -236,196 +286,468 @@ export default function TVShow() {
           <h1 className="clean-episode-title">{currentEpisode?.name || `Episódio ${episode}`}</h1>
 
           <div className="synopsis-wrapper">
-            {showSynopsis && <p className="content-description-streaming fade-in">{currentEpisode?.overview || tvShow.overview || 'Sinopse não disponível.'}</p>}
+            {showSynopsis && (
+                <p className="content-description-streaming fade-in">
+                    {currentEpisode?.overview || tvShow.overview || 'Sinopse não disponível.'}
+                </p>
+            )}
             <button className="synopsis-toggle-btn" onClick={() => setShowSynopsis(!showSynopsis)}>
-                {showSynopsis ? <span><i className="fas fa-chevron-up"></i> Ocultar</span> : <span><i className="fas fa-align-left"></i> Sinopse</span>}
+                {showSynopsis ? <span><i className="fas fa-chevron-up"></i> Ocultar Sinopse</span> : <span><i className="fas fa-align-left"></i> Ler Sinopse</span>}
             </button>
           </div>
 
           <div className="episodes-list-container">
             <div className="episodes-scroller" ref={episodeListRef}>
                 {seasonDetails?.episodes?.map(ep => (
-                    <div key={ep.episode_number} className={`episode-card ${ep.episode_number === episode ? 'active' : ''}`} onClick={() => {setEpisode(ep.episode_number); setShowVideoPlayer(false);}}>
+                    <div key={ep.episode_number} className={`episode-card ${ep.episode_number === episode ? 'active' : ''}`} onClick={() => handleEpisodeChange(ep.episode_number)}>
                         <div className="episode-thumbnail">
-                            {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} loading="lazy" /> : <div className="no-thumbnail"><i className="fas fa-play"></i></div>}
+                            {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt={`Episódio ${ep.episode_number}`} loading="lazy" /> : <div className="no-thumbnail"><i className="fas fa-play"></i></div>}
                             <div className="episode-number-badge">{ep.episode_number}</div>
+                            {ep.episode_number === episode && <div className="playing-indicator">Selecionado</div>}
                         </div>
                         <div className="episode-info-mini"><span className="ep-title">{ep.name}</span></div>
                     </div>
-                ))}
+                )) || <div className="loading-eps">Carregando...</div>}
             </div>
           </div>
         </div>
 
-        {/* Video Player Modal */}
         {showVideoPlayer && (
-            <div className="video-overlay-wrapper active">
-                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`}>
+            <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
+                <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
+                    
                     <div className="video-controls-toolbar">
-                        <div className="video-ep-indicator">EP {episode}</div>
+                        <div className="video-ep-indicator">EP {episode < 10 ? `0${episode}` : episode}</div>
                         <div className="video-controls-right">
-                            <button className="toolbar-btn" onClick={() => setIsWideScreen(!isWideScreen)}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
-                            <button className="toolbar-btn close-btn" onClick={() => setShowVideoPlayer(false)}><i className="fas fa-times"></i></button>
+                            <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
+                            <button className="toolbar-btn close-btn" onClick={() => closePopup(setShowVideoPlayer)}><i className="fas fa-times"></i></button>
                         </div>
                     </div>
+                    
                     <div className="video-floating-container">
-                        <iframe key={episode} src={getPlayerUrl()} allowFullScreen></iframe>
+                        <iframe key={episode} src={getPlayerUrl()} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen title={`Player`}></iframe>
+                    </div>
+                    
+                    <div className="player-navigation-bar">
+                        <button 
+                            className={`nav-control-btn ${!prevEp ? 'disabled' : ''}`} 
+                            onClick={() => prevEp && setEpisode(prevEp.episode_number)}
+                            disabled={!prevEp}
+                        >
+                            <i className="fas fa-step-backward"></i>
+                        </button>
+                        
+                        <button 
+                            className={`nav-control-btn ${!nextEp ? 'disabled' : ''}`} 
+                            onClick={() => nextEp && setEpisode(nextEp.episode_number)}
+                            disabled={!nextEp}
+                        >
+                            <i className="fas fa-step-forward"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Server Selector Popup */}
         {showPlayerSelector && (
-            <div className="player-selector-overlay active" onClick={() => closePopup(setShowPlayerSelector)}>
-                <div className="player-selector-bubble active" onClick={e => e.stopPropagation()}>
-                    <div className="player-option-bubble" onClick={() => handlePlayerChange('superflix')}>
-                        <div className="option-main-line"><i className="fas fa-film"></i> <span className="option-name">SuperFlix (DUB)</span></div>
-                    </div>
-                    <div className="player-option-bubble" onClick={() => handlePlayerChange('vidsrc')}>
-                        <div className="option-main-line"><i className="fas fa-bolt"></i> <span className="option-name">VidSrc (LEG)</span></div>
+            <div className="player-selector-overlay menu-overlay active" onClick={handleSelectorOverlayClick}>
+                <div className={`player-selector-bubble ${showPlayerSelector ? 'active' : ''}`} onClick={(e) => e.stopPropagation()}>
+                    <div className="player-options-bubble">
+                        <div className="player-option-bubble" onClick={() => handlePlayerChange('superflix')}>
+                            <div className="option-main-line"><i className="fas fa-film"></i><span className="option-name">SuperFlix</span><span className="player-tag-bubble player-tag-dub">DUB</span></div>
+                            <span className="option-details">Lento, mas possui dublagem.</span>
+                        </div>
+                        <div className="player-option-bubble" onClick={() => handlePlayerChange('vidsrc')}>
+                            <div className="option-main-line"><i className="fas fa-bolt"></i><span className="option-name">VidSrc</span><span className="player-tag-bubble player-tag-sub">LEG</span></div>
+                            <span className="option-details">Mais rápido, mas apenas legendado.</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        )}
+
+        {showInfoPopup && (
+            <div className="info-popup-overlay active" onClick={handleInfoOverlayClick}>
+              <div className="info-popup-content" onClick={(e) => e.stopPropagation()}>
+                <div className="info-popup-header">
+                  <img src={tvShow.poster_path ? `https://image.tmdb.org/t/p/w500${tvShow.poster_path}` : ''} className="info-poster" />
+                  <div className="info-details">
+                    <h2 className="info-title">{tvShow.name}</h2>
+                    <div className="info-meta">
+                      <span><i className="fas fa-calendar"></i> {tvShow.first_air_date ? new Date(tvShow.first_air_date).getFullYear() : 'N/A'}</span>
+                      <span><i className="fas fa-star"></i> {tvShow.vote_average ? tvShow.vote_average.toFixed(1) : 'N/A'}</span>
+                      <span><i className="fas fa-tags"></i> {tvShow.genres ? tvShow.genres.map(g => g.name).slice(0, 2).join(', ') : ''}</span>
+                    </div>
+                    <div className="info-meta">
+                        <span><i className="fas fa-tv"></i> {tvShow.number_of_seasons} Temporadas</span>
+                        <span><i className="fas fa-language"></i> {tvShow.original_language?.toUpperCase()}</span>
+                    </div>
+                  </div>
+                </div>
+                <button className="close-popup-btn" onClick={() => closePopup(setShowInfoPopup)}><i className="fas fa-times"></i> Fechar</button>
+              </div>
             </div>
         )}
       </main>
 
-      <BottomNav 
-        selectedPlayer={selectedPlayer} 
-        onPlayerChange={() => setShowPlayerSelector(true)} 
-        isFavorite={isFavorite} 
-        onToggleFavorite={toggleFavorite} 
-        onShowInfo={() => setShowInfoPopup(true)} 
-      />
-
-      <style jsx global>{`
-        body { background-color: #000000 !important; color: white; margin: 0; font-family: -apple-system, system-ui, sans-serif; }
-        .streaming-container { padding: 10px; padding-bottom: 100px; }
-      `}</style>
+      <SingleToast showVideoPlayer={showVideoPlayer} />
+      <BottomNav selectedPlayer={selectedPlayer} onPlayerChange={() => setShowPlayerSelector(true)} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onShowInfo={() => setShowInfoPopup(true)} />
 
       <style jsx>{`
-        /* GLASS EFFECTS */
-        .ios-glass {
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
         .episode-cover-placeholder {
-            width: 100%; aspect-ratio: 16/9; background: #111; border-radius: 12px;
-            overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;
-        }
-        .cover-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
-        .play-btn-circle-thin { 
-            position: absolute; width: 60px; height: 60px; border-radius: 50%;
-            border: 1px solid white; display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); color: white;
-        }
-
-        /* BOTTOM NAV */
-        .bottom-nav-container {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            height: 80px; background: rgba(15, 15, 15, 0.85);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; align-items: center; justify-content: space-around;
-            padding: 0 10px; z-index: 1000; border-top: 1px solid rgba(255,255,255,0.05);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
-        .nav-item {
-            background: none; border: none; color: #8e8e93;
-            display: flex; flex-direction: column; align-items: center;
-            gap: 5px; cursor: pointer; position: relative; width: 60px;
+        .cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            transition: opacity 0.3s, transform 0.3s;
         }
-
-        /* O EFEITO DA IMAGEM (Pílula acinzentada para o item selecionado) */
-        .nav-item.active .pill-highlight {
-            position: absolute; top: -5px; width: 45px; height: 30px;
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 20px; z-index: 0;
-        }
-        .nav-item.active { color: #007aff; }
-        .nav-item i, .nav-item span { z-index: 1; position: relative; }
-        .nav-item span { font-size: 10px; font-weight: 500; }
-
-        /* BOTAO FLUTUANTE (PLAYER CIRCLE) - MANTIDO IDENTICO */
-        .player-circle {
-            width: 55px; height: 55px; background: #007aff;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.5rem; border: none; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 113, 227, 0.4); margin-bottom: 20px;
-        }
-
-        /* UTILS */
-        .meta-header-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
-        .episode-label-simple { color: #007aff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
-        .clean-episode-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-        .episodes-scroller { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .episode-card { min-width: 140px; opacity: 0.6; }
-        .episode-card.active { opacity: 1; }
-        .episode-thumbnail { width: 100%; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; position: relative; border: 2px solid transparent; }
-        .episode-card.active .episode-thumbnail { border-color: #007aff; }
-        .episode-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-
-        .video-overlay-wrapper { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; }
-        .video-floating-container { flex: 1; background: #000; }
-        .video-floating-container iframe { width: 100%; height: 100%; border: none; }
-        .video-controls-toolbar { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        .player-selector-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 11000; display: flex; align-items: center; justify-content: center; }
-        .player-selector-bubble { background: #1c1c1e; border-radius: 20px; padding: 20px; width: 280px; }
-        .player-option-bubble { padding: 15px; background: #2c2c2e; border-radius: 12px; margin-bottom: 10px; color: white; cursor: pointer; }
+        .episode-cover-placeholder:hover .cover-img {
+            opacity: 0.4;
+            transform: scale(1.02);
+        }
+
+        .play-btn-circle-thin {
+            position: absolute;
+            z-index: 2;
+            width: 65px;
+            height: 65px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.4rem;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(2px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding-left: 4px;
+        }
+
+        .episode-cover-placeholder:hover .play-btn-circle-thin {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.3);
+            border-color: #fff;
+        }
+
+        .video-overlay-wrapper {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        }
+
+        .video-overlay-wrapper.closing { animation: fadeOut 0.3s ease forwards; }
+
+        .video-player-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .video-player-group.square { width: min(90vw, 90vh); max-width: 600px; }
+        .video-player-group.square .video-floating-container { aspect-ratio: 1 / 1; }
+        .video-player-group.widescreen { width: 90vw; max-width: 1200px; }
+        .video-player-group.widescreen .video-floating-container { aspect-ratio: 16 / 9; max-height: 80vh; }
+
+        .video-floating-container {
+            width: 100%;
+            background: #000;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            transition: aspect-ratio 0.4s ease;
+        }
+
+        .video-floating-container iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Video Controls Toolbar Styling */
+        .video-controls-toolbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0 5px;
+        }
+        
+        .video-ep-indicator {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .video-controls-right { display: flex; gap: 12px; }
+
+        /* Nav Buttons Styling */
+        .player-navigation-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .nav-control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+            transform: scale(1);
+        }
+
+        .nav-control-btn:hover:not(.disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+        
+        .nav-control-btn:active:not(.disabled) {
+            transform: scale(0.95);
+        }
+
+        .nav-control-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: scale(1);
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.1); }
+        .toolbar-btn.close-btn:hover { background: var(--primary); border-color: var(--primary); }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        .toast-container {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            max-width: 100%;
+            pointer-events: auto;
+        }
+
+        .meta-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .episode-label-simple {
+            color: var(--primary); 
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .season-selector-wrapper select {
+            appearance: none;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .clean-episode-title {
+            font-size: 1.3rem;
+            color: var(--text);
+            margin: 0 0 0.8rem 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .synopsis-wrapper { margin-bottom: 1.2rem; }
+        .synopsis-toggle-btn {
+            background: none;
+            border: none;
+            color: var(--secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+        
+        .content-description-streaming {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ESTILOS DA ROLAGEM DE EPISÓDIOS */
+        .episodes-scroller {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            /* Oculto por padrão (mobile) */
+            scrollbar-width: none;
+        }
+        
+        .episodes-scroller::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        /* Desktop: Exibe e estiliza scrollbar */
+        @media (min-width: 768px) {
+            .episodes-scroller {
+                scrollbar-width: thin;
+                scrollbar-color: var(--secondary) rgba(255, 255, 255, 0.05);
+                padding-bottom: 15px; /* Mais espaço para a barra */
+            }
+
+            .episodes-scroller::-webkit-scrollbar {
+                display: block;
+                height: 8px;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 4px;
+                margin: 0 5px;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-thumb {
+                background-color: var(--secondary, #555);
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            .episodes-scroller::-webkit-scrollbar-thumb:hover {
+                background-color: var(--primary, #777);
+            }
+        }
+
+        .episode-card { min-width: 130px; width: 130px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
+        .episode-card.active { opacity: 1; }
+        .episode-thumbnail {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--card-bg);
+            margin-bottom: 4px;
+            border: 2px solid var(--border);
+        }
+        .episode-card.active .episode-thumbnail { border-color: var(--primary); }
+        .episode-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .episode-number-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); color: white; padding: 1px 5px; font-size: 0.7rem; border-radius: 4px; font-weight: 600; }
+        .playing-indicator { position: absolute; bottom: 0; left: 0; right: 0; background: var(--primary); color: white; font-size: 0.65rem; text-align: center; padding: 2px 0; font-weight: 600; }
+        .ep-title { font-size: 0.8rem; color: var(--secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; }
+        .episode-card.active .ep-title { color: var(--text); font-weight: 600; }
       `}</style>
     </>
   )
 }
 
 const Header = () => (
-  <header className="header">
-    <div className="logo">
-      <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" />
-      <span>Yoshikawa <strong>TV+</strong></span>
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa Bot" className="logo-image" />
+        <div className="logo-text">
+          <span className="logo-name">Yoshikawa</span>
+          <span className="beta-tag">STREAMING</span>
+        </div>
+      </Link>
     </div>
-    <style jsx>{`
-      .header { padding: 15px; display: flex; align-items: center; background: #000; }
-      .logo { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; }
-      .logo img { width: 30px; height: 30px; border-radius: 50%; }
-      .logo strong { color: #007aff; }
-    `}</style>
   </header>
 )
 
-const BottomNav = ({ onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => {
-  const router = useRouter();
-  
-  return (
-    <div className="bottom-nav-container">
-      <Link href="/" className={`nav-item ${router.pathname === '/' ? 'active' : ''}`}>
-        {router.pathname === '/' && <div className="pill-highlight"></div>}
-        <i className="fas fa-home"></i>
-        <span>Início</span>
-      </Link>
-
-      <button className="nav-item" onClick={onShowInfo}>
-        <i className="fas fa-info-circle"></i>
-        <span>Info</span>
-      </button>
-
-      {/* Botão flutuante principal que abre a seleção de player */}
-      <button className="player-circle" onClick={onPlayerChange}>
-        <i className="fas fa-play"></i>
-      </button>
-
+const BottomNav = ({ selectedPlayer, onPlayerChange, isFavorite, onToggleFavorite, onShowInfo }) => (
+  <div className="bottom-nav-container streaming-mode">
+    <div className="main-nav-bar">
+      <Link href="/" className="nav-item"><i className="fas fa-home"></i><span>Início</span></Link>
+      <button className="nav-item" onClick={onShowInfo}><i className="fas fa-info-circle"></i><span>Info</span></button>
       <button className={`nav-item ${isFavorite ? 'active' : ''}`} onClick={onToggleFavorite}>
-        {isFavorite && <div className="pill-highlight"></div>}
-        <i className="fas fa-heart"></i>
-        <span>Favorito</span>
-      </button>
-
-      <button className="nav-item" onClick={() => window.location.reload()}>
-        <i className="fas fa-sync-alt"></i>
-        <span>Recarregar</span>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i><span>Favorito</span>
       </button>
     </div>
-  );
-}
+    <button className="player-circle" onClick={onPlayerChange}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
+    </button>
+  </div>
+)
