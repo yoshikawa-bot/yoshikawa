@@ -13,8 +13,8 @@
   --bg: #000000; /* Fundo preto sólido */
   
   /* Efeito de blur unificado - reduzido para todos os componentes */
-  --blur-amount: 12px; /* Reduzido de 15px para 12px */
-  --blur-saturation: 160%; /* Reduzido de 180% */
+  --blur-amount: 85px; /* Reduzido de 15px para 12px */
+  --blur-saturation: 180%; /* Reduzido de 180% */
   --glass-bg: rgba(20, 20, 20, 0.6);
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-shadow: 
