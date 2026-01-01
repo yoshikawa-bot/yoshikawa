@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import LiquidGlass from 'liquid-glass-react' // Importação da biblioteca
 
 // Define a função debounce para limitar chamadas de API
 const useDebounce = (callback, delay) => {
@@ -28,19 +27,19 @@ export default function Home() {
   const [toasts, setToasts] = useState([])
 
   const searchInputRef = useRef(null)
-  // Ref para o container principal para o efeito de mouse do LiquidGlass
-  const mainContainerRef = useRef(null)
-  
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Notifications (Modificado para não acumular)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts([toast]) // Mantém apenas um por vez
+    
+    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
+    setToasts([toast])
+    
     setTimeout(() => {
       removeToast(id)
     }, 3000)
@@ -72,7 +71,9 @@ export default function Home() {
       setLoading(false)
       return
     }
+    
     setLoading(true)
+    
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
@@ -189,45 +190,65 @@ export default function Home() {
         newFavorites = [...prevFavorites, favoriteItem]
         showToast('Adicionado aos favoritos!', 'success')
       }
+      
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
         console.error('Erro ao salvar favoritos:', error)
         showToast('Erro ao salvar favoritos', 'error')
       }
+
       return newFavorites
     })
+  }
+  
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        debouncedSearch(query)
+      } else {
+        setSearchResults([])
+        showToast('Digite algo para pesquisar', 'info')
+      }
+    }
   }
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      if (searchInputRef.current && searchInputRef.current.value.trim()) {
-        debouncedSearch(searchInputRef.current.value.trim())
-      }
+      handleSearchSubmit()
     }
   }
 
   const getActiveItems = () => {
     switch (activeSection) {
-      case 'releases': return releases
-      case 'recommendations': return recommendations
-      case 'favorites': return favorites
-      default: return releases
+      case 'releases':
+        return releases
+      case 'recommendations':
+        return recommendations
+      case 'favorites':
+        return favorites
+      default:
+        return releases
     }
   }
   
   const getActiveSectionDetails = () => {
     switch (activeSection) {
-      case 'releases': return { title: 'Lançamentos', icon: 'fas fa-film' }
-      case 'recommendations': return { title: 'Populares', icon: 'fas fa-fire' }
-      case 'favorites': return { title: 'Favoritos', icon: 'fas fa-heart' }
-      default: return { title: 'Conteúdo', icon: 'fas fa-tv' }
+      case 'releases':
+        return { title: 'Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations':
+        return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites':
+        return { title: 'Favoritos', icon: 'fas fa-heart' }
+      default:
+        return { title: 'Conteúdo', icon: 'fas fa-tv' }
     }
   }
   
   const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
-  // --- Componentes Internos ---
+  // --- Componentes ---
 
   const ContentGrid = ({ items, isFavorite, toggleFavorite, extraClass = '' }) => (
     <div className={`content-grid ${extraClass}`}>
@@ -246,6 +267,7 @@ export default function Home() {
                 className="content-poster"
                 loading="lazy"
               />
+              
               <button 
                 className={`favorite-btn ${isFav ? 'active' : ''}`}
                 onClick={(e) => {
@@ -257,6 +279,7 @@ export default function Home() {
               >
                 <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
               </button>
+
               <div className="floating-text-wrapper">
                 <div className="content-title-card">{item.title || item.name}</div>
                 <div className="content-year">
@@ -277,6 +300,7 @@ export default function Home() {
 
   const LiveSearchResults = () => {
     if (!searchActive) return null
+    
     return (
       <div className="live-search-results">
         <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
@@ -316,35 +340,28 @@ export default function Home() {
       {toasts.map(toast => (
         <div 
           key={toast.id} 
-          className={`toast-wrapper show`}
-          style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards', marginBottom: '10px' }}
+          className={`toast toast-${toast.type} show`}
+          style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
         >
-          {/* LiquidGlass aplicado nas notificações */}
-          <LiquidGlass
-            blurAmount={0.2}
-            saturation={120}
-            elasticity={0.2}
-            cornerRadius={12}
-            style={{overflow: 'hidden'}}
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
           >
-            <div className={`toast-content-inner toast-${toast.type}`}>
-                <div className="toast-icon">
-                    <i className={`fas ${
-                    toast.type === 'success' ? 'fa-check' : 
-                    toast.type === 'error' ? 'fa-exclamation-triangle' : 
-                    'fa-info'
-                    }`}></i>
-                </div>
-                <div className="toast-message">{toast.message}</div>
-                <button className="toast-close" onClick={() => removeToast(toast.id)}>
-                    <i className="fas fa-times"></i>
-                </button>
-            </div>
-          </LiquidGlass>
+            <i className="fas fa-times"></i>
+          </button>
         </div>
       ))}
     </div>
   )
+  
 
   return (
     <>
@@ -356,13 +373,11 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* Header com LiquidGlass */}
-      <Header containerRef={mainContainerRef} />
+      <Header />
       
       <ToastContainer />
 
-      {/* Referência adicionada ao main para o efeito de mouse */}
-      <main className="container" ref={mainContainerRef}>
+      <main className="container">
         
         {loading && !searchActive && (
           <div className="loading active">
@@ -371,6 +386,7 @@ export default function Home() {
           </div>
         )}
 
+        {/* Lógica de Renderização Condicional - Página Inteira */}
         {searchActive ? (
             <LiveSearchResults />
         ) : (
@@ -389,75 +405,54 @@ export default function Home() {
       </main>
 
       <div className="bottom-nav-container">
-        {/* Navbar com LiquidGlass */}
-        <div className={`main-nav-bar-wrapper ${searchActive ? 'search-active' : ''}`}>
-           <LiquidGlass
-             mouseContainer={mainContainerRef}
-             blurAmount={0.25}
-             saturation={140}
-             elasticity={0.3}
-             cornerRadius={40}
-             padding="0"
-             style={{ width: '100%', height: '100%' }}
-           >
-              <div className="main-nav-bar-content">
-                {!searchActive ? (
-                    <>
-                    <button 
-                        className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('releases')}
-                    >
-                        <i className="fas fa-film"></i>
-                        <span>Lançamentos</span>
-                    </button>
-                    <button 
-                        className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('recommendations')}
-                    >
-                        <i className="fas fa-fire"></i>
-                        <span>Populares</span>
-                    </button>
-                    <button 
-                        className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('favorites')}
-                    >
-                        <i className="fas fa-heart"></i>
-                        <span>Favoritos</span>
-                    </button>
-                    </>
-                ) : (
-                    <div className="search-input-container">
-                    <input 
-                        ref={searchInputRef}
-                        type="text"
-                        className="search-input-expanded" 
-                        placeholder="Pesquisar..."
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        onKeyPress={handleKeyPress}
-                    />
-                    </div>
-                )}
-              </div>
-           </LiquidGlass>
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
+          {!searchActive ? (
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
+          ) : (
+            <div className="search-input-container">
+              <input 
+                ref={searchInputRef}
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleKeyPress}
+              />
+              {/* Botão de fechar removido daqui */}
+            </div>
+          )}
         </div>
         
-        {/* Botão Círculo com LiquidGlass */}
-        <div className="search-circle-wrapper">
-            <LiquidGlass
-                mouseContainer={mainContainerRef}
-                blurAmount={0.2}
-                saturation={150}
-                elasticity={0.4}
-                cornerRadius={100} // Círculo perfeito
-                style={{ width: '70px', height: '70px' }}
-                onClick={() => setSearchActive(!searchActive)}
-            >
-                <div className={`search-circle-content ${searchActive ? 'active' : ''}`}>
-                    <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
-                </div>
-            </LiquidGlass>
-        </div>
+        {/* Botão circular que vira X quando ativo */}
+        <button 
+          className={`search-circle ${searchActive ? 'active' : ''}`}
+          onClick={() => setSearchActive(!searchActive)}
+        >
+          <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
+        </button>
       </div>
 
       <style jsx global>{`
@@ -467,54 +462,6 @@ export default function Home() {
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* Ajustes para o Liquid Glass funcionar bem */
-        .main-nav-bar-wrapper {
-            height: 70px;
-            flex-grow: 1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border-radius: 40px;
-            /* Removemos background aqui pois o LiquidGlass assume */
-        }
-        .main-nav-bar-content {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            padding: 0 10px;
-        }
-
-        .search-circle-wrapper {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .search-circle-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--text);
-            font-size: 24px;
-        }
-
-        .toast-content-inner {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            gap: 12px;
-            width: 100%;
-        }
-        .toast-message {
-            flex: 1;
-            font-size: 14px;
-            color: white;
-            font-weight: 500;
-        }
-
         /* --- Padronização do Grid (Home e Busca) --- */
         .content-grid {
             display: grid;
@@ -534,18 +481,20 @@ export default function Home() {
         .content-poster {
            width: 100%;
            height: auto;
-           aspect-ratio: 2/3; 
+           aspect-ratio: 2/3; /* Proporção exata 2:3 */
            object-fit: cover;
            display: block;
            border-radius: 12px;
         }
 
+        /* Mobile: 2 colunas exatas */
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
         }
 
+        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
             position: static;
             width: 100%;
@@ -569,7 +518,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh; 
+            min-height: 50vh; /* Ocupa altura mínima para estética */
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -582,50 +531,52 @@ export default function Home() {
             font-size: 2rem;
         }
 
+        /* --- Container Principal --- */
         .container {
             padding: 0 16px 100px 16px;
             width: 100%;
         }
 
+        /* --- Header Adjustments --- */
+        .header-content {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            padding: 0 16px;
+        }
+        
+        .main-nav-bar.search-active {
+            padding: 0 10px;
+        }
+
+        /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
             width: 100%;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 16px;
-            outline: none;
+            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
   )
 }
 
-// Header atualizado com LiquidGlass
-const Header = ({ containerRef }) => {
+// Header
+const Header = () => {
   return (
-    <header className="github-header-wrapper" style={{position: 'sticky', top: 0, zIndex: 100}}>
-      <LiquidGlass
-         mouseContainer={containerRef}
-         blurAmount={0.2}
-         saturation={110}
-         elasticity={0.1}
-         cornerRadius={0}
-         style={{ width: '100%', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-      >
-        <div className="header-content" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', maxWidth: '1280px', margin: '0 auto' }}>
-            <Link href="/" className="logo-container">
-            <img 
-                src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
-                alt="Yoshikawa Bot" 
-                className="logo-image"
-            />
-            <div className="logo-text">
-                <span className="logo-name">Yoshikawa</span>
-                <span className="beta-tag">STREAMING</span>
-            </div>
-            </Link>
-        </div>
-      </LiquidGlass>
+    <header className="github-header">
+      <div className="header-content">
+        <Link href="/" className="logo-container">
+          <img 
+            src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
+            alt="Yoshikawa Bot" 
+            className="logo-image"
+          />
+          <div className="logo-text">
+            <span className="logo-name">Yoshikawa</span>
+            <span className="beta-tag">STREAMING</span>
+          </div>
+        </Link>
+      </div>
     </header>
   )
-}
+    }
