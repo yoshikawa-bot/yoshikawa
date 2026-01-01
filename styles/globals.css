@@ -21,11 +21,13 @@
     0 15px 35px rgba(0, 0, 0, 0.5);
   --glass-blur: blur(20px) saturate(180%);
 
-  /* NOVAS VARIÁVEIS: Navbar Dark Solid Glass */
-  --nav-bg-solid: #000000;
+  /* ATUALIZADO: Navbar Translucent Glass */
+  --nav-bg-solid: rgba(0, 0, 0, 0.25); /* Removido o preto sólido */
+  --nav-bubble-bg: rgba(0, 0, 0, 0.5); /* Bolha translúcida */
   --nav-border-light: rgba(255, 255, 255, 0.15);
   --nav-glow-white: inset 0 0 20px rgba(255, 255, 255, 0.05);
-  --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --nav-backdrop: blur(20px) saturate(180%); /* Efeito de desfoque */
 
   --header-bg: rgba(0, 0, 0, 0.25);
   --header-border: rgba(255, 255, 255, 0.15);
@@ -433,7 +435,7 @@ body::before {
   background: var(--primary-dark);
 }
 
-/* ===== BOTTOM NAVIGATION - SOLID DARK GLASS STYLE ===== */
+/* ===== BOTTOM NAVIGATION - TRANSLUCENT GLASS STYLE ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -448,12 +450,13 @@ body::before {
 }
 
 .main-nav-bar {
-  /* Fundo Preto Sólido */
+  /* Fundo Translucido (Glass) */
   background: var(--nav-bg-solid);
+  backdrop-filter: var(--nav-backdrop);
+  -webkit-backdrop-filter: var(--nav-backdrop);
   
-  /* Efeito Glass na borda e sombra sutil */
   border: 1px solid var(--nav-border-light);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.5); /* Sombra de profundidade */
+  box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
   
   border-radius: 40px;
   display: flex;
@@ -473,7 +476,7 @@ body::before {
   overflow: hidden; 
 }
 
-/* Brilho superior sutil na navbar (Toque Branco) */
+/* Brilho superior sutil na navbar */
 .main-nav-bar::after {
     content: '';
     position: absolute;
@@ -485,12 +488,11 @@ body::before {
     z-index: 10;
 }
 
-/* ===== BOLHA DESLIZANTE (SLIDING BUBBLE) ===== */
+/* ===== BOLHA DESLIZANTE (SLIDING BUBBLE - GLASS) ===== */
 .main-nav-bar::before {
   content: '';
   position: absolute;
   top: 50%;
-  /* A posição 'left' será controlada pelo :has() abaixo */
   left: 50%; 
   transform: translate(-50%, -50%);
   
@@ -498,37 +500,32 @@ body::before {
   height: 74px;
   border-radius: 37px;
   
-  /* Fundo Preto Sólido na Bolha */
-  background: var(--nav-bg-solid);
+  /* Bolha Translúcida (mais escura que a barra para contraste) */
+  background: var(--nav-bubble-bg);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   border: 1px solid var(--nav-border-light);
   
-  /* Glow branco interno e sombra externa forte para destacar do fundo preto */
-  box-shadow: var(--nav-glow-white), 0 5px 20px rgba(0,0,0,0.9);
+  box-shadow: var(--nav-glow-white), 0 5px 20px rgba(0,0,0,0.2);
 
   z-index: 0; 
   pointer-events: none;
   opacity: 0;
   
-  /* A Animação de Deslize Suave */
   transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
 }
 
 /* Lógica de Posicionamento da Bolha via :has() */
-/* Assume layout de 3 ícones com space-around */
-
-/* Item 1 Ativo -> Esquerda */
 .main-nav-bar:has(.nav-item:nth-child(1).active)::before {
   left: 17%;
   opacity: 1;
 }
 
-/* Item 2 Ativo -> Centro */
 .main-nav-bar:has(.nav-item:nth-child(2).active)::before {
   left: 50%;
   opacity: 1;
 }
 
-/* Item 3 Ativo -> Direita */
 .main-nav-bar:has(.nav-item:nth-child(3).active)::before {
   left: 83%;
   opacity: 1;
@@ -541,7 +538,7 @@ body::before {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: rgba(255, 255, 255, 0.4); /* Cinza escuro inativo */
+  color: rgba(255, 255, 255, 0.5); /* Branco translúcido */
   font-size: 12px;
   font-weight: 500;
   padding: 5px 0;
@@ -557,7 +554,6 @@ body::before {
   z-index: 1; /* Acima da bolha */
 }
 
-/* Removemos a bolha individual antiga */
 .nav-item.active::before {
   display: none;
 }
@@ -601,7 +597,6 @@ body::before {
 .nav-item.active i {
   color: #fff;
   transform: scale(1.15);
-  /* Brilho no ícone ativo */
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
 }
 
@@ -625,12 +620,15 @@ body::before {
     display: none;
 }
 
-/* ===== SEARCH & PLAYER CIRCLES - SOLID DARK GLASS ===== */
+/* ===== SEARCH & PLAYER CIRCLES - TRANSLUCENT GLASS ===== */
 .search-circle, 
 .player-circle {
-  background: var(--nav-bg-solid); /* Preto Sólido */
+  background: var(--nav-bg-solid); /* Translucido */
+  backdrop-filter: var(--nav-backdrop);
+  -webkit-backdrop-filter: var(--nav-backdrop);
+  
   border: 1px solid var(--nav-border-light);
-  box-shadow: var(--nav-glow-white); /* Glow interno sutil */
+  box-shadow: var(--nav-glow-white);
   
   border-radius: 50%;
   width: 70px;
@@ -668,9 +666,9 @@ body::before {
 
 .search-circle:hover,
 .player-circle:hover {
-  background: #000;
-  border-color: rgba(255, 107, 107, 0.4); /* Leve tom da cor primária na borda */
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); /* Glow branco externo */
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 107, 107, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
   color: white;
   transform: translateY(-2px);
 }
@@ -681,7 +679,7 @@ body::before {
 }
 
 .search-circle.active {
-  background: rgba(255, 107, 107, 0.1); /* Fundo sutilmente colorido */
+  background: rgba(255, 107, 107, 0.15);
   border-color: var(--primary);
   color: white;
 }
@@ -1208,7 +1206,7 @@ body::before {
 .toast {
   background: rgba(30, 30, 30, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-left: 3px solid; /* Cor definida via JS ou classes específicas */
+  border-left: 3px solid; 
   border-radius: 12px;
   padding: 12px 16px;
   
