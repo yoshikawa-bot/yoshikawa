@@ -425,7 +425,7 @@ body::before {
   background: var(--primary-dark);
 }
 
-/* ===== BOTTOM NAVIGATION ORIGINAL ===== */
+/* ===== BOTTOM NAVIGATION ATUALIZADO (Efeito Bolha de Água) ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -449,7 +449,8 @@ body::before {
   align-items: center;
   height: 70px;
   flex-grow: 1;
-  overflow: hidden;
+  /* Alterado para visible para permitir que a bolha saia */
+  overflow: visible; 
   padding: 0 10px;
   position: relative;
   transition: all 0.3s ease;
@@ -458,6 +459,8 @@ body::before {
 .main-nav-bar.search-active {
   justify-content: flex-start;
   padding: 0;
+  /* Quando busca está ativa, voltamos ao hidden para cortar o input corretamente */
+  overflow: hidden; 
 }
 
 .main-nav-bar::before {
@@ -469,7 +472,8 @@ body::before {
     height: 100%;
     backdrop-filter: blur(10px);
     filter: saturate(120%) brightness(1.15);
-    z-index: -1;
+    z-index: -2; /* Recuado para trás */
+    border-radius: 38px; /* Ajuste fino */
 }
 
 .main-nav-bar::after {
@@ -481,7 +485,7 @@ body::before {
     height: 100%;
     background: var(--header-bg);
     border-radius: 40px;
-    z-index: -1;
+    z-index: -2; /* Recuado para trás */
 }
 
 .nav-item {
@@ -498,13 +502,39 @@ body::before {
   cursor: pointer;
   border: none;
   background: none;
-  position: relative;
+  position: relative; /* Importante para o posicionamento absoluto da bolha */
   height: 100%;
   justify-content: center;
   opacity: 1;
   transform: scale(1);
-  transition: all 0.3s ease;
   text-decoration: none;
+  z-index: 1;
+}
+
+/* Efeito da Bolha de Vidro/Água */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px; /* Largura da bolha */
+  height: 85px; /* Mais alto que a navbar (70px) */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 107, 107, 0.2));
+  border-radius: 25px; /* Cantos muito arredondados */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Borda de vidro */
+  box-shadow: 
+    inset 0 0 15px rgba(255, 255, 255, 0.1), /* Brilho interno */
+    0 5px 15px rgba(0, 0, 0, 0.3), /* Sombra externa */
+    0 0 20px rgba(255, 107, 107, 0.2); /* Glow da cor primária */
+  backdrop-filter: blur(5px); /* Efeito de desfoque no fundo, não no ícone */
+  z-index: -1; /* Fica ATRÁS do ícone para não desfocá-lo */
+  animation: bubble-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes bubble-pop {
+  0% { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scaleY(1); opacity: 1; }
 }
 
 .main-nav-bar.search-active .nav-item {
@@ -525,6 +555,8 @@ body::before {
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
+  z-index: 2; /* Garante que o ícone fique acima da bolha */
+  position: relative;
 }
 
 .nav-item:hover i {
@@ -541,8 +573,9 @@ body::before {
 }
 
 .nav-item.active i {
-  color: var(--primary);
-  transform: none;
+  color: #fff; /* Ícone branco para contraste com a bolha */
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .bottom-nav-container.reproduction-mode .main-nav-bar {
@@ -1512,4 +1545,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
