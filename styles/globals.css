@@ -1,8 +1,6 @@
 :root {
-  /* NOVA COR PRIMÁRIA */
-  --primary: #E90039;
-  --primary-dark: #b3002d;
-  
+  --primary: #ff6b6b;
+  --primary-dark: #e05555;
   --secondary: #94a3b8;
   --accent: #4dabf7;
   --accent-dark: #339af0;
@@ -14,7 +12,7 @@
   --text: #f1f5f9;
   --bg: transparent;
   
-  /* Variáveis do Efeito Liquid Glass (Mantidas para outros elementos se necessário) */
+  /* Variáveis do Efeito Liquid Glass (Originais) */
   --glass-bg: rgba(20, 20, 20, 0.6);
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-shadow: 
@@ -23,11 +21,15 @@
     0 15px 35px rgba(0, 0, 0, 0.5);
   --glass-blur: blur(20px) saturate(180%);
 
-  /* Variáveis do Header (Usadas agora na Navbar também) */
+  /* NOVAS VARIÁVEIS: Navbar Dark Solid Glass */
+  --nav-bg-solid: #000000;
+  --nav-border-light: rgba(255, 255, 255, 0.15);
+  --nav-glow-white: inset 0 0 20px rgba(255, 255, 255, 0.05);
+  --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+
   --header-bg: rgba(0, 0, 0, 0.25);
   --header-border: rgba(255, 255, 255, 0.15);
   --header-text: #f0f6fc;
-  
   --success: #10b981;
   --error: #ef4444;
   --overlay-bg: rgba(0, 0, 0, 0.6);
@@ -65,7 +67,6 @@ body::before {
   z-index: -1;
 }
 
-/* ===== HEADER ===== */
 .github-header {
   background-color: transparent;
   border-bottom: 1px solid var(--header-border);
@@ -246,11 +247,6 @@ body::before {
   background: linear-gradient(135deg, var(--primary-dark), var(--accent-dark));
 }
 
-.content-row {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
-}
-
 .content-card {
   background-color: var(--card-bg);
   border-radius: 15px;
@@ -376,7 +372,7 @@ body::before {
 }
 
 .favorite-btn:not(#headerFavoriteBtn):hover {
-  background: rgba(233, 0, 57, 0.9); /* Usando Primary Color */
+  background: rgba(255, 107, 107, 0.9);
   transform: scale(1.1);
 }
 
@@ -437,7 +433,7 @@ body::before {
   background: var(--primary-dark);
 }
 
-/* ===== BOTTOM NAVIGATION - ATUALIZADO (Estilo Header + Liquid Bubble) ===== */
+/* ===== BOTTOM NAVIGATION - SOLID DARK GLASS STYLE ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -452,11 +448,12 @@ body::before {
 }
 
 .main-nav-bar {
-  /* Réplica exata dos efeitos do Header */
-  background-color: transparent;
-  border: 1px solid var(--header-border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* Garante que os pseudo-elementos fiquem contidos */
+  /* Fundo Preto Sólido */
+  background: var(--nav-bg-solid);
+  
+  /* Efeito Glass na borda e sombra sutil */
+  border: 1px solid var(--nav-border-light);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5); /* Sombra de profundidade */
   
   border-radius: 40px;
   display: flex;
@@ -464,48 +461,87 @@ body::before {
   align-items: center;
   height: 70px;
   flex-grow: 1;
+  overflow: visible; 
   padding: 0 10px;
   position: relative;
   transition: all 0.3s ease;
 }
 
-/* Camada de Desfoque (Igual ao Header) */
-.main-nav-bar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(15px) saturate(150%);
-    -webkit-backdrop-filter: blur(15px) saturate(150%);
-    z-index: -2;
+.main-nav-bar.search-active {
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden; 
 }
 
-/* Camada de Gradiente (Igual ao Header) */
+/* Brilho superior sutil na navbar (Toque Branco) */
 .main-nav-bar::after {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
-    z-index: -1;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    z-index: 10;
 }
 
-.main-nav-bar.search-active {
-  justify-content: flex-start;
-  padding: 0;
+/* ===== BOLHA DESLIZANTE (SLIDING BUBBLE) ===== */
+.main-nav-bar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  /* A posição 'left' será controlada pelo :has() abaixo */
+  left: 50%; 
+  transform: translate(-50%, -50%);
+  
+  width: 95px; 
+  height: 74px;
+  border-radius: 37px;
+  
+  /* Fundo Preto Sólido na Bolha */
+  background: var(--nav-bg-solid);
+  border: 1px solid var(--nav-border-light);
+  
+  /* Glow branco interno e sombra externa forte para destacar do fundo preto */
+  box-shadow: var(--nav-glow-white), 0 5px 20px rgba(0,0,0,0.9);
+
+  z-index: 0; 
+  pointer-events: none;
+  opacity: 0;
+  
+  /* A Animação de Deslize Suave */
+  transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
 }
 
+/* Lógica de Posicionamento da Bolha via :has() */
+/* Assume layout de 3 ícones com space-around */
+
+/* Item 1 Ativo -> Esquerda */
+.main-nav-bar:has(.nav-item:nth-child(1).active)::before {
+  left: 17%;
+  opacity: 1;
+}
+
+/* Item 2 Ativo -> Centro */
+.main-nav-bar:has(.nav-item:nth-child(2).active)::before {
+  left: 50%;
+  opacity: 1;
+}
+
+/* Item 3 Ativo -> Direita */
+.main-nav-bar:has(.nav-item:nth-child(3).active)::before {
+  left: 83%;
+  opacity: 1;
+}
+
+/* Itens de Navegação */
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.4); /* Cinza escuro inativo */
   font-size: 12px;
   font-weight: 500;
   padding: 5px 0;
@@ -518,46 +554,12 @@ body::before {
   opacity: 1;
   transform: scale(1);
   text-decoration: none;
-  z-index: 1;
-  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1; /* Acima da bolha */
 }
 
-/* ===== BOLHA ATIVA: EFEITO LÍQUIDO (Simulação via CSS) ===== */
+/* Removemos a bolha individual antiga */
 .nav-item.active::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* Tamanho da bolha */
-  width: 55px; 
-  height: 55px;
-  
-  /* Cor Primária com Efeito Líquido */
-  background: var(--primary);
-  
-  /* Morphing Liquid Shape Animation */
-  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-  animation: liquid-morph 4s ease-in-out infinite, bubble-enter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-
-  /* Brilho e sombra para profundidade */
-  box-shadow: 
-    inset 0 0 20px rgba(0, 0, 0, 0.2),
-    0 0 15px rgba(233, 0, 57, 0.6); /* Glow da cor primária */
-
-  transform: translate(-50%, -50%);
-  z-index: -1;
-}
-
-/* Animação do formato da bolha (efeito líquido) */
-@keyframes liquid-morph {
-  0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
-  34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
-  67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
-}
-
-@keyframes bubble-enter {
-  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  display: none;
 }
 
 .main-nav-bar.search-active .nav-item {
@@ -585,7 +587,7 @@ body::before {
 .nav-item:hover i {
     transform: scale(1.1);
     color: var(--text);
-    filter: drop-shadow(0 0 5px var(--primary));
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
 }
 
 .nav-item:active i {
@@ -599,7 +601,8 @@ body::before {
 .nav-item.active i {
   color: #fff;
   transform: scale(1.15);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  /* Brilho no ícone ativo */
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
 }
 
 .bottom-nav-container.reproduction-mode .main-nav-bar {
@@ -622,13 +625,12 @@ body::before {
     display: none;
 }
 
-/* ===== SEARCH & PLAYER CIRCLES - Atualizados para estilo Header ===== */
-.search-circle,
+/* ===== SEARCH & PLAYER CIRCLES - SOLID DARK GLASS ===== */
+.search-circle, 
 .player-circle {
-  /* Base transparente */
-  background-color: transparent;
-  border: 1px solid var(--header-border);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background: var(--nav-bg-solid); /* Preto Sólido */
+  border: 1px solid var(--nav-border-light);
+  box-shadow: var(--nav-glow-white); /* Glow interno sutil */
   
   border-radius: 50%;
   width: 70px;
@@ -647,38 +649,30 @@ body::before {
   overflow: hidden;
 }
 
-/* Blur igual ao Header */
+/* Brilho superior nos círculos */
 .search-circle::before,
 .player-circle::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(15px) saturate(150%);
-    -webkit-backdrop-filter: blur(15px) saturate(150%);
-    z-index: -2;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
 }
 
-/* Gradiente igual ao Header */
 .search-circle::after,
 .player-circle::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
-    z-index: -1;
+    display: none; 
 }
 
 .search-circle:hover,
 .player-circle:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 15px rgba(233, 0, 57, 0.3);
+  background: #000;
+  border-color: rgba(255, 107, 107, 0.4); /* Leve tom da cor primária na borda */
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); /* Glow branco externo */
   color: white;
+  transform: translateY(-2px);
 }
 
 .search-circle:active,
@@ -687,16 +681,16 @@ body::before {
 }
 
 .search-circle.active {
+  background: rgba(255, 107, 107, 0.1); /* Fundo sutilmente colorido */
   border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: inset 0 0 10px rgba(233, 0, 57, 0.2);
+  color: white;
 }
 
 .search-circle i,
 .player-circle i {
   font-size: 32px;
   z-index: 1;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .main-nav-bar.search-active + .search-circle {
@@ -760,7 +754,7 @@ body::before {
 .close-search-expanded:hover {
   color: var(--primary);
   transform: translateY(-50%) scale(1.1);
-  text-shadow: 0 0 10px rgba(233, 0, 57, 0.5);
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
 }
 
 .close-search-expanded:active {
@@ -920,7 +914,7 @@ body::before {
   border-color: var(--primary);
 }
 
-/* ===== PLAYER SELECTOR BUBBLE ===== */
+/* ===== PLAYER SELECTOR BUBBLE - LIQUID GLASS ===== */
 .player-selector-overlay {
   position: fixed;
   top: 0;
@@ -943,6 +937,7 @@ body::before {
 }
 
 .player-selector-bubble {
+  /* Efeito Liquid Popup */
   background: var(--popup-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
@@ -984,7 +979,7 @@ body::before {
 }
 
 .player-option-bubble:hover {
-  background: rgba(233, 0, 57, 0.2);
+  background: rgba(255, 107, 107, 0.2);
   border-color: var(--primary);
   color: white;
   transform: translateX(5px);
@@ -1047,7 +1042,7 @@ body::before {
   color: white;
 }
 
-/* ===== INFO POPUP ===== */
+/* ===== INFO POPUP - LIQUID GLASS ===== */
 .info-popup-overlay {
   position: fixed;
   top: 0;
@@ -1071,6 +1066,7 @@ body::before {
 }
 
 .info-popup-content {
+  /* Liquid Glass Style */
   background: var(--popup-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
@@ -1158,12 +1154,12 @@ body::before {
   justify-content: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  box-shadow: 0 4px 15px rgba(233, 0, 57, 0.4);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
 
 .close-popup-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(233, 0, 57, 0.6);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
 }
 
 .close-popup-btn:active {
@@ -1195,7 +1191,7 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== TOAST NOTIFICATIONS ===== */
+/* ===== TOAST NOTIFICATIONS - LIQUID ===== */
 .toast-container {
   position: fixed;
   bottom: 120px;
@@ -1212,7 +1208,7 @@ body::before {
 .toast {
   background: rgba(30, 30, 30, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-left: 3px solid;
+  border-left: 3px solid; /* Cor definida via JS ou classes específicas */
   border-radius: 12px;
   padding: 12px 16px;
   
@@ -1312,12 +1308,21 @@ body::before {
     font-size: 24px;
   }
   
-  .search-circle, .player-circle {
+  .search-circle {
     width: 65px;
     height: 65px;
   }
   
-  .search-circle i, .player-circle i {
+  .search-circle i {
+    font-size: 28px;
+  }
+  
+  .player-circle {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .player-circle i {
     font-size: 28px;
   }
   
@@ -1457,12 +1462,21 @@ body::before {
     font-size: 22px;
   }
   
-  .search-circle, .player-circle {
+  .search-circle {
     width: 60px;
     height: 60px;
   }
   
-  .search-circle i, .player-circle i {
+  .search-circle i {
+    font-size: 26px;
+  }
+  
+  .player-circle {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .player-circle i {
     font-size: 26px;
   }
 
