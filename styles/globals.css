@@ -7,21 +7,29 @@
   
   --dark: #f1f5f9;
   --light: #0f172a;
-  --border: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.1);
   --card-bg: rgba(0, 0, 0, 0.25);
   --text: #f1f5f9;
   --bg: transparent;
+  
+  /* Variáveis do Efeito Liquid Glass */
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.4), 
+    inset 0 -1px 20px rgba(255, 255, 255, 0.05),
+    0 15px 35px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(20px) saturate(180%);
+
   --header-bg: rgba(0, 0, 0, 0.25);
   --header-border: rgba(255, 255, 255, 0.15);
   --header-text: #f0f6fc;
   --success: #10b981;
   --error: #ef4444;
-  --overlay-bg: rgba(0, 0, 0, 0.5);
-  --highlight: rgba(255, 255, 255, 0.15);
+  --overlay-bg: rgba(0, 0, 0, 0.6);
   
-  --popup-bg: rgba(255, 255, 255, 0.1);
-  --popup-border: rgba(255, 255, 255, 0.3);
-  --option-bg: rgba(0, 0, 0, 0.15);
+  --popup-bg: rgba(30, 30, 30, 0.7);
+  --option-bg: rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -69,8 +77,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  backdrop-filter: blur(15px) saturate(150%);
   z-index: -1;
 }
 
@@ -81,7 +88,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--header-bg);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
   z-index: -1;
 }
 
@@ -425,7 +432,7 @@ body::before {
   background: var(--primary-dark);
 }
 
-/* ===== BOTTOM NAVIGATION ATUALIZADO (Efeito Pílula Horizontal de Vidro) ===== */
+/* ===== BOTTOM NAVIGATION - LIQUID GLASS STYLE ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -440,16 +447,19 @@ body::before {
 }
 
 .main-nav-bar {
-  background-color: transparent;
-  border: 2px solid var(--header-border);
+  /* Fundo Liquid Glass */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
   border-radius: 40px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: space-around;
   align-items: center;
   height: 70px;
   flex-grow: 1;
-  /* Visible para permitir que a bolha saia */
   overflow: visible; 
   padding: 0 10px;
   position: relative;
@@ -462,29 +472,21 @@ body::before {
   overflow: hidden; 
 }
 
+/* Brilho extra no topo da navbar */
 .main-nav-bar::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(10px);
-    filter: saturate(120%) brightness(1.15);
-    z-index: -2;
-    border-radius: 38px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    z-index: 10;
 }
 
+/* Remove os pseudos antigos pois agora usamos o estilo liquid direto */
 .main-nav-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--header-bg);
-    border-radius: 40px;
-    z-index: -2;
+    display: none;
 }
 
 .nav-item {
@@ -493,7 +495,7 @@ body::before {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--secondary);
+  color: rgba(255, 255, 255, 0.6); /* Cor mais suave inativo */
   font-size: 12px;
   font-weight: 500;
   padding: 5px 0;
@@ -503,44 +505,48 @@ body::before {
   background: none;
   position: relative;
   height: 100%;
-  justify-content: center;
   opacity: 1;
   transform: scale(1);
   text-decoration: none;
   z-index: 1;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-/* Efeito da Bolha de Vidro Altamente Transparente ATUALIZADO */
+/* ===== BOLHA LIQUID GLASS DARK ===== */
 .nav-item.active::before {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.8);
+  transform: translate(-50%, -50%);
   
-  /* Dimensões Atualizadas */
-  width: 95px; /* Reduzido 5px */
-  height: 74px; /* Bem pouco maior que a navbar (70px) */
+  width: 95px; 
+  height: 74px;
   
-  /* Fundo Cinza Escuro Fixo */
-  background: rgba(35, 35, 35, 0.85);
+  /* Efeito Liquid Dark */
+  background: radial-gradient(120% 120% at 50% 0%, rgba(60, 60, 60, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
+  
+  border-radius: 37px;
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-  border-radius: 37px; /* Metade da altura para manter formato pílula */
-  border: 1px solid rgba(255, 255, 255, 0.15); 
-
+  /* Sombras complexas para efeito "Gota/Vidro" */
   box-shadow:
-    0 4px 15px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5), /* Topo brilhante nítido */
+    inset 0 10px 20px rgba(255, 255, 255, 0.05), /* Glow interno */
+    inset 0 -5px 15px rgba(0, 0, 0, 0.5), /* Sombra interna fundo */
+    0 15px 30px rgba(0, 0, 0, 0.4), /* Sombra projetada */
+    0 5px 10px rgba(0, 0, 0, 0.2);
 
-  backdrop-filter: blur(8px); 
-  -webkit-backdrop-filter: blur(8px); 
+  backdrop-filter: blur(12px); 
+  -webkit-backdrop-filter: blur(12px); 
 
   z-index: -1;
-  animation: bubble-pop-horizontal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: bubble-pop-liquid 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Nova animação para o formato horizontal */
-@keyframes bubble-pop-horizontal {
-  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+@keyframes bubble-pop-liquid {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
   100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
@@ -560,15 +566,16 @@ body::before {
 .nav-item i {
   font-size: 26px;
   margin-bottom: 0;
-  transition: color 0.3s ease, transform 0.3s ease;
-  color: var(--text);
+  transition: color 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+  color: var(--secondary);
   z-index: 2;
   position: relative;
 }
 
 .nav-item:hover i {
     transform: scale(1.1);
-    color: var(--primary);
+    color: var(--text);
+    filter: drop-shadow(0 0 5px var(--primary));
 }
 
 .nav-item:active i {
@@ -581,8 +588,8 @@ body::before {
 
 .nav-item.active i {
   color: #fff;
-  transform: scale(1.1);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transform: scale(1.15);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .bottom-nav-container.reproduction-mode .main-nav-bar {
@@ -605,18 +612,20 @@ body::before {
     display: none;
 }
 
+/* ===== SEARCH CIRCLE - LIQUID GLASS ===== */
 .search-circle {
-  background-color: transparent;
-  border: 2px solid var(--header-border);
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  
   border-radius: 50%;
   width: 70px;
   height: 70px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
@@ -625,40 +634,50 @@ body::before {
   opacity: 1;
   transform: scale(1);
   z-index: 1;
+  overflow: hidden;
+}
+
+/* Brilho superior no círculo */
+.search-circle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
 }
 
 .search-circle::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--header-bg);
-    border-radius: 50%;
-    z-index: -1;
+    display: none; /* Remove background antigo */
 }
 
 .search-circle:hover {
-  background-color: var(--primary);
-  color: var(--text);
-  border-color: var(--primary);
+  background: rgba(255, 107, 107, 0.2); /* Tintura Primary leve */
+  border-color: rgba(255, 107, 107, 0.4);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.4), 
+    0 0 20px rgba(255, 107, 107, 0.3);
+  color: white;
 }
 
 .search-circle:active {
   transform: scale(0.95);
-  background-color: var(--primary-dark);
 }
 
 .search-circle.active {
-  background-color: var(--primary);
-  border-color: var(--primary);
+  background: rgba(255, 107, 107, 0.85); /* Darker active */
+  border-color: rgba(255, 255, 255, 0.3);
   color: white;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
 }
 
 .search-circle i {
   font-size: 32px;
   z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
-/* O botão da lupa NÃO some mais quando a search está ativa */
 .main-nav-bar.search-active + .search-circle {
   opacity: 1;
   transform: scale(1);
@@ -671,19 +690,20 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== PLAYER CIRCLE (PARA PÁGINAS DE STREAMING) ===== */
+/* ===== PLAYER CIRCLE - LIQUID GLASS ===== */
 .player-circle {
-  background-color: transparent;
-  border: 2px solid var(--header-border);
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+
   border-radius: 50%;
   width: 70px;
   height: 70px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
@@ -692,31 +712,40 @@ body::before {
   opacity: 1;
   transform: scale(1);
   z-index: 1;
+  overflow: hidden;
+}
+
+.player-circle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
 }
 
 .player-circle::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--header-bg);
-  border-radius: 50%;
-  z-index: -1;
+  display: none;
 }
 
 .player-circle:hover {
-  background-color: var(--primary);
-  color: var(--text);
-  border-color: var(--primary);
+  background: rgba(255, 107, 107, 0.2);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: white;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.4), 
+    0 0 20px rgba(255, 107, 107, 0.3);
 }
 
 .player-circle:active {
   transform: scale(0.95);
-  background-color: var(--primary-dark);
 }
 
 .player-circle i {
   font-size: 32px;
   z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 /* ===== NOVA BARRA DE PESQUISA ===== */
@@ -738,11 +767,11 @@ body::before {
   padding: 0 50px 0 0;
   outline: none;
   font-family: 'Inter', sans-serif;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .search-input-expanded::placeholder {
-  color: var(--text);
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .close-search-expanded {
@@ -768,13 +797,13 @@ body::before {
 .close-search-expanded:hover {
   color: var(--primary);
   transform: translateY(-50%) scale(1.1);
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
 }
 
 .close-search-expanded:active {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Remover search container antigo */
 .search-container,
 .search-form,
 .search-input,
@@ -848,12 +877,12 @@ body::before {
 }
 
 .content-info-streaming {
-  background: var(--card-bg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--border);
   border-radius: 15px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
 }
 
 .content-title-streaming {
@@ -928,7 +957,7 @@ body::before {
   border-color: var(--primary);
 }
 
-/* ===== PLAYER SELECTOR BUBBLE ===== */
+/* ===== PLAYER SELECTOR BUBBLE - LIQUID GLASS ===== */
 .player-selector-overlay {
   position: fixed;
   top: 0;
@@ -951,14 +980,17 @@ body::before {
 }
 
 .player-selector-bubble {
+  /* Efeito Liquid Popup */
   background: var(--popup-bg);
-  border: 1px solid var(--popup-border);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  
   border-radius: 20px;
   padding: 1.5rem;
   max-width: 320px;
   width: 90%;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   transform: scale(0.8);
   opacity: 0;
   transition: all 0.3s ease;
@@ -981,8 +1013,8 @@ body::before {
   align-items: flex-start;
   gap: 0.25rem;
   padding: 0.75rem 1rem;
-  background: var(--option-bg);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -990,10 +1022,11 @@ body::before {
 }
 
 .player-option-bubble:hover {
-  background: var(--primary);
+  background: rgba(255, 107, 107, 0.2);
   border-color: var(--primary);
   color: white;
   transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .player-option-bubble:active {
@@ -1052,7 +1085,7 @@ body::before {
   color: white;
 }
 
-/* ===== INFO POPUP COMPACTO ===== */
+/* ===== INFO POPUP - LIQUID GLASS ===== */
 .info-popup-overlay {
   position: fixed;
   top: 0;
@@ -1076,16 +1109,19 @@ body::before {
 }
 
 .info-popup-content {
+  /* Liquid Glass Style */
   background: var(--popup-bg);
-  border: 1px solid var(--popup-border);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+
   border-radius: 20px;
   padding: 1.5rem;
   max-width: 400px;
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   transform: translateY(50px);
   opacity: 0;
   transition: all 0.4s ease;
@@ -1109,6 +1145,7 @@ body::before {
   object-fit: cover;
   border-radius: 8px;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .info-details {
@@ -1146,7 +1183,7 @@ body::before {
 }
 
 .close-popup-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border: none;
   border-radius: 25px;
@@ -1160,10 +1197,12 @@ body::before {
   justify-content: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
 
 .close-popup-btn:hover {
-  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
 }
 
 .close-popup-btn:active {
@@ -1195,10 +1234,10 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== TOAST NOTIFICATIONS ===== */
+/* ===== TOAST NOTIFICATIONS - LIQUID ===== */
 .toast-container {
   position: fixed;
-  bottom: 120px; /* Aumentada a distância da navbar */
+  bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -1210,12 +1249,15 @@ body::before {
 }
 
 .toast {
-  background: var(--popup-bg);
-  border: 1px solid var(--popup-border);
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 3px solid; /* Cor definida via JS ou classes específicas */
   border-radius: 12px;
   padding: 12px 16px;
-  backdrop-filter: blur(15px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1244,23 +1286,21 @@ body::before {
   justify-content: center;
   flex-shrink: 0;
   font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.toast-success .toast-icon {
-  background: var(--success);
-  color: white;
-}
+.toast-success { border-left-color: var(--success); }
+.toast-success .toast-icon { background: var(--success); color: white; }
 
-.toast-info .toast-icon {
-  background: var(--accent);
-  color: white;
-}
+.toast-info { border-left-color: var(--accent); }
+.toast-info .toast-icon { background: var(--accent); color: white; }
 
 .toast-content {
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
   color: var(--text);
+  font-weight: 500;
 }
 
 .toast-close {
@@ -1283,7 +1323,6 @@ body::before {
   transform: scale(0.95);
 }
 
-/* Remover as seções do tutorial antigo */
 .server-tutorial-overlay,
 .server-tutorial-content,
 .server-tutorial-icon,
@@ -1306,11 +1345,6 @@ body::before {
   .main-nav-bar {
     height: 65px;
     border-radius: 35px;
-    border: 1px solid var(--header-border);
-  }
-  
-  .main-nav-bar::after {
-    border-radius: 35px;
   }
   
   .nav-item i {
@@ -1320,7 +1354,6 @@ body::before {
   .search-circle {
     width: 65px;
     height: 65px;
-    border: 1px solid var(--header-border);
   }
   
   .search-circle i {
@@ -1330,7 +1363,6 @@ body::before {
   .player-circle {
     width: 65px;
     height: 65px;
-    border: 1px solid var(--header-border);
   }
   
   .player-circle i {
@@ -1381,7 +1413,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 110px; /* Ajuste para mobile */
+    bottom: 110px;
     max-width: 350px;
   }
   
@@ -1492,7 +1524,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 100px; /* Ajuste para mobile pequeno */
+    bottom: 100px;
     max-width: 300px;
   }
   
