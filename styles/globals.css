@@ -1,4 +1,5 @@
 :root {
+  /* Cores Originais */
   --primary: #ff6b6b;
   --primary-dark: #e05555;
   --secondary: #94a3b8;
@@ -7,39 +8,16 @@
   
   --dark: #f1f5f9;
   --light: #0f172a;
-  --border: rgba(255, 255, 255, 0.1);
-  --card-bg: rgba(0, 0, 0, 0.25);
-  --text: #f1f5f9;
-  --bg: #000000; /* Fundo preto sólido */
   
-  /* Efeito de blur unificado - reduzido para todos os componentes */
-  --blur-amount: 85px; /* Reduzido de 15px para 12px */
-  --blur-saturation: 180%; /* Reduzido de 180% */
-  --glass-bg: rgba(20, 20, 20, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.4), 
-    inset 0 -1px 20px rgba(255, 255, 255, 0.05),
-    0 15px 35px rgba(0, 0, 0, 0.5);
-  --glass-blur: blur(var(--blur-amount)) saturate(var(--blur-saturation));
-
-  /* Efeito unificado para navbar */
-  --nav-bg: rgba(0, 0, 0, 0.25);
-  --nav-bubble-bg: rgba(0, 0, 0, 0.5);
-  --nav-border-light: rgba(255, 255, 255, 0.15);
-  --nav-glow-white: inset 0 0 20px rgba(255, 255, 255, 0.05);
-  --nav-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  --nav-backdrop: var(--glass-blur); /* Usando o mesmo efeito unificado */
-
-  --header-bg: rgba(0, 0, 0, 0.25);
-  --header-border: rgba(255, 255, 255, 0.15);
-  --header-text: #f0f6fc;
+  /* Variáveis do Glassmorphism (Referência) */
+  --bg-color: rgba(0, 0, 0, .25);
+  --highlight: rgba(255, 255, 255, .15);
+  --text: #fff;
+  
+  /* Overlays de sistema */
+  --overlay-bg: rgba(0, 0, 0, 0.6);
   --success: #10b981;
   --error: #ef4444;
-  --overlay-bg: rgba(0, 0, 0, 0.6);
-  
-  --popup-bg: rgba(30, 30, 30, 0.7);
-  --option-bg: rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -49,51 +27,103 @@
 }
 
 body {
-  font-family: 'Inter', Arial, sans-serif;
-  background: var(--bg); /* Cor preta sólida */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text);
   line-height: 1.6;
   font-size: 16px;
   min-height: 100vh;
   position: relative;
-  overflow-y: auto;
+  overflow-y: scroll; /* Scroll da referência */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  
+  /* Background atualizado para permitir que o efeito de distorção seja visível */
+  background: url('https://yoshikawa-bot.github.io/cache/images/2926e9b3.jpg') no-repeat center/cover fixed;
+  background-attachment: fixed;
+  background-color: #000;
 }
 
-/* Removido o pseudo-elemento com overlay da imagem */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100vh;
+    height: auto;
+    background-color: rgba(0, 0, 0, .5); /* Escurece o fundo */
+    z-index: -1;
+}
+
+/* =========================================
+   ESTRUTURA DE EFEITOS GLASS (Referência)
+   Adicione as divs correspondentes no HTML
+   ========================================= */
+
+/* Camada 1: Filtro de Distorção + Blur */
+.glass-filter {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+    filter: url(#glass-distortion) saturate(120%) brightness(1.15);
+    border-radius: inherit; /* Herda o arredondamento do pai */
+    pointer-events: none;
+}
+
+/* Camada 2: Cor de Fundo */
+.glass-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: var(--bg-color);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* Camada 3: Brilho Specular (Borda interna) */
+.glass-specular {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    box-shadow: inset 1px 1px 1px var(--highlight);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* Camada 4: Conteúdo (Texto, Imagens) */
+.glass-content {
+    position: relative;
+    z-index: 4;
+    height: 100%;
+    width: 100%;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
 
 .github-header {
-  background-color: transparent;
-  border-bottom: 1px solid var(--header-border);
-  padding: 0.75rem 0;
   position: sticky;
   top: 0;
+  left: 0;
+  width: 100%;
+  padding: 0.75rem 0;
   z-index: 100;
+  
+  /* Removemos estilos antigos para usar as camadas glass internas */
+  background: transparent;
+  border: none;
 }
 
-.github-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur); /* Para Safari */
-  z-index: -1;
-}
-
+/* Removemos os pseudo-elementos antigos do header */
+.github-header::before,
 .github-header::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
-  z-index: -1;
+  display: none;
 }
 
 .header-content {
+  /* Agora deve estar dentro de uma div .glass-content no HTML */
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 1.5rem;
@@ -102,6 +132,7 @@ body {
   align-items: center;
   gap: 1rem;
   position: relative;
+  z-index: 4; /* Garante que fique acima do vidro */
 }
 
 .logo-container {
@@ -135,7 +166,7 @@ body {
 .logo-name {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--header-text);
+  color: var(--text);
 }
 
 .beta-tag {
@@ -153,11 +184,17 @@ body {
   gap: 1rem;
 }
 
+/* =========================================
+   CONTAINERS & SEÇÕES
+   ========================================= */
+
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1.5rem;
   min-height: calc(100vh - 80px);
+  position: relative;
+  z-index: 1;
 }
 
 .home-sections {
@@ -189,7 +226,7 @@ body {
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .section-title {
@@ -204,6 +241,10 @@ body {
   color: var(--primary);
   font-size: 1.2rem;
 }
+
+/* =========================================
+   CARDS (GLASS)
+   ========================================= */
 
 .content-grid {
   display: grid;
@@ -221,46 +262,33 @@ body {
   scrollbar-color: var(--primary) transparent;
 }
 
-.content-row::-webkit-scrollbar {
-  height: 6px;
-}
-
-.content-row::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  margin: 0 10px;
-}
-
-.content-row::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.content-row::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--primary-dark), var(--accent-dark));
-}
-
 .content-card {
-  background-color: var(--card-bg);
+  position: relative; /* Necessário para posicionar os absolutos */
   border-radius: 15px;
-  overflow: hidden;
+  overflow: hidden; /* Mantém o efeito glass dentro das bordas */
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 1px solid var(--border);
-  position: relative;
   text-decoration: none;
   color: inherit;
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur); /* Para Safari */
   aspect-ratio: 2/3;
+  
+  /* Removemos backgrounds antigos */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .content-card:hover {
   transform: translateY(-5px);
-  border-color: var(--primary);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  /* O brilho ao hover agora pode ser manipulado via JS ou adicionando uma borda na layer specular */
+}
+
+/* Ajuste para o conteúdo dentro do card */
+.content-card .glass-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .content-poster {
@@ -268,26 +296,11 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.content-info-card {
-  padding: 0;
-  background: transparent;
-  position: static;
-  color: inherit;
-  backdrop-filter: none;
-  border: none;
-  height: 0;
-}
-
-.content-title-card {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.content-year {
-  font-size: 0.8rem;
-  color: var(--secondary);
+  /* Poster deve ficar atrás dos textos flutuantes mas na frente do fundo */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0; /* Abaixo do texto */
 }
 
 .floating-text-wrapper {
@@ -304,23 +317,20 @@ body {
 .floating-text-wrapper .content-title-card {
     display: block;
     padding: 4px 7px;
-    background-color: rgba(0, 0, 0, 0.85);
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    background-color: rgba(0, 0, 0, 0.6); /* Ajustado para legibilidade */
+    backdrop-filter: blur(4px);
     font-weight: 600;
     font-size: 1rem;
     white-space: normal;
     width: fit-content;
     border-radius: 4px;
-    text-shadow: none;
 }
 
 .floating-text-wrapper .content-year {
     display: block;
     padding: 4px 7px;
-    background-color: rgba(0, 0, 0, 0.85);
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     font-size: 0.85rem;
     color: white;
     opacity: 0.9;
@@ -328,31 +338,13 @@ body {
     margin-top: 3px;
     width: fit-content;
     border-radius: 4px;
-    text-shadow: none;
-}
-
-.content-text-meta {
-    display: none;
-}
-
-.content-rating {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-    color: gold;
-    font-weight: 500;
-}
-
-.content-rating i {
-    font-size: 0.8rem;
-    color: gold;
 }
 
 .favorite-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   border: none;
   border-radius: 50%;
   width: 32px;
@@ -367,70 +359,15 @@ body {
   backdrop-filter: blur(5px);
 }
 
-.favorite-btn:not(#headerFavoriteBtn):hover {
+.favorite-btn:hover {
   background: rgba(255, 107, 107, 0.9);
   transform: scale(1.1);
 }
 
-.favorite-btn.active:not(#headerFavoriteBtn) {
-  background: var(--primary);
-  color: white;
-}
+/* =========================================
+   BOTTOM NAVIGATION
+   ========================================= */
 
-.favorite-btn.active:not(#headerFavoriteBtn) i {
-  animation: heart-pop 0.5s;
-}
-
-@keyframes heart-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); }
-}
-
-.search-results-section {
-  display: none;
-  padding-bottom: 7rem;
-}
-
-.search-results-section.active {
-  display: block;
-}
-
-.search-results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.clear-search-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 25px;
-  padding: 0.5rem 1rem;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  font-size: 0.9rem;
-}
-
-.clear-search-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  transform: translateY(-2px);
-}
-
-.clear-search-btn:active {
-  transform: translateY(0);
-  background: var(--primary-dark);
-}
-
-/* ===== BOTTOM NAVIGATION - EFEITO UNIFICADO ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -445,14 +382,9 @@ body {
 }
 
 .main-nav-bar {
-  /* Efeito glass unificado */
-  background: var(--nav-bg);
-  backdrop-filter: var(--nav-backdrop);
-  -webkit-backdrop-filter: var(--nav-backdrop);
-  
-  border: 1px solid var(--nav-border-light);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
-  
+  position: relative;
+  /* Removemos background direto. Use o HTML interno com classes .glass-* */
+  background: transparent;
   border-radius: 40px;
   display: flex;
   justify-content: space-around;
@@ -461,72 +393,40 @@ body {
   flex-grow: 1;
   overflow: visible; 
   padding: 0 10px;
-  position: relative;
   transition: all 0.3s ease;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-.main-nav-bar.search-active {
-  justify-content: flex-start;
-  padding: 0;
-  overflow: hidden; 
-}
-
-/* Brilho superior sutil na navbar */
-.main-nav-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 10%;
-    right: 10%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    z-index: 10;
-}
-
-/* ===== BOLHA DESLIZANTE - EFEITO UNIFICADO ===== */
+/* A bolha deslizante precisa do efeito via pseudo-elemento pois é dinâmica */
 .main-nav-bar::before {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%; 
   transform: translate(-50%, -50%);
-  
   width: 95px; 
   height: 74px;
   border-radius: 37px;
   
-  /* Bolha com efeito unificado */
-  background: var(--nav-bubble-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--nav-border-light);
-  
-  box-shadow: var(--nav-glow-white), 0 5px 20px rgba(0,0,0,0.2);
+  /* Aplicando o efeito glass diretamente no pseudo-elemento */
+  background: var(--bg-color);
+  backdrop-filter: blur(10px);
+  filter: url(#glass-distortion) saturate(120%) brightness(1.15);
+  box-shadow: inset 1px 1px 1px var(--highlight), 0 5px 20px rgba(0,0,0,0.2);
 
   z-index: 0; 
   pointer-events: none;
   opacity: 0;
-  
   transition: left 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
 }
 
-/* Lógica de Posicionamento da Bolha via :has() */
-.main-nav-bar:has(.nav-item:nth-child(1).active)::before {
-  left: 17%;
-  opacity: 1;
-}
+/* Posicionamento da Bolha */
+.main-nav-bar:has(.nav-item:nth-child(1).active)::before { left: 17%; opacity: 1; }
+.main-nav-bar:has(.nav-item:nth-child(2).active)::before { left: 50%; opacity: 1; }
+.main-nav-bar:has(.nav-item:nth-child(3).active)::before { left: 83%; opacity: 1; }
 
-.main-nav-bar:has(.nav-item:nth-child(2).active)::before {
-  left: 50%;
-  opacity: 1;
-}
-
-.main-nav-bar:has(.nav-item:nth-child(3).active)::before {
-  left: 83%;
-  opacity: 1;
-}
-
-/* Itens de Navegação */
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -543,50 +443,14 @@ body {
   background: none;
   position: relative;
   height: 100%;
-  opacity: 1;
-  transform: scale(1);
   text-decoration: none;
-  z-index: 1;
-}
-
-.nav-item.active::before {
-  display: none;
-}
-
-.main-nav-bar.search-active .nav-item {
-  opacity: 0;
-  transform: scale(0.8);
-  pointer-events: none;
-  flex: 0;
-  width: 0;
-  min-width: 0;
-}
-
-.nav-item span {
-  display: none;
+  z-index: 5; /* Acima de tudo */
 }
 
 .nav-item i {
   font-size: 26px;
-  margin-bottom: 0;
-  transition: color 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s ease;
   color: var(--secondary);
-  z-index: 2;
-  position: relative;
-}
-
-.nav-item:hover i {
-    transform: scale(1.1);
-    color: var(--text);
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
-}
-
-.nav-item:active i {
-  transform: scale(0.95);
-}
-
-.nav-item.active {
-  color: initial;
 }
 
 .nav-item.active i {
@@ -595,35 +459,15 @@ body {
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
 }
 
-.bottom-nav-container.reproduction-mode .main-nav-bar {
-    justify-content: space-around;
-    padding: 0 10px;
-    flex-grow: 1;
-    width: auto;
-    max-width: none;
-}
-
-.bottom-nav-container.reproduction-mode .nav-item {
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
-    flex: 1;
-    width: auto;
-}
-
-.bottom-nav-container.reproduction-mode .nav-item.hidden-on-repro {
-    display: none;
-}
-
-/* ===== SEARCH & PLAYER CIRCLES - EFEITO UNIFICADO ===== */
+/* Botões Circulares (Search/Player) */
 .search-circle, 
 .player-circle {
-  background: var(--nav-bg);
-  backdrop-filter: var(--nav-backdrop);
-  -webkit-backdrop-filter: var(--nav-backdrop);
-  
-  border: 1px solid var(--nav-border-light);
-  box-shadow: var(--nav-glow-white);
+  position: relative;
+  /* Use estrutura interna glass ou aplique aqui se não for alterar HTML destes */
+  background: var(--bg-color);
+  backdrop-filter: blur(10px);
+  filter: url(#glass-distortion) saturate(120%) brightness(1.15);
+  box-shadow: inset 1px 1px 1px var(--highlight);
   
   border-radius: 50%;
   width: 70px;
@@ -635,416 +479,24 @@ body {
   cursor: pointer;
   color: var(--text);
   transition: all 0.3s ease;
-  position: relative;
-  opacity: 1;
-  transform: scale(1);
   z-index: 1;
-  overflow: hidden;
-}
-
-/* Brilho superior nos círculos */
-.search-circle::before,
-.player-circle::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 20%;
-    right: 20%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-}
-
-.search-circle::after,
-.player-circle::after {
-    display: none; 
+  border: none;
 }
 
 .search-circle:hover,
 .player-circle:hover {
-  background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 107, 107, 0.4);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-  color: white;
   transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.search-circle:active,
-.player-circle:active {
-  transform: scale(0.95);
-}
+/* =========================================
+   POPUPS E OVERLAYS
+   ========================================= */
 
-.search-circle.active {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: var(--primary);
-  color: white;
-}
-
-.search-circle i,
-.player-circle i {
-  font-size: 32px;
-  z-index: 1;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-.main-nav-bar.search-active + .search-circle {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-}
-
-.bottom-nav-container.reproduction-mode .search-circle {
-    opacity: 0;
-    transform: scale(0);
-    pointer-events: none;
-}
-
-/* ===== NOVA BARRA DE PESQUISA ===== */
-.search-input-container {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 15px;
-}
-
-.search-input-expanded {
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 16px;
-  width: 100%;
-  padding: 0 50px 0 0;
-  outline: none;
-  font-family: 'Inter', sans-serif;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-}
-
-.search-input-expanded::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.close-search-expanded {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  z-index: 2;
-  font-size: 1.3rem;
-}
-
-.close-search-expanded:hover {
-  color: var(--primary);
-  transform: translateY(-50%) scale(1.1);
-  text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-}
-
-.close-search-expanded:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-.search-container,
-.search-form,
-.search-input,
-.search-button,
-.close-search {
-  display: none;
-}
-
-.loading {
-  display: none;
-  justify-content: center;
-  align-items: center;
-  padding: 3rem;
-  color: var(--secondary);
-  flex-direction: column;
-}
-
-.loading.active {
-  display: flex;
-}
-
-.spinner {
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid var(--primary);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* ===== PÁGINAS DE STREAMING ===== */
-.streaming-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1.5rem;
-  min-height: calc(100vh - 80px);
-  padding-bottom: 8rem;
-}
-
-.player-container {
-  background: var(--card-bg);
-  border-radius: 15px;
-  overflow: hidden;
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--border);
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  position: relative;
-}
-
-.player-wrapper {
-  position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
-  overflow: hidden;
-  background-color: #000;
-}
-
-.player-wrapper iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.content-info-streaming {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.content-title-streaming {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.content-meta-streaming {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  color: var(--secondary);
-  font-size: 0.9rem;
-}
-
-.content-meta-streaming span {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.content-description-streaming {
-  color: var(--text);
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
-
-/* ===== SELETOR DE TEMPORADA/EPISÓDIO ===== */
-.episode-selector-streaming {
-  display: none;
-  gap: 1rem;
-  margin: 1rem 0;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.episode-selector-streaming.active {
-  display: flex;
-}
-
-.selector-group-streaming {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.selector-label-streaming {
-  color: var(--secondary);
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.selector-select-streaming {
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border);
-  border-radius: 25px;
-  padding: 0.5rem 0.75rem;
-  color: var(--text);
-  width: 140px;
-  transition: all 0.3s ease;
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.selector-select-streaming:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-/* ===== PLAYER SELECTOR BUBBLE - EFEITO UNIFICADO ===== */
+.info-popup-overlay,
 .player-selector-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--overlay-bg);
-  z-index: 2000;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(5px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.player-selector-overlay.active {
-  display: flex;
-  opacity: 1;
-}
-
-.player-selector-bubble {
-  /* Efeito unificado */
-  background: var(--popup-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  
-  border-radius: 20px;
-  padding: 1.5rem;
-  max-width: 320px;
-  width: 90%;
-  transform: scale(0.8);
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.player-selector-bubble.active {
-  transform: scale(1);
-  opacity: 1;
-}
-
-.player-options-bubble {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.player-option-bubble {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: var(--text);
-}
-
-.player-option-bubble:hover {
-  background: rgba(255, 107, 107, 0.2);
-  border-color: var(--primary);
-  color: white;
-  transform: translateX(5px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.player-option-bubble:active {
-  transform: translateX(5px) scale(0.98);
-}
-
-.option-main-line {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.option-main-line i {
-  font-size: 1.2rem;
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.option-name {
-  font-weight: 600;
-  font-size: 1rem;
-  flex-grow: 1;
-}
-
-.option-details {
-  font-size: 0.8rem;
-  color: var(--secondary);
-  margin-left: 27.5px;
-  text-align: left;
-}
-
-.player-option-bubble:hover .option-details {
-  color: white;
-  opacity: 0.8;
-}
-
-.player-tag-bubble {
-  margin-left: auto;
-  padding: 0.2rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.player-tag-dub {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: white;
-}
-
-.player-tag-sub {
-  background: linear-gradient(135deg, var(--success), var(--accent));
-  color: white;
-}
-
-/* ===== INFO POPUP - EFEITO UNIFICADO ===== */
-.info-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: var(--overlay-bg);
   z-index: 2000;
   display: none;
@@ -1056,19 +508,15 @@ body {
   transition: opacity 0.3s ease;
 }
 
-.info-popup-overlay.active {
+.info-popup-overlay.active,
+.player-selector-overlay.active {
   display: flex;
   opacity: 1;
 }
 
-.info-popup-content {
-  /* Efeito unificado */
-  background: var(--popup-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-
+.info-popup-content,
+.player-selector-bubble {
+  position: relative;
   border-radius: 20px;
   padding: 1.5rem;
   max-width: 400px;
@@ -1078,13 +526,21 @@ body {
   transform: translateY(50px);
   opacity: 0;
   transition: all 0.4s ease;
+  
+  /* Limpeza para usar o sistema glass interno */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-.info-popup-overlay.active .info-popup-content {
+.info-popup-overlay.active .info-popup-content,
+.player-selector-bubble.active {
   transform: translateY(0);
   opacity: 1;
 }
 
+/* Conteúdo interno do Popup precisa estar na div .glass-content */
 .info-popup-header {
   display: flex;
   gap: 1rem;
@@ -1097,42 +553,15 @@ body {
   height: 120px;
   object-fit: cover;
   border-radius: 8px;
-  flex-shrink: 0;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-.info-details {
-  flex: 1;
-}
+.info-details { flex: 1; }
 
 .info-title {
   font-size: 1.2rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
   color: var(--text);
-  line-height: 1.3;
-}
-
-.info-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin-bottom: 0.8rem;
-  color: var(--secondary);
-  font-size: 0.8rem;
-}
-
-.info-meta span {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.info-description {
-  color: var(--text);
-  line-height: 1.5;
-  font-size: 0.9rem;
-  margin-bottom: 1.2rem;
 }
 
 .close-popup-btn {
@@ -1142,53 +571,72 @@ body {
   border-radius: 25px;
   padding: 0.6rem 1.2rem;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  margin-top: 1rem;
+  position: relative;
+  z-index: 5;
 }
 
-.close-popup-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
-}
+/* =========================================
+   PLAYER & STREAMING
+   ========================================= */
 
-.close-popup-btn:active {
-  transform: scale(0.98);
-}
-
-.error-message {
-  display: none;
-  background: var(--card-bg);
+.streaming-container {
+  max-width: 1280px;
+  margin: 0 auto;
   padding: 1.5rem;
+  min-height: calc(100vh - 80px);
+  padding-bottom: 8rem;
+}
+
+.player-container {
+  position: relative;
   border-radius: 15px;
-  border-left: 4px solid var(--error);
-  margin-bottom: 2rem;
-  text-align: center;
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: transparent; /* Use glass interno */
 }
 
-.error-message.active {
-  display: block;
+.player-wrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  background-color: #000;
+  z-index: 5; /* Player acima do vidro */
 }
 
-.error-message h3 {
-  color: var(--error);
-  margin-bottom: 0.5rem;
+.player-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Opções do Player (Lista) */
+.player-option-bubble {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05); /* Fundo leve para diferenciar itens */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text);
+  margin-bottom: 0.5rem;
 }
 
-/* ===== TOAST NOTIFICATIONS - EFEITO UNIFICADO ===== */
+.player-option-bubble:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: var(--primary);
+}
+
+/* =========================================
+   TOASTS (Notificações)
+   ========================================= */
 .toast-container {
   position: fixed;
   bottom: 120px;
@@ -1198,345 +646,84 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: 400px;
   width: 90%;
+  max-width: 400px;
 }
 
 .toast {
-  background: rgba(30, 30, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
   border-left: 3px solid; 
   border-radius: 12px;
   padding: 12px 16px;
-  
-  backdrop-filter: var(--glass-blur); /* Efeito unificado */
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  
   display: flex;
   align-items: center;
   gap: 12px;
+  
+  /* Estilo Glass Simplificado para Toasts */
+  background: var(--bg-color);
+  backdrop-filter: blur(10px);
+  filter: url(#glass-distortion) saturate(120%) brightness(1.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  
   transform: translateY(100px);
   opacity: 0;
   transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  max-width: 400px;
 }
 
-.toast.show {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.toast.hiding {
-  transform: translateY(100px);
-  opacity: 0;
-}
-
-.toast-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 14px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
+.toast.show { transform: translateY(0); opacity: 1; }
 .toast-success { border-left-color: var(--success); }
-.toast-success .toast-icon { background: var(--success); color: white; }
-
 .toast-info { border-left-color: var(--accent); }
-.toast-info .toast-icon { background: var(--accent); color: white; }
 
 .toast-content {
   flex: 1;
   font-size: 14px;
-  line-height: 1.4;
   color: var(--text);
-  font-weight: 500;
+  position: relative;
+  z-index: 5;
 }
 
-.toast-close {
-  background: none;
-  border: none;
-  color: var(--secondary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
+/* =========================================
+   RESPONSIVIDADE
+   ========================================= */
 
-.toast-close:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.toast-close:active {
-  transform: scale(0.95);
-}
-
-.server-tutorial-overlay,
-.server-tutorial-content,
-.server-tutorial-icon,
-.server-tutorial-title,
-.server-tutorial-text,
-.server-tutorial-highlight,
-.server-tutorial-button {
-  display: none;
-}
-
-/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
     bottom: 20px;
-    max-width: 95%;
     width: 95%;
-    gap: 10px;
   }
   
   .main-nav-bar {
     height: 65px;
-    border-radius: 35px;
   }
   
-  .nav-item i {
-    font-size: 24px;
-  }
+  .nav-item i { font-size: 24px; }
   
-  .search-circle {
-    width: 65px;
-    height: 65px;
-  }
-  
-  .search-circle i {
-    font-size: 28px;
-  }
-  
-  .player-circle {
-    width: 65px;
-    height: 65px;
-  }
-  
-  .player-circle i {
-    font-size: 28px;
-  }
-  
-  .streaming-container {
-    padding: 1rem;
-    padding-bottom: 7rem;
-  }
-  
-  .content-title-streaming {
-    font-size: 1.2rem;
-  }
-  
-  .info-popup-content {
-    padding: 1.2rem;
-    max-width: 350px;
-  }
-  
-  .info-poster {
-    width: 70px;
-    height: 105px;
-  }
-  
-  .info-title {
-    font-size: 1.1rem;
-  }
-  
+  .info-popup-content, 
   .player-selector-bubble {
     padding: 1.2rem;
-    max-width: 300px;
-  }
-  
-  .episode-selector-streaming {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-  }
-  
-  .selector-group-streaming {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .selector-select-streaming {
-    width: 120px;
-  }
-
-  .toast-container {
-    bottom: 110px;
-    max-width: 350px;
-  }
-  
-  .toast {
-    max-width: 350px;
-    padding: 10px 14px;
-  }
-  
-  .toast-content {
-    font-size: 13px;
-  }
-  
-  .search-input-expanded {
-    font-size: 16px;
-    padding: 0 45px 0 0;
-  }
-  
-  .close-search-expanded {
-    width: 35px;
-    height: 35px;
-    font-size: 1.2rem;
   }
 }
 
 @media (max-width: 480px) {
   .info-popup-content {
     padding: 1rem;
-    max-width: 320px;
   }
   
   .info-popup-header {
     flex-direction: column;
     text-align: center;
-    gap: 0.8rem;
   }
   
-  .info-poster {
-    width: 80px;
-    height: 120px;
-    align-self: center;
-  }
+  .info-poster { align-self: center; }
   
-  .info-title {
-    font-size: 1rem;
-  }
+  .bottom-nav-container { gap: 8px; }
   
-  .info-meta {
-    font-size: 0.75rem;
-  }
+  .main-nav-bar { height: 60px; }
   
-  .info-description {
-    font-size: 0.85rem;
-  }
-  
-  .player-selector-bubble {
-    padding: 1rem;
-    max-width: 280px;
-  }
-  
-  .player-option-bubble {
-    padding: 0.6rem 0.8rem;
-  }
-  
-  .option-name {
-    font-size: 0.9rem;
-  }
-  
-  .option-details {
-    font-size: 0.75rem;
-    margin-left: 26px;
-  }
-  
-  .selector-select-streaming {
-    width: 110px;
-    font-size: 0.85rem;
-    padding: 0.4rem 0.8rem;
-  }
-
-  .bottom-nav-container {
-    gap: 8px;
-  }
-  
-  .main-nav-bar {
-    height: 60px;
-    padding: 0 8px;
-  }
-  
-  .nav-item i {
-    font-size: 22px;
-  }
-  
-  .search-circle {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .search-circle i {
-    font-size: 26px;
-  }
-  
-  .player-circle {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .player-circle i {
-    font-size: 26px;
-  }
-
-  .toast-container {
-    bottom: 100px;
-    max-width: 300px;
-  }
-  
-  .toast {
-    max-width: 300px;
-    padding: 8px 12px;
-  }
-  
-  .toast-content {
-    font-size: 12px;
-  }
-  
-  .toast-icon {
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-  }
-  
-  .search-input-expanded {
-    font-size: 16px;
-    padding: 0 40px 0 0;
-  }
-  
-  .close-search-expanded {
-    width: 32px;
-    height: 32px;
-    right: 8px;
-    font-size: 1.1rem;
-  }
-  
-  .search-input-container {
-    padding: 0 12px;
-  }
+  .nav-item i { font-size: 22px; }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font-family: inherit;
-}
-
-select {
-  font-family: inherit;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+/* Utilitários */
+.loading.active { display: flex; }
+.search-results-section.active { display: block; }
+.hidden { display: none; }
