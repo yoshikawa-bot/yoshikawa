@@ -197,9 +197,9 @@ export default function TVShow() {
 
   const handleVideoOverlayClick = (e) => {
     if (e.target.classList.contains('video-overlay-wrapper')) {
-        closePopup(setShowVideoPlayer);
+      closePopup(setShowVideoPlayer);
     }
-  }
+  };
   
   const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
   
@@ -453,8 +453,8 @@ export default function TVShow() {
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -490,6 +490,7 @@ export default function TVShow() {
 
         .video-floating-container iframe { width: 100%; height: 100%; border: none; }
         
+        /* Video Controls Toolbar Styling */
         .video-controls-toolbar { 
             display: flex; 
             justify-content: space-between; 
@@ -508,6 +509,7 @@ export default function TVShow() {
 
         .video-controls-right { display: flex; gap: 12px; }
 
+        /* Nav Buttons Styling */
         .player-navigation-bar {
             display: flex;
             justify-content: center;
@@ -658,11 +660,13 @@ export default function TVShow() {
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* ESTILOS DA ROLAGEM DE EPISÓDIOS */
         .episodes-scroller {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
+            /* Oculto por padrão (mobile) */
             scrollbar-width: none;
         }
         
@@ -670,11 +674,12 @@ export default function TVShow() {
             display: none; 
         }
 
+        /* Desktop: Exibe e estiliza scrollbar */
         @media (min-width: 768px) {
             .episodes-scroller {
                 scrollbar-width: thin;
                 scrollbar-color: var(--secondary) rgba(255, 255, 255, 0.05);
-                padding-bottom: 15px;
+                padding-bottom: 15px; /* Mais espaço para a barra */
             }
 
             .episodes-scroller::-webkit-scrollbar {
