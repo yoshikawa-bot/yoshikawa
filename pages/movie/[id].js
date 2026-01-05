@@ -172,8 +172,6 @@ export default function Movie() {
     }
   };
 
-  const handleVideoOverlayClick = (e) => { e.stopPropagation(); }
-  
   const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
 
   const handlePlayerChange = (player) => {
@@ -252,7 +250,7 @@ export default function Movie() {
         </div>
 
         {showVideoPlayer && (
-            <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
+            <div className="video-overlay-wrapper active">
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     <div className="video-controls-toolbar">
                         <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
@@ -362,9 +360,7 @@ export default function Movie() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: transparent; 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            background: #0D1017;
             z-index: 9999;
             display: flex;
             align-items: center;
