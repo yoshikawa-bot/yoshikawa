@@ -251,6 +251,7 @@ export default function Movie() {
 
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active">
+                <div className="video-blur-backdrop"></div>
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     <div className="video-controls-toolbar">
                         <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
@@ -366,32 +367,19 @@ export default function Movie() {
             justify-content: center;
             animation: fadeIn 0.3s ease;
             padding: 20px;
-            pointer-events: none;
-        }
-
-        .video-overlay-wrapper.active {
-            pointer-events: auto;
-        }
-
-        .video-overlay-wrapper::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
-            -webkit-backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
-            z-index: -1;
-        }
-
-        .video-overlay-wrapper::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: -1;
         }
 
         .video-overlay-wrapper.closing { 
             animation: fadeOut 0.3s ease forwards; 
+        }
+
+        .video-blur-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
+            -webkit-backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
+            pointer-events: none;
         }
 
         .video-player-group {
@@ -401,6 +389,7 @@ export default function Movie() {
             position: relative;
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             pointer-events: auto;
+            z-index: 1;
         }
 
         .video-player-group.square { width: min(90vw, 90vh); max-width: 600px; }
