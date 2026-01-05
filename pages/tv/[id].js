@@ -195,12 +195,6 @@ export default function TVShow() {
     if (e.target.classList.contains('player-selector-overlay')) closePopup(setShowPlayerSelector);
   };
 
-  const handleVideoOverlayClick = (e) => {
-    if (e.target.classList.contains('video-overlay-wrapper')) {
-        closePopup(setShowVideoPlayer);
-    }
-  }
-  
   const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
   
   const handleSeasonChange = async (newSeason) => {
@@ -317,7 +311,7 @@ export default function TVShow() {
         </div>
 
         {showVideoPlayer && (
-            <div className="video-overlay-wrapper active" onClick={handleVideoOverlayClick}>
+            <div className="video-overlay-wrapper active">
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     
                     <div className="video-controls-toolbar">
