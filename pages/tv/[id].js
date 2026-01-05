@@ -54,7 +54,36 @@ export default function TVShow() {
   useEffect(() => {
     if (showVideoPlayer) removeToast()
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto'
-    return () => { document.body.style.overflow = 'auto' }
+
+    const header = document.querySelector('.github-header')
+    const bottomNav = document.querySelector('.bottom-nav-container')
+
+    if (showVideoPlayer) {
+      if (header) {
+        header.style.transition = 'filter 0.4s ease, transform 0.4s ease'
+        header.style.filter = 'blur(40px) saturate(200%)'
+        header.style.transform = 'scale(0.94)'
+      }
+      if (bottomNav) {
+        bottomNav.style.transition = 'filter 0.4s ease, transform 0.4s ease'
+        bottomNav.style.filter = 'blur(40px) saturate(200%)'
+        bottomNav.style.transform = 'scale(0.94)'
+      }
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto'
+      if (header) {
+        header.style.filter = ''
+        header.style.transform = ''
+        header.style.transition = ''
+      }
+      if (bottomNav) {
+        bottomNav.style.filter = ''
+        bottomNav.style.transform = ''
+        bottomNav.style.transition = ''
+      }
+    }
   }, [showVideoPlayer]) 
 
   useEffect(() => {
@@ -264,7 +293,7 @@ export default function TVShow() {
 
       <Header />
 
-      <main className="streaming-container">
+      <main className={`streaming-container ${showVideoPlayer ? 'content-blurred' : ''}`}>
         
         <div className="player-container">
           <div className="player-wrapper">
@@ -452,9 +481,7 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(40px) saturate(200%);
-            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            background: rgba(0, 0, 0, 0.65);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -464,6 +491,13 @@ export default function TVShow() {
         }
 
         .video-overlay-wrapper.closing { animation: fadeOut 0.3s ease forwards; }
+
+        .content-blurred {
+            filter: blur(40px) saturate(200%);
+            transition: filter 0.4s ease, transform 0.4s ease;
+            transform: scale(0.94);
+            pointer-events: none;
+        }
 
         .video-player-group {
             display: flex;
@@ -666,7 +700,6 @@ export default function TVShow() {
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
-            /* Oculto por padrão (mobile) */
             scrollbar-width: none;
         }
         
@@ -674,12 +707,11 @@ export default function TVShow() {
             display: none; 
         }
 
-        /* Desktop: Exibe e estiliza scrollbar */
         @media (min-width: 768px) {
             .episodes-scroller {
                 scrollbar-width: thin;
                 scrollbar-color: var(--secondary) rgba(255, 255, 255, 0.05);
-                padding-bottom: 15px; /* Mais espaço para a barra */
+                padding-bottom: 15px;
             }
 
             .episodes-scroller::-webkit-scrollbar {
