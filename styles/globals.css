@@ -1121,12 +1121,15 @@ body::before {
   transform: scale(0.98);
 }
 
+/* --- CLASSE MODIFICADA PARA O BLUR --- */
 .video-overlay-wrapper {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    /* Opacidade ajustada para 0.25 para permitir que o blur apareça */
+    background: rgba(0, 0, 0, 0.25);
+    /* Saturate adicionado para realçar o efeito de vidro */
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
     z-index: 9999;
     display: none;
     align-items: center;
@@ -1134,6 +1137,7 @@ body::before {
     animation: fadeIn 0.3s ease;
     padding: 20px;
 }
+/* ------------------------------------- */
 
 .video-overlay-wrapper.active {
     display: flex;
