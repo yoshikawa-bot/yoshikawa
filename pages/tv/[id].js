@@ -54,36 +54,7 @@ export default function TVShow() {
   useEffect(() => {
     if (showVideoPlayer) removeToast()
     document.body.style.overflow = showVideoPlayer ? 'hidden' : 'auto'
-
-    const header = document.querySelector('.github-header')
-    const bottomNav = document.querySelector('.bottom-nav-container')
-
-    if (showVideoPlayer) {
-      if (header) {
-        header.style.transition = 'filter 0.4s ease, transform 0.4s ease'
-        header.style.filter = 'blur(40px) saturate(200%)'
-        header.style.transform = 'scale(0.94)'
-      }
-      if (bottomNav) {
-        bottomNav.style.transition = 'filter 0.4s ease, transform 0.4s ease'
-        bottomNav.style.filter = 'blur(40px) saturate(200%)'
-        bottomNav.style.transform = 'scale(0.94)'
-      }
-    }
-
-    return () => {
-      document.body.style.overflow = 'auto'
-      if (header) {
-        header.style.filter = ''
-        header.style.transform = ''
-        header.style.transition = ''
-      }
-      if (bottomNav) {
-        bottomNav.style.filter = ''
-        bottomNav.style.transform = ''
-        bottomNav.style.transition = ''
-      }
-    }
+    return () => { document.body.style.overflow = 'auto' }
   }, [showVideoPlayer]) 
 
   useEffect(() => {
@@ -226,9 +197,9 @@ export default function TVShow() {
 
   const handleVideoOverlayClick = (e) => {
     if (e.target.classList.contains('video-overlay-wrapper')) {
-      closePopup(setShowVideoPlayer);
+        closePopup(setShowVideoPlayer);
     }
-  };
+  }
   
   const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
   
@@ -293,7 +264,7 @@ export default function TVShow() {
 
       <Header />
 
-      <main className={`streaming-container ${showVideoPlayer ? 'content-blurred' : ''}`}>
+      <main className="streaming-container">
         
         <div className="player-container">
           <div className="player-wrapper">
@@ -481,7 +452,9 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -491,13 +464,6 @@ export default function TVShow() {
         }
 
         .video-overlay-wrapper.closing { animation: fadeOut 0.3s ease forwards; }
-
-        .content-blurred {
-            filter: blur(40px) saturate(200%);
-            transition: filter 0.4s ease, transform 0.4s ease;
-            transform: scale(0.94);
-            pointer-events: none;
-        }
 
         .video-player-group {
             display: flex;
@@ -524,7 +490,6 @@ export default function TVShow() {
 
         .video-floating-container iframe { width: 100%; height: 100%; border: none; }
         
-        /* Video Controls Toolbar Styling */
         .video-controls-toolbar { 
             display: flex; 
             justify-content: space-between; 
@@ -543,7 +508,6 @@ export default function TVShow() {
 
         .video-controls-right { display: flex; gap: 12px; }
 
-        /* Nav Buttons Styling */
         .player-navigation-bar {
             display: flex;
             justify-content: center;
@@ -694,7 +658,6 @@ export default function TVShow() {
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ESTILOS DA ROLAGEM DE EPISÓDIOS */
         .episodes-scroller {
             display: flex;
             gap: 10px;
