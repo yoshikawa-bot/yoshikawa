@@ -32,11 +32,14 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications
+  // Sistema de Toast Notifications (Modificado para não acumular)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    setToasts([toast]) // Mantém apenas um toast por vez
+    
+    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
+    setToasts([toast])
+    
     setTimeout(() => {
       removeToast(id)
     }, 3000)
@@ -258,37 +261,30 @@ export default function Home() {
               href={`/${item.media_type}/${item.id}`}
               className="content-card"
             >
-              {/* Efeitos Glass no Card */}
-              <div className="glass-filter"></div>
-              <div className="glass-overlay"></div>
-              <div className="glass-specular"></div>
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+                loading="lazy"
+              />
+              
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+              >
+                <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+              </button>
 
-              <div className="glass-content">
-                <img 
-                    src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-                    alt={item.title || item.name}
-                    className="content-poster"
-                    loading="lazy"
-                />
-                
-                <button 
-                    className={`favorite-btn ${isFav ? 'active' : ''}`}
-                    onClick={(e) => {
-                    e.preventDefault() 
-                    e.stopPropagation() 
-                    toggleFavorite(item)
-                    }}
-                    title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
-                >
-                    <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
-                </button>
-
-                <div className="floating-text-wrapper">
-                    <div className="content-title-card">{item.title || item.name}</div>
-                    <div className="content-year">
-                    {item.release_date ? new Date(item.release_date).getFullYear() : 
-                    item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                    </div>
+              <div className="floating-text-wrapper">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
+                  {item.release_date ? new Date(item.release_date).getFullYear() : 
+                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
                 </div>
               </div>
             </Link>
@@ -347,27 +343,20 @@ export default function Home() {
           className={`toast toast-${toast.type} show`}
           style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
         >
-          {/* Efeitos Glass no Toast */}
-          <div className="glass-filter"></div>
-          <div className="glass-overlay"></div>
-          <div className="glass-specular"></div>
-          
-          <div className="glass-content" style={{display: 'flex', alignItems: 'center', gap: '12px', width: '100%'}}>
-            <div className="toast-icon">
-                <i className={`fas ${
-                toast.type === 'success' ? 'fa-check' : 
-                toast.type === 'error' ? 'fa-exclamation-triangle' : 
-                'fa-info'
-                }`}></i>
-            </div>
-            <div className="toast-content">{toast.message}</div>
-            <button 
-                className="toast-close"
-                onClick={() => removeToast(toast.id)}
-            >
-                <i className="fas fa-times"></i>
-            </button>
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
           </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
         </div>
       ))}
     </div>
@@ -383,14 +372,6 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
-
-      {/* SVG Definition for Glass Distortion */}
-      <svg style={{ display: 'none' }}>
-        <filter id="glass-distortion">
-            <feTurbulence baseFrequency="0.008" numOctaves="2" result="noise" type="turbulence" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="77" />
-        </filter>
-      </svg>
 
       <Header />
       
@@ -425,63 +406,52 @@ export default function Home() {
 
       <div className="bottom-nav-container">
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-          {/* Efeitos Glass na Navbar */}
-          <div className="glass-filter"></div>
-          <div className="glass-overlay"></div>
-          <div className="glass-specular"></div>
-
-          <div className="glass-content" style={{display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'space-around'}}>
-            {!searchActive ? (
-                <>
-                <button 
-                    className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                    onClick={() => setActiveSection('releases')}
-                >
-                    <i className="fas fa-film"></i>
-                    <span>Lançamentos</span>
-                </button>
-                <button 
-                    className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                    onClick={() => setActiveSection('recommendations')}
-                >
-                    <i className="fas fa-fire"></i>
-                    <span>Populares</span>
-                </button>
-                <button 
-                    className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                    onClick={() => setActiveSection('favorites')}
-                >
-                    <i className="fas fa-heart"></i>
-                    <span>Favoritos</span>
-                </button>
-                </>
-            ) : (
-                <div className="search-input-container">
-                <input 
-                    ref={searchInputRef}
-                    type="text"
-                    className="search-input-expanded" 
-                    placeholder="Pesquisar..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onKeyPress={handleKeyPress}
-                />
-                </div>
-            )}
-          </div>
+          {!searchActive ? (
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
+          ) : (
+            <div className="search-input-container">
+              <input 
+                ref={searchInputRef}
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleKeyPress}
+              />
+              {/* Botão de fechar removido daqui */}
+            </div>
+          )}
         </div>
         
-        {/* Botão circular Search */}
+        {/* Botão circular que vira X quando ativo */}
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
           onClick={() => setSearchActive(!searchActive)}
         >
-          <div className="glass-filter" style={{borderRadius: 'inherit'}}></div>
-          <div className="glass-overlay" style={{borderRadius: 'inherit'}}></div>
-          <div className="glass-specular" style={{borderRadius: 'inherit'}}></div>
-          <div className="glass-content" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-             <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
-          </div>
+          <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
       </div>
 
@@ -508,16 +478,13 @@ export default function Home() {
            border-radius: 12px;
         }
 
-        /* Ajuste do poster para ficar atras do texto mas acima do glass background se desejado */
         .content-poster {
            width: 100%;
            height: auto;
-           aspect-ratio: 2/3;
+           aspect-ratio: 2/3; /* Proporção exata 2:3 */
            object-fit: cover;
            display: block;
            border-radius: 12px;
-           position: relative; 
-           z-index: 0;
         }
 
         /* Mobile: 2 colunas exatas */
@@ -527,6 +494,7 @@ export default function Home() {
             }
         }
 
+        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
         .live-search-results {
             position: static;
             width: 100%;
@@ -550,7 +518,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 50vh;
+            min-height: 50vh; /* Ocupa altura mínima para estética */
             color: var(--secondary);
             font-size: 1rem;
             flex-direction: column;
@@ -563,6 +531,7 @@ export default function Home() {
             font-size: 2rem;
         }
 
+        /* --- Container Principal --- */
         .container {
             padding: 0 16px 100px 16px;
             width: 100%;
@@ -571,18 +540,20 @@ export default function Home() {
         /* --- Header Adjustments --- */
         .header-content {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             width: 100%;
-            /* padding removido aqui pois está no CSS principal */
+            padding: 0 16px;
         }
         
         .main-nav-bar.search-active {
             padding: 0 10px;
         }
 
+        /* Ajuste do input quando não há botão X interno */
         .search-input-expanded {
             width: 100%;
+            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
@@ -593,12 +564,7 @@ export default function Home() {
 const Header = () => {
   return (
     <header className="github-header">
-      {/* Efeitos Glass no Header */}
-      <div className="glass-filter"></div>
-      <div className="glass-overlay"></div>
-      <div className="glass-specular"></div>
-      
-      <div className="glass-content header-content">
+      <div className="header-content">
         <Link href="/" className="logo-container">
           <img 
             src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
@@ -613,4 +579,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
+                        }
