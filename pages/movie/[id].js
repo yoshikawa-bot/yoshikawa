@@ -251,7 +251,6 @@ export default function Movie() {
 
         {showVideoPlayer && (
             <div className="video-overlay-wrapper active">
-                <div className="video-blur-backdrop"></div>
                 <div className={`video-player-group ${isWideScreen ? 'widescreen' : 'square'}`} onClick={(e) => e.stopPropagation()}>
                     <div className="video-controls-toolbar">
                         <button className="toolbar-btn" onClick={toggleVideoFormat}><i className={`fas ${isWideScreen ? 'fa-compress' : 'fa-expand'}`}></i></button>
@@ -361,6 +360,7 @@ export default function Movie() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
+            background: #0D1017;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -369,18 +369,7 @@ export default function Movie() {
             padding: 20px;
         }
 
-        .video-overlay-wrapper.closing { 
-            animation: fadeOut 0.3s ease forwards; 
-        }
-
-        .video-blur-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
-            -webkit-backdrop-filter: blur(20px) saturate(120%) brightness(1.15);
-            pointer-events: none;
-        }
+        .video-overlay-wrapper.closing { animation: fadeOut 0.3s ease forwards; }
 
         .video-player-group {
             display: flex;
@@ -388,8 +377,6 @@ export default function Movie() {
             gap: 10px;
             position: relative;
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            pointer-events: auto;
-            z-index: 1;
         }
 
         .video-player-group.square { width: min(90vw, 90vh); max-width: 600px; }
@@ -428,8 +415,6 @@ export default function Movie() {
 
         .toolbar-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.1); }
         .toolbar-btn.close-btn:hover { background: var(--primary); border-color: var(--primary); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
         .toast-container {
@@ -462,6 +447,7 @@ export default function Movie() {
         .synopsis-toggle-btn { background: none; border: none; color: var(--secondary); font-size: 0.85rem; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
         .content-description-streaming { margin-bottom: 0.8rem; font-size: 0.9rem; line-height: 1.5; color: var(--text); opacity: 0.9; }
         .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </>
   )
