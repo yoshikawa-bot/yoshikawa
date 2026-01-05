@@ -195,7 +195,11 @@ export default function TVShow() {
     if (e.target.classList.contains('player-selector-overlay')) closePopup(setShowPlayerSelector);
   };
 
-  const handleVideoOverlayClick = (e) => { e.stopPropagation(); }
+  const handleVideoOverlayClick = (e) => {
+    if (e.target.classList.contains('video-overlay-wrapper')) {
+        closePopup(setShowVideoPlayer);
+    }
+  }
   
   const toggleVideoFormat = () => setIsWideScreen(!isWideScreen);
   
@@ -448,9 +452,9 @@ export default function TVShow() {
         .video-overlay-wrapper {
             position: fixed;
             inset: 0;
-            background: transparent;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -486,7 +490,6 @@ export default function TVShow() {
 
         .video-floating-container iframe { width: 100%; height: 100%; border: none; }
         
-        /* Video Controls Toolbar Styling */
         .video-controls-toolbar { 
             display: flex; 
             justify-content: space-between; 
@@ -505,7 +508,6 @@ export default function TVShow() {
 
         .video-controls-right { display: flex; gap: 12px; }
 
-        /* Nav Buttons Styling */
         .player-navigation-bar {
             display: flex;
             justify-content: center;
@@ -656,13 +658,11 @@ export default function TVShow() {
         .fade-in { animation: fadeIn 0.2s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ESTILOS DA ROLAGEM DE EPISÓDIOS */
         .episodes-scroller {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 8px;
-            /* Oculto por padrão (mobile) */
             scrollbar-width: none;
         }
         
@@ -670,12 +670,11 @@ export default function TVShow() {
             display: none; 
         }
 
-        /* Desktop: Exibe e estiliza scrollbar */
         @media (min-width: 768px) {
             .episodes-scroller {
                 scrollbar-width: thin;
                 scrollbar-color: var(--secondary) rgba(255, 255, 255, 0.05);
-                padding-bottom: 15px; /* Mais espaço para a barra */
+                padding-bottom: 15px;
             }
 
             .episodes-scroller::-webkit-scrollbar {
