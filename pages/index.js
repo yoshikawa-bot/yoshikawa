@@ -377,7 +377,6 @@ export default function Home() {
             <LiveSearchResults />
         ) : (
             <div className="home-sections">
-                {/* Ícone removido do título conforme solicitado */}
                 <h1 className="page-title-home">{pageTitle}</h1>
                 <section className="section">
                     <ContentGrid 
@@ -401,7 +400,7 @@ export default function Home() {
                   className={`nav-item ${activeSection === section ? 'active' : ''}`}
                   onClick={() => setActiveSection(section)}
                 >
-                  {/* Bolha Ativa - Efeito Glass */}
+                  {/* Bolha Ativa - CONFIGURADA PARA QUEBRAR LIMITES */}
                   {activeSection === section && (
                     <div className="nav-active-bubble"></div>
                   )}
@@ -442,57 +441,49 @@ export default function Home() {
 
       <style jsx global>{`
         :root {
-          /* Nova Cor Primária E90039 */
           --primary: #E90039;
           --primary-dark: #b8002e;
           --secondary: #94a3b8;
           --accent: #4dabf7;
           
           --dark: #000000;
-          --card-bg: #111111; /* Cor sólida para performance */
+          --card-bg: #111111;
           --text: #ffffff;
-          --header-bg: rgba(20, 20, 20, 0.6);
-          --header-border: rgba(255, 255, 255, 0.1);
           
-          --popup-bg: rgba(30, 30, 30, 0.85);
+          /* HEADER MAIS TRANSPARENTE (0.3) */
+          --header-bg: rgba(0, 0, 0, 0.3);
+          --header-border: rgba(255, 255, 255, 0.08);
+          
           --success: #10b981;
           --error: #ef4444;
-          --overlay-bg: rgba(0, 0, 0, 0.8);
         }
 
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
-          /* Transições Globais mais fluidas */
           transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         body {
           font-family: 'Inter', Arial, sans-serif;
-          /* Fundo preto absoluto */
           background-color: #000000;
-          background-image: none;
           color: var(--text);
           line-height: 1.6;
           min-height: 100vh;
           overflow-y: auto;
         }
 
-        /* Efeito de Vidro Real (Navbar e Header) */
-        .glass-effect {
-             backdrop-filter: blur(20px) saturate(180%) contrast(1.05);
-             -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(1.05);
-        }
-
         .github-header {
-          background-color: rgba(0,0,0,0.3);
+          background-color: var(--header-bg);
           border-bottom: 1px solid var(--header-border);
           padding: 0.75rem 0;
           position: sticky;
           top: 0;
           z-index: 100;
-          backdrop-filter: blur(20px) saturate(180%);
+          /* Blur forte para compensar a transparência */
+          backdrop-filter: blur(25px) saturate(180%);
+          -webkit-backdrop-filter: blur(25px) saturate(180%);
         }
 
         .header-content {
@@ -557,18 +548,16 @@ export default function Home() {
           width: 100%;
         }
 
-        /* CARD OTIMIZADO - SEM GLASS BACKGROUND */
         .content-card {
           background-color: var(--card-bg);
           border-radius: 16px;
           overflow: hidden;
           transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
           cursor: pointer;
-          border: 1px solid #222; /* Borda sutil em vez de vidro */
+          border: 1px solid #222;
           position: relative;
           text-decoration: none;
           color: inherit;
-          /* backdrop-filter removido para performance */
         }
 
         .content-card:hover {
@@ -654,13 +643,15 @@ export default function Home() {
           z-index: 1000;
         }
 
+        /* NAVBAR PRINCIPAL - MAIS TRANSPARENTE E MENOS PRETA */
         .main-nav-bar {
-          background-color: rgba(10, 10, 10, 0.75); /* Escuro, semitransparente */
-          border: 1px solid rgba(255,255,255,0.15);
-          backdrop-filter: blur(25px) saturate(200%) contrast(1.1); /* Efeito Vidro Real */
-          -webkit-backdrop-filter: blur(25px) saturate(200%) contrast(1.1);
+          /* Fundo bem transparente (0.35) */
+          background-color: rgba(10, 10, 10, 0.35); 
+          border: 1px solid rgba(255,255,255,0.1);
+          backdrop-filter: blur(30px) saturate(200%);
+          -webkit-backdrop-filter: blur(30px) saturate(200%);
           border-radius: 100px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -669,6 +660,8 @@ export default function Home() {
           padding: 0 15px;
           position: relative;
           transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          /* IMPORTANTE: Permite que a bolha saia para fora */
+          overflow: visible; 
         }
 
         .nav-item {
@@ -680,16 +673,17 @@ export default function Home() {
           background: none;
           border: none;
           cursor: pointer;
-          position: relative; /* Necessário para posicionar a bolha */
+          position: relative;
           height: 100%;
-          color: #888;
+          color: #999;
           transition: color 0.3s ease;
+          /* Z-index 1 garante que o ícone fique na frente da bolha (que terá z-index menor) */
           z-index: 1;
         }
 
         .nav-item i {
             font-size: 24px;
-            z-index: 2; /* Fica na frente da bolha */
+            z-index: 2; 
             position: relative;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -699,47 +693,58 @@ export default function Home() {
         }
 
         .nav-item.active {
-            color: #fff; /* Ícone branco quando ativo para contraste */
+            color: #fff;
         }
         
         .nav-item.active i {
-            transform: scale(1.1) translateY(-2px);
+            transform: scale(1.1);
         }
 
-        /* === A BOLHA GORDA DE VIDRO === */
+        /* === A BOLHA "INDEPENDENTE" QUE QUEBRA LIMITES === */
         .nav-active-bubble {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 140%; /* Ultrapassa os limites laterais do item */
-            height: 55px; /* Altura "gorda" */
-            border-radius: 35px;
             
-            /* Efeito de Vidro na Bolha */
-            background: rgba(233, 0, 57, 0.25); /* Vermelho translúcido */
-            box-shadow: 0 8px 32px rgba(233, 0, 57, 0.15);
-            backdrop-filter: blur(12px) saturate(150%);
-            -webkit-backdrop-filter: blur(12px) saturate(150%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Largura fixa para não invadir o ícone vizinho */
+            width: 75px;
             
-            z-index: 0; /* Atrás do ícone */
+            /* Altura fixa MAIOR que a navbar (75px) para quebrar o limite */
+            height: 88px;
+            
+            border-radius: 30px; /* Borda bem arredondada (quase cápsula) */
+            
+            /* Vidro Diferente (Levemente mais claro/branco que o fundo preto da nav) */
+            background: rgba(255, 255, 255, 0.07);
+            
+            /* Bordas finas e brilhantes */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            
+            /* Sombra projetada para dar efeito 3D flutuante */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.03);
+            
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            
+            /* Z-index negativo relativo ao botão, mas visível na navbar */
+            z-index: -1; 
             pointer-events: none;
             
-            /* Animação de entrada fluida */
-            animation: bubble-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: bubble-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes bubble-enter {
-            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+        @keyframes bubble-pop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
 
-        /* Search Circle */
+        /* Search Circle - Mais Transparente */
         .search-circle {
-          background-color: rgba(20, 20, 20, 0.6);
-          border: 1px solid rgba(255,255,255,0.15);
-          backdrop-filter: blur(20px) saturate(180%);
+          background-color: rgba(20, 20, 20, 0.35); /* Transparente */
+          border: 1px solid rgba(255,255,255,0.1);
+          backdrop-filter: blur(30px) saturate(180%);
           border-radius: 50%;
           width: 75px;
           height: 75px;
@@ -769,7 +774,6 @@ export default function Home() {
             font-size: 28px;
         }
 
-        /* Search Input */
         .search-input-container {
             width: 100%;
             height: 100%;
@@ -829,7 +833,7 @@ export default function Home() {
         }
 
         .toast {
-            background: rgba(20, 20, 20, 0.9);
+            background: rgba(20, 20, 20, 0.8);
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             color: white;
@@ -847,7 +851,6 @@ export default function Home() {
             color: var(--primary);
         }
 
-        /* Responsividade Mobile */
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -869,9 +872,10 @@ export default function Home() {
                 height: 65px;
             }
             
+            /* Ajuste Mobile da Bolha */
             .nav-active-bubble {
-                width: 120%; /* Um pouco menor no mobile */
-                height: 45px;
+                width: 60px; /* Um pouco mais estreita no mobile para evitar toque */
+                height: 78px; /* Ainda maior que a navbar (65px) */
             }
         }
       `}</style>
