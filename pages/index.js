@@ -1977,44 +1977,7 @@ export default function Home() {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-.nav-active-bubble-traveling {
-            position: absolute;
-            top: 50%;
-            /* Posiciona no centro do primeiro terço */
-            left: calc(100% / 6); 
-            transform: translate(-50%, -50%);
-            
-            /* MENOS LARGA: Para não sair das bordas laterais */
-            width: 105px; 
-            
-            /* MAIS ALTA: Para ultrapassar a navbar (90px > 75px da nav) */
-            height: 90px;
-            
-            /* Pílula verticalizada */
-            border-radius: 50px;
-            
-            /* VIDRO INCOLOR BRILHANTE */
-            /* Fundo branco ultra transparente */
-            background: rgba(255, 255, 255, 0.05);
-            /* Borda branca fina para o "brilho" */
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Topo mais brilhante */
-            
-            /* Sombra/Glow branco incolor */
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
-            
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            
-            z-index: 0;
-            pointer-events: none;
-
-            /* MOVIMENTO */
-            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-            margin-left: calc(var(--active-index) * (100% / 3));
-        }
-          
+        
         /* --- Padronização do Grid (Home e Busca) --- */
         .content-grid {
             display: grid;
@@ -2132,4 +2095,4 @@ const Header = () => {
       </div>
     </header>
   )
-      }
+  }
