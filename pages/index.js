@@ -82,15 +82,15 @@ export default function Home() {
       const itemRect = activeItem.getBoundingClientRect()
       const navHeight = navRect.height
 
-      // Overflow sutil: ~1-2px top/bottom, ~8-10px lateral total (não invade vizinhos)
-      const overflowVertical = 4   // total extra vertical (2px cada lado)
-      const overflowHorizontal = window.innerWidth > 768 ? 16 : 10  // total extra horizontal
+      // Overflow controlado: ~3px top/bottom, ~20-30px lateral total (não invade vizinhos)
+      const overflowVertical = 6    // total extra vertical
+      const overflowHorizontal = window.innerWidth > 768 ? 30 : 20  // total extra horizontal
 
       const bubbleWidth = itemRect.width + overflowHorizontal
       const bubbleHeight = navHeight + overflowVertical
 
       const left = (itemRect.left - navRect.left) + (itemRect.width / 2) - (bubbleWidth / 2)
-      const top = - (overflowVertical / 2)  // centralizado com overflow simétrico
+      const top = - (overflowVertical / 2)
 
       bubble.style.width = `${bubbleWidth}px`
       bubble.style.height = `${bubbleHeight}px`
@@ -485,12 +485,12 @@ export default function Home() {
           
           --dark: #f1f5f9;
           --light: #0f172a;
-          --border: rgba(255, 255, 255, 0.15);
+          --border: rgba(255, 255, 255, 0.12);
           --card-bg: rgba(0, 0, 0, 0.25);
           --text: #f1f5f9;
           --bg: transparent;
           --header-bg: rgba(0, 0, 0, 0.25);
-          --header-border: rgba(255, 255, 255, 0.15);
+          --header-border: rgba(255, 255, 255, 0.12);
           --header-text: #f0f6fc;
           --success: #10b981;
           --error: #ef4444;
@@ -753,7 +753,7 @@ export default function Home() {
           100% { transform: scale(1); }
         }
 
-        /* Bottom Navigation */
+        /* Bottom Navigation - Mais larga e proporção rigorosa */
         .bottom-nav-container {
           position: fixed;
           bottom: 25px;
@@ -761,15 +761,14 @@ export default function Home() {
           transform: translateX(-50%);
           display: flex;
           align-items: center;
-          max-width: 600px;
-          width: 90%;
-          gap: 15px;
+          width: 95%; /* Mais larga, como original */
+          gap: 16px;
           z-index: 1000;
         }
 
         .main-nav-bar {
           background-color: transparent;
-          border: 2px solid var(--header-border);
+          border: 1px solid var(--header-border); /* Borda mais fina */
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
           display: flex;
@@ -777,7 +776,7 @@ export default function Home() {
           align-items: center;
           height: 70px;
           flex-grow: 1;
-          padding: 0 10px;
+          padding: 0 12px;
           position: relative;
           transition: all 0.4s ease;
         }
@@ -807,17 +806,18 @@ export default function Home() {
 
         .main-nav-bar.search-active {
           justify-content: flex-start;
-          padding: 0;
+          padding: 0 15px;
         }
 
+        /* Bolha ativa - Pilula gorda, independente, na frente dos ícones, com overflow controlado */
         .active-bubble {
           position: absolute;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(24px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: 40px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-          z-index: 0;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 35px; /* Pilula gorda, menos redonda */
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+          z-index: 2; /* Na frente dos ícones */
           pointer-events: none;
           opacity: 0;
           transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -827,8 +827,8 @@ export default function Home() {
           content: '';
           position: absolute;
           inset: 0;
-          border-radius: 40px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 70%);
+          border-radius: 35px;
+          background: linear-gradient(135deg, rgba(233, 0, 57, 0.15), transparent 70%);
           pointer-events: none;
         }
 
@@ -837,7 +837,7 @@ export default function Home() {
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
           mix-blend-mode: overlay;
           opacity: 0.3;
           pointer-events: none;
@@ -859,7 +859,7 @@ export default function Home() {
           background: none;
           position: relative;
           height: 100%;
-          z-index: 1;
+          z-index: 1; /* Atrás da bolha */
         }
 
         .nav-item span {
@@ -881,9 +881,10 @@ export default function Home() {
           color: var(--primary);
         }
 
+        /* Search circle - Mesma altura/proporção da navbar */
         .search-circle {
           background-color: transparent;
-          border: 2px solid var(--header-border);
+          border: 1px solid var(--header-border); /* Borda fina igual à navbar */
           border-radius: 50%;
           width: 70px;
           height: 70px;
@@ -950,157 +951,31 @@ export default function Home() {
           opacity: 0.7;
         }
 
-        .loading {
-          display: none;
-          justify-content: center;
-          align-items: center;
-          padding: 3rem;
-          color: var(--secondary);
-          flex-direction: column;
-        }
-
-        .loading.active {
-          display: flex;
-        }
-
-        .spinner {
-          border: 3px solid rgba(255, 255, 255, 0.1);
-          border-top: 3px solid var(--primary);
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          animation: spin 1s linear infinite;
-          margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .live-search-results {
-            position: static;
-            width: 100%;
-            height: auto;
-            background-color: transparent;
-            padding: 0;
-            margin-bottom: 20px;
-        }
-
-        .live-search-loading, .no-results-live {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 50vh;
-            color: var(--secondary);
-            font-size: 1rem;
-            flex-direction: column;
-            text-align: center;
-            width: 100%;
-        }
-        
-        .live-search-loading i, .no-results-live i {
-            margin-bottom: 10px;
-            font-size: 2rem;
-        }
-
-        .toast-container {
-          position: fixed;
-          bottom: 120px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 9999;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          max-width: 400px;
-          width: 90%;
-        }
-
-        .toast {
-          background: var(--popup-bg);
-          border: 1px solid var(--popup-border);
-          border-radius: 12px;
-          padding: 12px 16px;
-          backdrop-filter: blur(15px);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          animation: toast-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes toast-slide-up {
-          0% { opacity: 0; transform: translateY(30px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .toast-icon {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          font-size: 14px;
-        }
-
-        .toast-success .toast-icon {
-          background: var(--success);
-          color: white;
-        }
-
-        .toast-info .toast-icon {
-          background: var(--accent);
-          color: white;
-        }
-
-        .toast-content {
-          flex: 1;
-          font-size: 14px;
-          line-height: 1.4;
-          color: var(--text);
-        }
-
-        .toast-close {
-          background: none;
-          border: none;
-          color: var(--secondary);
-          cursor: pointer;
-          padding: 4px;
-          border-radius: 4px;
-          transition: all 0.2s;
-        }
-
-        .toast-close:hover {
-          color: var(--text);
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Responsividade */
+        /* Responsividade - Mantém proporção */
         @media (max-width: 768px) {
           .bottom-nav-container {
             bottom: 20px;
-            gap: 10px;
+            gap: 12px;
+            width: 96%;
           }
           
           .main-nav-bar {
-            height: 65px;
-            border-radius: 35px;
-          }
-          
-          .nav-item i {
-            font-size: 24px;
+            height: 66px;
+            border-radius: 36px;
+            padding: 0 10px;
           }
           
           .search-circle {
-            width: 65px;
-            height: 65px;
+            width: 66px;
+            height: 66px;
           }
           
           .search-circle i {
-            font-size: 28px;
+            font-size: 29px;
+          }
+
+          .nav-item i {
+            font-size: 24px;
           }
 
           .toast-container {
@@ -1109,26 +984,27 @@ export default function Home() {
         }
 
         @media (max-width: 480px) {
+          .bottom-nav-container {
+            gap: 10px;
+          }
+          
+          .main-nav-bar {
+            height: 62px;
+            border-radius: 34px;
+          }
+          
           .search-circle {
-            width: 60px;
-            height: 60px;
+            width: 62px;
+            height: 62px;
           }
           
           .search-circle i {
-            font-size: 26px;
+            font-size: 27px;
           }
 
           .toast-container {
             bottom: 100px;
             max-width: 300px;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
           }
         }
       `}</style>
