@@ -406,7 +406,7 @@ export default function Home() {
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
           {!searchActive ? (
             <>
-              {/* A BOLHA VIAJANTE - AGORA FORA DOS BOTÕES */}
+              {/* A BOLHA VIAJANTE - REDIMENSIONADA E INCOLOR */}
               <div 
                 className="nav-active-bubble-traveling"
                 style={{ '--active-index': activeIndex }}
@@ -418,8 +418,6 @@ export default function Home() {
                   className={`nav-item ${activeSection === section ? 'active' : ''}`}
                   onClick={() => handleTabChange(section, index)}
                 >
-                  {/* A bolha interna foi removida daqui */}
-                  
                   <i className={`fas ${
                     section === 'releases' ? 'fa-film' : 
                     section === 'recommendations' ? 'fa-fire' : 'fa-heart'
@@ -465,9 +463,9 @@ export default function Home() {
           --card-bg: #111111;
           --text: #ffffff;
           
-          /* HEADER QUASE INCOLOR (Apenas brilho) */
-          --header-bg: rgba(255, 255, 255, 0.05);
-          --header-border: rgba(255, 255, 255, 0.1);
+          /* HEADER INCOLOR */
+          --header-bg: rgba(255, 255, 255, 0.01);
+          --header-border: rgba(255, 255, 255, 0.08);
           
           --success: #10b981;
           --error: #ef4444;
@@ -497,9 +495,9 @@ export default function Home() {
           position: sticky;
           top: 0;
           z-index: 100;
-          /* Blur forte para compensar a falta de cor */
-          backdrop-filter: blur(30px) saturate(180%);
-          -webkit-backdrop-filter: blur(30px) saturate(180%);
+          /* Blur sem cor */
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
         }
 
         .header-content {
@@ -659,23 +657,30 @@ export default function Home() {
           z-index: 1000;
         }
 
-        /* NAVBAR PRINCIPAL - INCOLOR */
+        /* NAVBAR PRINCIPAL - VIDRO INCOLOR */
         .main-nav-bar {
-          /* Quase transparente, apenas um leve brilho branco */
-          background-color: rgba(255, 255, 255, 0.05); 
-          border: 1px solid rgba(255,255,255,0.1);
-          backdrop-filter: blur(35px) saturate(200%);
-          -webkit-backdrop-filter: blur(35px) saturate(200%);
+          /* Fundo praticamente invisível (1% branco) para pegar apenas o blur */
+          background-color: rgba(255, 255, 255, 0.01); 
+          border: 1px solid rgba(255,255,255,0.08);
+          
+          /* Blur sem saturação (incolor) */
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
+          
           border-radius: 100px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+          /* Sombra branca sutil para "brilho" */
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255,255,255,0.02);
+          
           display: flex;
           justify-content: space-between;
           align-items: center;
           height: 75px;
           flex-grow: 1;
-          padding: 0 5px; /* Reduzido padding lateral para a bolha viajar mais */
+          padding: 0 5px; 
           position: relative;
           transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          
+          /* CRUCIAL: Overflow visible para a bolha sair na vertical */
           overflow: visible; 
         }
 
@@ -692,7 +697,7 @@ export default function Home() {
           height: 100%;
           color: #999;
           transition: color 0.3s ease;
-          z-index: 2; /* Ícone acima da bolha */
+          z-index: 2;
         }
 
         .nav-item i {
@@ -713,7 +718,7 @@ export default function Home() {
             transform: scale(1.1);
         }
 
-        /* === A BOLHA VIAJANTE (PÍLULA GORDA HORIZONTAL) === */
+        /* === A BOLHA VIAJANTE (INCOLOR E ALTA) === */
         .nav-active-bubble-traveling {
             position: absolute;
             top: 50%;
@@ -721,33 +726,43 @@ export default function Home() {
             left: calc(100% / 6); 
             transform: translate(-50%, -50%);
             
-            /* Forma de Pílula Gorda Horizontal */
-            width: 120px; /* Bem larga */
-            height: 65px; /* Altura menor que a navbar para parecer mais "achatada" */
-            border-radius: 40px;
+            /* MENOS LARGA: Para não sair das bordas laterais */
+            width: 80px; 
             
-            /* O único vidro com cor (levemente branco/avermelhado para destaque) */
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            /* MAIS ALTA: Para ultrapassar a navbar (90px > 75px da nav) */
+            height: 90px;
             
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            /* Pílula verticalizada */
+            border-radius: 50px;
             
-            z-index: 0; /* Atrás dos ícones */
+            /* VIDRO INCOLOR BRILHANTE */
+            /* Fundo branco ultra transparente */
+            background: rgba(255, 255, 255, 0.05);
+            /* Borda branca fina para o "brilho" */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Topo mais brilhante */
+            
+            /* Sombra/Glow branco incolor */
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            
+            z-index: 0;
             pointer-events: none;
 
-            /* A MÁGICA DO DESLIZE */
-            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1); /* Transição fluida */
-            /* Calcula a posição baseado no índice ativo (0, 1 ou 2) */
+            /* MOVIMENTO */
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
             margin-left: calc(var(--active-index) * (100% / 3));
         }
 
         /* Search Circle - INCOLOR */
         .search-circle {
-          background-color: rgba(255, 255, 255, 0.05); /* Incolor */
-          border: 1px solid rgba(255,255,255,0.1);
-          backdrop-filter: blur(35px) saturate(180%);
+          background-color: rgba(255, 255, 255, 0.01);
+          border: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
+          
           border-radius: 50%;
           width: 75px;
           height: 75px;
@@ -803,7 +818,6 @@ export default function Home() {
             padding: 0 20px;
         }
         
-        /* Esconde a bolha viajante quando a busca está ativa */
         .main-nav-bar.search-active .nav-active-bubble-traveling {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.8);
@@ -883,8 +897,8 @@ export default function Home() {
             
             /* Ajuste Mobile da Bolha Viajante */
             .nav-active-bubble-traveling {
-                width: 100px;
-                height: 55px;
+                width: 65px; /* Menos larga no mobile */
+                height: 80px; /* Ainda mais alta que a nav (65px) */
             }
         }
       `}</style>
