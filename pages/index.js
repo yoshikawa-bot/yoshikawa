@@ -70,42 +70,33 @@ export default function Home() {
       if (!bubbleRef.current) return
 
       const bubble = bubbleRef.current
-
-      if (searchActive) {
-        bubble.style.opacity = '0'
-        bubble.style.pointerEvents = 'none'
-        return
-      }
-
       const activeItem = document.querySelector('.nav-item.active')
       const navBar = document.querySelector('.main-nav-bar')
 
-      if (activeItem && navBar) {
-        const navRect = navBar.getBoundingClientRect()
-        const itemRect = activeItem.getBoundingClientRect()
-
-        // Tamanhos responsivos da bolha
-        let bubbleWidth = 140
-        let bubbleHeight = 60
-        if (window.innerWidth <= 768) {
-          bubbleWidth = 120
-          bubbleHeight = 55
-        }
-        if (window.innerWidth <= 480) {
-          bubbleWidth = 110
-          bubbleHeight = 50
-        }
-
-        const left = (itemRect.left - navRect.left) + (itemRect.width / 2) - (bubbleWidth / 2)
-        const top = (itemRect.top - navRect.top) + (itemRect.height / 2) - (bubbleHeight / 2)
-
-        bubble.style.width = `${bubbleWidth}px`
-        bubble.style.height = `${bubbleHeight}px`
-        bubble.style.left = `${left}px`
-        bubble.style.top = `${top}px`
-        bubble.style.opacity = '1'
-        bubble.style.pointerEvents = 'none'
+      if (searchActive || !activeItem || !navBar) {
+        bubble.style.opacity = '0'
+        return
       }
+
+      const navRect = navBar.getBoundingClientRect()
+      const itemRect = activeItem.getBoundingClientRect()
+      const navHeight = navRect.height
+
+      // Overflow sutil: ~1-2px top/bottom, ~8-10px lateral total (não invade vizinhos)
+      const overflowVertical = 4   // total extra vertical (2px cada lado)
+      const overflowHorizontal = window.innerWidth > 768 ? 16 : 10  // total extra horizontal
+
+      const bubbleWidth = itemRect.width + overflowHorizontal
+      const bubbleHeight = navHeight + overflowVertical
+
+      const left = (itemRect.left - navRect.left) + (itemRect.width / 2) - (bubbleWidth / 2)
+      const top = - (overflowVertical / 2)  // centralizado com overflow simétrico
+
+      bubble.style.width = `${bubbleWidth}px`
+      bubble.style.height = `${bubbleHeight}px`
+      bubble.style.left = `${left}px`
+      bubble.style.top = `${top}px`
+      bubble.style.opacity = '1'
     }
 
     updateBubblePosition()
@@ -436,9 +427,9 @@ export default function Home() {
 
       <div className="bottom-nav-container">
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
+          <div ref={bubbleRef} className="active-bubble" />
           {!searchActive ? (
             <>
-              <div ref={bubbleRef} className="active-bubble" />
               <button 
                 className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
                 onClick={() => setActiveSection('releases')}
@@ -470,7 +461,7 @@ export default function Home() {
                 placeholder="Pesquisar..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onKeyPress={handleKeyPress}
+                onKeyDown={(e) => { if (e.key === 'Enter') debouncedSearch(searchQuery) }}
               />
             </div>
           )}
@@ -478,7 +469,7 @@ export default function Home() {
         
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
-          onClick={() => setSearchActive(!searchActive)}
+          onClick={() => setSearchActive(prev => !prev)}
         >
           <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
@@ -611,12 +602,6 @@ export default function Home() {
           padding: 0.2rem 0.5rem;
           border-radius: 12px;
           font-weight: 500;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
         }
 
         .container {
@@ -792,7 +777,6 @@ export default function Home() {
           align-items: center;
           height: 70px;
           flex-grow: 1;
-          overflow: hidden;
           padding: 0 10px;
           position: relative;
           transition: all 0.4s ease;
@@ -828,8 +812,6 @@ export default function Home() {
 
         .active-bubble {
           position: absolute;
-          width: 140px;
-          height: 60px;
           background: rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(24px) saturate(180%);
           border: 1px solid rgba(255, 255, 255, 0.18);
@@ -1172,4 +1154,4 @@ const Header = () => {
       </div>
     </header>
   )
-                          }
+}
