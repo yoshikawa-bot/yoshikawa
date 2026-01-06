@@ -27,19 +27,16 @@ export default function Home() {
   const [toasts, setToasts] = useState([])
 
   const searchInputRef = useRef(null)
-  const bubbleRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-  // Sistema de Toast Notifications (Modificado para não acumular)
+  // Sistema de Toast Notifications
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const toast = { id, message, type }
-    
     setToasts([toast])
-    
     setTimeout(() => {
       removeToast(id)
     }, 3000)
@@ -64,48 +61,6 @@ export default function Home() {
     }
   }, [searchActive])
   
-  // Posicionamento fluido da bolha indicadora
-  useEffect(() => {
-    const updateBubblePosition = () => {
-      if (!bubbleRef.current) return
-
-      const bubble = bubbleRef.current
-      const activeItem = document.querySelector('.nav-item.active')
-      const navBar = document.querySelector('.main-nav-bar')
-
-      if (searchActive || !activeItem || !navBar) {
-        bubble.style.opacity = '0'
-        return
-      }
-
-      const navRect = navBar.getBoundingClientRect()
-      const itemRect = activeItem.getBoundingClientRect()
-      const navHeight = navRect.height
-
-      // Overflow controlado: ~3px top/bottom, ~20-30px lateral total (não invade vizinhos)
-      const overflowVertical = 6    // total extra vertical
-      const overflowHorizontal = window.innerWidth > 768 ? 30 : 20  // total extra horizontal
-
-      const bubbleWidth = itemRect.width + overflowHorizontal
-      const bubbleHeight = navHeight + overflowVertical
-
-      const left = (itemRect.left - navRect.left) + (itemRect.width / 2) - (bubbleWidth / 2)
-      const top = - (overflowVertical / 2)
-
-      bubble.style.width = `${bubbleWidth}px`
-      bubble.style.height = `${bubbleHeight}px`
-      bubble.style.left = `${left}px`
-      bubble.style.top = `${top}px`
-      bubble.style.opacity = '1'
-    }
-
-    updateBubblePosition()
-    window.addEventListener('resize', updateBubblePosition)
-
-    return () => window.removeEventListener('resize', updateBubblePosition)
-  }, [activeSection, searchActive])
-
-  // Função central de busca
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -156,7 +111,6 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // --- Funções de Carregamento de Conteúdo ---
   const loadHomeContent = async () => { 
     try {
       const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
@@ -243,6 +197,24 @@ export default function Home() {
     })
   }
   
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        debouncedSearch(query)
+      } else {
+        setSearchResults([])
+        showToast('Digite algo para pesquisar', 'info')
+      }
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit()
+    }
+  }
+
   const getActiveItems = () => {
     switch (activeSection) {
       case 'releases':
@@ -256,20 +228,20 @@ export default function Home() {
     }
   }
   
-  const getActiveSectionTitle = () => {
+  const getActiveSectionDetails = () => {
     switch (activeSection) {
       case 'releases':
-        return 'Lançamentos'
+        return { title: 'Lançamentos' }
       case 'recommendations':
-        return 'Populares'
+        return { title: 'Populares' }
       case 'favorites':
-        return 'Favoritos'
+        return { title: 'Favoritos' }
       default:
-        return 'Conteúdo'
+        return { title: 'Conteúdo' }
     }
   }
   
-  const pageTitle = getActiveSectionTitle()
+  const { title: pageTitle } = getActiveSectionDetails()
 
   // --- Componentes ---
 
@@ -345,13 +317,13 @@ export default function Home() {
         ) : (!loading && searchQuery.trim() !== '' && (
             <div className="no-results-live">
                 <i className="fas fa-ghost"></i>
-                <p>Nenhum resultado encontrado para "{searchQuery}".</p>
+                <p>Nenhum resultado encontrado.</p>
             </div>
         ))}
         
         {!loading && searchQuery.trim() === '' && (
             <div className="no-results-live">
-                <p>Comece a digitar para pesquisar...</p>
+                <p>Digite para pesquisar...</p>
             </div>
         )}
       </div>
@@ -364,6 +336,7 @@ export default function Home() {
         <div 
           key={toast.id} 
           className={`toast toast-${toast.type} show`}
+          style={{ animation: 'toast-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}
         >
           <div className="toast-icon">
             <i className={`fas ${
@@ -373,23 +346,15 @@ export default function Home() {
             }`}></i>
           </div>
           <div className="toast-content">{toast.message}</div>
-          <button 
-            className="toast-close"
-            onClick={() => removeToast(toast.id)}
-          >
-            <i className="fas fa-times"></i>
-          </button>
         </div>
       ))}
     </div>
   )
   
-
   return (
     <>
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="description" content="Yoshikawa Streaming Player" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -404,7 +369,7 @@ export default function Home() {
         {loading && !searchActive && (
           <div className="loading active">
             <div className="spinner"></div>
-            <p>Carregando conteúdo...</p>
+            <p>Carregando...</p>
           </div>
         )}
 
@@ -412,6 +377,7 @@ export default function Home() {
             <LiveSearchResults />
         ) : (
             <div className="home-sections">
+                {/* Ícone removido do título conforme solicitado */}
                 <h1 className="page-title-home">{pageTitle}</h1>
                 <section className="section">
                     <ContentGrid 
@@ -427,30 +393,29 @@ export default function Home() {
 
       <div className="bottom-nav-container">
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-          <div ref={bubbleRef} className="active-bubble" />
           {!searchActive ? (
             <>
-              <button 
-                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                onClick={() => setActiveSection('releases')}
-              >
-                <i className="fas fa-film"></i>
-                <span>Lançamentos</span>
-              </button>
-              <button 
-                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                onClick={() => setActiveSection('recommendations')}
-              >
-                <i className="fas fa-fire"></i>
-                <span>Populares</span>
-              </button>
-              <button 
-                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                onClick={() => setActiveSection('favorites')}
-              >
-                <i className="fas fa-heart"></i>
-                <span>Favoritos</span>
-              </button>
+              {['releases', 'recommendations', 'favorites'].map((section) => (
+                <button 
+                  key={section}
+                  className={`nav-item ${activeSection === section ? 'active' : ''}`}
+                  onClick={() => setActiveSection(section)}
+                >
+                  {/* Bolha Ativa - Efeito Glass */}
+                  {activeSection === section && (
+                    <div className="nav-active-bubble"></div>
+                  )}
+                  
+                  <i className={`fas ${
+                    section === 'releases' ? 'fa-film' : 
+                    section === 'recommendations' ? 'fa-fire' : 'fa-heart'
+                  }`}></i>
+                  <span>
+                    {section === 'releases' ? 'Lançamentos' : 
+                     section === 'recommendations' ? 'Populares' : 'Favoritos'}
+                  </span>
+                </button>
+              ))}
             </>
           ) : (
             <div className="search-input-container">
@@ -461,7 +426,7 @@ export default function Home() {
                 placeholder="Pesquisar..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onKeyDown={(e) => { if (e.key === 'Enter') debouncedSearch(searchQuery) }}
+                onKeyPress={handleKeyPress}
               />
             </div>
           )}
@@ -469,7 +434,7 @@ export default function Home() {
         
         <button 
           className={`search-circle ${searchActive ? 'active' : ''}`}
-          onClick={() => setSearchActive(prev => !prev)}
+          onClick={() => setSearchActive(!searchActive)}
         >
           <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
@@ -477,77 +442,57 @@ export default function Home() {
 
       <style jsx global>{`
         :root {
+          /* Nova Cor Primária E90039 */
           --primary: #E90039;
-          --primary-dark: #c80032;
+          --primary-dark: #b8002e;
           --secondary: #94a3b8;
           --accent: #4dabf7;
-          --accent-dark: #339af0;
           
-          --dark: #f1f5f9;
-          --light: #0f172a;
-          --border: rgba(255, 255, 255, 0.12);
-          --card-bg: rgba(0, 0, 0, 0.25);
-          --text: #f1f5f9;
-          --bg: transparent;
-          --header-bg: rgba(0, 0, 0, 0.25);
-          --header-border: rgba(255, 255, 255, 0.12);
-          --header-text: #f0f6fc;
+          --dark: #000000;
+          --card-bg: #111111; /* Cor sólida para performance */
+          --text: #ffffff;
+          --header-bg: rgba(20, 20, 20, 0.6);
+          --header-border: rgba(255, 255, 255, 0.1);
+          
+          --popup-bg: rgba(30, 30, 30, 0.85);
           --success: #10b981;
           --error: #ef4444;
-          --overlay-bg: rgba(0, 0, 0, 0.5);
-          --highlight: rgba(255, 255, 255, 0.15);
-          
-          --popup-bg: rgba(255, 255, 255, 0.1);
-          --popup-border: rgba(255, 255, 255, 0.3);
-          --option-bg: rgba(0, 0, 0, 0.15);
+          --overlay-bg: rgba(0, 0, 0, 0.8);
         }
 
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
+          /* Transições Globais mais fluidas */
+          transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         body {
           font-family: 'Inter', Arial, sans-serif;
-          background: #000 fixed;
+          /* Fundo preto absoluto */
+          background-color: #000000;
+          background-image: none;
           color: var(--text);
           line-height: 1.6;
-          font-size: 16px;
           min-height: 100vh;
-          position: relative;
           overflow-y: auto;
         }
 
+        /* Efeito de Vidro Real (Navbar e Header) */
+        .glass-effect {
+             backdrop-filter: blur(20px) saturate(180%) contrast(1.05);
+             -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(1.05);
+        }
+
         .github-header {
-          background-color: transparent;
+          background-color: rgba(0,0,0,0.3);
           border-bottom: 1px solid var(--header-border);
           padding: 0.75rem 0;
           position: sticky;
           top: 0;
           z-index: 100;
-        }
-
-        .github-header::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          backdrop-filter: blur(16px) saturate(150%);
-          z-index: -1;
-        }
-
-        .github-header::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: var(--header-bg);
-          z-index: -1;
+          backdrop-filter: blur(20px) saturate(180%);
         }
 
         .header-content {
@@ -555,187 +500,139 @@ export default function Home() {
           margin: 0 auto;
           padding: 0 1.5rem;
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: center;
-          gap: 1rem;
-          position: relative;
         }
 
         .logo-container {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          flex-shrink: 0;
-          cursor: pointer;
           text-decoration: none;
         }
 
         .logo-image {
           width: 32px;
           height: 32px;
-          border-radius: 6px;
-          object-fit: cover;
-          flex-shrink: 0;
-          transition: all 0.3s;
-        }
-
-        .logo-image:hover {
-          transform: scale(1.05);
-        }
-
-        .logo-text {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
+          border-radius: 8px;
         }
 
         .logo-name {
           font-size: 1.2rem;
-          font-weight: 600;
-          color: var(--header-text);
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.5px;
         }
 
         .beta-tag {
           background: var(--primary);
           color: white;
-          font-size: 0.7rem;
-          padding: 0.2rem 0.5rem;
+          font-size: 0.65rem;
+          padding: 0.2rem 0.6rem;
           border-radius: 12px;
-          font-weight: 500;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .container {
           max-width: 1280px;
           margin: 0 auto;
           padding: 1.5rem;
-          min-height: calc(100vh - 80px);
-          padding: 0 16px 100px 16px;
-          width: 100%;
-        }
-
-        .home-sections {
-          display: block;
-          width: 100%;
-          max-width: 1280px;
-          margin: auto;
           padding-bottom: 7rem;
         }
 
-        .section {
-          margin-bottom: 2rem;
-        }
-
         .page-title-home {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--text);
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
             margin-bottom: 1.5rem;
-            margin-top: 20px;
             padding-top: 1rem;
+            letter-spacing: -1px;
         }
 
         .content-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-          gap: 12px;
-          padding: 0;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 16px;
           width: 100%;
         }
 
-        @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
-        }
-
+        /* CARD OTIMIZADO - SEM GLASS BACKGROUND */
         .content-card {
           background-color: var(--card-bg);
-          border-radius: 15px;
+          border-radius: 16px;
           overflow: hidden;
-          transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                      box-shadow 0.45s ease;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
           cursor: pointer;
-          border: 1px solid var(--border);
+          border: 1px solid #222; /* Borda sutil em vez de vidro */
           position: relative;
           text-decoration: none;
           color: inherit;
-          aspect-ratio: 2/3;
+          /* backdrop-filter removido para performance */
         }
 
         .content-card:hover {
-          transform: translateY(-8px);
+          transform: scale(1.03);
           border-color: var(--primary);
-          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 10px 30px rgba(233, 0, 57, 0.2);
+          z-index: 2;
         }
 
         .content-poster {
           width: 100%;
-          height: 100%;
+          aspect-ratio: 2/3;
           object-fit: cover;
           display: block;
-          border-radius: 15px;
+          background: #222;
         }
 
         .floating-text-wrapper {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 12px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
             z-index: 5;
-            color: white;
-            line-height: 1.2;
-            font-size: 0.95rem;
         }
 
-        .floating-text-wrapper .content-title-card {
-            display: block;
-            padding: 4px 7px;
-            background-color: rgba(0, 0, 0, 0.85);
-            box-decoration-break: clone;
-            -webkit-box-decoration-break: clone;
+        .content-title-card {
             font-weight: 600;
-            font-size: 1rem;
-            white-space: normal;
-            width: fit-content;
-            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        .floating-text-wrapper .content-year {
-            display: block;
-            padding: 4px 7px;
-            background-color: rgba(0, 0, 0, 0.85);
-            box-decoration-break: clone;
-            -webkit-box-decoration-break: clone;
-            font-size: 0.85rem;
-            color: white;
-            opacity: 0.9;
-            font-weight: 500;
-            margin-top: 3px;
-            width: fit-content;
-            border-radius: 4px;
+        .content-year {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            margin-top: 2px;
         }
 
         .favorite-btn {
           position: absolute;
-          top: 8px;
-          right: 8px;
-          background: rgba(0, 0, 0, 0.7);
+          top: 10px;
+          right: 10px;
+          background: rgba(0, 0, 0, 0.6);
           border: none;
           border-radius: 50%;
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           color: white;
           cursor: pointer;
           display: flex;
           justify-content: center;
           align-items: center;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           z-index: 10;
+          backdrop-filter: blur(4px);
+          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .favorite-btn:hover {
-          background: rgba(233, 0, 57, 0.9);
-          transform: scale(1.1);
+            transform: scale(1.15);
         }
 
         .favorite-btn.active {
@@ -743,104 +640,35 @@ export default function Home() {
           color: white;
         }
 
-        .favorite-btn.active i {
-          animation: heart-pop 0.5s;
-        }
-
-        @keyframes heart-pop {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.3); }
-          100% { transform: scale(1); }
-        }
-
-        /* Bottom Navigation - Mais larga e proporção rigorosa */
+        /* ===== BOTTOM NAVIGATION ===== */
         .bottom-nav-container {
           position: fixed;
-          bottom: 25px;
+          bottom: 30px;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
           align-items: center;
-          width: 95%; /* Mais larga, como original */
-          gap: 16px;
+          max-width: 500px;
+          width: 90%;
+          gap: 15px;
           z-index: 1000;
         }
 
         .main-nav-bar {
-          background-color: transparent;
-          border: 1px solid var(--header-border); /* Borda mais fina */
-          border-radius: 40px;
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+          background-color: rgba(10, 10, 10, 0.75); /* Escuro, semitransparente */
+          border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(25px) saturate(200%) contrast(1.1); /* Efeito Vidro Real */
+          -webkit-backdrop-filter: blur(25px) saturate(200%) contrast(1.1);
+          border-radius: 100px;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
           display: flex;
-          justify-content: space-around;
+          justify-content: space-between;
           align-items: center;
-          height: 70px;
+          height: 75px;
           flex-grow: 1;
-          padding: 0 12px;
-          position: relative;
-          transition: all 0.4s ease;
-        }
-
-        .main-nav-bar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(16px) saturate(150%);
-            z-index: -1;
-        }
-
-        .main-nav-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--header-bg);
-            border-radius: 40px;
-            z-index: -1;
-        }
-
-        .main-nav-bar.search-active {
-          justify-content: flex-start;
           padding: 0 15px;
-        }
-
-        /* Bolha ativa - Pilula gorda, independente, na frente dos ícones, com overflow controlado */
-        .active-bubble {
-          position: absolute;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(24px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 35px; /* Pilula gorda, menos redonda */
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-          z-index: 2; /* Na frente dos ícones */
-          pointer-events: none;
-          opacity: 0;
-          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .active-bubble::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 35px;
-          background: linear-gradient(135deg, rgba(233, 0, 57, 0.15), transparent 70%);
-          pointer-events: none;
-        }
-
-        .active-bubble::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
-          mix-blend-mode: overlay;
-          opacity: 0.3;
-          pointer-events: none;
+          position: relative;
+          transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .nav-item {
@@ -849,185 +677,221 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           flex: 1;
-          color: var(--secondary);
-          font-size: 12px;
-          font-weight: 500;
-          padding: 5px 0;
-          transition: all 0.3s ease;
-          cursor: pointer;
-          border: none;
           background: none;
-          position: relative;
+          border: none;
+          cursor: pointer;
+          position: relative; /* Necessário para posicionar a bolha */
           height: 100%;
-          z-index: 1; /* Atrás da bolha */
-        }
-
-        .nav-item span {
-          display: none;
+          color: #888;
+          transition: color 0.3s ease;
+          z-index: 1;
         }
 
         .nav-item i {
-          font-size: 26px;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          color: var(--text);
+            font-size: 24px;
+            z-index: 2; /* Fica na frente da bolha */
+            position: relative;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .nav-item:hover i {
-            transform: scale(1.15);
-            color: var(--primary);
+        .nav-item span {
+            display: none;
         }
 
+        .nav-item.active {
+            color: #fff; /* Ícone branco quando ativo para contraste */
+        }
+        
         .nav-item.active i {
-          color: var(--primary);
+            transform: scale(1.1) translateY(-2px);
         }
 
-        /* Search circle - Mesma altura/proporção da navbar */
+        /* === A BOLHA GORDA DE VIDRO === */
+        .nav-active-bubble {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%; /* Ultrapassa os limites laterais do item */
+            height: 55px; /* Altura "gorda" */
+            border-radius: 35px;
+            
+            /* Efeito de Vidro na Bolha */
+            background: rgba(233, 0, 57, 0.25); /* Vermelho translúcido */
+            box-shadow: 0 8px 32px rgba(233, 0, 57, 0.15);
+            backdrop-filter: blur(12px) saturate(150%);
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            
+            z-index: 0; /* Atrás do ícone */
+            pointer-events: none;
+            
+            /* Animação de entrada fluida */
+            animation: bubble-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes bubble-enter {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* Search Circle */
         .search-circle {
-          background-color: transparent;
-          border: 1px solid var(--header-border); /* Borda fina igual à navbar */
+          background-color: rgba(20, 20, 20, 0.6);
+          border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(20px) saturate(180%);
           border-radius: 50%;
-          width: 70px;
-          height: 70px;
+          width: 75px;
+          height: 75px;
           display: flex;
           justify-content: center;
           align-items: center;
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
           flex-shrink: 0;
           cursor: pointer;
-          color: var(--text);
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          position: relative;
-        }
-
-        .search-circle::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--header-bg);
-            border-radius: 50%;
-            backdrop-filter: blur(16px) saturate(150%);
-            z-index: -1;
+          color: white;
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .search-circle:hover {
           background-color: var(--primary);
-          color: white;
           border-color: var(--primary);
+          transform: scale(1.05);
         }
 
         .search-circle.active {
           background-color: var(--primary);
           border-color: var(--primary);
-          color: white;
+          transform: rotate(90deg);
         }
 
         .search-circle i {
-          font-size: 32px;
-          z-index: 1;
+            font-size: 28px;
         }
 
+        /* Search Input */
         .search-input-container {
-          position: relative;
-          flex: 1;
-          display: flex;
-          align-items: center;
-          height: 100%;
-          padding: 0 15px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
 
         .search-input-expanded {
-          background: transparent;
-          border: none;
-          color: var(--text);
-          font-size: 16px;
-          width: 100%;
-          padding: 0;
-          outline: none;
-          font-family: 'Inter', sans-serif;
-        }
-
-        .search-input-expanded::placeholder {
-          color: var(--text);
-          opacity: 0.7;
-        }
-
-        /* Responsividade - Mantém proporção */
-        @media (max-width: 768px) {
-          .bottom-nav-container {
-            bottom: 20px;
-            gap: 12px;
-            width: 96%;
-          }
-          
-          .main-nav-bar {
-            height: 66px;
-            border-radius: 36px;
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 500;
+            outline: none;
             padding: 0 10px;
-          }
-          
-          .search-circle {
-            width: 66px;
-            height: 66px;
-          }
-          
-          .search-circle i {
-            font-size: 29px;
-          }
-
-          .nav-item i {
-            font-size: 24px;
-          }
-
-          .toast-container {
-            bottom: 110px;
-          }
+        }
+        
+        .search-input-expanded::placeholder {
+            color: rgba(255,255,255,0.4);
         }
 
-        @media (max-width: 480px) {
-          .bottom-nav-container {
-            gap: 10px;
-          }
-          
-          .main-nav-bar {
-            height: 62px;
-            border-radius: 34px;
-          }
-          
-          .search-circle {
-            width: 62px;
-            height: 62px;
-          }
-          
-          .search-circle i {
-            font-size: 27px;
-          }
+        .main-nav-bar.search-active {
+            padding: 0 20px;
+        }
 
-          .toast-container {
-            bottom: 100px;
-            max-width: 300px;
-          }
+        /* Loading */
+        .loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-top: 50px;
+        }
+        
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255,255,255,0.1);
+          border-top-color: var(--primary);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast Notification */
+        .toast-container {
+            position: fixed;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .toast-icon {
+            color: var(--primary);
+        }
+
+        /* Responsividade Mobile */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .bottom-nav-container {
+                bottom: 15px;
+                width: 95%;
+                gap: 10px;
+            }
+
+            .main-nav-bar {
+                height: 65px;
+            }
+
+            .search-circle {
+                width: 65px;
+                height: 65px;
+            }
+            
+            .nav-active-bubble {
+                width: 120%; /* Um pouco menor no mobile */
+                height: 45px;
+            }
         }
       `}</style>
     </>
   )
 }
 
-const Header = () => {
-  return (
-    <header className="github-header">
-      <div className="header-content">
-        <Link href="/" className="logo-container">
-          <img 
-            src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
-            alt="Yoshikawa Bot" 
-            className="logo-image"
-          />
-          <div className="logo-text">
-            <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
-          </div>
-        </Link>
-      </div>
-    </header>
-  )
-}
+// Header Simples
+const Header = () => (
+  <header className="github-header">
+    <div className="header-content">
+      <Link href="/" className="logo-container">
+        <img 
+          src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
+          alt="Yoshikawa" 
+          className="logo-image"
+        />
+        <span className="logo-name">Yoshikawa</span>
+        <span className="beta-tag">STREAMING</span>
+      </Link>
+    </div>
+  </header>
+)
