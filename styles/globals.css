@@ -449,7 +449,7 @@ body::before {
   align-items: center;
   height: 70px;
   flex-grow: 1;
-  overflow: visible; /* Alterado de hidden para visible para permitir que a bolha saia pelas laterais nas bordas */
+  overflow: hidden;
   padding: 0 10px;
   position: relative;
   transition: all 0.3s ease;
@@ -525,8 +525,6 @@ body::before {
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   color: var(--text);
-  position: relative;
-  z-index: 2; /* Garante que o ícone fique acima da bolha indicadora */
 }
 
 .nav-item:hover i {
@@ -545,31 +543,6 @@ body::before {
 .nav-item.active i {
   color: var(--primary);
   transform: none;
-}
-
-/* Bolha indicadora (adicione <div class="nav-indicator"></div> dentro da .main-nav-bar no HTML) */
-.nav-indicator {
-  position: absolute;
-  top: -10px; /* Sai 10px para cima */
-  height: calc(100% + 20px); /* Altura maior que a navbar para sair 10px para baixo também */
-  width: 100px; /* Largura gorda para formato de cápsula horizontal */
-  background: rgba(255, 107, 107, 0.25); /* Tinturado com primary, mais visível */
-  backdrop-filter: blur(20px); /* Blur mais forte que o da navbar (10px) */
-  filter: saturate(180%) brightness(1.3); /* Efeito de vidro diferente/more intenso */
-  border-radius: 50px; /* Cantos bem arredondados para cápsula */
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4); /* Glow sutil com cor primary */
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); /* Transição suave e levemente bouncy */
-  pointer-events: none;
-  z-index: 0; /* Fica atrás dos ícones */
-  left: 0;
-  transform: translateX(0);
-}
-
-/* Esconde a bolha quando a barra está no modo busca ou reprodução (se necessário) */
-.main-nav-bar.search-active .nav-indicator {
-  opacity: 0;
-  transform: translateX(0) scale(0.8);
 }
 
 .bottom-nav-container.reproduction-mode .main-nav-bar {
@@ -1539,4 +1512,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  }
+}
