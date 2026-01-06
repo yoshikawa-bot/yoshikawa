@@ -1,27 +1,27 @@
 :root {
-  --primary: #ff6b6b;
-  --primary-dark: #e05555;
-  --secondary: #94a3b8;
+  --primary: #E90039;
+  --primary-dark: #c80030;
+  --secondary: #6b7280;
   --accent: #4dabf7;
   --accent-dark: #339af0;
   
-  --dark: #f1f5f9;
-  --light: #0f172a;
-  --border: rgba(255, 255, 255, 0.15);
-  --card-bg: rgba(0, 0, 0, 0.25);
-  --text: #f1f5f9;
-  --bg: transparent;
-  --header-bg: rgba(0, 0, 0, 0.25);
-  --header-border: rgba(255, 255, 255, 0.15);
-  --header-text: #f0f6fc;
+  --dark: #1e293b;
+  --light: #f8fafc;
+  --border: rgba(0, 0, 0, 0.12);
+  --card-bg: rgba(250, 251, 252, 0.95);
+  --text: #1e293b;
+  --bg: #ffffff;
+  --header-bg: rgba(250, 251, 252, 0.95);
+  --header-border: rgba(0, 0, 0, 0.12);
+  --header-text: #1e293b;
   --success: #10b981;
   --error: #ef4444;
   --overlay-bg: rgba(0, 0, 0, 0.5);
-  --highlight: rgba(255, 255, 255, 0.15);
+  --highlight: rgba(0, 0, 0, 0.08);
   
-  --popup-bg: rgba(255, 255, 255, 0.1);
-  --popup-border: rgba(255, 255, 255, 0.3);
-  --option-bg: rgba(0, 0, 0, 0.15);
+  --popup-bg: rgba(255, 255, 255, 0.98);
+  --popup-border: rgba(0, 0, 0, 0.2);
+  --option-bg: rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -32,25 +32,12 @@
 
 body {
   font-family: 'Inter', Arial, sans-serif;
-  background: url('https://yoshikawa-bot.github.io/cache/images/2926e9b3.jpg') no-repeat center/cover fixed;
+  background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   font-size: 16px;
   min-height: 100vh;
-  position: relative;
   overflow-y: auto;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  min-height: 100vh;
-  height: auto;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: -1;
 }
 
 .github-header {
@@ -69,8 +56,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  backdrop-filter: blur(12px);
   z-index: -1;
 }
 
@@ -111,7 +97,7 @@ body::before {
   border-radius: 6px;
   object-fit: cover;
   flex-shrink: 0;
-  transition: all 0.3s;
+  transition: transform 0.35s ease;
 }
 
 .logo-image:hover {
@@ -218,7 +204,7 @@ body::before {
 }
 
 .content-row::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
   margin: 0 10px;
 }
@@ -226,37 +212,33 @@ body::before {
 .content-row::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .content-row::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--primary-dark), var(--accent-dark));
 }
 
-.content-row {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary) transparent;
-}
-
 .content-card {
   background-color: var(--card-bg);
   border-radius: 15px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
   cursor: pointer;
   border: 1px solid var(--border);
   position: relative;
   text-decoration: none;
   color: inherit;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   aspect-ratio: 2/3;
+  will-change: transform;
 }
 
 .content-card:hover {
   transform: translateY(-5px);
   border-color: var(--primary);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .content-poster {
@@ -308,7 +290,6 @@ body::before {
     white-space: normal;
     width: fit-content;
     border-radius: 4px;
-    text-shadow: none;
 }
 
 .floating-text-wrapper .content-year {
@@ -324,7 +305,6 @@ body::before {
     margin-top: 3px;
     width: fit-content;
     border-radius: 4px;
-    text-shadow: none;
 }
 
 .content-text-meta {
@@ -358,13 +338,13 @@ body::before {
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: background 0.35s ease, transform 0.35s ease;
   z-index: 10;
   backdrop-filter: blur(5px);
 }
 
 .favorite-btn:not(#headerFavoriteBtn):hover {
-  background: rgba(255, 107, 107, 0.9);
+  background: var(--primary);
   transform: scale(1.1);
 }
 
@@ -409,14 +389,15 @@ body::before {
   padding: 0.5rem 1rem;
   color: var(--text);
   cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  transition: background 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+  backdrop-filter: blur(12px);
   font-size: 0.9rem;
 }
 
 .clear-search-btn:hover {
   background: var(--primary);
   border-color: var(--primary);
+  color: white;
   transform: translateY(-2px);
 }
 
@@ -425,7 +406,6 @@ body::before {
   background: var(--primary-dark);
 }
 
-/* ===== BOTTOM NAVIGATION ORIGINAL ===== */
 .bottom-nav-container {
   position: fixed;
   bottom: 25px;
@@ -443,7 +423,7 @@ body::before {
   background-color: transparent;
   border: 2px solid var(--header-border);
   border-radius: 40px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -452,7 +432,7 @@ body::before {
   overflow: hidden;
   padding: 0 10px;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
 }
 
 .main-nav-bar.search-active {
@@ -467,8 +447,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    backdrop-filter: blur(10px);
-    filter: saturate(120%) brightness(1.15);
+    backdrop-filter: blur(12px);
     z-index: -1;
 }
 
@@ -494,16 +473,14 @@ body::before {
   font-size: 12px;
   font-weight: 500;
   padding: 5px 0;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   cursor: pointer;
   border: none;
   background: none;
   position: relative;
   height: 100%;
-  justify-content: center;
   opacity: 1;
   transform: scale(1);
-  transition: all 0.3s ease;
   text-decoration: none;
 }
 
@@ -523,7 +500,7 @@ body::before {
 .nav-item i {
   font-size: 26px;
   margin-bottom: 0;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: color 0.35s ease, transform 0.35s ease;
   color: var(--text);
 }
 
@@ -536,13 +513,8 @@ body::before {
   transform: scale(0.95);
 }
 
-.nav-item.active {
-  color: initial;
-}
-
 .nav-item.active i {
   color: var(--primary);
-  transform: none;
 }
 
 .bottom-nav-container.reproduction-mode .main-nav-bar {
@@ -568,19 +540,18 @@ body::before {
 .search-circle {
   background-color: transparent;
   border: 2px solid var(--header-border);
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  backdrop-filter: blur(12px);
   border-radius: 50%;
   width: 70px;
   height: 70px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   position: relative;
   opacity: 1;
   transform: scale(1);
@@ -598,7 +569,7 @@ body::before {
 
 .search-circle:hover {
   background-color: var(--primary);
-  color: var(--text);
+  color: white;
   border-color: var(--primary);
 }
 
@@ -618,7 +589,6 @@ body::before {
   z-index: 1;
 }
 
-/* O botão da lupa NÃO some mais quando a search está ativa */
 .main-nav-bar.search-active + .search-circle {
   opacity: 1;
   transform: scale(1);
@@ -631,23 +601,21 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== PLAYER CIRCLE (PARA PÁGINAS DE STREAMING) ===== */
 .player-circle {
   background-color: transparent;
   border: 2px solid var(--header-border);
-  backdrop-filter: blur(10px);
-  filter: saturate(120%) brightness(1.15);
+  backdrop-filter: blur(12px);
   border-radius: 50%;
   width: 70px;
   height: 70px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
   cursor: pointer;
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   position: relative;
   opacity: 1;
   transform: scale(1);
@@ -665,7 +633,7 @@ body::before {
 
 .player-circle:hover {
   background-color: var(--primary);
-  color: var(--text);
+  color: white;
   border-color: var(--primary);
 }
 
@@ -679,7 +647,6 @@ body::before {
   z-index: 2;
 }
 
-/* ===== NOVA BARRA DE PESQUISA ===== */
 .search-input-container {
   position: relative;
   flex: 1;
@@ -720,7 +687,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   z-index: 2;
   font-size: 1.3rem;
 }
@@ -734,7 +701,6 @@ body::before {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Remover search container antigo */
 .search-container,
 .search-form,
 .search-input,
@@ -757,7 +723,7 @@ body::before {
 }
 
 .spinner {
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(0, 0, 0, 0.1);
   border-top: 3px solid var(--primary);
   border-radius: 50%;
   width: 40px;
@@ -771,7 +737,6 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== PÁGINAS DE STREAMING ===== */
 .streaming-container {
   max-width: 1280px;
   margin: 0 auto;
@@ -786,7 +751,7 @@ body::before {
   overflow: hidden;
   margin-bottom: 1.5rem;
   border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   position: relative;
 }
 
@@ -813,7 +778,7 @@ body::before {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
 }
 
 .content-title-streaming {
@@ -845,7 +810,6 @@ body::before {
   margin-bottom: 1rem;
 }
 
-/* ===== SELETOR DE TEMPORADA/EPISÓDIO ===== */
 .episode-selector-streaming {
   display: none;
   gap: 1rem;
@@ -871,14 +835,14 @@ body::before {
 }
 
 .selector-select-streaming {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border);
   border-radius: 25px;
   padding: 0.5rem 0.75rem;
   color: var(--text);
   width: 140px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  transition: all 0.35s ease;
+  backdrop-filter: blur(12px);
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -888,7 +852,6 @@ body::before {
   border-color: var(--primary);
 }
 
-/* ===== PLAYER SELECTOR BUBBLE ===== */
 .player-selector-overlay {
   position: fixed;
   top: 0;
@@ -902,7 +865,7 @@ body::before {
   align-items: center;
   backdrop-filter: blur(5px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
 .player-selector-overlay.active {
@@ -918,10 +881,10 @@ body::before {
   max-width: 320px;
   width: 90%;
   backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  transform: scale(0.8);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: scale(0.9);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
 }
 
 .player-selector-bubble.active {
@@ -945,7 +908,7 @@ body::before {
   border: 1px solid var(--border);
   border-radius: 15px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   color: var(--text);
 }
 
@@ -1012,7 +975,6 @@ body::before {
   color: white;
 }
 
-/* ===== INFO POPUP COMPACTO ===== */
 .info-popup-overlay {
   position: fixed;
   top: 0;
@@ -1027,7 +989,7 @@ body::before {
   padding: 1rem;
   backdrop-filter: blur(5px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
 .info-popup-overlay.active {
@@ -1045,8 +1007,8 @@ body::before {
   max-height: 80vh;
   overflow-y: auto;
   backdrop-filter: blur(15px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  transform: translateY(50px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(30px);
   opacity: 0;
   transition: all 0.4s ease;
 }
@@ -1113,7 +1075,7 @@ body::before {
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   width: 100%;
   display: flex;
   align-items: center;
@@ -1138,7 +1100,7 @@ body::before {
   border-left: 4px solid var(--error);
   margin-bottom: 2rem;
   text-align: center;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--border);
 }
 
@@ -1155,10 +1117,9 @@ body::before {
   gap: 0.5rem;
 }
 
-/* ===== TOAST NOTIFICATIONS ===== */
 .toast-container {
   position: fixed;
-  bottom: 120px; /* Aumentada a distância da navbar */
+  bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -1175,7 +1136,7 @@ body::before {
   border-radius: 12px;
   padding: 12px 16px;
   backdrop-filter: blur(15px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1236,14 +1197,13 @@ body::before {
 
 .toast-close:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .toast-close:active {
   transform: scale(0.95);
 }
 
-/* Remover as seções do tutorial antigo */
 .server-tutorial-overlay,
 .server-tutorial-content,
 .server-tutorial-icon,
@@ -1254,7 +1214,6 @@ body::before {
   display: none;
 }
 
-/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
   .bottom-nav-container {
     bottom: 20px;
@@ -1341,7 +1300,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 110px; /* Ajuste para mobile */
+    bottom: 110px;
     max-width: 350px;
   }
   
@@ -1452,7 +1411,7 @@ body::before {
   }
 
   .toast-container {
-    bottom: 100px; /* Ajuste para mobile pequeno */
+    bottom: 100px;
     max-width: 300px;
   }
   
@@ -1512,4 +1471,4 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+  }
