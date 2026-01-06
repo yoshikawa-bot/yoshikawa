@@ -727,7 +727,7 @@ export default function Home() {
             transform: translate(-50%, -50%);
             
             /* MENOS LARGA: Para não sair das bordas laterais */
-            width: 80px; 
+            width: 105px; 
             
             /* MAIS ALTA: Para ultrapassar a navbar (90px > 75px da nav) */
             height: 90px;
