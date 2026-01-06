@@ -22,13 +22,19 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Estado para controlar a seção ativa e o ÍNDICE para a animação da bolha
   const [activeSection, setActiveSection] = useState('releases')
+  const [activeIndex, setActiveIndex] = useState(0) // 0, 1, ou 2
+
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
   const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+
+  const navItems = ['releases', 'recommendations', 'favorites'];
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
@@ -60,6 +66,12 @@ export default function Home() {
         setSearchQuery('')
     }
   }, [searchActive])
+  
+  // Função auxiliar para mudar a aba e atualizar o índice para a animação
+  const handleTabChange = (section, index) => {
+    setActiveSection(section);
+    setActiveIndex(index);
+  }
   
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
@@ -394,16 +406,19 @@ export default function Home() {
         <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
           {!searchActive ? (
             <>
-              {['releases', 'recommendations', 'favorites'].map((section) => (
+              {/* A BOLHA VIAJANTE - AGORA FORA DOS BOTÕES */}
+              <div 
+                className="nav-active-bubble-traveling"
+                style={{ '--active-index': activeIndex }}
+              ></div>
+
+              {navItems.map((section, index) => (
                 <button 
                   key={section}
                   className={`nav-item ${activeSection === section ? 'active' : ''}`}
-                  onClick={() => setActiveSection(section)}
+                  onClick={() => handleTabChange(section, index)}
                 >
-                  {/* Bolha Ativa - CONFIGURADA PARA QUEBRAR LIMITES */}
-                  {activeSection === section && (
-                    <div className="nav-active-bubble"></div>
-                  )}
+                  {/* A bolha interna foi removida daqui */}
                   
                   <i className={`fas ${
                     section === 'releases' ? 'fa-film' : 
@@ -450,9 +465,9 @@ export default function Home() {
           --card-bg: #111111;
           --text: #ffffff;
           
-          /* HEADER MAIS TRANSPARENTE (0.3) */
-          --header-bg: rgba(0, 0, 0, 0.3);
-          --header-border: rgba(255, 255, 255, 0.08);
+          /* HEADER QUASE INCOLOR (Apenas brilho) */
+          --header-bg: rgba(255, 255, 255, 0.05);
+          --header-border: rgba(255, 255, 255, 0.1);
           
           --success: #10b981;
           --error: #ef4444;
@@ -467,7 +482,8 @@ export default function Home() {
 
         body {
           font-family: 'Inter', Arial, sans-serif;
-          background-color: #000000;
+          /* FUNDO CINZA SÓLIDO */
+          background-color: #121212; 
           color: var(--text);
           line-height: 1.6;
           min-height: 100vh;
@@ -481,9 +497,9 @@ export default function Home() {
           position: sticky;
           top: 0;
           z-index: 100;
-          /* Blur forte para compensar a transparência */
-          backdrop-filter: blur(25px) saturate(180%);
-          -webkit-backdrop-filter: blur(25px) saturate(180%);
+          /* Blur forte para compensar a falta de cor */
+          backdrop-filter: blur(30px) saturate(180%);
+          -webkit-backdrop-filter: blur(30px) saturate(180%);
         }
 
         .header-content {
@@ -643,24 +659,23 @@ export default function Home() {
           z-index: 1000;
         }
 
-        /* NAVBAR PRINCIPAL - MAIS TRANSPARENTE E MENOS PRETA */
+        /* NAVBAR PRINCIPAL - INCOLOR */
         .main-nav-bar {
-          /* Fundo bem transparente (0.35) */
-          background-color: rgba(10, 10, 10, 0.35); 
+          /* Quase transparente, apenas um leve brilho branco */
+          background-color: rgba(255, 255, 255, 0.05); 
           border: 1px solid rgba(255,255,255,0.1);
-          backdrop-filter: blur(30px) saturate(200%);
-          -webkit-backdrop-filter: blur(30px) saturate(200%);
+          backdrop-filter: blur(35px) saturate(200%);
+          -webkit-backdrop-filter: blur(35px) saturate(200%);
           border-radius: 100px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
           display: flex;
           justify-content: space-between;
           align-items: center;
           height: 75px;
           flex-grow: 1;
-          padding: 0 15px;
+          padding: 0 5px; /* Reduzido padding lateral para a bolha viajar mais */
           position: relative;
           transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-          /* IMPORTANTE: Permite que a bolha saia para fora */
           overflow: visible; 
         }
 
@@ -677,13 +692,11 @@ export default function Home() {
           height: 100%;
           color: #999;
           transition: color 0.3s ease;
-          /* Z-index 1 garante que o ícone fique na frente da bolha (que terá z-index menor) */
-          z-index: 1;
+          z-index: 2; /* Ícone acima da bolha */
         }
 
         .nav-item i {
             font-size: 24px;
-            z-index: 2; 
             position: relative;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -700,58 +713,48 @@ export default function Home() {
             transform: scale(1.1);
         }
 
-        /* === A BOLHA "INDEPENDENTE" QUE QUEBRA LIMITES === */
-        .nav-active-bubble {
+        /* === A BOLHA VIAJANTE (PÍLULA GORDA HORIZONTAL) === */
+        .nav-active-bubble-traveling {
             position: absolute;
             top: 50%;
-            left: 50%;
+            /* Posiciona no centro do primeiro terço */
+            left: calc(100% / 6); 
             transform: translate(-50%, -50%);
             
-            /* Largura fixa para não invadir o ícone vizinho */
-            width: 75px;
+            /* Forma de Pílula Gorda Horizontal */
+            width: 120px; /* Bem larga */
+            height: 65px; /* Altura menor que a navbar para parecer mais "achatada" */
+            border-radius: 40px;
             
-            /* Altura fixa MAIOR que a navbar (75px) para quebrar o limite */
-            height: 88px;
+            /* O único vidro com cor (levemente branco/avermelhado para destaque) */
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
             
-            border-radius: 30px; /* Borda bem arredondada (quase cápsula) */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             
-            /* Vidro Diferente (Levemente mais claro/branco que o fundo preto da nav) */
-            background: rgba(255, 255, 255, 0.07);
-            
-            /* Bordas finas e brilhantes */
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-            
-            /* Sombra projetada para dar efeito 3D flutuante */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.03);
-            
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            
-            /* Z-index negativo relativo ao botão, mas visível na navbar */
-            z-index: -1; 
+            z-index: 0; /* Atrás dos ícones */
             pointer-events: none;
-            
-            animation: bubble-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+
+            /* A MÁGICA DO DESLIZE */
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1); /* Transição fluida */
+            /* Calcula a posição baseado no índice ativo (0, 1 ou 2) */
+            margin-left: calc(var(--active-index) * (100% / 3));
         }
 
-        @keyframes bubble-pop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-
-        /* Search Circle - Mais Transparente */
+        /* Search Circle - INCOLOR */
         .search-circle {
-          background-color: rgba(20, 20, 20, 0.35); /* Transparente */
+          background-color: rgba(255, 255, 255, 0.05); /* Incolor */
           border: 1px solid rgba(255,255,255,0.1);
-          backdrop-filter: blur(30px) saturate(180%);
+          backdrop-filter: blur(35px) saturate(180%);
           border-radius: 50%;
           width: 75px;
           height: 75px;
           display: flex;
           justify-content: center;
           align-items: center;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
           flex-shrink: 0;
           cursor: pointer;
           color: white;
@@ -798,6 +801,12 @@ export default function Home() {
 
         .main-nav-bar.search-active {
             padding: 0 20px;
+        }
+        
+        /* Esconde a bolha viajante quando a busca está ativa */
+        .main-nav-bar.search-active .nav-active-bubble-traveling {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
         }
 
         /* Loading */
@@ -872,10 +881,10 @@ export default function Home() {
                 height: 65px;
             }
             
-            /* Ajuste Mobile da Bolha */
-            .nav-active-bubble {
-                width: 60px; /* Um pouco mais estreita no mobile para evitar toque */
-                height: 78px; /* Ainda maior que a navbar (65px) */
+            /* Ajuste Mobile da Bolha Viajante */
+            .nav-active-bubble-traveling {
+                width: 100px;
+                height: 55px;
             }
         }
       `}</style>
