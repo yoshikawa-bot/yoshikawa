@@ -20,19 +20,19 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState([])
   const [trending, setTrending] = useState([])
   const [topRated, setTopRated] = useState([])
-  const [movies, setMovies] = useState([])
-  const [series, setSeries] = useState([])
+  const [movies, setMovies] = useState({})
+  const [series, setSeries] = useState({})
   const [favorites, setFavorites] = useState([])
   const [watchlist, setWatchlist] = useState([])
   const [continueWatching, setContinueWatching] = useState([])
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('home')
   const [searchActive, setSearchActive] = useState(false)
   const [heroContent, setHeroContent] = useState(null)
-  const [showScrollTop, setShowScrollTop] = useState(false)
-  const [toast, setToast] = useState(null)
+  const [toasts, setToasts] = useState([])
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -41,8 +41,14 @@ export default function Home() {
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
   const showToast = (message, type = 'info') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
+    const id = Date.now()
+    const newToast = { id, message, type }
+    
+    setToasts(prev => [...prev, newToast])
+    
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 3500)
   }
 
   useEffect(() => {
@@ -50,13 +56,6 @@ export default function Home() {
     loadFavorites()
     loadWatchlist()
     loadContinueWatching()
-
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   useEffect(() => {
@@ -117,7 +116,6 @@ export default function Home() {
         ...(topRatedTv.results || []).map(item => ({...item, media_type: 'tv'}))
       ].filter(item => item.poster_path).slice(0, 20)
 
-      // Separar filmes e séries
       const moviesList = (nowPlaying.results || [])
         .map(item => ({...item, media_type: 'movie'}))
         .filter(item => item.poster_path)
@@ -153,7 +151,6 @@ export default function Home() {
       setTrending(allTrending)
       setTopRated(allTopRated)
       
-      // Definir filmes e séries separadamente
       setMovies({
         nowPlaying: moviesList,
         popular: popularMoviesList,
@@ -166,7 +163,6 @@ export default function Home() {
         topRated: topRatedSeriesList
       })
 
-      // Set hero content
       if (allTrending.length > 0) {
         setHeroContent(allTrending[0])
       }
@@ -295,11 +291,11 @@ export default function Home() {
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
-      setLoading(false)
+      setSearchLoading(false)
       return
     }
     
-    setLoading(true)
+    setSearchLoading(true)
     
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
@@ -324,26 +320,22 @@ export default function Home() {
       showToast('Erro na busca', 'error')
       setSearchResults([])
     } finally {
-      setLoading(false)
+      setSearchLoading(false)
     }
   }
 
-  const debouncedSearch = useDebounce(fetchSearchResults, 300)
+  const debouncedSearch = useDebounce(fetchSearchResults, 400)
 
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
     if (query.trim() === '') {
       setSearchResults([])
-      setLoading(false)
+      setSearchLoading(false)
       return
     }
-    setLoading(true)
+    setSearchLoading(true)
     debouncedSearch(query)
-  }
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Components
@@ -515,38 +507,52 @@ export default function Home() {
 
   const SearchView = () => (
     <div className="search-view">
-      <div className="search-header">
-        <h1 className="search-title">
-          <i className="fas fa-search"></i>
-          Resultados da Busca
-        </h1>
-        {searchQuery && (
-          <p className="search-query">"{searchQuery}"</p>
-        )}
+      <div className="search-view-header">
+        <div className="search-input-container-full">
+          <i className="fas fa-search search-icon-full"></i>
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Buscar filmes e séries..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="search-input-full"
+            autoFocus
+          />
+          {searchQuery && (
+            <button className="clear-search-full" onClick={() => setSearchQuery('')}>
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </div>
       </div>
 
-      {loading && (
-        <div className="loading-spinner">
+      {searchLoading && (
+        <div className="search-loading">
           <div className="spinner"></div>
           <p>Buscando...</p>
         </div>
       )}
 
-      {!loading && searchResults.length > 0 && (
-        <ContentGrid items={searchResults} />
-      )}
-
-      {!loading && searchQuery && searchResults.length === 0 && (
-        <div className="empty-state">
-          <i className="fas fa-search"></i>
-          <p>Nenhum resultado encontrado para "{searchQuery}"</p>
+      {!searchLoading && searchResults.length > 0 && (
+        <div className="search-results-grid">
+          <ContentGrid items={searchResults} />
         </div>
       )}
 
-      {!loading && !searchQuery && (
+      {!searchLoading && searchQuery && searchResults.length === 0 && (
+        <div className="empty-state">
+          <i className="fas fa-search"></i>
+          <p>Nenhum resultado encontrado</p>
+          <span>Tente buscar por outro termo</span>
+        </div>
+      )}
+
+      {!searchLoading && !searchQuery && (
         <div className="empty-state">
           <i className="fas fa-keyboard"></i>
-          <p>Digite algo para pesquisar</p>
+          <p>Comece a digitar</p>
+          <span>Busque por filmes e séries</span>
         </div>
       )}
     </div>
@@ -661,7 +667,7 @@ export default function Home() {
       {/* Header */}
       <header className="app-header">
         <div className="header-content">
-          <Link href="/" className="logo">
+          <Link href="/" className="logo" onClick={() => { setSearchActive(false); setActiveTab('home'); }}>
             <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" />
             <span>Yoshikawa</span>
           </Link>
@@ -673,27 +679,6 @@ export default function Home() {
             <i className={`fas fa-${searchActive ? 'times' : 'search'}`}></i>
           </button>
         </div>
-
-        {searchActive && (
-          <div className="search-bar">
-            <div className="search-container">
-              <i className="fas fa-search search-icon"></i>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Buscar filmes e séries..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="search-input"
-              />
-              {searchQuery && (
-                <button className="clear-search" onClick={() => setSearchQuery('')}>
-                  <i className="fas fa-times"></i>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
@@ -753,20 +738,23 @@ export default function Home() {
         </button>
       </nav>
 
-      {/* Scroll to Top */}
-      {showScrollTop && (
-        <button className="scroll-top-btn" onClick={scrollToTop}>
-          <i className="fas fa-arrow-up"></i>
-        </button>
-      )}
-
-      {/* Toast */}
-      {toast && (
-        <div className={`toast toast-${toast.type}`}>
-          <i className={`fas fa-${toast.type === 'success' ? 'check-circle' : toast.type === 'error' ? 'exclamation-circle' : 'info-circle'}`}></i>
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* Toast Notifications - Lateral Esquerda */}
+      <div className="toast-container-left">
+        {toasts.map((toast, index) => (
+          <div 
+            key={toast.id} 
+            className={`toast-left toast-left-${toast.type}`}
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <i className={`fas fa-${
+              toast.type === 'success' ? 'check-circle' : 
+              toast.type === 'error' ? 'exclamation-circle' : 
+              'info-circle'
+            }`}></i>
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
 
       <style jsx global>{`
         * {
@@ -791,6 +779,10 @@ export default function Home() {
           --info: #54b4d3;
         }
 
+        html, body {
+          overscroll-behavior: none;
+        }
+
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           background: var(--background);
@@ -807,19 +799,15 @@ export default function Home() {
           left: 0;
           right: 0;
           z-index: 100;
-          background: linear-gradient(180deg, rgba(20,20,20,1) 0%, rgba(20,20,20,0) 100%);
+          background: rgba(20,20,20,0.98);
           backdrop-filter: blur(10px);
-          transition: background 0.3s ease;
-        }
-
-        .app-header.scrolled {
-          background: rgba(20,20,20,0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .header-content {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 1rem 1.5rem;
+          padding: 1.25rem 1.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -841,8 +829,8 @@ export default function Home() {
         }
 
         .logo img {
-          width: 40px;
-          height: 40px;
+          width: 42px;
+          height: 42px;
           border-radius: 8px;
           object-fit: cover;
         }
@@ -851,8 +839,8 @@ export default function Home() {
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid var(--border);
           border-radius: 50%;
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -871,73 +859,84 @@ export default function Home() {
           border-color: var(--primary);
         }
 
-        .search-bar {
-          padding: 0 1.5rem 1rem;
-          animation: slideDown 0.3s ease;
+        .search-trigger i {
+          font-size: 1.1rem;
         }
 
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        /* Main */
+        .app-main {
+          min-height: 100vh;
+          padding-top: 85px;
+          padding-bottom: 90px;
         }
 
-        .search-container {
+        .content-wrapper {
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        /* Search View */
+        .search-view {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        .search-view-header {
+          margin-bottom: 2rem;
+        }
+
+        .search-input-container-full {
           position: relative;
-          max-width: 600px;
+          max-width: 800px;
           width: 100%;
         }
 
-        .search-icon {
+        .search-icon-full {
           position: absolute;
-          left: 1.125rem;
+          left: 1.25rem;
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-secondary);
           pointer-events: none;
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           z-index: 2;
         }
 
-        .search-input {
+        .search-input-full {
           width: 100%;
-          padding: 1rem 3.25rem;
+          padding: 1.125rem 3.5rem;
           background: rgba(47, 47, 47, 0.95);
           border: 2px solid rgba(255, 255, 255, 0.2);
-          border-radius: 28px;
+          border-radius: 32px;
           color: var(--text-primary);
-          font-size: 1rem;
+          font-size: 1.05rem;
           transition: all 0.3s ease;
           font-weight: 400;
         }
 
-        .search-input::placeholder {
+        .search-input-full::placeholder {
           color: var(--text-secondary);
           opacity: 0.8;
         }
 
-        .search-input:focus {
+        .search-input-full:focus {
           outline: none;
           border-color: rgba(255, 255, 255, 0.4);
           background: rgba(47, 47, 47, 1);
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
         }
 
-        .clear-search {
+        .clear-search-full {
           position: absolute;
-          right: 1rem;
+          right: 1.125rem;
           top: 50%;
           transform: translateY(-50%);
           background: rgba(255, 255, 255, 0.1);
           border: none;
           border-radius: 50%;
-          width: 28px;
-          height: 28px;
+          width: 32px;
+          height: 32px;
           color: var(--text-secondary);
           cursor: pointer;
           display: flex;
@@ -947,21 +946,22 @@ export default function Home() {
           z-index: 2;
         }
 
-        .clear-search:hover {
+        .clear-search-full:hover {
           background: rgba(255, 255, 255, 0.2);
           color: var(--text-primary);
+          transform: translateY(-50%) scale(1.1);
         }
 
-        /* Main */
-        .app-main {
-          min-height: 100vh;
-          padding-top: 70px;
-          padding-bottom: 100px;
+        .search-loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem 2rem;
         }
 
-        .content-wrapper {
-          max-width: 1400px;
-          margin: 0 auto;
+        .search-results-grid {
+          padding-top: 1rem;
         }
 
         /* Hero Section */
@@ -1369,29 +1369,6 @@ export default function Home() {
           gap: 1rem;
         }
 
-        /* Search View */
-        .search-view {
-          padding: 2rem 1.5rem;
-        }
-
-        .search-header {
-          margin-bottom: 2rem;
-        }
-
-        .search-title {
-          font-size: 2rem;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .search-query {
-          font-size: 1.1rem;
-          color: var(--text-secondary);
-        }
-
         /* Empty State */
         .empty-state {
           display: flex;
@@ -1453,11 +1430,11 @@ export default function Home() {
           bottom: 0;
           left: 0;
           right: 0;
-          background: var(--surface);
-          border-top: 1px solid var(--border);
+          background: rgba(31, 31, 31, 0.98);
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
           justify-content: space-around;
-          padding: 0.5rem 0;
+          padding: 0.75rem 0;
           z-index: 100;
           backdrop-filter: blur(10px);
         }
@@ -1466,134 +1443,145 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.25rem;
-          padding: 0.5rem 1rem;
+          gap: 0.35rem;
+          padding: 0.5rem 1.5rem;
           background: none;
           border: none;
           color: var(--text-secondary);
-          font-size: 0.75rem;
+          font-size: 0.8rem;
           cursor: pointer;
           transition: all 0.3s ease;
+          font-weight: 500;
         }
 
         .nav-btn i {
-          font-size: 1.5rem;
+          font-size: 1.6rem;
         }
 
         .nav-btn.active {
           color: var(--text-primary);
         }
 
+        .nav-btn.active i {
+          color: var(--primary);
+        }
+
         .nav-btn:hover {
           color: var(--text-primary);
         }
 
-        /* Scroll to Top */
-        .scroll-top-btn {
+        /* Toast Notifications - Lateral Esquerda */
+        .toast-container-left {
           position: fixed;
-          bottom: 100px;
-          right: 2rem;
-          width: 50px;
-          height: 50px;
-          background: var(--primary);
-          border: none;
-          border-radius: 50%;
-          color: white;
-          font-size: 1.2rem;
-          cursor: pointer;
-          z-index: 99;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
-        }
-
-        .scroll-top-btn:hover {
-          transform: scale(1.1);
-          box-shadow: 0 6px 16px rgba(229, 9, 20, 0.6);
-        }
-
-        /* Toast */
-        .toast {
-          position: fixed;
+          left: 1.5rem;
           bottom: 120px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(31, 31, 31, 0.98);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 12px;
-          padding: 1rem 1.25rem;
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          max-width: 280px;
+        }
+
+        .toast-left {
+          background: rgba(31, 31, 31, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 10px;
+          padding: 0.875rem 1rem;
           display: flex;
           align-items: center;
-          gap: 0.875rem;
-          z-index: 1000;
-          animation: slideUp 0.3s ease;
-          backdrop-filter: blur(20px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-          min-width: 280px;
-          max-width: 400px;
+          gap: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes slideUp {
+        .toast-left.removing {
+          animation: slideOutLeft 0.3s ease forwards;
+        }
+
+        @keyframes slideInLeft {
           from {
             opacity: 0;
-            transform: translateX(-50%) translateY(30px);
+            transform: translateX(-100%);
           }
           to {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(0);
           }
         }
 
-        .toast i {
-          font-size: 1.3rem;
+        @keyframes slideOutLeft {
+          from {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateX(-100%);
+          }
+        }
+
+        .toast-left i {
+          font-size: 1.1rem;
           flex-shrink: 0;
         }
 
-        .toast span {
-          font-size: 0.95rem;
+        .toast-left span {
+          font-size: 0.9rem;
           font-weight: 500;
-          line-height: 1.4;
+          line-height: 1.3;
+          color: var(--text-primary);
         }
 
-        .toast-success {
-          background: rgba(70, 211, 105, 0.15);
-          border-color: var(--success);
-        }
-
-        .toast-success i {
+        .toast-left-success i {
           color: var(--success);
         }
 
-        .toast-success span {
-          color: var(--text-primary);
-        }
-
-        .toast-error {
-          background: rgba(232, 124, 3, 0.15);
-          border-color: var(--error);
-        }
-
-        .toast-error i {
+        .toast-left-error i {
           color: var(--error);
         }
 
-        .toast-error span {
-          color: var(--text-primary);
-        }
-
-        .toast-info {
-          background: rgba(84, 180, 211, 0.15);
-          border-color: var(--info);
-        }
-
-        .toast-info i {
+        .toast-left-info i {
           color: var(--info);
         }
 
-        .toast-info span {
-          color: var(--text-primary);
+        /* Responsive */
+        @media (min-width: 1024px) {
+          .header-content {
+            padding: 1.5rem 2rem;
+          }
+
+          .logo {
+            font-size: 1.65rem;
+          }
+
+          .logo img {
+            width: 48px;
+            height: 48px;
+          }
+
+          .search-trigger {
+            width: 48px;
+            height: 48px;
+          }
+
+          .bottom-nav {
+            padding: 1rem 0;
+          }
+
+          .nav-btn {
+            padding: 0.75rem 2.5rem;
+          }
+
+          .nav-btn i {
+            font-size: 1.8rem;
+          }
+
+          .nav-btn span {
+            font-size: 0.9rem;
+          }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
           .hero-section {
             height: 55vh;
@@ -1667,27 +1655,26 @@ export default function Home() {
             font-size: 1.5rem;
           }
 
-          .search-title {
-            font-size: 1.5rem;
-          }
-
           .nav-btn span {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
           }
 
-          .toast {
+          .toast-container-left {
+            left: 1rem;
             bottom: 100px;
-            min-width: 260px;
-            max-width: 90%;
-            padding: 0.875rem 1rem;
+            max-width: 240px;
           }
 
-          .toast i {
-            font-size: 1.2rem;
+          .toast-left {
+            padding: 0.75rem 0.875rem;
           }
 
-          .toast span {
-            font-size: 0.9rem;
+          .toast-left i {
+            font-size: 1rem;
+          }
+
+          .toast-left span {
+            font-size: 0.85rem;
           }
         }
 
@@ -1770,18 +1757,22 @@ export default function Home() {
             display: none;
           }
 
-          .toast {
+          .toast-container-left {
+            left: 0.75rem;
             bottom: 90px;
-            min-width: 240px;
-            padding: 0.75rem 0.875rem;
+            max-width: 220px;
           }
 
-          .toast i {
-            font-size: 1.1rem;
+          .toast-left {
+            padding: 0.65rem 0.75rem;
           }
 
-          .toast span {
-            font-size: 0.85rem;
+          .toast-left i {
+            font-size: 0.95rem;
+          }
+
+          .toast-left span {
+            font-size: 0.8rem;
           }
         }
       `}</style>
