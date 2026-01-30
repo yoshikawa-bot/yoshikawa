@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// Debounce hook
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -30,7 +29,7 @@ export default function Home() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('home')
-  const [searchActive, setSearchActive] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [heroContent, setHeroContent] = useState(null)
   const [toasts, setToasts] = useState([])
 
@@ -43,9 +42,7 @@ export default function Home() {
   const showToast = (message, type = 'info') => {
     const id = Date.now()
     const newToast = { id, message, type }
-    
     setToasts(prev => [...prev, newToast])
-    
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3500)
@@ -56,17 +53,15 @@ export default function Home() {
     loadFavorites()
     loadWatchlist()
     loadContinueWatching()
+    
+    const handleResize = () => {
+      if (window.innerWidth < 1024) setIsSidebarOpen(false)
+      else setIsSidebarOpen(true)
+    }
+    window.addEventListener('resize', handleResize)
+    handleResize()
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
-
-  useEffect(() => {
-    if (searchActive && searchInputRef.current) {
-      searchInputRef.current.focus()
-    }
-    if (!searchActive) {
-      setSearchResults([])
-      setSearchQuery('')
-    }
-  }, [searchActive])
 
   const loadAllContent = async () => {
     setLoading(true)
@@ -168,8 +163,7 @@ export default function Home() {
       }
 
     } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error)
-      showToast('Erro ao carregar conteúdo', 'error')
+      showToast('Falha ao conectar com o servidor', 'error')
     } finally {
       setLoading(false)
     }
@@ -202,13 +196,8 @@ export default function Home() {
     }
   }
 
-  const isFavorite = (item) => {
-    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type)
-  }
-
-  const isInWatchlist = (item) => {
-    return watchlist.some(w => w.id === item.id && w.media_type === item.media_type)
-  }
+  const isFavorite = (item) => favorites.some(fav => fav.id === item.id)
+  const isInWatchlist = (item) => watchlist.some(w => w.id === item.id)
 
   const toggleFavorite = (item, e) => {
     if (e) {
@@ -224,27 +213,10 @@ export default function Home() {
         newFavorites = prev.filter(fav => getItemKey(fav) !== getItemKey(item))
         showToast('Removido dos favoritos', 'info')
       } else {
-        const favoriteItem = {
-          id: item.id,
-          media_type: item.media_type,
-          title: item.title || item.name,
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date,
-          first_air_date: item.first_air_date,
-          overview: item.overview,
-          vote_average: item.vote_average
-        }
-        newFavorites = [...prev, favoriteItem]
-        showToast('Adicionado aos favoritos!', 'success')
+        newFavorites = [...prev, item]
+        showToast('Adicionado aos favoritos', 'success')
       }
-      
-      try {
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
-      } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
-      }
-
+      localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       return newFavorites
     })
   }
@@ -261,29 +233,12 @@ export default function Home() {
       
       if (exists) {
         newWatchlist = prev.filter(w => getItemKey(w) !== getItemKey(item))
-        showToast('Removido da lista', 'info')
+        showToast('Removido da biblioteca', 'info')
       } else {
-        const watchlistItem = {
-          id: item.id,
-          media_type: item.media_type,
-          title: item.title || item.name,
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date,
-          first_air_date: item.first_air_date,
-          overview: item.overview,
-          vote_average: item.vote_average
-        }
-        newWatchlist = [...prev, watchlistItem]
-        showToast('Adicionado à lista!', 'success')
+        newWatchlist = [...prev, item]
+        showToast('Salvo na biblioteca', 'success')
       }
-      
-      try {
-        localStorage.setItem('yoshikawaWatchlist', JSON.stringify(newWatchlist))
-      } catch (error) {
-        console.error('Erro ao salvar watchlist:', error)
-      }
-
+      localStorage.setItem('yoshikawaWatchlist', JSON.stringify(newWatchlist))
       return newWatchlist
     })
   }
@@ -314,17 +269,15 @@ export default function Home() {
        .slice(0, 30)
 
       setSearchResults(allResults)
-      
     } catch (error) {
-      console.error('Erro na busca:', error)
-      showToast('Erro na busca', 'error')
+      showToast('Erro na pesquisa', 'error')
       setSearchResults([])
     } finally {
       setSearchLoading(false)
     }
   }
 
-  const debouncedSearch = useDebounce(fetchSearchResults, 400)
+  const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
   const handleSearchChange = (e) => {
     const query = e.target.value
@@ -338,147 +291,72 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // Components
-  const HeroSection = ({ content }) => {
-    if (!content) return null
+  const YouTubeCard = ({ item, isHero = false }) => {
+    const [hover, setHover] = useState(false)
 
-    return (
-      <div className="hero-section">
-        <div className="hero-backdrop">
-          <img 
-            src={`https://image.tmdb.org/t/p/original${content.backdrop_path}`} 
-            alt={content.title || content.name}
-          />
-          <div className="hero-gradient"></div>
+    if (isHero) return (
+      <div className="yt-hero-container">
+        <div className="yt-hero-backdrop">
+          <img src={`https://image.tmdb.org/t/p/original${item.backdrop_path}`} alt="" />
+          <div className="yt-hero-gradient"></div>
         </div>
-        <div className="hero-content">
-          <div className="hero-badge">
-            <i className="fas fa-fire"></i>
-            <span>Em Alta</span>
+        <div className="yt-hero-content">
+          <div className="yt-chip-hero">Em alta</div>
+          <h1>{item.title || item.name}</h1>
+          <div className="yt-meta-row">
+            <span>{item.vote_average?.toFixed(1)} <i className="fas fa-star" style={{fontSize: '10px'}}></i></span>
+            <span className="dot">•</span>
+            <span>{new Date(item.release_date || item.first_air_date).getFullYear()}</span>
+            <span className="dot">•</span>
+            <span>{item.media_type === 'movie' ? 'Filme' : 'Série'}</span>
           </div>
-          <h1 className="hero-title">{content.title || content.name}</h1>
-          <div className="hero-meta">
-            <span className="hero-rating">
-              <i className="fas fa-star"></i>
-              {content.vote_average ? content.vote_average.toFixed(1) : 'N/A'}
-            </span>
-            <span className="hero-year">
-              {content.release_date ? new Date(content.release_date).getFullYear() : 
-               content.first_air_date ? new Date(content.first_air_date).getFullYear() : 'N/A'}
-            </span>
-            <span className="hero-type">
-              <i className={`fas fa-${content.media_type === 'movie' ? 'film' : 'tv'}`}></i>
-              {content.media_type === 'movie' ? 'Filme' : 'Série'}
-            </span>
-          </div>
-          <p className="hero-overview">
-            {content.overview || 'Sem descrição disponível.'}
-          </p>
-          <div className="hero-actions">
-            <Link href={`/${content.media_type}/${content.id}`} className="hero-btn hero-btn-play">
-              <i className="fas fa-play"></i>
-              <span>Assistir</span>
+          <p className="yt-desc">{item.overview}</p>
+          <div className="yt-actions">
+            <Link href={`/${item.media_type}/${item.id}`} className="yt-btn-primary">
+              <i className="fas fa-play"></i> Assistir
             </Link>
-            <button 
-              className={`hero-btn hero-btn-secondary ${isInWatchlist(content) ? 'active' : ''}`}
-              onClick={(e) => toggleWatchlist(content, e)}
-            >
-              <i className={`fas fa-${isInWatchlist(content) ? 'check' : 'plus'}`}></i>
-              <span>{isInWatchlist(content) ? 'Na Lista' : 'Minha Lista'}</span>
-            </button>
-            <button 
-              className="hero-btn hero-btn-icon"
-              onClick={(e) => toggleFavorite(content, e)}
-            >
-              <i className={`fa${isFavorite(content) ? 's' : 'r'} fa-heart`}></i>
+            <button className="yt-btn-secondary" onClick={(e) => toggleWatchlist(item, e)}>
+              <i className={`fas fa-${isInWatchlist(item) ? 'check' : 'plus'}`}></i> Minha Lista
             </button>
           </div>
         </div>
       </div>
     )
-  }
-
-  const ContentRow = ({ title, items, icon }) => {
-    const scrollRef = useRef(null)
-
-    const scroll = (direction) => {
-      if (scrollRef.current) {
-        const scrollAmount = direction === 'left' ? -400 : 400
-        scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
-      }
-    }
-
-    if (!items || items.length === 0) return null
 
     return (
-      <div className="content-row-container">
-        <div className="content-row-header">
-          <h2 className="content-row-title">
-            {icon && <i className={icon}></i>}
-            {title}
-          </h2>
-        </div>
-        <div className="content-row-wrapper">
-          <button className="scroll-btn scroll-btn-left" onClick={() => scroll('left')}>
-            <i className="fas fa-chevron-left"></i>
-          </button>
-          <div className="content-row-scroll" ref={scrollRef}>
-            {items.map(item => (
-              <ContentCard key={getItemKey(item)} item={item} />
-            ))}
+      <Link href={`/${item.media_type}/${item.id}`}>
+        <div 
+          className="yt-video-card"
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          <div className="yt-thumbnail-container">
+            <img 
+              src={item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : `https://image.tmdb.org/t/p/w500${item.poster_path}`} 
+              className="yt-thumbnail"
+              alt=""
+            />
+            <div className="yt-duration">HD</div>
+            {hover && <div className="yt-hover-overlay"><i className="fas fa-play"></i></div>}
           </div>
-          <button className="scroll-btn scroll-btn-right" onClick={() => scroll('right')}>
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const ContentCard = ({ item }) => {
-    const [imageLoaded, setImageLoaded] = useState(false)
-
-    return (
-      <Link href={`/${item.media_type}/${item.id}`} className="content-card-modern">
-        <div className="card-image-wrapper">
-          <img 
-            src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER}
-            alt={item.title || item.name}
-            className={`card-image ${imageLoaded ? 'loaded' : ''}`}
-            loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-          />
-          {!imageLoaded && <div className="card-skeleton"></div>}
-          
-          <div className="card-overlay">
-            <div className="card-overlay-content">
-              <h3 className="card-title">{item.title || item.name}</h3>
-              <div className="card-info">
-                <span className="card-rating">
-                  <i className="fas fa-star"></i>
-                  {item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}
-                </span>
-                <span className="card-year">
-                  {item.release_date ? new Date(item.release_date).getFullYear() : 
-                   item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                </span>
+          <div className="yt-details">
+            <div className="yt-avatar">
+              <img src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : DEFAULT_POSTER} alt="" />
+            </div>
+            <div className="yt-text-info">
+              <h3 className="yt-title">{item.title || item.name}</h3>
+              <div className="yt-channel-name">
+                {item.media_type === 'movie' ? 'Cinema' : 'TV Show'}
+                <i className="fas fa-check-circle verified"></i>
               </div>
-              <div className="card-actions">
-                <button 
-                  className="card-action-btn"
-                  onClick={(e) => toggleWatchlist(item, e)}
-                  title={isInWatchlist(item) ? "Remover da lista" : "Adicionar à lista"}
-                >
-                  <i className={`fas fa-${isInWatchlist(item) ? 'check' : 'plus'}`}></i>
-                </button>
-                <button 
-                  className="card-action-btn"
-                  onClick={(e) => toggleFavorite(item, e)}
-                  title={isFavorite(item) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                >
-                  <i className={`fa${isFavorite(item) ? 's' : 'r'} fa-heart`}></i>
-                </button>
+              <div className="yt-meta-line">
+                {item.vote_average?.toFixed(1)} avaliações <span className="dot">•</span> {new Date(item.release_date || item.first_air_date).getFullYear()}
               </div>
+            </div>
+            <div className="yt-menu-dots">
+              <button onClick={(e) => toggleFavorite(item, e)}>
+                <i className={`fa${isFavorite(item) ? 's' : 'r'} fa-heart`}></i>
+              </button>
             </div>
           </div>
         </div>
@@ -486,1296 +364,697 @@ export default function Home() {
     )
   }
 
-  const ContentGrid = ({ items }) => {
-    if (!items || items.length === 0) {
-      return (
-        <div className="empty-state">
-          <i className="fas fa-ghost"></i>
-          <p>Nenhum conteúdo encontrado</p>
-        </div>
-      )
-    }
-
-    return (
-      <div className="content-grid-modern">
-        {items.map(item => (
-          <ContentCard key={getItemKey(item)} item={item} />
+  const ChipBar = () => (
+    <div className="yt-chips-wrapper">
+      <div className="yt-chips-scroll">
+        {['Tudo', 'Ao vivo', 'Filmes', 'Séries', 'Jogos', 'Notícias', 'Esportes', 'Podcasts', 'Mixes'].map((chip, i) => (
+          <button key={i} className={`yt-chip ${i === 0 ? 'active' : ''}`}>
+            {chip}
+          </button>
         ))}
       </div>
-    )
-  }
-
-  const SearchView = () => (
-    <div className="search-view">
-      <div className="search-view-header">
-        <div className="search-input-container-full">
-          <i className="fas fa-search search-icon-full"></i>
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Buscar filmes e séries..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="search-input-full"
-            autoFocus
-          />
-          {searchQuery && (
-            <button className="clear-search-full" onClick={() => setSearchQuery('')}>
-              <i className="fas fa-times"></i>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {searchLoading && (
-        <div className="search-loading">
-          <div className="spinner"></div>
-          <p>Buscando...</p>
-        </div>
-      )}
-
-      {!searchLoading && searchResults.length > 0 && (
-        <div className="search-results-grid">
-          <ContentGrid items={searchResults} />
-        </div>
-      )}
-
-      {!searchLoading && searchQuery && searchResults.length === 0 && (
-        <div className="empty-state">
-          <i className="fas fa-search"></i>
-          <p>Nenhum resultado encontrado</p>
-          <span>Tente buscar por outro termo</span>
-        </div>
-      )}
-
-      {!searchLoading && !searchQuery && (
-        <div className="empty-state">
-          <i className="fas fa-keyboard"></i>
-          <p>Comece a digitar</p>
-          <span>Busque por filmes e séries</span>
-        </div>
-      )}
     </div>
   )
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <>
-            <HeroSection content={heroContent} />
-            {continueWatching.length > 0 && (
-              <ContentRow 
-                title="Continue Assistindo" 
-                items={continueWatching} 
-                icon="fas fa-play-circle"
-              />
-            )}
-            <ContentRow title="Em Alta" items={trending} icon="fas fa-fire" />
-            <ContentRow title="Lançamentos" items={releases} icon="fas fa-sparkles" />
-            <ContentRow title="Mais Populares" items={recommendations} icon="fas fa-star" />
-            <ContentRow title="Melhor Avaliados" items={topRated} icon="fas fa-award" />
-          </>
-        )
-      case 'movies':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-film"></i>
-                Filmes
-              </h1>
-            </div>
-            {movies.nowPlaying && <ContentRow title="Nos Cinemas" items={movies.nowPlaying} icon="fas fa-ticket-alt" />}
-            {movies.popular && <ContentRow title="Populares" items={movies.popular} icon="fas fa-star" />}
-            {movies.topRated && <ContentRow title="Melhor Avaliados" items={movies.topRated} icon="fas fa-award" />}
-          </>
-        )
-      case 'series':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-tv"></i>
-                Séries
-              </h1>
-            </div>
-            {series.onAir && <ContentRow title="No Ar" items={series.onAir} icon="fas fa-satellite-dish" />}
-            {series.popular && <ContentRow title="Populares" items={series.popular} icon="fas fa-star" />}
-            {series.topRated && <ContentRow title="Melhor Avaliadas" items={series.topRated} icon="fas fa-award" />}
-          </>
-        )
-      case 'mylist':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-bookmark"></i>
-                Minha Lista
-              </h1>
-            </div>
-            <div className="grid-wrapper">
-              {watchlist.length > 0 ? (
-                <ContentGrid items={watchlist} />
-              ) : (
-                <div className="empty-state">
-                  <i className="fas fa-bookmark"></i>
-                  <p>Sua lista está vazia</p>
-                  <span>Adicione filmes e séries que deseja assistir</span>
-                </div>
-              )}
-            </div>
-          </>
-        )
-      case 'favorites':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-heart"></i>
-                Favoritos
-              </h1>
-            </div>
-            <div className="grid-wrapper">
-              {favorites.length > 0 ? (
-                <ContentGrid items={favorites} />
-              ) : (
-                <div className="empty-state">
-                  <i className="fas fa-heart"></i>
-                  <p>Nenhum favorito ainda</p>
-                  <span>Marque seus filmes e séries favoritos</span>
-                </div>
-              )}
-            </div>
-          </>
-        )
-      default:
-        return null
-    }
-  }
+  const Sidebar = () => (
+    <aside className={`yt-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+      <div className="yt-nav-section">
+        <button className={`yt-nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+          <i className={`fas fa-home ${activeTab === 'home' ? '' : 'outlined'}`}></i>
+          <span>Início</span>
+        </button>
+        <button className={`yt-nav-item ${activeTab === 'series' ? 'active' : ''}`} onClick={() => setActiveTab('series')}>
+          <i className="fas fa-film"></i>
+          <span>Shorts</span>
+        </button>
+        <button className={`yt-nav-item ${activeTab === 'movies' ? 'active' : ''}`} onClick={() => setActiveTab('movies')}>
+          <i className="fab fa-youtube"></i>
+          <span>Inscrições</span>
+        </button>
+      </div>
+      <div className="yt-divider"></div>
+      <div className="yt-nav-section">
+        <div className="yt-section-title">Você <i className="fas fa-chevron-right" style={{fontSize: '12px', marginLeft: '6px'}}></i></div>
+        <button className={`yt-nav-item ${activeTab === 'mylist' ? 'active' : ''}`} onClick={() => setActiveTab('mylist')}>
+          <i className="fas fa-history"></i>
+          <span>Histórico</span>
+        </button>
+        <button className={`yt-nav-item ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>
+          <i className="fas fa-list-ul"></i>
+          <span>Playlists</span>
+        </button>
+        <button className="yt-nav-item">
+          <i className="fas fa-clock"></i>
+          <span>Assistir mais tarde</span>
+        </button>
+        <button className="yt-nav-item">
+          <i className="fas fa-thumbs-up"></i>
+          <span>Vídeos com "Gostei"</span>
+        </button>
+      </div>
+    </aside>
+  )
+
+  const GridContent = ({ items }) => (
+    <div className="yt-grid">
+      {items.map(item => <YouTubeCard key={getItemKey(item)} item={item} />)}
+    </div>
+  )
 
   return (
-    <>
+    <div className="yt-app">
       <Head>
-        <title>Yoshikawa Streaming</title>
-        <meta name="description" content="Sua plataforma de streaming definitiva" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <title>YouTube 2026 Clone</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-content">
-          <Link href="/" className="logo" onClick={() => { setSearchActive(false); setActiveTab('home'); }}>
-            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" />
-            <span>Yoshikawa</span>
-          </Link>
-
-          <button 
-            className={`search-trigger ${searchActive ? 'active' : ''}`}
-            onClick={() => setSearchActive(!searchActive)}
-          >
-            <i className={`fas fa-${searchActive ? 'times' : 'search'}`}></i>
+      <header className="yt-header">
+        <div className="yt-header-start">
+          <button className="yt-icon-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            <i className="fas fa-bars"></i>
           </button>
+          <div className="yt-logo" onClick={() => setActiveTab('home')}>
+            <div className="yt-logo-icon"><i className="fas fa-play"></i></div>
+            <span>YouTube</span>
+            <span className="yt-country">BR</span>
+          </div>
+        </div>
+
+        <div className="yt-header-center">
+          <div className="yt-search-container">
+            <div className={`yt-search-box ${searchQuery ? 'has-text' : ''}`}>
+              <div className="yt-search-focus-icon"><i className="fas fa-search"></i></div>
+              <input 
+                ref={searchInputRef}
+                type="text" 
+                placeholder="Pesquisar" 
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+              {searchQuery && (
+                <button className="yt-clear-btn" onClick={() => setSearchQuery('')}>
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            <button className="yt-search-btn">
+              <i className="fas fa-search"></i>
+              <div className="yt-tooltip">Pesquisar</div>
+            </button>
+          </div>
+          <button className="yt-mic-btn">
+            <i className="fas fa-microphone"></i>
+          </button>
+        </div>
+
+        <div className="yt-header-end">
+          <button className="yt-icon-btn"><i className="fas fa-video"></i></button>
+          <button className="yt-icon-btn"><i className="far fa-bell"></i></button>
+          <div className="yt-avatar-btn">Y</div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="app-main">
-        {searchActive ? (
-          <SearchView />
-        ) : (
-          <div className="content-wrapper">
-            {loading && !heroContent ? (
-              <div className="loading-spinner">
-                <div className="spinner"></div>
-                <p>Carregando conteúdo...</p>
+      <div className="yt-body">
+        <Sidebar />
+        
+        <main className={`yt-main ${isSidebarOpen ? 'shifted' : ''}`}>
+          <ChipBar />
+          
+          <div className="yt-content-scroll">
+            {searchQuery ? (
+              <div className="yt-container">
+                {searchLoading ? (
+                   <div className="yt-loading"></div>
+                ) : (
+                  <GridContent items={searchResults} />
+                )}
               </div>
             ) : (
-              renderTabContent()
+              <div className="yt-container">
+                {activeTab === 'home' && (
+                  <>
+                    {heroContent && <YouTubeCard item={heroContent} isHero={true} />}
+                    <GridContent items={[...trending, ...releases, ...recommendations]} />
+                  </>
+                )}
+                {activeTab === 'movies' && <GridContent items={[...(movies.nowPlaying || []), ...(movies.popular || [])]} />}
+                {activeTab === 'series' && <GridContent items={[...(series.onAir || []), ...(series.popular || [])]} />}
+                {activeTab === 'mylist' && <GridContent items={watchlist} />}
+                {activeTab === 'favorites' && <GridContent items={favorites} />}
+              </div>
             )}
           </div>
-        )}
-      </main>
+        </main>
+      </div>
 
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <button 
-          className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('home'); setSearchActive(false); }}
-        >
-          <i className="fas fa-home"></i>
-          <span>Início</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'movies' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('movies'); setSearchActive(false); }}
-        >
-          <i className="fas fa-film"></i>
-          <span>Filmes</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'series' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('series'); setSearchActive(false); }}
-        >
-          <i className="fas fa-tv"></i>
-          <span>Séries</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'mylist' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('mylist'); setSearchActive(false); }}
-        >
-          <i className="fas fa-bookmark"></i>
-          <span>Lista</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('favorites'); setSearchActive(false); }}
-        >
-          <i className="fas fa-heart"></i>
-          <span>Favoritos</span>
-        </button>
-      </nav>
-
-      {/* Toast Notifications - Lateral Esquerda */}
-      <div className="toast-container-left">
-        {toasts.map((toast, index) => (
-          <div 
-            key={toast.id} 
-            className={`toast-left toast-left-${toast.type}`}
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <i className={`fas fa-${
-              toast.type === 'success' ? 'check-circle' : 
-              toast.type === 'error' ? 'exclamation-circle' : 
-              'info-circle'
-            }`}></i>
+      <div className="yt-toast-container">
+        {toasts.map(toast => (
+          <div key={toast.id} className="yt-toast">
             <span>{toast.message}</span>
           </div>
         ))}
       </div>
 
       <style jsx global>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
         :root {
-          --primary: #e50914;
-          --primary-hover: #f40612;
-          --secondary: #564d4d;
-          --background: #141414;
-          --surface: #1f1f1f;
-          --surface-light: #2f2f2f;
-          --text-primary: #ffffff;
-          --text-secondary: #b3b3b3;
-          --border: rgba(255, 255, 255, 0.1);
-          --overlay: rgba(0, 0, 0, 0.7);
-          --success: #46d369;
-          --error: #e87c03;
-          --info: #54b4d3;
+          --yt-bg: #0f0f0f;
+          --yt-raised: #282828;
+          --yt-border: #303030;
+          --yt-text: #f1f1f1;
+          --yt-text-sec: #aaaaaa;
+          --yt-brand: #ff0000;
+          --yt-hover: #3f3f3f;
+          --yt-search-bg: #121212;
+          --yt-font: 'Roboto', sans-serif;
         }
 
-        html, body {
-          overscroll-behavior: none;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          background: var(--background);
-          color: var(--text-primary);
-          overflow-x: hidden;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
+          background-color: var(--yt-bg);
+          color: var(--yt-text);
+          font-family: var(--yt-font);
+          overflow: hidden;
         }
 
         /* Header */
-        .app-header {
+        .yt-header {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
-          z-index: 100;
-          background: rgba(20,20,20,0.98);
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .header-content {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 1.25rem 1.5rem;
+          height: 56px;
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          align-items: center;
+          padding: 0 16px;
+          background: var(--yt-bg);
+          z-index: 1000;
         }
 
-        .logo {
+        .yt-header-start, .yt-header-end {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          text-decoration: none;
-          color: var(--text-primary);
-          font-weight: 700;
-          font-size: 1.5rem;
-          transition: transform 0.2s ease;
+          gap: 8px;
         }
 
-        .logo:hover {
-          transform: scale(1.05);
-        }
-
-        .logo img {
-          width: 42px;
-          height: 42px;
-          border-radius: 8px;
-          object-fit: cover;
-        }
-
-        .search-trigger {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid var(--border);
+        .yt-icon-btn {
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          width: 44px;
-          height: 44px;
+          border: none;
+          background: transparent;
+          color: var(--yt-text);
+          font-size: 18px;
+          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--text-primary);
+        }
+
+        .yt-icon-btn:hover { background: var(--yt-raised); }
+
+        .yt-logo {
+          display: flex;
+          align-items: center;
+          gap: 4px;
           cursor: pointer;
-          transition: all 0.3s ease;
+          padding-left: 16px;
+          font-size: 18px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
         }
 
-        .search-trigger:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: scale(1.1);
+        .yt-logo-icon {
+          color: var(--yt-brand);
+          font-size: 24px;
         }
 
-        .search-trigger.active {
-          background: var(--primary);
-          border-color: var(--primary);
+        .yt-country {
+          font-size: 10px;
+          color: var(--yt-text-sec);
+          margin-top: -10px;
+          margin-left: 2px;
         }
 
-        .search-trigger i {
-          font-size: 1.1rem;
+        /* Search */
+        .yt-header-center {
+          flex: 0 1 732px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-left: 40px;
         }
 
-        /* Main */
-        .app-main {
-          min-height: 100vh;
-          padding-top: 85px;
-          padding-bottom: 90px;
+        .yt-search-container {
+          display: flex;
+          align-items: center;
+          flex: 1;
         }
 
-        .content-wrapper {
-          max-width: 1400px;
-          margin: 0 auto;
-        }
-
-        /* Search View */
-        .search-view {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-        }
-
-        .search-view-header {
-          margin-bottom: 2rem;
-        }
-
-        .search-input-container-full {
+        .yt-search-box {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          background: var(--yt-search-bg);
+          border: 1px solid var(--yt-border);
+          border-right: none;
+          border-radius: 40px 0 0 40px;
+          padding: 0 4px 0 16px;
+          height: 40px;
           position: relative;
-          max-width: 800px;
-          width: 100%;
         }
 
-        .search-icon-full {
-          position: absolute;
-          left: 1.25rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-secondary);
-          pointer-events: none;
-          font-size: 1.2rem;
-          z-index: 2;
-        }
+        .yt-search-focus-icon { display: none; margin-right: 12px; color: var(--yt-text); }
+        .yt-search-box:focus-within { border-color: #1c62b9; margin-left: 0; }
+        .yt-search-box:focus-within .yt-search-focus-icon { display: block; }
 
-        .search-input-full {
-          width: 100%;
-          padding: 1.125rem 3.5rem;
-          background: rgba(47, 47, 47, 0.95);
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          border-radius: 32px;
-          color: var(--text-primary);
-          font-size: 1.05rem;
-          transition: all 0.3s ease;
-          font-weight: 400;
-        }
-
-        .search-input-full::placeholder {
-          color: var(--text-secondary);
-          opacity: 0.8;
-        }
-
-        .search-input-full:focus {
-          outline: none;
-          border-color: rgba(255, 255, 255, 0.4);
-          background: rgba(47, 47, 47, 1);
-          box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
-        }
-
-        .clear-search-full {
-          position: absolute;
-          right: 1.125rem;
-          top: 50%;
-          transform: translateY(-50%);
-          background: rgba(255, 255, 255, 0.1);
+        .yt-search-box input {
+          flex: 1;
+          background: transparent;
           border: none;
+          color: var(--yt-text);
+          font-size: 16px;
+          height: 100%;
+          outline: none;
+          font-family: var(--yt-font);
+        }
+
+        .yt-search-btn {
+          height: 40px;
+          width: 64px;
+          background: var(--yt-raised);
+          border: 1px solid var(--yt-border);
+          border-radius: 0 40px 40px 0;
+          color: var(--yt-text);
+          cursor: pointer;
+          position: relative;
+        }
+
+        .yt-search-btn:hover { background: var(--yt-hover); }
+
+        .yt-mic-btn {
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
+          border: none;
+          background: var(--yt-search-bg);
+          color: var(--yt-text);
+          cursor: pointer;
+        }
+        .yt-mic-btn:hover { background: var(--yt-raised); }
+
+        .yt-clear-btn {
+          background: transparent;
+          border: none;
+          color: var(--yt-text);
+          cursor: pointer;
+          padding: 8px;
+        }
+
+        .yt-avatar-btn {
           width: 32px;
           height: 32px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          z-index: 2;
-        }
-
-        .clear-search-full:hover {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          transform: translateY(-50%) scale(1.1);
-        }
-
-        .search-loading {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem 2rem;
-        }
-
-        .search-results-grid {
-          padding-top: 1rem;
-        }
-
-        /* Hero Section */
-        .hero-section {
-          position: relative;
-          height: 70vh;
-          min-height: 500px;
-          max-height: 700px;
-          margin-bottom: 2rem;
-          overflow: hidden;
-        }
-
-        .hero-backdrop {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-        }
-
-        .hero-backdrop img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-        }
-
-        .hero-gradient {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 100%;
-          background: linear-gradient(
-            180deg,
-            rgba(20,20,20,0.4) 0%,
-            rgba(20,20,20,0.6) 40%,
-            rgba(20,20,20,0.95) 80%,
-            rgba(20,20,20,1) 100%
-          );
-        }
-
-        .hero-content {
-          position: relative;
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding-bottom: 3rem;
-        }
-
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          background: var(--primary);
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          width: fit-content;
-          margin-bottom: 1rem;
-        }
-
-        .hero-title {
-          font-size: clamp(1.8rem, 4vw, 3.5rem);
-          font-weight: 900;
-          margin-bottom: 1rem;
-          text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-          max-width: 700px;
-          line-height: 1.2;
-        }
-
-        .hero-meta {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          font-size: 0.95rem;
-          color: var(--text-secondary);
-          flex-wrap: wrap;
-        }
-
-        .hero-rating {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          color: #ffd700;
-        }
-
-        .hero-type {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-        }
-
-        .hero-overview {
-          max-width: 600px;
-          font-size: 1rem;
-          line-height: 1.6;
-          color: var(--text-secondary);
-          margin-bottom: 1.5rem;
-          text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .hero-actions {
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .hero-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.875rem 1.75rem;
-          border: none;
-          border-radius: 6px;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
-        }
-
-        .hero-btn-play {
-          background: var(--text-primary);
-          color: var(--background);
-        }
-
-        .hero-btn-play:hover {
-          background: var(--text-secondary);
-          transform: scale(1.05);
-        }
-
-        .hero-btn-secondary {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          backdrop-filter: blur(10px);
-        }
-
-        .hero-btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.05);
-        }
-
-        .hero-btn-secondary.active {
-          background: rgba(255, 255, 255, 0.4);
-        }
-
-        .hero-btn-icon {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          min-width: 48px;
-          width: 48px;
-          height: 48px;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          background: #5c6bc0;
           border-radius: 50%;
-          backdrop-filter: blur(10px);
-          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 500;
+          font-size: 14px;
+          cursor: pointer;
+          margin-left: 8px;
         }
 
-        .hero-btn-icon:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
+        /* Layout */
+        .yt-body {
+          display: flex;
+          height: calc(100vh - 56px);
+          margin-top: 56px;
         }
 
-        .hero-btn-icon i {
-          font-size: 1.2rem;
+        .yt-sidebar {
+          width: 72px;
+          background: var(--yt-bg);
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          padding: 4px;
+          transition: width 0.1s;
         }
 
-        /* Content Rows */
-        .content-row-container {
-          margin-bottom: 2.5rem;
-        }
+        .yt-sidebar.open { width: 240px; padding: 12px; }
 
-        .content-row-header {
-          padding: 0 1.5rem;
-          margin-bottom: 1rem;
-        }
+        .yt-nav-section { padding-bottom: 12px; }
+        .yt-divider { height: 1px; background: var(--yt-border); margin: 12px 0; }
 
-        .content-row-title {
-          font-size: 1.4rem;
+        .yt-section-title {
+          padding: 6px 12px;
+          font-size: 16px;
           font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
         }
 
-        .content-row-wrapper {
-          position: relative;
-        }
-
-        .scroll-btn {
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          background: rgba(20, 20, 20, 0.8);
-          border: none;
-          width: 50px;
-          color: white;
-          font-size: 1.5rem;
-          cursor: pointer;
-          z-index: 10;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .content-row-wrapper:hover .scroll-btn {
-          opacity: 1;
-        }
-
-        .scroll-btn-left {
-          left: 0;
-        }
-
-        .scroll-btn-right {
-          right: 0;
-        }
-
-        .scroll-btn:hover {
-          background: rgba(20, 20, 20, 0.95);
-        }
-
-        .content-row-scroll {
+        .yt-nav-item {
           display: flex;
-          gap: 0.75rem;
-          overflow-x: auto;
-          scroll-behavior: smooth;
-          scrollbar-width: none;
-          padding: 0 1.5rem;
-        }
-
-        .content-row-scroll::-webkit-scrollbar {
-          display: none;
-        }
-
-        /* Content Card */
-        .content-card-modern {
-          flex: 0 0 200px;
-          text-decoration: none;
-          color: inherit;
-          transition: transform 0.3s ease;
-          cursor: pointer;
-        }
-
-        .content-card-modern:hover {
-          transform: scale(1.05);
-          z-index: 5;
-        }
-
-        .card-image-wrapper {
-          position: relative;
-          border-radius: 8px;
-          overflow: hidden;
-          aspect-ratio: 2/3;
-          background: var(--surface);
-        }
-
-        .card-image {
+          align-items: center;
           width: 100%;
-          height: 100%;
+          height: 40px;
+          padding: 0 12px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          color: var(--yt-text);
+          cursor: pointer;
+          gap: 24px;
+          font-family: var(--yt-font);
+        }
+
+        .yt-nav-item:hover { background: var(--yt-raised); }
+        .yt-nav-item.active { background: var(--yt-raised); font-weight: 500; }
+        .yt-nav-item.active i { color: var(--yt-text); }
+        
+        .yt-sidebar:not(.open) .yt-nav-item {
+          flex-direction: column;
+          gap: 4px;
+          height: 72px;
+          padding: 16px 0;
+          font-size: 10px;
+          border-radius: 10px;
+        }
+        
+        .yt-sidebar:not(.open) .yt-nav-item i { font-size: 24px; margin-bottom: 6px; }
+        .yt-sidebar:not(.open) .yt-section-title, 
+        .yt-sidebar:not(.open) .yt-divider { display: none; }
+
+        .yt-nav-item i { font-size: 20px; width: 24px; text-align: center; }
+
+        /* Main Content */
+        .yt-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .yt-chips-wrapper {
+          height: 56px;
+          display: flex;
+          align-items: center;
+          background: var(--yt-bg);
+          width: 100%;
+          border-bottom: 1px solid transparent;
+          z-index: 10;
+        }
+
+        .yt-chips-scroll {
+          display: flex;
+          gap: 12px;
+          padding: 0 24px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .yt-chips-scroll::-webkit-scrollbar { display: none; }
+
+        .yt-chip {
+          padding: 0 12px;
+          height: 32px;
+          border-radius: 8px;
+          border: none;
+          background: var(--yt-raised);
+          color: var(--yt-text);
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: 0.2s;
+          font-family: var(--yt-font);
+        }
+
+        .yt-chip:hover { background: var(--yt-hover); }
+        .yt-chip.active { background: var(--yt-text); color: var(--yt-bg); }
+
+        .yt-content-scroll {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+        }
+
+        .yt-container {
+          max-width: 2200px;
+          margin: 0 auto;
+        }
+
+        /* Grid System */
+        .yt-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          column-gap: 16px;
+          row-gap: 40px;
+        }
+
+        /* Video Card */
+        .yt-video-card {
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .yt-thumbnail-container {
+          position: relative;
+          width: 100%;
+          padding-top: 56.25%; /* 16:9 Aspect Ratio */
+          border-radius: 12px;
+          overflow: hidden;
+          background: #202020;
+        }
+
+        .yt-thumbnail {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
           object-fit: cover;
-          opacity: 0;
-          transition: opacity 0.3s ease;
         }
 
-        .card-image.loaded {
-          opacity: 1;
-        }
-
-        .card-skeleton {
+        .yt-duration {
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            90deg,
-            var(--surface) 0%,
-            var(--surface-light) 50%,
-            var(--surface) 100%
-          );
-          background-size: 200% 100%;
-          animation: skeleton 1.5s infinite;
+          bottom: 8px;
+          right: 8px;
+          background: rgba(0,0,0,0.8);
+          color: white;
+          padding: 1px 4px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 500;
         }
 
-        @keyframes skeleton {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-
-        .card-overlay {
+        .yt-hover-overlay {
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            180deg,
-            transparent 0%,
-            rgba(0,0,0,0.8) 100%
-          );
-          opacity: 0;
-          transition: opacity 0.3s ease;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.4);
           display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 1rem;
+          align-items: center;
+          justify-content: center;
+          font-size: 48px;
+          color: white;
         }
 
-        .content-card-modern:hover .card-overlay {
-          opacity: 1;
+        .yt-details {
+          display: flex;
+          gap: 12px;
+          padding-right: 24px;
+          position: relative;
         }
 
-        .card-overlay-content {
+        .yt-avatar img {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .yt-text-info {
           display: flex;
           flex-direction: column;
         }
 
-        .card-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          line-height: 1.3;
+        .yt-title {
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 22px;
+          margin-bottom: 4px;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          color: var(--yt-text);
         }
 
-        .card-info {
+        .yt-channel-name {
+          font-size: 14px;
+          color: var(--yt-text-sec);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          margin-bottom: 0.75rem;
+          gap: 4px;
         }
+        
+        .yt-channel-name:hover { color: var(--yt-text); }
+        .verified { font-size: 12px; }
 
-        .card-rating {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          color: #ffd700;
+        .yt-meta-line {
+          font-size: 14px;
+          color: var(--yt-text-sec);
         }
-
-        .card-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .card-action-btn {
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          backdrop-filter: blur(10px);
-        }
-
-        .card-action-btn:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
-        }
-
-        /* Content Grid */
-        .grid-wrapper {
-          padding: 0 1.5rem;
-        }
-
-        .content-grid-modern {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 1rem;
-        }
-
-        /* Tab Header */
-        .tab-header {
-          padding: 2rem 1.5rem 1rem;
-        }
-
-        .tab-title {
-          font-size: 2rem;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem 2rem;
-          text-align: center;
-          color: var(--text-secondary);
-        }
-
-        .empty-state i {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          opacity: 0.5;
-        }
-
-        .empty-state p {
-          font-size: 1.2rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: var(--text-primary);
-        }
-
-        .empty-state span {
-          font-size: 0.95rem;
-        }
-
-        /* Loading */
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem 2rem;
-        }
-
-        .spinner {
-          width: 50px;
-          height: 50px;
-          border: 3px solid var(--surface);
-          border-top-color: var(--primary);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .loading-spinner p {
-          color: var(--text-secondary);
-        }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-          position: fixed;
-          bottom: 0;
-          left: 0;
+        
+        .yt-menu-dots {
+          position: absolute;
+          top: 0;
           right: 0;
-          background: rgba(31, 31, 31, 0.98);
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          display: flex;
-          justify-content: space-around;
-          padding: 0.75rem 0;
-          z-index: 100;
-          backdrop-filter: blur(10px);
+          opacity: 0;
+          transition: 0.2s;
         }
-
-        .nav-btn {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.35rem;
-          padding: 0.5rem 1.5rem;
-          background: none;
+        
+        .yt-video-card:hover .yt-menu-dots { opacity: 1; }
+        
+        .yt-menu-dots button {
+          background: transparent;
           border: none;
-          color: var(--text-secondary);
-          font-size: 0.8rem;
+          color: var(--yt-text);
           cursor: pointer;
-          transition: all 0.3s ease;
-          font-weight: 500;
+          padding: 4px;
         }
 
-        .nav-btn i {
-          font-size: 1.6rem;
+        /* Hero */
+        .yt-hero-container {
+          position: relative;
+          height: 400px;
+          border-radius: 16px;
+          overflow: hidden;
+          margin-bottom: 40px;
+          grid-column: 1 / -1;
         }
-
-        .nav-btn.active {
-          color: var(--text-primary);
+        
+        .yt-hero-backdrop img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
-
-        .nav-btn.active i {
-          color: var(--primary);
+        
+        .yt-hero-gradient {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, #0f0f0f 0%, rgba(15,15,15,0.8) 40%, transparent 100%);
         }
-
-        .nav-btn:hover {
-          color: var(--text-primary);
-        }
-
-        /* Toast Notifications - Lateral Esquerda */
-        .toast-container-left {
-          position: fixed;
-          left: 1.5rem;
-          bottom: 120px;
-          z-index: 9999;
+        
+        .yt-hero-content {
+          position: absolute;
+          top: 0; left: 0; bottom: 0;
+          width: 50%;
+          padding: 48px;
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
-          max-width: 280px;
+          justify-content: center;
+          gap: 16px;
         }
-
-        .toast-left {
-          background: rgba(31, 31, 31, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 10px;
-          padding: 0.875rem 1rem;
+        
+        .yt-chip-hero {
+          background: var(--yt-brand);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 700;
+          width: fit-content;
+          text-transform: uppercase;
+        }
+        
+        .yt-hero-content h1 {
+          font-size: 40px;
+          font-weight: 700;
+        }
+        
+        .yt-meta-row {
+          display: flex;
+          gap: 8px;
+          color: var(--yt-text-sec);
+          font-size: 14px;
+        }
+        
+        .yt-desc {
+          font-size: 16px;
+          color: #e0e0e0;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          line-height: 1.5;
+        }
+        
+        .yt-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 16px;
+        }
+        
+        .yt-btn-primary, .yt-btn-secondary {
+          padding: 10px 24px;
+          border-radius: 24px;
+          font-size: 14px;
+          font-weight: 500;
+          border: none;
+          cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          gap: 8px;
+          text-decoration: none;
         }
+        
+        .yt-btn-primary { background: var(--yt-text); color: var(--yt-bg); }
+        .yt-btn-primary:hover { background: #d9d9d9; }
+        
+        .yt-btn-secondary { background: rgba(255,255,255,0.1); color: var(--yt-text); }
+        .yt-btn-secondary:hover { background: rgba(255,255,255,0.2); }
 
-        .toast-left.removing {
-          animation: slideOutLeft 0.3s ease forwards;
+        /* Toast */
+        .yt-toast-container {
+          position: fixed;
+          bottom: 24px;
+          left: 24px;
+          z-index: 2000;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
-
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideOutLeft {
-          from {
-            opacity: 1;
-            transform: translateX(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateX(-100%);
-          }
-        }
-
-        .toast-left i {
-          font-size: 1.1rem;
-          flex-shrink: 0;
-        }
-
-        .toast-left span {
-          font-size: 0.9rem;
-          font-weight: 500;
-          line-height: 1.3;
-          color: var(--text-primary);
-        }
-
-        .toast-left-success i {
-          color: var(--success);
-        }
-
-        .toast-left-error i {
-          color: var(--error);
-        }
-
-        .toast-left-info i {
-          color: var(--info);
+        
+        .yt-toast {
+          background: var(--yt-text);
+          color: var(--yt-bg);
+          padding: 12px 24px;
+          border-radius: 4px;
+          font-size: 14px;
         }
 
         /* Responsive */
-        @media (min-width: 1024px) {
-          .header-content {
-            padding: 1.5rem 2rem;
-          }
-
-          .logo {
-            font-size: 1.65rem;
-          }
-
-          .logo img {
-            width: 48px;
-            height: 48px;
-          }
-
-          .search-trigger {
-            width: 48px;
-            height: 48px;
-          }
-
-          .bottom-nav {
-            padding: 1rem 0;
-          }
-
-          .nav-btn {
-            padding: 0.75rem 2.5rem;
-          }
-
-          .nav-btn i {
-            font-size: 1.8rem;
-          }
-
-          .nav-btn span {
-            font-size: 0.9rem;
-          }
+        @media (max-width: 1024px) {
+          .yt-header-center { margin-left: 16px; flex: 1; }
+          .yt-mic-btn { display: none; }
         }
 
         @media (max-width: 768px) {
-          .hero-section {
-            height: 55vh;
-            min-height: 450px;
-            max-height: 550px;
-          }
-
-          .hero-content {
-            padding-bottom: 2rem;
-            padding-left: 1rem;
-            padding-right: 1rem;
-          }
-
-          .hero-badge {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.85rem;
-          }
-
-          .hero-title {
-            font-size: 1.6rem;
-            margin-bottom: 0.75rem;
-          }
-
-          .hero-meta {
-            font-size: 0.85rem;
-            gap: 0.75rem;
-          }
-
-          .hero-overview {
-            font-size: 0.85rem;
-            -webkit-line-clamp: 2;
-            margin-bottom: 1.25rem;
-          }
-
-          .hero-actions {
-            gap: 0.75rem;
-          }
-
-          .hero-btn {
-            font-size: 0.9rem;
-            padding: 0.75rem 1.25rem;
-          }
-
-          .hero-btn-icon {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
-          }
-
-          .hero-btn-icon i {
-            font-size: 1.1rem;
-          }
-
-          .content-row-title {
-            font-size: 1.2rem;
-          }
-
-          .content-card-modern {
-            flex: 0 0 140px;
-          }
-
-          .content-grid-modern {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          }
-
-          .scroll-btn {
-            display: none;
-          }
-
-          .tab-title {
-            font-size: 1.5rem;
-          }
-
-          .nav-btn span {
-            font-size: 0.75rem;
-          }
-
-          .toast-container-left {
-            left: 1rem;
-            bottom: 100px;
-            max-width: 240px;
-          }
-
-          .toast-left {
-            padding: 0.75rem 0.875rem;
-          }
-
-          .toast-left i {
-            font-size: 1rem;
-          }
-
-          .toast-left span {
-            font-size: 0.85rem;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .hero-section {
-            height: 50vh;
-            min-height: 400px;
-          }
-
-          .hero-content {
-            padding-bottom: 1.5rem;
-          }
-
-          .hero-badge {
-            font-size: 0.7rem;
-            padding: 0.35rem 0.75rem;
-          }
-
-          .hero-title {
-            font-size: 1.35rem;
-            margin-bottom: 0.6rem;
-          }
-
-          .hero-meta {
-            font-size: 0.8rem;
-            gap: 0.6rem;
-          }
-
-          .hero-overview {
-            font-size: 0.8rem;
-            -webkit-line-clamp: 2;
-            margin-bottom: 1rem;
-          }
-
-          .hero-actions {
-            flex-wrap: wrap;
-            gap: 0.6rem;
-          }
-
-          .hero-btn {
-            font-size: 0.85rem;
-            padding: 0.7rem 1.1rem;
-            flex: 1;
-            min-width: calc(50% - 0.3rem);
-          }
-
-          .hero-btn-play {
-            flex: 1 1 100%;
-            min-width: 100%;
-          }
-
-          .hero-btn-secondary {
-            flex: 1;
-          }
-
-          .hero-btn-icon {
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            flex: 0 0 auto;
-          }
-
-          .hero-btn-icon i {
-            font-size: 1rem;
-          }
-
-          .content-card-modern {
-            flex: 0 0 120px;
-          }
-
-          .content-grid-modern {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .nav-btn {
-            padding: 0.5rem 0.5rem;
-          }
-
-          .nav-btn span {
-            display: none;
-          }
-
-          .toast-container-left {
-            left: 0.75rem;
-            bottom: 90px;
-            max-width: 220px;
-          }
-
-          .toast-left {
-            padding: 0.65rem 0.75rem;
-          }
-
-          .toast-left i {
-            font-size: 0.95rem;
-          }
-
-          .toast-left span {
-            font-size: 0.8rem;
-          }
+          .yt-sidebar { display: none; }
+          .yt-sidebar.open { position: fixed; height: 100%; z-index: 1200; box-shadow: 5px 0 10px rgba(0,0,0,0.5); }
+          .yt-search-box { display: none; }
+          .yt-search-btn { background: transparent; border: none; width: 40px; border-radius: 50%; }
+          .yt-search-btn:hover { background: var(--yt-raised); }
+          .yt-grid { grid-template-columns: 1fr; }
+          .yt-hero-container { height: auto; }
+          .yt-hero-content { position: relative; width: 100%; padding: 24px; background: linear-gradient(0deg, #0f0f0f 0%, transparent 100%); margin-top: -100px; }
         }
       `}</style>
-    </>
+    </div>
   )
 }
