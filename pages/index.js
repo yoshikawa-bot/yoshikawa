@@ -20,6 +20,8 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState([])
   const [trending, setTrending] = useState([])
   const [topRated, setTopRated] = useState([])
+  const [movies, setMovies] = useState([])
+  const [series, setSeries] = useState([])
   const [favorites, setFavorites] = useState([])
   const [watchlist, setWatchlist] = useState([])
   const [continueWatching, setContinueWatching] = useState([])
@@ -115,10 +117,54 @@ export default function Home() {
         ...(topRatedTv.results || []).map(item => ({...item, media_type: 'tv'}))
       ].filter(item => item.poster_path).slice(0, 20)
 
+      // Separar filmes e séries
+      const moviesList = (nowPlaying.results || [])
+        .map(item => ({...item, media_type: 'movie'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
+      const seriesList = (onAir.results || [])
+        .map(item => ({...item, media_type: 'tv'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
+      const popularMoviesList = (popularMovies.results || [])
+        .map(item => ({...item, media_type: 'movie'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
+      const popularSeriesList = (popularTv.results || [])
+        .map(item => ({...item, media_type: 'tv'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
+      const topRatedMoviesList = (topRatedMovies.results || [])
+        .map(item => ({...item, media_type: 'movie'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
+      const topRatedSeriesList = (topRatedTv.results || [])
+        .map(item => ({...item, media_type: 'tv'}))
+        .filter(item => item.poster_path)
+        .slice(0, 20)
+
       setReleases(allReleases)
       setRecommendations(allPopular)
       setTrending(allTrending)
       setTopRated(allTopRated)
+      
+      // Definir filmes e séries separadamente
+      setMovies({
+        nowPlaying: moviesList,
+        popular: popularMoviesList,
+        topRated: topRatedMoviesList
+      })
+
+      setSeries({
+        onAir: seriesList,
+        popular: popularSeriesList,
+        topRated: topRatedSeriesList
+      })
 
       // Set hero content
       if (allTrending.length > 0) {
@@ -534,9 +580,9 @@ export default function Home() {
                 Filmes
               </h1>
             </div>
-            <ContentRow title="Lançamentos" items={releases.filter(i => i.media_type === 'movie')} icon="fas fa-sparkles" />
-            <ContentRow title="Populares" items={recommendations.filter(i => i.media_type === 'movie')} icon="fas fa-star" />
-            <ContentRow title="Melhor Avaliados" items={topRated.filter(i => i.media_type === 'movie')} icon="fas fa-award" />
+            {movies.nowPlaying && <ContentRow title="Nos Cinemas" items={movies.nowPlaying} icon="fas fa-ticket-alt" />}
+            {movies.popular && <ContentRow title="Populares" items={movies.popular} icon="fas fa-star" />}
+            {movies.topRated && <ContentRow title="Melhor Avaliados" items={movies.topRated} icon="fas fa-award" />}
           </>
         )
       case 'series':
@@ -548,9 +594,9 @@ export default function Home() {
                 Séries
               </h1>
             </div>
-            <ContentRow title="No Ar" items={releases.filter(i => i.media_type === 'tv')} icon="fas fa-satellite-dish" />
-            <ContentRow title="Populares" items={recommendations.filter(i => i.media_type === 'tv')} icon="fas fa-star" />
-            <ContentRow title="Melhor Avaliadas" items={topRated.filter(i => i.media_type === 'tv')} icon="fas fa-award" />
+            {series.onAir && <ContentRow title="No Ar" items={series.onAir} icon="fas fa-satellite-dish" />}
+            {series.popular && <ContentRow title="Populares" items={series.popular} icon="fas fa-star" />}
+            {series.topRated && <ContentRow title="Melhor Avaliadas" items={series.topRated} icon="fas fa-award" />}
           </>
         )
       case 'mylist':
@@ -849,28 +895,37 @@ export default function Home() {
 
         .search-icon {
           position: absolute;
-          left: 1rem;
+          left: 1.125rem;
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-secondary);
           pointer-events: none;
+          font-size: 1.1rem;
+          z-index: 2;
         }
 
         .search-input {
           width: 100%;
-          padding: 0.875rem 3rem 0.875rem 3rem;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 24px;
+          padding: 1rem 3.25rem;
+          background: rgba(47, 47, 47, 0.95);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          border-radius: 28px;
           color: var(--text-primary);
-          font-size: 0.95rem;
+          font-size: 1rem;
           transition: all 0.3s ease;
+          font-weight: 400;
+        }
+
+        .search-input::placeholder {
+          color: var(--text-secondary);
+          opacity: 0.8;
         }
 
         .search-input:focus {
           outline: none;
-          border-color: var(--text-secondary);
-          background: var(--surface-light);
+          border-color: rgba(255, 255, 255, 0.4);
+          background: rgba(47, 47, 47, 1);
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
         }
 
         .clear-search {
@@ -878,18 +933,22 @@ export default function Home() {
           right: 1rem;
           top: 50%;
           transform: translateY(-50%);
-          background: none;
+          background: rgba(255, 255, 255, 0.1);
           border: none;
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
           color: var(--text-secondary);
           cursor: pointer;
-          padding: 0.5rem;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: color 0.2s ease;
+          transition: all 0.2s ease;
+          z-index: 2;
         }
 
         .clear-search:hover {
+          background: rgba(255, 255, 255, 0.2);
           color: var(--text-primary);
         }
 
@@ -927,6 +986,7 @@ export default function Home() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: center;
         }
 
         .hero-gradient {
@@ -937,9 +997,9 @@ export default function Home() {
           height: 100%;
           background: linear-gradient(
             180deg,
-            transparent 0%,
-            rgba(20,20,20,0.3) 40%,
-            rgba(20,20,20,0.9) 80%,
+            rgba(20,20,20,0.4) 0%,
+            rgba(20,20,20,0.6) 40%,
+            rgba(20,20,20,0.95) 80%,
             rgba(20,20,20,1) 100%
           );
         }
@@ -1063,17 +1123,25 @@ export default function Home() {
         .hero-btn-icon {
           background: rgba(255, 255, 255, 0.2);
           color: var(--text-primary);
+          min-width: 48px;
           width: 48px;
           height: 48px;
           padding: 0;
+          display: flex;
+          align-items: center;
           justify-content: center;
           border-radius: 50%;
           backdrop-filter: blur(10px);
+          flex-shrink: 0;
         }
 
         .hero-btn-icon:hover {
           background: rgba(255, 255, 255, 0.3);
           transform: scale(1.1);
+        }
+
+        .hero-btn-icon i {
+          font-size: 1.2rem;
         }
 
         /* Content Rows */
@@ -1449,23 +1517,25 @@ export default function Home() {
           bottom: 120px;
           left: 50%;
           transform: translateX(-50%);
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          padding: 1rem 1.5rem;
+          background: rgba(31, 31, 31, 0.98);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 12px;
+          padding: 1rem 1.25rem;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.875rem;
           z-index: 1000;
           animation: slideUp 0.3s ease;
-          backdrop-filter: blur(10px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          backdrop-filter: blur(20px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+          min-width: 280px;
+          max-width: 400px;
         }
 
         @keyframes slideUp {
           from {
             opacity: 0;
-            transform: translateX(-50%) translateY(20px);
+            transform: translateX(-50%) translateY(30px);
           }
           to {
             opacity: 1;
@@ -1474,42 +1544,107 @@ export default function Home() {
         }
 
         .toast i {
-          font-size: 1.2rem;
+          font-size: 1.3rem;
+          flex-shrink: 0;
+        }
+
+        .toast span {
+          font-size: 0.95rem;
+          font-weight: 500;
+          line-height: 1.4;
         }
 
         .toast-success {
+          background: rgba(70, 211, 105, 0.15);
           border-color: var(--success);
+        }
+
+        .toast-success i {
           color: var(--success);
         }
 
+        .toast-success span {
+          color: var(--text-primary);
+        }
+
         .toast-error {
+          background: rgba(232, 124, 3, 0.15);
           border-color: var(--error);
+        }
+
+        .toast-error i {
           color: var(--error);
         }
 
+        .toast-error span {
+          color: var(--text-primary);
+        }
+
         .toast-info {
+          background: rgba(84, 180, 211, 0.15);
           border-color: var(--info);
+        }
+
+        .toast-info i {
           color: var(--info);
+        }
+
+        .toast-info span {
+          color: var(--text-primary);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
           .hero-section {
-            height: 60vh;
-            min-height: 400px;
+            height: 55vh;
+            min-height: 450px;
+            max-height: 550px;
           }
 
           .hero-content {
             padding-bottom: 2rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+
+          .hero-badge {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.85rem;
           }
 
           .hero-title {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
+            margin-bottom: 0.75rem;
+          }
+
+          .hero-meta {
+            font-size: 0.85rem;
+            gap: 0.75rem;
           }
 
           .hero-overview {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             -webkit-line-clamp: 2;
+            margin-bottom: 1.25rem;
+          }
+
+          .hero-actions {
+            gap: 0.75rem;
+          }
+
+          .hero-btn {
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+          }
+
+          .hero-btn-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+          }
+
+          .hero-btn-icon i {
+            font-size: 1.1rem;
           }
 
           .content-row-title {
@@ -1539,21 +1674,84 @@ export default function Home() {
           .nav-btn span {
             font-size: 0.7rem;
           }
+
+          .toast {
+            bottom: 100px;
+            min-width: 260px;
+            max-width: 90%;
+            padding: 0.875rem 1rem;
+          }
+
+          .toast i {
+            font-size: 1.2rem;
+          }
+
+          .toast span {
+            font-size: 0.9rem;
+          }
         }
 
         @media (max-width: 480px) {
+          .hero-section {
+            height: 50vh;
+            min-height: 400px;
+          }
+
+          .hero-content {
+            padding-bottom: 1.5rem;
+          }
+
+          .hero-badge {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.75rem;
+          }
+
           .hero-title {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
+            margin-bottom: 0.6rem;
+          }
+
+          .hero-meta {
+            font-size: 0.8rem;
+            gap: 0.6rem;
+          }
+
+          .hero-overview {
+            font-size: 0.8rem;
+            -webkit-line-clamp: 2;
+            margin-bottom: 1rem;
           }
 
           .hero-actions {
-            flex-direction: column;
-            width: 100%;
+            flex-wrap: wrap;
+            gap: 0.6rem;
           }
 
           .hero-btn {
-            width: 100%;
-            justify-content: center;
+            font-size: 0.85rem;
+            padding: 0.7rem 1.1rem;
+            flex: 1;
+            min-width: calc(50% - 0.3rem);
+          }
+
+          .hero-btn-play {
+            flex: 1 1 100%;
+            min-width: 100%;
+          }
+
+          .hero-btn-secondary {
+            flex: 1;
+          }
+
+          .hero-btn-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            flex: 0 0 auto;
+          }
+
+          .hero-btn-icon i {
+            font-size: 1rem;
           }
 
           .content-card-modern {
@@ -1570,6 +1768,20 @@ export default function Home() {
 
           .nav-btn span {
             display: none;
+          }
+
+          .toast {
+            bottom: 90px;
+            min-width: 240px;
+            padding: 0.75rem 0.875rem;
+          }
+
+          .toast i {
+            font-size: 1.1rem;
+          }
+
+          .toast span {
+            font-size: 0.85rem;
           }
         }
       `}</style>
