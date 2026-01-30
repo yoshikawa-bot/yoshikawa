@@ -657,7 +657,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Yoshikawa Streaming</title>
+        <title>yStreaming</title>
         <meta name="description" content="Sua plataforma de streaming definitiva" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -668,8 +668,8 @@ export default function Home() {
       <header className="app-header">
         <div className="header-content">
           <Link href="/" className="logo" onClick={() => { setSearchActive(false); setActiveTab('home'); }}>
-            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" />
-            <span>Yoshikawa</span>
+            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="yStreaming" />
+            <span>yStreaming</span>
           </Link>
 
           <button 
@@ -779,10 +779,6 @@ export default function Home() {
           --info: #54b4d3;
         }
 
-        html, body {
-          overscroll-behavior: none;
-        }
-
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           background: var(--background);
@@ -799,9 +795,10 @@ export default function Home() {
           left: 0;
           right: 0;
           z-index: 100;
-          background: rgba(20,20,20,0.98);
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(20,20,20,0.85);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .header-content {
@@ -821,7 +818,7 @@ export default function Home() {
           color: var(--text-primary);
           font-weight: 700;
           font-size: 1.5rem;
-          transition: transform 0.2s ease;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .logo:hover {
@@ -833,6 +830,11 @@ export default function Home() {
           height: 42px;
           border-radius: 8px;
           object-fit: cover;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .logo:hover img {
+          transform: rotate(5deg) scale(1.05);
         }
 
         .search-trigger {
@@ -846,7 +848,7 @@ export default function Home() {
           justify-content: center;
           color: var(--text-primary);
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .search-trigger:hover {
@@ -855,12 +857,18 @@ export default function Home() {
         }
 
         .search-trigger.active {
-          background: var(--primary);
-          border-color: var(--primary);
+          background: var(--text-primary);
+          border-color: var(--text-primary);
+          color: var(--background);
         }
 
         .search-trigger i {
           font-size: 1.1rem;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-trigger.active i {
+          transform: rotate(90deg);
         }
 
         /* Main */
@@ -883,73 +891,77 @@ export default function Home() {
         }
 
         .search-view-header {
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
+          padding-top: 2rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
 
         .search-input-container-full {
           position: relative;
-          max-width: 800px;
+          max-width: 600px;
           width: 100%;
         }
 
         .search-icon-full {
           position: absolute;
-          left: 1.25rem;
+          left: 1rem;
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-secondary);
           pointer-events: none;
-          font-size: 1.2rem;
+          font-size: 1rem;
           z-index: 2;
         }
 
         .search-input-full {
           width: 100%;
-          padding: 1.125rem 3.5rem;
+          padding: 0.875rem 3rem;
           background: rgba(47, 47, 47, 0.95);
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          border-radius: 32px;
+          border: 2px solid rgba(255, 255, 255, 0.15);
+          border-radius: 28px;
           color: var(--text-primary);
-          font-size: 1.05rem;
-          transition: all 0.3s ease;
+          font-size: 0.95rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           font-weight: 400;
         }
 
         .search-input-full::placeholder {
           color: var(--text-secondary);
-          opacity: 0.8;
+          opacity: 0.7;
         }
 
         .search-input-full:focus {
           outline: none;
-          border-color: rgba(255, 255, 255, 0.4);
+          border-color: rgba(255, 255, 255, 0.3);
           background: rgba(47, 47, 47, 1);
-          box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.03);
         }
 
         .clear-search-full {
           position: absolute;
-          right: 1.125rem;
+          right: 0.875rem;
           top: 50%;
           transform: translateY(-50%);
           background: rgba(255, 255, 255, 0.1);
           border: none;
           border-radius: 50%;
-          width: 32px;
-          height: 32px;
+          width: 28px;
+          height: 28px;
           color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.2s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 2;
         }
 
         .clear-search-full:hover {
           background: rgba(255, 255, 255, 0.2);
           color: var(--text-primary);
-          transform: translateY(-50%) scale(1.1);
+          transform: translateY(-50%) scale(1.08);
         }
 
         .search-loading {
@@ -1091,7 +1103,7 @@ export default function Home() {
           font-size: 1rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           text-decoration: none;
         }
 
@@ -1102,7 +1114,12 @@ export default function Home() {
 
         .hero-btn-play:hover {
           background: var(--text-secondary);
-          transform: scale(1.05);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-btn-play:active {
+          transform: translateY(0);
         }
 
         .hero-btn-secondary {
@@ -1113,7 +1130,11 @@ export default function Home() {
 
         .hero-btn-secondary:hover {
           background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.05);
+          transform: translateY(-2px);
+        }
+
+        .hero-btn-secondary:active {
+          transform: translateY(0);
         }
 
         .hero-btn-secondary.active {
@@ -1133,15 +1154,21 @@ export default function Home() {
           border-radius: 50%;
           backdrop-filter: blur(10px);
           flex-shrink: 0;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .hero-btn-icon:hover {
           background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
+          transform: scale(1.1) rotate(5deg);
+        }
+
+        .hero-btn-icon:active {
+          transform: scale(1);
         }
 
         .hero-btn-icon i {
           font-size: 1.2rem;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Content Rows */
@@ -1215,7 +1242,7 @@ export default function Home() {
           flex: 0 0 200px;
           text-decoration: none;
           color: inherit;
-          transition: transform 0.3s ease;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
         }
 
@@ -1237,7 +1264,7 @@ export default function Home() {
           height: 100%;
           object-fit: cover;
           opacity: 0;
-          transition: opacity 0.3s ease;
+          transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card-image.loaded {
@@ -1257,7 +1284,7 @@ export default function Home() {
             var(--surface) 100%
           );
           background-size: 200% 100%;
-          animation: skeleton 1.5s infinite;
+          animation: skeleton 1.5s ease-in-out infinite;
         }
 
         @keyframes skeleton {
@@ -1277,7 +1304,7 @@ export default function Home() {
             rgba(0,0,0,0.8) 100%
           );
           opacity: 0;
-          transition: opacity 0.3s ease;
+          transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
@@ -1336,13 +1363,18 @@ export default function Home() {
           justify-content: center;
           color: white;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           backdrop-filter: blur(10px);
         }
 
         .card-action-btn:hover {
           background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1);
+          transform: scale(1.15) rotate(10deg);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-action-btn:active {
+          transform: scale(0.95);
         }
 
         /* Content Grid */
@@ -1430,13 +1462,14 @@ export default function Home() {
           bottom: 0;
           left: 0;
           right: 0;
-          background: rgba(31, 31, 31, 0.98);
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(31, 31, 31, 0.85);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           justify-content: space-around;
           padding: 0.75rem 0;
           z-index: 100;
-          backdrop-filter: blur(10px);
         }
 
         .nav-btn {
@@ -1450,12 +1483,13 @@ export default function Home() {
           color: var(--text-secondary);
           font-size: 0.8rem;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           font-weight: 500;
         }
 
         .nav-btn i {
           font-size: 1.6rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .nav-btn.active {
@@ -1463,11 +1497,16 @@ export default function Home() {
         }
 
         .nav-btn.active i {
-          color: var(--primary);
+          color: var(--text-primary);
+          transform: scale(1.1);
         }
 
         .nav-btn:hover {
           color: var(--text-primary);
+        }
+
+        .nav-btn:hover i {
+          transform: scale(1.05);
         }
 
         /* Toast Notifications - Lateral Esquerda */
@@ -1483,41 +1522,42 @@ export default function Home() {
         }
 
         .toast-left {
-          background: rgba(31, 31, 31, 0.95);
-          backdrop-filter: blur(20px);
+          background: rgba(31, 31, 31, 0.8);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
           border-radius: 10px;
           padding: 0.875rem 1rem;
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
           border: 1px solid rgba(255, 255, 255, 0.1);
           animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .toast-left.removing {
-          animation: slideOutLeft 0.3s ease forwards;
+          animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
         }
 
         @keyframes slideInLeft {
           from {
             opacity: 0;
-            transform: translateX(-100%);
+            transform: translateX(-100%) scale(0.9);
           }
           to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
           }
         }
 
         @keyframes slideOutLeft {
           from {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
           }
           to {
             opacity: 0;
-            transform: translateX(-100%);
+            transform: translateX(-100%) scale(0.9);
           }
         }
 
@@ -1778,4 +1818,4 @@ export default function Home() {
       `}</style>
     </>
   )
-        }
+}
