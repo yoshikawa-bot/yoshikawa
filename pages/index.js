@@ -358,16 +358,6 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-        <defs>
-          <filter id="liquid-glass">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
-            <feBlend in="SourceGraphic" in2="goo" />
-          </filter>
-        </defs>
-      </svg>
-
       <Header />
       
       <ToastContainer />
@@ -527,7 +517,6 @@ export default function Home() {
           object-fit: cover;
           flex-shrink: 0;
           transition: all 0.3s;
-          filter: url(#liquid-glass);
         }
 
         .logo-image:hover {
@@ -600,23 +589,21 @@ export default function Home() {
         }
 
         .content-card {
-          background-color: var(--card-bg);
-          border-radius: 15px;
+          background-color: rgba(30, 30, 30, 1);
+          border-radius: 12px;
           overflow: hidden;
           transition: all 0.3s ease;
           cursor: pointer;
-          border: 1px solid var(--border);
+          border: none;
           position: relative;
           text-decoration: none;
           color: inherit;
           aspect-ratio: 2/3;
-          filter: url(#liquid-glass);
         }
 
         .content-card:hover {
-          transform: translateY(-5px);
-          border-color: var(--primary);
-          box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
 
         .content-poster {
@@ -691,7 +678,6 @@ export default function Home() {
           padding: 0 10px;
           position: relative;
           transition: all 0.3s ease;
-          filter: url(#liquid-glass);
         }
 
         .main-nav-bar.search-active {
@@ -773,7 +759,6 @@ export default function Home() {
           opacity: 1;
           transform: scale(1);
           z-index: 1;
-          filter: url(#liquid-glass);
         }
 
         .search-circle:hover {
@@ -877,7 +862,6 @@ export default function Home() {
           opacity: 0;
           transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           max-width: 400px;
-          filter: url(#liquid-glass);
         }
 
         .toast.show {
