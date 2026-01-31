@@ -188,7 +188,7 @@ export default function Home() {
             --pill-bg: rgba(20, 20, 20, 0.35);
             --pill-border: 1px solid rgba(255, 255, 255, 0.12);
             --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-            --pill-blur: blur(40px);
+            --pill-blur: blur(16px);
             --pill-max-width: 680px;
           }
 
@@ -205,7 +205,8 @@ export default function Home() {
             height: var(--pill-height);
             width: 90%;
             max-width: var(--pill-max-width);
-            padding: 0 1.75rem;
+            padding-left: 1.75rem;
+            padding-right: 1.75rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -340,7 +341,8 @@ export default function Home() {
             align-items: center;
             justify-content: space-around;
             height: var(--pill-height);
-            padding: 0 1.75rem;
+            padding-left: 1.75rem;
+            padding-right: 1.75rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -354,7 +356,6 @@ export default function Home() {
 
           .nav-pill.search-mode {
             justify-content: flex-start;
-            padding: 0 1.75rem;
           }
 
           .nav-btn {
@@ -426,7 +427,8 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 0 1.75rem;
+            padding-left: 1.75rem;
+            padding-right: 1.75rem;
             height: 40px;
             border-radius: 28px;
             border: var(--pill-border);
@@ -501,7 +503,7 @@ export default function Home() {
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
             .header-pill { top: 14px; width: 92%; }
-            .nav-pill { width: calc(var(--pill-max-width) - 78px); padding: 0 1rem; }
+            .nav-pill { width: calc(var(--pill-max-width) - 78px); padding-left: 1rem; padding-right: 1rem; }
           }
 
           @media (max-width: 480px) {
@@ -510,7 +512,7 @@ export default function Home() {
               --pill-max-width: 95vw;
             }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .nav-pill { padding: 0 1.75rem; }
+            .nav-pill { padding-left: 1.75rem; padding-right: 1.75rem; }
             .nav-btn i { font-size: 22px; }
             .search-circle i { font-size: 24px; }
             .bottom-nav { gap: 8px; }
