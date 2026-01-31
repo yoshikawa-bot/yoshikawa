@@ -182,18 +182,16 @@ export default function Home() {
           button { font-family: inherit; }
           img { max-width: 100%; height: auto; }
 
-          /* ─── SHARED PILL STYLE ─── */
           :root {
             --pill-height: 72px;
             --pill-radius: 44px;
-            --pill-bg: rgba(30, 30, 30, 0.55);
+            --pill-bg: rgba(20, 20, 20, 0.35);
             --pill-border: 1px solid rgba(255, 255, 255, 0.12);
             --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
             --pill-blur: blur(40px);
             --pill-max-width: 680px;
           }
 
-          /* ─── HEADER PILL (flutuante no topo, espelhado da navbar) ─── */
           .header-pill {
             position: fixed;
             top: 20px;
@@ -256,7 +254,6 @@ export default function Home() {
           }
           .header-plus:hover { opacity: 1; }
 
-          /* ─── MAIN CONTENT ─── */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -273,7 +270,6 @@ export default function Home() {
             margin-bottom: 1.2rem;
           }
 
-          /* ─── GRID ─── */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -281,7 +277,6 @@ export default function Home() {
             width: 100%;
           }
 
-          /* ─── CARD ─── */
           .content-card {
             position: relative;
             display: block;
@@ -306,7 +301,6 @@ export default function Home() {
             display: block;
           }
 
-          /* ─── FAVORITE BTN ─── */
           .fav-btn {
             position: absolute;
             top: 8px;
@@ -330,7 +324,6 @@ export default function Home() {
           .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
           .fav-btn.active { background: rgba(255, 107, 107, 0.6); }
 
-          /* ─── BOTTOM NAV ─── */
           .bottom-nav {
             position: fixed;
             bottom: 25px;
@@ -380,7 +373,6 @@ export default function Home() {
           .nav-btn:hover i { color: #ff6b6b; transform: scale(1.08); }
           .nav-btn.active i { color: #ff6b6b; }
 
-          /* Search input dentro da nav pill */
           .search-wrap {
             width: 100%;
             display: flex;
@@ -398,7 +390,6 @@ export default function Home() {
           }
           .search-wrap input::placeholder { color: #f1f5f9; opacity: 0.5; }
 
-          /* ─── SEARCH CIRCLE ─── */
           .search-circle {
             width: var(--pill-height);
             height: var(--pill-height);
@@ -417,7 +408,6 @@ export default function Home() {
           }
           .search-circle i { font-size: 28px; }
 
-          /* ─── TOAST PILL (própria pill flutuante acima da navbar) ─── */
           .toast-wrap {
             position: fixed;
             bottom: calc(25px + var(--pill-height) + 14px);
@@ -436,8 +426,8 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 0 1.25rem;
-            height: 48px;
+            padding: 0 1.75rem;
+            height: 40px;
             border-radius: 28px;
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -480,7 +470,6 @@ export default function Home() {
           }
           .toast-x:hover { color: #f1f5f9; }
 
-          /* ─── EMPTY / LOADING STATES ─── */
           .empty-state {
             display: flex;
             flex-direction: column;
@@ -504,7 +493,6 @@ export default function Home() {
           }
           @keyframes spin { to { transform: rotate(360deg); } }
 
-          /* ─── RESPONSIVE ─── */
           @media (max-width: 768px) {
             :root {
               --pill-height: 64px;
@@ -522,7 +510,7 @@ export default function Home() {
               --pill-max-width: 95vw;
             }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .nav-pill { padding: 0 0.75rem; }
+            .nav-pill { padding: 0 1.75rem; }
             .nav-btn i { font-size: 22px; }
             .search-circle i { font-size: 24px; }
             .bottom-nav { gap: 8px; }
@@ -534,7 +522,6 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {/* ─── HEADER ─── */}
       <header className="header-pill">
         <Link href="/" className="header-left">
           <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
@@ -545,7 +532,6 @@ export default function Home() {
         </button>
       </header>
 
-      {/* ─── TOASTS (pill própria, acima da navbar) ─── */}
       <div className="toast-wrap">
         {toasts.map(t => (
           <div key={t.id} className={`toast ${t.type}`}>
@@ -558,11 +544,9 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ─── MAIN ─── */}
       <main className="container">
         <h1 className="page-title">{pageTitle}</h1>
 
-        {/* loading */}
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
             <div className="spinner"></div>
@@ -570,14 +554,12 @@ export default function Home() {
           </div>
         )}
 
-        {/* search results vazio */}
         {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
           <div className="empty-state">
             <i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}"</p>
           </div>
         )}
 
-        {/* grid */}
         {(searchActive ? searchResults : getActiveItems()).length > 0 && !loading && (
           <div className="content-grid">
             {(searchActive ? searchResults : getActiveItems()).map(item => {
@@ -594,13 +576,11 @@ export default function Home() {
           </div>
         )}
 
-        {/* favoritos vazio */}
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state"><i className="fas fa-heart"></i><p>Nenhum favorito adicionado ainda.</p></div>
         )}
       </main>
 
-      {/* ─── BOTTOM NAV ─── */}
       <div className="bottom-nav">
         <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
           {searchActive ? (
