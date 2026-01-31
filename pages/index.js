@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// Debounce hook
+// Define a função debounce para limitar chamadas de API
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -18,20 +18,12 @@ const useDebounce = (callback, delay) => {
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
-  const [trending, setTrending] = useState([])
-  const [topRated, setTopRated] = useState([])
-  const [movies, setMovies] = useState({})
-  const [series, setSeries] = useState({})
   const [favorites, setFavorites] = useState([])
-  const [watchlist, setWatchlist] = useState([])
-  const [continueWatching, setContinueWatching] = useState([])
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
-  const [searchLoading, setSearchLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('home')
+  const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
-  const [heroContent, setHeroContent] = useState(null)
   const [toasts, setToasts] = useState([])
 
   const searchInputRef = useRef(null)
@@ -40,29 +32,26 @@ export default function Home() {
 
   const getItemKey = (item) => `${item.media_type}-${item.id}`
 
+  // Sistema de Toast Notifications (Modificado para não acumular)
   const showToast = (message, type = 'info') => {
     const id = Date.now()
-    const newToast = { id, message, type }
+    const toast = { id, message, type }
     
-    setToasts(prev => {
-      // Limita a 2 notificações
-      const updated = [...prev, newToast]
-      if (updated.length > 2) {
-        return updated.slice(-2) // Mantém apenas as 2 últimas
-      }
-      return updated
-    })
+    // Substitui o array anterior pelo novo toast, garantindo apenas um por vez
+    setToasts([toast])
     
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
-    }, 3500)
+      removeToast(id)
+    }, 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
   }
 
   useEffect(() => {
-    loadAllContent()
+    loadHomeContent()
     loadFavorites()
-    loadWatchlist()
-    loadContinueWatching()
   }, [])
 
   useEffect(() => {
@@ -70,239 +59,20 @@ export default function Home() {
       searchInputRef.current.focus()
     }
     if (!searchActive) {
-      setSearchResults([])
-      setSearchQuery('')
+        setSearchResults([])
+        setSearchQuery('')
     }
   }, [searchActive])
-
-  const loadAllContent = async () => {
-    setLoading(true)
-    try {
-      const [
-        nowPlayingRes,
-        onAirRes,
-        popularMoviesRes,
-        popularTvRes,
-        trendingRes,
-        topRatedMoviesRes,
-        topRatedTvRes
-      ] = await Promise.all([
-        fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetch(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`)
-      ])
-
-      const nowPlaying = await nowPlayingRes.json()
-      const onAir = await onAirRes.json()
-      const popularMovies = await popularMoviesRes.json()
-      const popularTv = await popularTvRes.json()
-      const trendingData = await trendingRes.json()
-      const topRatedMovies = await topRatedMoviesRes.json()
-      const topRatedTv = await topRatedTvRes.json()
-
-      const allReleases = [
-        ...(nowPlaying.results || []).map(item => ({...item, media_type: 'movie'})),
-        ...(onAir.results || []).map(item => ({...item, media_type: 'tv'}))
-      ].filter(item => item.poster_path).slice(0, 20)
-
-      const allPopular = [
-        ...(popularMovies.results || []).map(item => ({...item, media_type: 'movie'})),
-        ...(popularTv.results || []).map(item => ({...item, media_type: 'tv'}))
-      ].filter(item => item.poster_path).slice(0, 20)
-
-      const allTrending = (trendingData.results || [])
-        .filter(item => item.poster_path && item.backdrop_path)
-        .slice(0, 20)
-
-      const allTopRated = [
-        ...(topRatedMovies.results || []).map(item => ({...item, media_type: 'movie'})),
-        ...(topRatedTv.results || []).map(item => ({...item, media_type: 'tv'}))
-      ].filter(item => item.poster_path).slice(0, 20)
-
-      const moviesList = (nowPlaying.results || [])
-        .map(item => ({...item, media_type: 'movie'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      const seriesList = (onAir.results || [])
-        .map(item => ({...item, media_type: 'tv'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      const popularMoviesList = (popularMovies.results || [])
-        .map(item => ({...item, media_type: 'movie'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      const popularSeriesList = (popularTv.results || [])
-        .map(item => ({...item, media_type: 'tv'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      const topRatedMoviesList = (topRatedMovies.results || [])
-        .map(item => ({...item, media_type: 'movie'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      const topRatedSeriesList = (topRatedTv.results || [])
-        .map(item => ({...item, media_type: 'tv'}))
-        .filter(item => item.poster_path)
-        .slice(0, 20)
-
-      setReleases(allReleases)
-      setRecommendations(allPopular)
-      setTrending(allTrending)
-      setTopRated(allTopRated)
-      
-      setMovies({
-        nowPlaying: moviesList,
-        popular: popularMoviesList,
-        topRated: topRatedMoviesList
-      })
-
-      setSeries({
-        onAir: seriesList,
-        popular: popularSeriesList,
-        topRated: topRatedSeriesList
-      })
-
-      if (allTrending.length > 0) {
-        setHeroContent(allTrending[0])
-      }
-
-    } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error)
-      showToast('Erro ao carregar conteúdo', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadFavorites = () => {
-    try {
-      const saved = localStorage.getItem('yoshikawaFavorites')
-      setFavorites(saved ? JSON.parse(saved) : [])
-    } catch (error) {
-      setFavorites([])
-    }
-  }
-
-  const loadWatchlist = () => {
-    try {
-      const saved = localStorage.getItem('yoshikawaWatchlist')
-      setWatchlist(saved ? JSON.parse(saved) : [])
-    } catch (error) {
-      setWatchlist([])
-    }
-  }
-
-  const loadContinueWatching = () => {
-    try {
-      const saved = localStorage.getItem('yoshikawaContinueWatching')
-      setContinueWatching(saved ? JSON.parse(saved) : [])
-    } catch (error) {
-      setContinueWatching([])
-    }
-  }
-
-  const isFavorite = (item) => {
-    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type)
-  }
-
-  const isInWatchlist = (item) => {
-    return watchlist.some(w => w.id === item.id && w.media_type === item.media_type)
-  }
-
-  const toggleFavorite = (item, e) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    
-    setFavorites(prev => {
-      const exists = prev.some(fav => getItemKey(fav) === getItemKey(item))
-      let newFavorites
-      
-      if (exists) {
-        newFavorites = prev.filter(fav => getItemKey(fav) !== getItemKey(item))
-        showToast('Removido dos favoritos', 'info')
-      } else {
-        const favoriteItem = {
-          id: item.id,
-          media_type: item.media_type,
-          title: item.title || item.name,
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date,
-          first_air_date: item.first_air_date,
-          overview: item.overview,
-          vote_average: item.vote_average
-        }
-        newFavorites = [...prev, favoriteItem]
-        showToast('Adicionado aos favoritos!', 'success')
-      }
-      
-      try {
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
-      } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
-      }
-
-      return newFavorites
-    })
-  }
-
-  const toggleWatchlist = (item, e) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    
-    setWatchlist(prev => {
-      const exists = prev.some(w => getItemKey(w) === getItemKey(item))
-      let newWatchlist
-      
-      if (exists) {
-        newWatchlist = prev.filter(w => getItemKey(w) !== getItemKey(item))
-        showToast('Removido da lista', 'info')
-      } else {
-        const watchlistItem = {
-          id: item.id,
-          media_type: item.media_type,
-          title: item.title || item.name,
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date,
-          first_air_date: item.first_air_date,
-          overview: item.overview,
-          vote_average: item.vote_average
-        }
-        newWatchlist = [...prev, watchlistItem]
-        showToast('Adicionado à lista!', 'success')
-      }
-      
-      try {
-        localStorage.setItem('yoshikawaWatchlist', JSON.stringify(newWatchlist))
-      } catch (error) {
-        console.error('Erro ao salvar watchlist:', error)
-      }
-
-      return newWatchlist
-    })
-  }
-
+  
+  // Função central de busca
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
-      setSearchLoading(false)
+      setLoading(false)
       return
     }
     
-    setSearchLoading(true)
+    setLoading(true)
     
     try {
       const [moviesResponse, tvResponse] = await Promise.all([
@@ -324,1512 +94,2005 @@ export default function Home() {
       
     } catch (error) {
       console.error('Erro na busca:', error)
-      showToast('Erro na busca', 'error')
+      showToast('Erro na busca em tempo real', 'error')
       setSearchResults([])
     } finally {
-      setSearchLoading(false)
+      setLoading(false)
     }
   }
 
-  const debouncedSearch = useDebounce(fetchSearchResults, 400)
+  const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
   const handleSearchChange = (e) => {
     const query = e.target.value
     setSearchQuery(query)
     if (query.trim() === '') {
-      setSearchResults([])
-      setSearchLoading(false)
-      return
+        setSearchResults([])
+        setLoading(false)
+        return
     }
-    setSearchLoading(true)
+    setLoading(true)
     debouncedSearch(query)
   }
 
-  // Components com React.memo para evitar re-renders
-  const HeroSection = React.memo(({ content }) => {
-    if (!content) return null
+  // --- Funções de Carregamento de Conteúdo ---
+  const loadHomeContent = async () => { 
+    try {
+      const [moviesResponse, tvResponse, popularMoviesResponse, popularTvResponse] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
+        fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`)
+      ])
 
-    return (
-      <div className="hero-section">
-        <div className="hero-backdrop">
-          <img 
-            src={`https://image.tmdb.org/t/p/original${content.backdrop_path}`} 
-            alt={content.title || content.name}
-          />
-          <div className="hero-gradient"></div>
-        </div>
-        <div className="hero-content">
-          <div className="hero-badge">
-            <i className="fas fa-fire"></i>
-            <span>Em Alta</span>
-          </div>
-          <h1 className="hero-title">{content.title || content.name}</h1>
-          <div className="hero-meta">
-            <span className="hero-rating">
-              <i className="fas fa-star"></i>
-              {content.vote_average ? content.vote_average.toFixed(1) : 'N/A'}
-            </span>
-            <span className="hero-year">
-              {content.release_date ? new Date(content.release_date).getFullYear() : 
-               content.first_air_date ? new Date(content.first_air_date).getFullYear() : 'N/A'}
-            </span>
-            <span className="hero-type">
-              <i className={`fas fa-${content.media_type === 'movie' ? 'film' : 'tv'}`}></i>
-              {content.media_type === 'movie' ? 'Filme' : 'Série'}
-            </span>
-          </div>
-          <p className="hero-overview">
-            {content.overview || 'Sem descrição disponível.'}
-          </p>
-          <div className="hero-actions">
-            <Link href={`/${content.media_type}/${content.id}`} className="hero-btn hero-btn-play">
-              <i className="fas fa-play"></i>
-              <span>Assistir</span>
-            </Link>
-            <button 
-              className={`hero-btn hero-btn-secondary ${isInWatchlist(content) ? 'active' : ''}`}
-              onClick={(e) => toggleWatchlist(content, e)}
-            >
-              <i className={`fas fa-${isInWatchlist(content) ? 'check' : 'plus'}`}></i>
-              <span>{isInWatchlist(content) ? 'Na Lista' : 'Minha Lista'}</span>
-            </button>
-            <button 
-              className="hero-btn hero-btn-icon"
-              onClick={(e) => toggleFavorite(content, e)}
-            >
-              <i className={`fa${isFavorite(content) ? 's' : 'r'} fa-heart`}></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  })
+      const moviesData = await moviesResponse.json()
+      const tvData = await tvResponse.json()
+      const popularMoviesData = await popularMoviesResponse.json()
+      const popularTvData = await popularTvResponse.json()
 
-  HeroSection.displayName = 'HeroSection'
+      const allReleases = [
+        ...(moviesData.results || []).map(item => ({...item, media_type: 'movie'})),
+        ...(tvData.results || []).map(item => ({...item, media_type: 'tv'}))
+      ]
+        .filter(item => item.poster_path)
+        .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
+        .slice(0, 15)
 
-  const ContentRow = React.memo(({ title, items, icon }) => {
-    const scrollRef = useRef(null)
+      const allPopular = [
+        ...(popularMoviesData.results || []).map(item => ({...item, media_type: 'movie'})),
+        ...(popularTvData.results || []).map(item => ({...item, media_type: 'tv'}))
+      ]
+        .filter(item => item.poster_path)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 15)
 
-    const scroll = (direction) => {
-      if (scrollRef.current) {
-        const scrollAmount = direction === 'left' ? -400 : 400
-        scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+      setReleases(allReleases)
+      setRecommendations(allPopular)
+
+    } catch (error) {
+      console.error('Erro ao carregar conteúdo:', error)
+    }
+  }
+
+  const loadFavorites = () => {
+    try {
+      const savedFavorites = localStorage.getItem('yoshikawaFavorites')
+      const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
+      setFavorites(initialFavorites)
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error)
+      setFavorites([])
+    }
+  }
+  
+  const isFavorite = (item) => {
+    return favorites.some(fav => fav.id === item.id && fav.media_type === item.media_type);
+  }
+
+  const toggleFavorite = (item) => {
+    setFavorites(prevFavorites => {
+      let newFavorites
+      const wasFavorite = isFavorite(item)
+      
+      if (wasFavorite) {
+        newFavorites = prevFavorites.filter(fav => getItemKey(fav) !== getItemKey(item))
+        showToast('Removido dos favoritos', 'info')
+      } else {
+        const favoriteItem = {
+          id: item.id,
+          media_type: item.media_type,
+          title: item.title || item.name,
+          poster_path: item.poster_path,
+          release_date: item.release_date,
+          first_air_date: item.first_air_date,
+          overview: item.overview
+        }
+        newFavorites = [...prevFavorites, favoriteItem]
+        showToast('Adicionado aos favoritos!', 'success')
+      }
+      
+      try {
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
+      } catch (error) {
+        console.error('Erro ao salvar favoritos:', error)
+        showToast('Erro ao salvar favoritos', 'error')
+      }
+
+      return newFavorites
+    })
+  }
+  
+  const handleSearchSubmit = () => {
+    if (searchInputRef.current) {
+      const query = searchInputRef.current.value.trim()
+      if (query) {
+        debouncedSearch(query)
+      } else {
+        setSearchResults([])
+        showToast('Digite algo para pesquisar', 'info')
       }
     }
+  }
 
-    if (!items || items.length === 0) return null
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit()
+    }
+  }
 
-    return (
-      <div className="content-row-container">
-        <div className="content-row-header">
-          <h2 className="content-row-title">
-            {icon && <i className={icon}></i>}
-            {title}
-          </h2>
-        </div>
-        <div className="content-row-wrapper">
-          <button className="scroll-btn scroll-btn-left" onClick={() => scroll('left')}>
-            <i className="fas fa-chevron-left"></i>
-          </button>
-          <div className="content-row-scroll" ref={scrollRef}>
-            {items.map(item => (
-              <ContentCard key={getItemKey(item)} item={item} />
-            ))}
-          </div>
-          <button className="scroll-btn scroll-btn-right" onClick={() => scroll('right')}>
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    )
-  })
+  const getActiveItems = () => {
+    switch (activeSection) {
+      case 'releases':
+        return releases
+      case 'recommendations':
+        return recommendations
+      case 'favorites':
+        return favorites
+      default:
+        return releases
+    }
+  }
+  
+  const getActiveSectionDetails = () => {
+    switch (activeSection) {
+      case 'releases':
+        return { title: 'Lançamentos', icon: 'fas fa-film' }
+      case 'recommendations':
+        return { title: 'Populares', icon: 'fas fa-fire' }
+      case 'favorites':
+        return { title: 'Favoritos', icon: 'fas fa-heart' }
+      default:
+        return { title: 'Conteúdo', icon: 'fas fa-tv' }
+    }
+  }
+  
+  const { title: pageTitle, icon: pageIcon } = getActiveSectionDetails()
 
-  ContentRow.displayName = 'ContentRow'
+  // --- Componentes ---
 
-  const ContentCard = React.memo(({ item }) => {
-    const [imageLoaded, setImageLoaded] = useState(false)
+  const ContentGrid = ({ items, isFavorite, toggleFavorite, extraClass = '' }) => (
+    <div className={`content-grid ${extraClass}`}>
+      {items.length > 0 ? (
+        items.map(item => {
+          const isFav = isFavorite(item)
+          return (
+            <Link 
+              key={getItemKey(item)}
+              href={`/${item.media_type}/${item.id}`}
+              className="content-card"
+            >
+              <img 
+                src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+                alt={item.title || item.name}
+                className="content-poster"
+                loading="lazy"
+              />
+              
+              <button 
+                className={`favorite-btn ${isFav ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault() 
+                  e.stopPropagation() 
+                  toggleFavorite(item)
+                }}
+                title={isFav ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+              >
+                <i className={isFav ? 'fas fa-heart' : 'far fa-heart'}></i>
+              </button>
 
-    return (
-      <Link href={`/${item.media_type}/${item.id}`} className="content-card-modern">
-        <div className="card-image-wrapper">
-          <img 
-            src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER}
-            alt={item.title || item.name}
-            className={`card-image ${imageLoaded ? 'loaded' : ''}`}
-            loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-          />
-          {!imageLoaded && <div className="card-skeleton"></div>}
-          
-          <div className="card-overlay">
-            <div className="card-overlay-content">
-              <h3 className="card-title">{item.title || item.name}</h3>
-              <div className="card-info">
-                <span className="card-rating">
-                  <i className="fas fa-star"></i>
-                  {item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}
-                </span>
-                <span className="card-year">
+              <div className="floating-text-wrapper">
+                <div className="content-title-card">{item.title || item.name}</div>
+                <div className="content-year">
                   {item.release_date ? new Date(item.release_date).getFullYear() : 
                    item.first_air_date ? new Date(item.first_air_date).getFullYear() : 'N/A'}
-                </span>
+                </div>
               </div>
-              <div className="card-actions">
-                <button 
-                  className="card-action-btn"
-                  onClick={(e) => toggleWatchlist(item, e)}
-                  title={isInWatchlist(item) ? "Remover da lista" : "Adicionar à lista"}
-                >
-                  <i className={`fas fa-${isInWatchlist(item) ? 'check' : 'plus'}`}></i>
-                </button>
-                <button 
-                  className="card-action-btn"
-                  onClick={(e) => toggleFavorite(item, e)}
-                  title={isFavorite(item) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                >
-                  <i className={`fa${isFavorite(item) ? 's' : 'r'} fa-heart`}></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Link>
-    )
-  })
-
-  ContentCard.displayName = 'ContentCard'
-
-  const ContentGrid = React.memo(({ items }) => {
-    if (!items || items.length === 0) {
-      return (
-        <div className="empty-state">
-          <i className="fas fa-ghost"></i>
-          <p>Nenhum conteúdo encontrado</p>
-        </div>
-      )
-    }
-
-    return (
-      <div className="content-grid-modern">
-        {items.map(item => (
-          <ContentCard key={getItemKey(item)} item={item} />
-        ))}
-      </div>
-    )
-  })
-
-  ContentGrid.displayName = 'ContentGrid'
-
-  const SearchView = () => (
-    <div className="search-view">
-      <div className="search-view-header">
-        <div className="search-input-container-full">
-          <i className="fas fa-search search-icon-full"></i>
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Buscar filmes e séries..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="search-input-full"
-            autoFocus
-          />
-          {searchQuery && (
-            <button className="clear-search-full" onClick={() => setSearchQuery('')}>
-              <i className="fas fa-times"></i>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {searchLoading && (
-        <div className="search-loading">
-          <div className="spinner"></div>
-          <p>Buscando...</p>
-        </div>
-      )}
-
-      {!searchLoading && searchResults.length > 0 && (
-        <div className="search-results-grid">
-          <ContentGrid items={searchResults} />
-        </div>
-      )}
-
-      {!searchLoading && searchQuery && searchResults.length === 0 && (
-        <div className="empty-state">
-          <i className="fas fa-search"></i>
-          <p>Nenhum resultado encontrado</p>
-          <span>Tente buscar por outro termo</span>
-        </div>
-      )}
-
-      {!searchLoading && !searchQuery && (
-        <div className="empty-state">
-          <i className="fas fa-keyboard"></i>
-          <p>Comece a digitar</p>
-          <span>Busque por filmes e séries</span>
+            </Link>
+          )
+        })
+      ) : (
+        <div className="no-content" style={{padding: '2rem', textAlign: 'center', color: 'var(--secondary)', width: '100%', gridColumn: '1 / -1'}}>
+          {activeSection === 'favorites' ? 'Nenhum favorito adicionado ainda.' : 'Nenhum conteúdo disponível.'}
         </div>
       )}
     </div>
   )
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <>
-            <HeroSection content={heroContent} />
-            {continueWatching.length > 0 && (
-              <ContentRow 
-                title="Continue Assistindo" 
-                items={continueWatching} 
-                icon="fas fa-play-circle"
-              />
-            )}
-            <ContentRow title="Em Alta" items={trending} icon="fas fa-fire" />
-            <ContentRow title="Lançamentos" items={releases} icon="fas fa-sparkles" />
-            <ContentRow title="Mais Populares" items={recommendations} icon="fas fa-star" />
-            <ContentRow title="Melhor Avaliados" items={topRated} icon="fas fa-award" />
-          </>
-        )
-      case 'movies':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-film"></i>
-                Filmes
-              </h1>
+  const LiveSearchResults = () => {
+    if (!searchActive) return null
+    
+    return (
+      <div className="live-search-results">
+        <h1 className="page-title-home"><i className="fas fa-search" style={{marginRight: '8px'}}></i>Resultados</h1>
+
+        {loading && (
+            <div className="live-search-loading">
+                <i className="fas fa-spinner fa-spin"></i>
+                <span> Buscando...</span>
             </div>
-            {movies.nowPlaying && <ContentRow title="Nos Cinemas" items={movies.nowPlaying} icon="fas fa-ticket-alt" />}
-            {movies.popular && <ContentRow title="Populares" items={movies.popular} icon="fas fa-star" />}
-            {movies.topRated && <ContentRow title="Melhor Avaliados" items={movies.topRated} icon="fas fa-award" />}
-          </>
-        )
-      case 'series':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-tv"></i>
-                Séries
-              </h1>
+        )}
+        
+        {!loading && searchResults.length > 0 ? (
+            <ContentGrid 
+                items={searchResults}
+                isFavorite={isFavorite}
+                toggleFavorite={toggleFavorite}
+                extraClass="live-grid"
+            />
+        ) : (!loading && searchQuery.trim() !== '' && (
+            <div className="no-results-live">
+                <i className="fas fa-ghost"></i>
+                <p>Nenhum resultado encontrado para "{searchQuery}".</p>
             </div>
-            {series.onAir && <ContentRow title="No Ar" items={series.onAir} icon="fas fa-satellite-dish" />}
-            {series.popular && <ContentRow title="Populares" items={series.popular} icon="fas fa-star" />}
-            {series.topRated && <ContentRow title="Melhor Avaliadas" items={series.topRated} icon="fas fa-award" />}
-          </>
-        )
-      case 'mylist':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-bookmark"></i>
-                Minha Lista
-              </h1>
+        ))}
+        
+        {!loading && searchQuery.trim() === '' && (
+            <div className="no-results-live">
+                <p>Comece a digitar para pesquisar...</p>
             </div>
-            <div className="grid-wrapper">
-              {watchlist.length > 0 ? (
-                <ContentGrid items={watchlist} />
-              ) : (
-                <div className="empty-state">
-                  <i className="fas fa-bookmark"></i>
-                  <p>Sua lista está vazia</p>
-                  <span>Adicione filmes e séries que deseja assistir</span>
-                </div>
-              )}
-            </div>
-          </>
-        )
-      case 'favorites':
-        return (
-          <>
-            <div className="tab-header">
-              <h1 className="tab-title">
-                <i className="fas fa-heart"></i>
-                Favoritos
-              </h1>
-            </div>
-            <div className="grid-wrapper">
-              {favorites.length > 0 ? (
-                <ContentGrid items={favorites} />
-              ) : (
-                <div className="empty-state">
-                  <i className="fas fa-heart"></i>
-                  <p>Nenhum favorito ainda</p>
-                  <span>Marque seus filmes e séries favoritos</span>
-                </div>
-              )}
-            </div>
-          </>
-        )
-      default:
-        return null
-    }
+        )}
+      </div>
+    )
   }
+
+  const ToastContainer = () => (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div 
+          key={toast.id} 
+          className={`toast toast-${toast.type} show`}
+          style={{ animation: 'toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        >
+          <div className="toast-icon">
+            <i className={`fas ${
+              toast.type === 'success' ? 'fa-check' : 
+              toast.type === 'error' ? 'fa-exclamation-triangle' : 
+              'fa-info'
+            }`}></i>
+          </div>
+          <div className="toast-content">{toast.message}</div>
+          <button 
+            className="toast-close"
+            onClick={() => removeToast(toast.id)}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+  
 
   return (
     <>
       <Head>
-        <title>yStreaming</title>
-        <meta name="description" content="Sua plataforma de streaming definitiva" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <title>Yoshikawa Player</title>
+        <meta name="description" content="Yoshikawa Streaming Player" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-content">
-          <Link href="/" className="logo" onClick={() => { setSearchActive(false); setActiveTab('home'); }}>
-            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="yStreaming" />
-            <span>yStreaming</span>
-          </Link>
+      <Header />
+      
+      <ToastContainer />
 
-          <button 
-            className={`search-trigger ${searchActive ? 'active' : ''}`}
-            onClick={() => setSearchActive(!searchActive)}
-          >
-            <i className={`fas fa-${searchActive ? 'times' : 'search'}`}></i>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="app-main">
-        {searchActive ? (
-          <SearchView />
-        ) : (
-          <div className="content-wrapper">
-            {loading && !heroContent ? (
-              <div className="loading-spinner">
-                <div className="spinner"></div>
-                <p>Carregando conteúdo...</p>
-              </div>
-            ) : (
-              renderTabContent()
-            )}
+      <main className="container">
+        
+        {loading && !searchActive && (
+          <div className="loading active">
+            <div className="spinner"></div>
+            <p>Carregando conteúdo...</p>
           </div>
+        )}
+
+        {/* Lógica de Renderização Condicional - Página Inteira */}
+        {searchActive ? (
+            <LiveSearchResults />
+        ) : (
+            <div className="home-sections">
+                <h1 className="page-title-home"><i className={pageIcon} style={{marginRight: '8px'}}></i>{pageTitle}</h1>
+                <section className="section">
+                    <ContentGrid 
+                        items={getActiveItems()} 
+                        isFavorite={isFavorite} 
+                        toggleFavorite={toggleFavorite}
+                        extraClass="main-grid"
+                    />
+                </section>
+            </div>
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
+      <div className="bottom-nav-container">
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
+          {!searchActive ? (
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
+          ) : (
+            <div className="search-input-container">
+              <input 
+                ref={searchInputRef}
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleKeyPress}
+              />
+              {/* Botão de fechar removido daqui */}
+            </div>
+          )}
+        </div>
+        
+        {/* Botão circular que vira X quando ativo */}
         <button 
-          className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('home'); setSearchActive(false); }}
+          className={`search-circle ${searchActive ? 'active' : ''}`}
+          onClick={() => setSearchActive(!searchActive)}
         >
-          <i className="fas fa-home"></i>
-          <span>Início</span>
+          <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
         </button>
-        <button 
-          className={`nav-btn ${activeTab === 'movies' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('movies'); setSearchActive(false); }}
-        >
-          <i className="fas fa-film"></i>
-          <span>Filmes</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'series' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('series'); setSearchActive(false); }}
-        >
-          <i className="fas fa-tv"></i>
-          <span>Séries</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'mylist' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('mylist'); setSearchActive(false); }}
-        >
-          <i className="fas fa-bookmark"></i>
-          <span>Lista</span>
-        </button>
-        <button 
-          className={`nav-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('favorites'); setSearchActive(false); }}
-        >
-          <i className="fas fa-heart"></i>
-          <span>Favoritos</span>
-        </button>
-      </nav>
-
-      {/* Toast Notifications - Lateral Esquerda */}
-      <div className="toast-container-left">
-        {toasts.map((toast, index) => (
-          <div 
-            key={toast.id} 
-            className={`toast-left toast-left-${toast.type}`}
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <i className={`fas fa-${
-              toast.type === 'success' ? 'check-circle' : 
-              toast.type === 'error' ? 'exclamation-circle' : 
-              'info-circle'
-            }`}></i>
-            <span>{toast.message}</span>
-          </div>
-        ))}
       </div>
 
       <style jsx global>{`
+        :root {
+          --primary: #ff6b6b;
+          --primary-dark: #e05555;
+          --secondary: #94a3b8;
+          --accent: #4dabf7;
+          --accent-dark: #339af0;
+          
+          --dark: #f1f5f9;
+          --light: #0f172a;
+          --border: rgba(255, 255, 255, 0.15);
+          --card-bg: rgba(0, 0, 0, 0.25);
+          --text: #f1f5f9;
+          --bg: transparent;
+          --header-bg: rgba(0, 0, 0, 0.25);
+          --header-border: rgba(255, 255, 255, 0.15);
+          --header-text: #f0f6fc;
+          --success: #10b981;
+          --error: #ef4444;
+          --overlay-bg: rgba(0, 0, 0, 0.5);
+          --highlight: rgba(255, 255, 255, 0.15);
+          
+          --popup-bg: rgba(255, 255, 255, 0.1);
+          --popup-border: rgba(255, 255, 255, 0.3);
+          --option-bg: rgba(0, 0, 0, 0.15);
+        }
+
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
         }
 
-        :root {
-          --primary: #e50914;
-          --primary-hover: #f40612;
-          --secondary: #564d4d;
-          --background: #141414;
-          --surface: #1f1f1f;
-          --surface-light: #2f2f2f;
-          --text-primary: #ffffff;
-          --text-secondary: #b3b3b3;
-          --border: rgba(255, 255, 255, 0.1);
-          --overlay: rgba(0, 0, 0, 0.7);
-          --success: #46d369;
-          --error: #e87c03;
-          --info: #54b4d3;
-        }
-
         body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          background: var(--background);
-          color: var(--text-primary);
-          overflow-x: hidden;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
+          font-family: 'Inter', Arial, sans-serif;
+          background: url('https://yoshikawa-bot.github.io/cache/images/2926e9b3.jpg') no-repeat center/cover fixed;
+          color: var(--text);
+          line-height: 1.6;
+          font-size: 16px;
+          min-height: 100vh;
+          position: relative;
+          overflow-y: auto;
         }
 
-        /* Header */
-        .app-header {
+        body::before {
+          content: '';
           position: fixed;
           top: 0;
           left: 0;
-          right: 0;
+          width: 100%;
+          min-height: 100vh;
+          height: auto;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: -1;
+        }
+
+        .github-header {
+          background-color: transparent;
+          border-bottom: 1px solid var(--header-border);
+          padding: 0.75rem 0;
+          position: sticky;
+          top: 0;
           z-index: 100;
-          background: rgba(20,20,20,0.75);
-          backdrop-filter: saturate(180%) blur(20px) !important;
-          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .github-header::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          backdrop-filter: blur(10px);
+          filter: saturate(120%) brightness(1.15);
+          z-index: -1;
+        }
+
+        .github-header::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: var(--header-bg);
+          z-index: -1;
         }
 
         .header-content {
-          max-width: 1400px;
+          max-width: 1280px;
           margin: 0 auto;
-          padding: 0.75rem 1.5rem;
+          padding: 0 1.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 1rem;
+          position: relative;
         }
 
-        .logo {
+        .logo-container {
           display: flex;
           align-items: center;
           gap: 0.75rem;
+          flex-shrink: 0;
+          cursor: pointer;
           text-decoration: none;
-          color: var(--text-primary);
-          font-weight: 700;
-          font-size: 1.5rem;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .logo:hover {
+        .logo-image {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          object-fit: cover;
+          flex-shrink: 0;
+          transition: all 0.3s;
+        }
+
+        .logo-image:hover {
           transform: scale(1.05);
         }
 
-        .logo img {
-          width: 42px;
-          height: 42px;
-          border-radius: 8px;
-          object-fit: cover;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .logo:hover img {
-          transform: rotate(5deg) scale(1.05);
-        }
-
-        .search-trigger {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid var(--border);
-          border-radius: 50%;
-          width: 44px;
-          height: 44px;
+        .logo-text {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-primary);
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .search-trigger:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: scale(1.1);
-        }
-
-        .search-trigger.active {
-          background: var(--text-primary);
-          border-color: var(--text-primary);
-          color: var(--background);
-        }
-
-        .search-trigger i {
-          font-size: 1.1rem;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .search-trigger.active i {
-          transform: rotate(90deg);
-        }
-
-        /* Main */
-        .app-main {
-          min-height: 100vh;
-          padding-top: 70px;
-          padding-bottom: 80px;
-        }
-
-        .content-wrapper {
-          max-width: 1400px;
-          margin: 0 auto;
-        }
-
-        /* Search View */
-        .search-view {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-        }
-
-        .search-view-header {
-          margin-bottom: 3rem;
-          padding-top: 2rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        .search-input-container-full {
-          position: relative;
-          max-width: 600px;
-          width: 100%;
-        }
-
-        .search-icon-full {
-          position: absolute;
-          left: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-secondary);
-          pointer-events: none;
-          font-size: 1rem;
-          z-index: 2;
-        }
-
-        .search-input-full {
-          width: 100%;
-          padding: 0.875rem 3rem;
-          background: rgba(47, 47, 47, 0.95);
-          border: 2px solid rgba(255, 255, 255, 0.15);
-          border-radius: 28px;
-          color: var(--text-primary);
-          font-size: 0.95rem;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          font-weight: 400;
-        }
-
-        .search-input-full::placeholder {
-          color: var(--text-secondary);
-          opacity: 0.7;
-        }
-
-        .search-input-full:focus {
-          outline: none;
-          border-color: rgba(255, 255, 255, 0.3);
-          background: rgba(47, 47, 47, 1);
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.03);
-        }
-
-        .clear-search-full {
-          position: absolute;
-          right: 0.875rem;
-          top: 50%;
-          transform: translateY(-50%);
-          background: rgba(255, 255, 255, 0.1);
-          border: none;
-          border-radius: 50%;
-          width: 28px;
-          height: 28px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          z-index: 2;
-        }
-
-        .clear-search-full:hover {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          transform: translateY(-50%) scale(1.08);
-        }
-
-        .search-loading {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem 2rem;
-        }
-
-        .search-results-grid {
-          padding-top: 1rem;
-        }
-
-        /* Hero Section */
-        .hero-section {
-          position: relative;
-          height: 70vh;
-          min-height: 500px;
-          max-height: 700px;
-          margin-bottom: 2rem;
-          overflow: hidden;
-        }
-
-        .hero-backdrop {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-        }
-
-        .hero-backdrop img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-        }
-
-        .hero-gradient {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 100%;
-          background: linear-gradient(
-            180deg,
-            rgba(20,20,20,0.4) 0%,
-            rgba(20,20,20,0.6) 40%,
-            rgba(20,20,20,0.95) 80%,
-            rgba(20,20,20,1) 100%
-          );
-        }
-
-        .hero-content {
-          position: relative;
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding-bottom: 3rem;
-        }
-
-        .hero-badge {
-          display: inline-flex;
           align-items: center;
           gap: 0.5rem;
+        }
+
+        .logo-name {
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: var(--header-text);
+        }
+
+        .beta-tag {
           background: var(--primary);
           color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          width: fit-content;
-          margin-bottom: 1rem;
+          font-size: 0.7rem;
+          padding: 0.2rem 0.5rem;
+          border-radius: 12px;
+          font-weight: 500;
         }
 
-        .hero-title {
-          font-size: clamp(1.8rem, 4vw, 3.5rem);
-          font-weight: 900;
-          margin-bottom: 1rem;
-          text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-          max-width: 700px;
-          line-height: 1.2;
-        }
-
-        .hero-meta {
+        .header-right {
           display: flex;
           align-items: center;
           gap: 1rem;
-          margin-bottom: 1rem;
-          font-size: 0.95rem;
-          color: var(--text-secondary);
-          flex-wrap: wrap;
         }
 
-        .hero-rating {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          color: #ffd700;
+        .container {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 1.5rem;
+          min-height: calc(100vh - 80px);
         }
 
-        .hero-type {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
+        .home-sections {
+          display: block;
+          width: 100%;
+          max-width: 1280px;
+          margin: auto;
+          padding-bottom: 7rem;
         }
 
-        .hero-overview {
-          max-width: 600px;
-          font-size: 1rem;
-          line-height: 1.6;
-          color: var(--text-secondary);
-          margin-bottom: 1.5rem;
-          text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .hero-actions {
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .hero-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.875rem 1.75rem;
-          border: none;
-          border-radius: 6px;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          text-decoration: none;
-        }
-
-        .hero-btn-play {
-          background: var(--text-primary);
-          color: var(--background);
-        }
-
-        .hero-btn-play:hover {
-          background: var(--text-secondary);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
-        }
-
-        .hero-btn-play:active {
-          transform: translateY(0);
-        }
-
-        .hero-btn-secondary {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          backdrop-filter: blur(10px);
-        }
-
-        .hero-btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-2px);
-        }
-
-        .hero-btn-secondary:active {
-          transform: translateY(0);
-        }
-
-        .hero-btn-secondary.active {
-          background: rgba(255, 255, 255, 0.4);
-        }
-
-        .hero-btn-icon {
-          background: rgba(255, 255, 255, 0.2);
-          color: var(--text-primary);
-          min-width: 48px;
-          width: 48px;
-          height: 48px;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          backdrop-filter: blur(10px);
-          flex-shrink: 0;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hero-btn-icon:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.1) rotate(5deg);
-        }
-
-        .hero-btn-icon:active {
-          transform: scale(1);
-        }
-
-        .hero-btn-icon i {
-          font-size: 1.2rem;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Content Rows */
-        .content-row-container {
-          margin-bottom: 2.5rem;
-        }
-
-        .content-row-header {
-          padding: 0 1.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .content-row-title {
-          font-size: 1.4rem;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .content-row-wrapper {
-          position: relative;
-        }
-
-        .scroll-btn {
-          position: absolute;
-          top: 0;
-          bottom: 0;
-          background: rgba(20, 20, 20, 0.8);
-          border: none;
-          width: 50px;
-          color: white;
-          font-size: 1.5rem;
-          cursor: pointer;
-          z-index: 10;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .content-row-wrapper:hover .scroll-btn {
-          opacity: 1;
-        }
-
-        .scroll-btn-left {
-          left: 0;
-        }
-
-        .scroll-btn-right {
-          right: 0;
-        }
-
-        .scroll-btn:hover {
-          background: rgba(20, 20, 20, 0.95);
-        }
-
-        .content-row-scroll {
-          display: flex;
-          gap: 0.75rem;
-          overflow-x: auto;
-          scroll-behavior: smooth;
-          scrollbar-width: none;
-          padding: 0 1.5rem;
-        }
-
-        .content-row-scroll::-webkit-scrollbar {
+        .home-sections.hidden {
           display: none;
         }
 
-        /* Content Card */
-        .content-card-modern {
-          flex: 0 0 200px;
-          text-decoration: none;
-          color: inherit;
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
+        .section {
+          margin-bottom: 2rem;
         }
 
-        .content-card-modern:hover {
-          transform: scale(1.05);
-          z-index: 5;
+        .page-title-home {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            padding-top: 1rem;
         }
 
-        .card-image-wrapper {
-          position: relative;
-          border-radius: 8px;
-          overflow: hidden;
-          aspect-ratio: 2/3;
-          background: var(--surface);
-        }
-
-        .card-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          opacity: 0;
-          transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .card-image.loaded {
-          opacity: 1;
-        }
-
-        .card-skeleton {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            90deg,
-            var(--surface) 0%,
-            var(--surface-light) 50%,
-            var(--surface) 100%
-          );
-          background-size: 200% 100%;
-          animation: skeleton 1.5s ease-in-out infinite;
-        }
-
-        @keyframes skeleton {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-
-        .card-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            180deg,
-            transparent 0%,
-            rgba(0,0,0,0.8) 100%
-          );
-          opacity: 0;
-          transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .section-header {
           display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 1rem;
+          align-items: center;
+          margin-bottom: 1rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid var(--border);
         }
 
-        .content-card-modern:hover .card-overlay {
-          opacity: 1;
-        }
-
-        .card-overlay-content {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .card-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          line-height: 1.3;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .card-info {
+        .section-title {
+          font-size: 1.4rem;
+          color: var(--text);
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          font-size: 0.85rem;
-          color: var(--text-secondary);
-          margin-bottom: 0.75rem;
         }
 
-        .card-rating {
+        .section-title i {
+          color: var(--primary);
+          font-size: 1.2rem;
+        }
+
+        .content-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 1.5rem;
+          width: 100%;
+        }
+
+        .content-row {
           display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          color: #ffd700;
+          overflow-x: auto;
+          gap: 1rem;
+          padding: 0.5rem 0;
+          scrollbar-width: thin;
+          scrollbar-color: var(--primary) transparent;
         }
 
-        .card-actions {
-          display: flex;
-          gap: 0.5rem;
+        .content-row::-webkit-scrollbar {
+          height: 6px;
         }
 
-        .card-action-btn {
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+        .content-row::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          margin: 0 10px;
+        }
+
+        .content-row::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, var(--primary), var(--accent));
+          border-radius: 10px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .content-row::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, var(--primary-dark), var(--accent-dark));
+        }
+
+        .content-row {
+          scrollbar-width: thin;
+          scrollbar-color: var(--primary) transparent;
+        }
+
+        .content-card {
+          background-color: var(--card-bg);
+          border-radius: 15px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          border: 1px solid var(--border);
+          position: relative;
+          text-decoration: none;
+          color: inherit;
+          backdrop-filter: blur(10px);
+          aspect-ratio: 2/3;
+        }
+
+        .content-card:hover {
+          transform: translateY(-5px);
+          border-color: var(--primary);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .content-poster {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .content-info-card {
+          padding: 0;
+          background: transparent;
+          position: static;
+          color: inherit;
+          backdrop-filter: none;
+          border: none;
+          height: 0;
+        }
+
+        .content-title-card {
+          font-weight: 500;
+          font-size: 0.9rem;
+        }
+
+        .content-year {
+          font-size: 0.8rem;
+          color: var(--secondary);
+        }
+
+        .floating-text-wrapper {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 5;
+            color: white;
+            line-height: 1.2;
+            font-size: 0.95rem;
+        }
+
+        .floating-text-wrapper .content-title-card {
+            display: block;
+            padding: 4px 7px;
+            background-color: rgba(0, 0, 0, 0.85);
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+            font-weight: 600;
+            font-size: 1rem;
+            white-space: normal;
+            width: fit-content;
+            border-radius: 4px;
+            text-shadow: none;
+        }
+
+        .floating-text-wrapper .content-year {
+            display: block;
+            padding: 4px 7px;
+            background-color: rgba(0, 0, 0, 0.85);
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+            font-size: 0.85rem;
+            color: white;
+            opacity: 0.9;
+            font-weight: 500;
+            margin-top: 3px;
+            width: fit-content;
+            border-radius: 4px;
+            text-shadow: none;
+        }
+
+        .content-text-meta {
+            display: none;
+        }
+
+        .content-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            color: gold;
+            font-weight: 500;
+        }
+
+        .content-rating i {
+            font-size: 0.8rem;
+            color: gold;
+        }
+
+        .favorite-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.7);
+          border: none;
           border-radius: 50%;
           width: 32px;
           height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           color: white;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transition: all 0.3s ease;
+          z-index: 10;
+          backdrop-filter: blur(5px);
+        }
+
+        .favorite-btn:not(#headerFavoriteBtn):hover {
+          background: rgba(255, 107, 107, 0.9);
+          transform: scale(1.1);
+        }
+
+        .favorite-btn.active:not(#headerFavoriteBtn) {
+          background: var(--primary);
+          color: white;
+        }
+
+        .favorite-btn.active:not(#headerFavoriteBtn) i {
+          animation: heart-pop 0.5s;
+        }
+
+        @keyframes heart-pop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); }
+        }
+
+        .search-results-section {
+          display: none;
+          padding-bottom: 7rem;
+        }
+
+        .search-results-section.active {
+          display: block;
+        }
+
+        .search-results-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .clear-search-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: var(--card-bg);
+          border: 1px solid var(--border);
+          border-radius: 25px;
+          padding: 0.5rem 1rem;
+          color: var(--text);
+          cursor: pointer;
+          transition: all 0.3s ease;
           backdrop-filter: blur(10px);
+          font-size: 0.9rem;
         }
 
-        .card-action-btn:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.15) rotate(10deg);
-          border-color: rgba(255, 255, 255, 0.5);
+        .clear-search-btn:hover {
+          background: var(--primary);
+          border-color: var(--primary);
+          transform: translateY(-2px);
         }
 
-        .card-action-btn:active {
+        .clear-search-btn:active {
+          transform: translateY(0);
+          background: var(--primary-dark);
+        }
+
+        /* ===== BOTTOM NAVIGATION ORIGINAL ===== */
+        .bottom-nav-container {
+          position: fixed;
+          bottom: 25px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          max-width: 600px;
+          width: 90%;
+          gap: 15px;
+          z-index: 1000;
+        }
+
+        .main-nav-bar {
+          background-color: transparent;
+          border: 2px solid var(--header-border);
+          border-radius: 40px;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          height: 70px;
+          flex-grow: 1;
+          overflow: hidden;
+          padding: 0 10px;
+          position: relative;
+          transition: all 0.3s ease;
+        }
+
+        .main-nav-bar.search-active {
+          justify-content: flex-start;
+          padding: 0;
+        }
+
+        .main-nav-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(10px);
+            filter: saturate(120%) brightness(1.15);
+            z-index: -1;
+        }
+
+        .main-nav-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--header-bg);
+            border-radius: 40px;
+            z-index: -1;
+        }
+
+        .nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+          color: var(--secondary);
+          font-size: 12px;
+          font-weight: 500;
+          padding: 5px 0;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          border: none;
+          background: none;
+          position: relative;
+          height: 100%;
+          justify-content: center;
+          opacity: 1;
+          transform: scale(1);
+          transition: all 0.3s ease;
+          text-decoration: none;
+        }
+
+        .main-nav-bar.search-active .nav-item {
+          opacity: 0;
+          transform: scale(0.8);
+          pointer-events: none;
+          flex: 0;
+          width: 0;
+          min-width: 0;
+        }
+
+        .nav-item span {
+          display: none;
+        }
+
+        .nav-item i {
+          font-size: 26px;
+          margin-bottom: 0;
+          transition: color 0.3s ease, transform 0.3s ease;
+          color: var(--text);
+        }
+
+        .nav-item:hover i {
+            transform: scale(1.1);
+            color: var(--primary);
+        }
+
+        .nav-item:active i {
           transform: scale(0.95);
         }
 
-        /* Content Grid */
-        .grid-wrapper {
-          padding: 0 1.5rem;
+        .nav-item.active {
+          color: initial;
         }
 
-        .content-grid-modern {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 1rem;
+        .nav-item.active i {
+          color: var(--primary);
+          transform: none;
         }
 
-        /* Tab Header */
-        .tab-header {
-          padding: 2rem 1.5rem 1rem;
+        .bottom-nav-container.reproduction-mode .main-nav-bar {
+            justify-content: space-around;
+            padding: 0 10px;
+            flex-grow: 1;
+            width: auto;
+            max-width: none;
         }
 
-        .tab-title {
-          font-size: 2rem;
-          font-weight: 800;
+        .bottom-nav-container.reproduction-mode .nav-item {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+            flex: 1;
+            width: auto;
+        }
+
+        .bottom-nav-container.reproduction-mode .nav-item.hidden-on-repro {
+            display: none;
+        }
+
+        .search-circle {
+          background-color: transparent;
+          border: 2px solid var(--header-border);
+          backdrop-filter: blur(10px);
+          filter: saturate(120%) brightness(1.15);
+          border-radius: 50%;
+          width: 70px;
+          height: 70px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+          flex-shrink: 0;
+          cursor: pointer;
+          color: var(--text);
+          transition: all 0.3s ease;
+          position: relative;
+          opacity: 1;
+          transform: scale(1);
+          z-index: 1;
+        }
+
+        .search-circle::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--header-bg);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .search-circle:hover {
+          background-color: var(--primary);
+          color: var(--text);
+          border-color: var(--primary);
+        }
+
+        .search-circle:active {
+          transform: scale(0.95);
+          background-color: var(--primary-dark);
+        }
+
+        .search-circle.active {
+          background-color: var(--primary);
+          border-color: var(--primary);
+          color: white;
+        }
+
+        .search-circle i {
+          font-size: 32px;
+          z-index: 1;
+        }
+
+        /* O botão da lupa NÃO some mais quando a search está ativa */
+        .main-nav-bar.search-active + .search-circle {
+          opacity: 1;
+          transform: scale(1);
+          pointer-events: auto;
+        }
+
+        .bottom-nav-container.reproduction-mode .search-circle {
+            opacity: 0;
+            transform: scale(0);
+            pointer-events: none;
+        }
+
+        /* ===== PLAYER CIRCLE (PARA PÁGINAS DE STREAMING) ===== */
+        .player-circle {
+          background-color: transparent;
+          border: 2px solid var(--header-border);
+          backdrop-filter: blur(10px);
+          filter: saturate(120%) brightness(1.15);
+          border-radius: 50%;
+          width: 70px;
+          height: 70px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+          flex-shrink: 0;
+          cursor: pointer;
+          color: var(--text);
+          transition: all 0.3s ease;
+          position: relative;
+          opacity: 1;
+          transform: scale(1);
+          z-index: 1;
+        }
+
+        .player-circle::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--header-bg);
+          border-radius: 50%;
+          z-index: -1;
+        }
+
+        .player-circle:hover {
+          background-color: var(--primary);
+          color: var(--text);
+          border-color: var(--primary);
+        }
+
+        .player-circle:active {
+          transform: scale(0.95);
+          background-color: var(--primary-dark);
+        }
+
+        .player-circle i {
+          font-size: 32px;
+          z-index: 2;
+        }
+
+        /* ===== NOVA BARRA DE PESQUISA ===== */
+        .search-input-container {
+          position: relative;
+          flex: 1;
           display: flex;
           align-items: center;
-          gap: 1rem;
+          height: 100%;
+          padding: 0 15px;
         }
 
-        /* Empty State */
-        .empty-state {
+        .search-input-expanded {
+          background: transparent;
+          border: none;
+          color: var(--text);
+          font-size: 16px;
+          width: 100%;
+          padding: 0 50px 0 0;
+          outline: none;
+          font-family: 'Inter', sans-serif;
+        }
+
+        .search-input-expanded::placeholder {
+          color: var(--text);
+          opacity: 0.7;
+        }
+
+        .close-search-expanded {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: transparent;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          color: var(--text);
+          cursor: pointer;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 4rem 2rem;
-          text-align: center;
-          color: var(--text-secondary);
+          transition: all 0.3s ease;
+          z-index: 2;
+          font-size: 1.3rem;
         }
 
-        .empty-state i {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          opacity: 0.5;
+        .close-search-expanded:hover {
+          color: var(--primary);
+          transform: translateY(-50%) scale(1.1);
         }
 
-        .empty-state p {
-          font-size: 1.2rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: var(--text-primary);
+        .close-search-expanded:active {
+          transform: translateY(-50%) scale(0.95);
         }
 
-        .empty-state span {
-          font-size: 0.95rem;
+        /* Remover search container antigo */
+        .search-container,
+        .search-form,
+        .search-input,
+        .search-button,
+        .close-search {
+          display: none;
         }
 
-        /* Loading */
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
+        .loading {
+          display: none;
           justify-content: center;
-          padding: 4rem 2rem;
+          align-items: center;
+          padding: 3rem;
+          color: var(--secondary);
+          flex-direction: column;
+        }
+
+        .loading.active {
+          display: flex;
         }
 
         .spinner {
-          width: 50px;
-          height: 50px;
-          border: 3px solid var(--surface);
-          border-top-color: var(--primary);
+          border: 3px solid rgba(255, 255, 255, 0.1);
+          border-top: 3px solid var(--primary);
           border-radius: 50%;
-          animation: spin 0.8s linear infinite;
+          width: 40px;
+          height: 40px;
+          animation: spin 1s linear infinite;
           margin-bottom: 1rem;
         }
 
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
-        .loading-spinner p {
-          color: var(--text-secondary);
+        /* ===== PÁGINAS DE STREAMING ===== */
+        .streaming-container {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 1.5rem;
+          min-height: calc(100vh - 80px);
+          padding-bottom: 8rem;
         }
 
-        /* Bottom Navigation */
-        .bottom-nav {
-          position: fixed;
-          bottom: 0;
+        .player-container {
+          background: var(--card-bg);
+          border-radius: 15px;
+          overflow: hidden;
+          margin-bottom: 1.5rem;
+          border: 1px solid var(--border);
+          backdrop-filter: blur(10px);
+          position: relative;
+        }
+
+        .player-wrapper {
+          position: relative;
+          padding-bottom: 56.25%;
+          height: 0;
+          overflow: hidden;
+          background-color: #000;
+        }
+
+        .player-wrapper iframe {
+          position: absolute;
+          top: 0;
           left: 0;
-          right: 0;
-          background: rgba(31, 31, 31, 0.75);
-          backdrop-filter: saturate(180%) blur(20px) !important;
-          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          display: flex;
-          justify-content: space-around;
-          padding: 0.6rem 0;
-          z-index: 100;
-        }
-
-        .nav-btn {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.35rem;
-          padding: 0.5rem 1.5rem;
-          background: none;
+          width: 100%;
+          height: 100%;
           border: none;
-          color: var(--text-secondary);
-          font-size: 0.8rem;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          font-weight: 500;
         }
 
-        .nav-btn i {
-          font-size: 1.6rem;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .content-info-streaming {
+          background: var(--card-bg);
+          border-radius: 15px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          border: 1px solid var(--border);
+          backdrop-filter: blur(10px);
         }
 
-        .nav-btn.active {
-          color: var(--text-primary);
+        .content-title-streaming {
+          font-size: 1.4rem;
+          font-weight: 700;
+          margin-bottom: 1rem;
+          color: var(--text);
+          line-height: 1.3;
         }
 
-        .nav-btn.active i {
-          color: var(--text-primary);
-          transform: scale(1.1);
-        }
-
-        .nav-btn:hover {
-          color: var(--text-primary);
-        }
-
-        .nav-btn:hover i {
-          transform: scale(1.05);
-        }
-
-        /* Toast Notifications - Centralizadas */
-        .toast-container-left {
-          position: fixed;
-          left: 50%;
-          transform: translateX(-50%);
-          bottom: 100px;
-          z-index: 9999;
+        .content-meta-streaming {
           display: flex;
-          flex-direction: column;
+          gap: 1rem;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+          color: var(--secondary);
+          font-size: 0.9rem;
+        }
+
+        .content-meta-streaming span {
+          display: flex;
+          align-items: center;
           gap: 0.5rem;
+        }
+
+        .content-description-streaming {
+          color: var(--text);
+          line-height: 1.6;
+          margin-bottom: 1rem;
+        }
+
+        /* ===== SELETOR DE TEMPORADA/EPISÓDIO ===== */
+        .episode-selector-streaming {
+          display: none;
+          gap: 1rem;
+          margin: 1rem 0;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .episode-selector-streaming.active {
+          display: flex;
+        }
+
+        .selector-group-streaming {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .selector-label-streaming {
+          color: var(--secondary);
+          font-size: 0.9rem;
+          white-space: nowrap;
+        }
+
+        .selector-select-streaming {
+          background-color: rgba(0, 0, 0, 0.3);
+          border: 1px solid var(--border);
+          border-radius: 25px;
+          padding: 0.5rem 0.75rem;
+          color: var(--text);
+          width: 140px;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
+          cursor: pointer;
+          font-size: 0.9rem;
+        }
+
+        .selector-select-streaming:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
+
+        /* ===== PLAYER SELECTOR BUBBLE ===== */
+        .player-selector-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: var(--overlay-bg);
+          z-index: 2000;
+          display: none;
+          justify-content: center;
+          align-items: center;
+          backdrop-filter: blur(5px);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .player-selector-overlay.active {
+          display: flex;
+          opacity: 1;
+        }
+
+        .player-selector-bubble {
+          background: var(--popup-bg);
+          border: 1px solid var(--popup-border);
+          border-radius: 20px;
+          padding: 1.5rem;
           max-width: 320px;
           width: 90%;
+          backdrop-filter: blur(15px);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+          transform: scale(0.8);
+          opacity: 0;
+          transition: all 0.3s ease;
         }
 
-        .toast-left {
-          background: rgba(31, 31, 31, 0.75);
-          backdrop-filter: saturate(180%) blur(20px) !important;
-          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
-          border-radius: 12px;
-          padding: 1rem 1.25rem;
+        .player-selector-bubble.active {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        .player-options-bubble {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .player-option-bubble {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
+          padding: 0.75rem 1rem;
+          background: var(--option-bg);
+          border: 1px solid var(--border);
+          border-radius: 15px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          color: var(--text);
+        }
+
+        .player-option-bubble:hover {
+          background: var(--primary);
+          border-color: var(--primary);
+          color: white;
+          transform: translateX(5px);
+        }
+
+        .player-option-bubble:active {
+          transform: translateX(5px) scale(0.98);
+        }
+
+        .option-main-line {
           display: flex;
           align-items: center;
-          gap: 0.875rem;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
-          animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          gap: 0.75rem;
+          width: 100%;
         }
 
-        .toast-left.removing {
-          animation: slideOutToast 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
-        }
-
-        @keyframes slideInToast {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes slideOutToast {
-          from {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-          to {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-          }
-        }
-
-        .toast-left i {
+        .option-main-line i {
           font-size: 1.2rem;
+          width: 20px;
+          text-align: center;
           flex-shrink: 0;
         }
 
-        .toast-left span {
-          font-size: 0.95rem;
+        .option-name {
+          font-weight: 600;
+          font-size: 1rem;
+          flex-grow: 1;
+        }
+
+        .option-details {
+          font-size: 0.8rem;
+          color: var(--secondary);
+          margin-left: 27.5px;
+          text-align: left;
+        }
+
+        .player-option-bubble:hover .option-details {
+          color: white;
+          opacity: 0.8;
+        }
+
+        .player-tag-bubble {
+          margin-left: auto;
+          padding: 0.2rem 0.5rem;
+          border-radius: 12px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        }
+
+        .player-tag-dub {
+          background: linear-gradient(135deg, var(--primary), var(--accent));
+          color: white;
+        }
+
+        .player-tag-sub {
+          background: linear-gradient(135deg, var(--success), var(--accent));
+          color: white;
+        }
+
+        /* ===== INFO POPUP COMPACTO ===== */
+        .info-popup-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: var(--overlay-bg);
+          z-index: 2000;
+          display: none;
+          justify-content: center;
+          align-items: center;
+          padding: 1rem;
+          backdrop-filter: blur(5px);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .info-popup-overlay.active {
+          display: flex;
+          opacity: 1;
+        }
+
+        .info-popup-content {
+          background: var(--popup-bg);
+          border: 1px solid var(--popup-border);
+          border-radius: 20px;
+          padding: 1.5rem;
+          max-width: 400px;
+          width: 90%;
+          max-height: 80vh;
+          overflow-y: auto;
+          backdrop-filter: blur(15px);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+          transform: translateY(50px);
+          opacity: 0;
+          transition: all 0.4s ease;
+        }
+
+        .info-popup-overlay.active .info-popup-content {
+          transform: translateY(0);
+          opacity: 1;
+        }
+
+        .info-popup-header {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 1rem;
+          align-items: flex-start;
+        }
+
+        .info-poster {
+          width: 80px;
+          height: 120px;
+          object-fit: cover;
+          border-radius: 8px;
+          flex-shrink: 0;
+        }
+
+        .info-details {
+          flex: 1;
+        }
+
+        .info-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+          color: var(--text);
+          line-height: 1.3;
+        }
+
+        .info-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+          margin-bottom: 0.8rem;
+          color: var(--secondary);
+          font-size: 0.8rem;
+        }
+
+        .info-meta span {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+
+        .info-description {
+          color: var(--text);
+          line-height: 1.5;
+          font-size: 0.9rem;
+          margin-bottom: 1.2rem;
+        }
+
+        .close-popup-btn {
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: 25px;
+          padding: 0.6rem 1.2rem;
+          cursor: pointer;
           font-weight: 500;
-          line-height: 1.4;
-          color: var(--text-primary);
+          transition: all 0.3s ease;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
         }
 
-        .toast-left-success i {
-          color: var(--success);
+        .close-popup-btn:hover {
+          background: var(--primary-dark);
         }
 
-        .toast-left-error i {
+        .close-popup-btn:active {
+          transform: scale(0.98);
+        }
+
+        .error-message {
+          display: none;
+          background: var(--card-bg);
+          padding: 1.5rem;
+          border-radius: 15px;
+          border-left: 4px solid var(--error);
+          margin-bottom: 2rem;
+          text-align: center;
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--border);
+        }
+
+        .error-message.active {
+          display: block;
+        }
+
+        .error-message h3 {
           color: var(--error);
+          margin-bottom: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
         }
 
-        .toast-left-info i {
-          color: var(--info);
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-container {
+          position: fixed;
+          bottom: 120px; /* Aumentada a distância da navbar */
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-width: 400px;
+          width: 90%;
         }
 
-        /* Responsive */
-        @media (min-width: 1024px) {
-          .header-content {
-            padding: 1.5rem 2rem;
-          }
-
-          .logo {
-            font-size: 1.65rem;
-          }
-
-          .logo img {
-            width: 48px;
-            height: 48px;
-          }
-
-          .search-trigger {
-            width: 48px;
-            height: 48px;
-          }
-
-          .bottom-nav {
-            padding: 1rem 0;
-          }
-
-          .nav-btn {
-            padding: 0.75rem 2.5rem;
-          }
-
-          .nav-btn i {
-            font-size: 1.8rem;
-          }
-
-          .nav-btn span {
-            font-size: 0.9rem;
-          }
+        .toast {
+          background: var(--popup-bg);
+          border: 1px solid var(--popup-border);
+          border-radius: 12px;
+          padding: 12px 16px;
+          backdrop-filter: blur(15px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          transform: translateY(100px);
+          opacity: 0;
+          transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          max-width: 400px;
         }
 
+        .toast.show {
+          transform: translateY(0);
+          opacity: 1;
+        }
+
+        .toast.hiding {
+          transform: translateY(100px);
+          opacity: 0;
+        }
+
+        .toast-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 14px;
+        }
+
+        .toast-success .toast-icon {
+          background: var(--success);
+          color: white;
+        }
+
+        .toast-info .toast-icon {
+          background: var(--accent);
+          color: white;
+        }
+
+        .toast-content {
+          flex: 1;
+          font-size: 14px;
+          line-height: 1.4;
+          color: var(--text);
+        }
+
+        .toast-close {
+          background: none;
+          border: none;
+          color: var(--secondary);
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+          color: var(--text);
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .toast-close:active {
+          transform: scale(0.95);
+        }
+
+        /* Remover as seções do tutorial antigo */
+        .server-tutorial-overlay,
+        .server-tutorial-content,
+        .server-tutorial-icon,
+        .server-tutorial-title,
+        .server-tutorial-text,
+        .server-tutorial-highlight,
+        .server-tutorial-button {
+          display: none;
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 768px) {
-          .hero-section {
-            height: 55vh;
-            min-height: 450px;
-            max-height: 550px;
+          .bottom-nav-container {
+            bottom: 20px;
+            max-width: 95%;
+            width: 95%;
+            gap: 10px;
           }
-
-          .hero-content {
-            padding-bottom: 2rem;
-            padding-left: 1rem;
-            padding-right: 1rem;
+          
+          .main-nav-bar {
+            height: 65px;
+            border-radius: 35px;
+            border: 1px solid var(--header-border);
           }
-
-          .hero-badge {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.85rem;
+          
+          .main-nav-bar::after {
+            border-radius: 35px;
           }
-
-          .hero-title {
-            font-size: 1.6rem;
-            margin-bottom: 0.75rem;
+          
+          .nav-item i {
+            font-size: 24px;
           }
-
-          .hero-meta {
-            font-size: 0.85rem;
-            gap: 0.75rem;
+          
+          .search-circle {
+            width: 65px;
+            height: 65px;
+            border: 1px solid var(--header-border);
           }
-
-          .hero-overview {
-            font-size: 0.85rem;
-            -webkit-line-clamp: 2;
-            margin-bottom: 1.25rem;
+          
+          .search-circle i {
+            font-size: 28px;
           }
-
-          .hero-actions {
-            gap: 0.75rem;
+          
+          .player-circle {
+            width: 65px;
+            height: 65px;
+            border: 1px solid var(--header-border);
           }
-
-          .hero-btn {
-            font-size: 0.9rem;
-            padding: 0.75rem 1.25rem;
+          
+          .player-circle i {
+            font-size: 28px;
           }
-
-          .hero-btn-icon {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
+          
+          .streaming-container {
+            padding: 1rem;
+            padding-bottom: 7rem;
           }
-
-          .hero-btn-icon i {
-            font-size: 1.1rem;
-          }
-
-          .content-row-title {
+          
+          .content-title-streaming {
             font-size: 1.2rem;
           }
-
-          .content-card-modern {
-            flex: 0 0 140px;
+          
+          .info-popup-content {
+            padding: 1.2rem;
+            max-width: 350px;
           }
-
-          .content-grid-modern {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          
+          .info-poster {
+            width: 70px;
+            height: 105px;
           }
-
-          .scroll-btn {
-            display: none;
-          }
-
-          .tab-title {
-            font-size: 1.5rem;
-          }
-
-          .nav-btn span {
-            font-size: 0.75rem;
-          }
-
-          .toast-container-left {
-            bottom: 90px;
-            max-width: 90%;
-          }
-
-          .toast-left {
-            padding: 0.875rem 1rem;
-          }
-
-          .toast-left i {
+          
+          .info-title {
             font-size: 1.1rem;
           }
+          
+          .player-selector-bubble {
+            padding: 1.2rem;
+            max-width: 300px;
+          }
+          
+          .episode-selector-streaming {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.8rem;
+          }
+          
+          .selector-group-streaming {
+            width: 100%;
+            justify-content: space-between;
+          }
+          
+          .selector-select-streaming {
+            width: 120px;
+          }
 
-          .toast-left span {
-            font-size: 0.9rem;
+          .toast-container {
+            bottom: 110px; /* Ajuste para mobile */
+            max-width: 350px;
+          }
+          
+          .toast {
+            max-width: 350px;
+            padding: 10px 14px;
+          }
+          
+          .toast-content {
+            font-size: 13px;
+          }
+          
+          .search-input-expanded {
+            font-size: 16px;
+            padding: 0 45px 0 0;
+          }
+          
+          .close-search-expanded {
+            width: 35px;
+            height: 35px;
+            font-size: 1.2rem;
           }
         }
 
         @media (max-width: 480px) {
-          .hero-section {
-            height: 50vh;
-            min-height: 400px;
+          .info-popup-content {
+            padding: 1rem;
+            max-width: 320px;
           }
-
-          .hero-content {
-            padding-bottom: 1.5rem;
+          
+          .info-popup-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.8rem;
           }
-
-          .hero-badge {
-            font-size: 0.7rem;
-            padding: 0.35rem 0.75rem;
+          
+          .info-poster {
+            width: 80px;
+            height: 120px;
+            align-self: center;
           }
-
-          .hero-title {
-            font-size: 1.35rem;
-            margin-bottom: 0.6rem;
-          }
-
-          .hero-meta {
-            font-size: 0.8rem;
-            gap: 0.6rem;
-          }
-
-          .hero-overview {
-            font-size: 0.8rem;
-            -webkit-line-clamp: 2;
-            margin-bottom: 1rem;
-          }
-
-          .hero-actions {
-            flex-wrap: wrap;
-            gap: 0.6rem;
-          }
-
-          .hero-btn {
-            font-size: 0.85rem;
-            padding: 0.7rem 1.1rem;
-            flex: 1;
-            min-width: calc(50% - 0.3rem);
-          }
-
-          .hero-btn-play {
-            flex: 1 1 100%;
-            min-width: 100%;
-          }
-
-          .hero-btn-secondary {
-            flex: 1;
-          }
-
-          .hero-btn-icon {
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            flex: 0 0 auto;
-          }
-
-          .hero-btn-icon i {
+          
+          .info-title {
             font-size: 1rem;
           }
-
-          .content-card-modern {
-            flex: 0 0 120px;
+          
+          .info-meta {
+            font-size: 0.75rem;
           }
-
-          .content-grid-modern {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .nav-btn {
-            padding: 0.5rem 0.5rem;
-          }
-
-          .nav-btn span {
-            display: none;
-          }
-
-          .toast-container-left {
-            bottom: 85px;
-            max-width: 92%;
-          }
-
-          .toast-left {
-            padding: 0.75rem 0.875rem;
-          }
-
-          .toast-left i {
-            font-size: 1rem;
-          }
-
-          .toast-left span {
+          
+          .info-description {
             font-size: 0.85rem;
           }
+          
+          .player-selector-bubble {
+            padding: 1rem;
+            max-width: 280px;
+          }
+          
+          .player-option-bubble {
+            padding: 0.6rem 0.8rem;
+          }
+          
+          .option-name {
+            font-size: 0.9rem;
+          }
+          
+          .option-details {
+            font-size: 0.75rem;
+            margin-left: 26px;
+          }
+          
+          .selector-select-streaming {
+            width: 110px;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+          }
+
+          .bottom-nav-container {
+            gap: 8px;
+          }
+          
+          .main-nav-bar {
+            height: 60px;
+            padding: 0 8px;
+          }
+          
+          .nav-item i {
+            font-size: 22px;
+          }
+          
+          .search-circle {
+            width: 60px;
+            height: 60px;
+          }
+          
+          .search-circle i {
+            font-size: 26px;
+          }
+          
+          .player-circle {
+            width: 60px;
+            height: 60px;
+          }
+          
+          .player-circle i {
+            font-size: 26px;
+          }
+
+          .toast-container {
+            bottom: 100px; /* Ajuste para mobile pequeno */
+            max-width: 300px;
+          }
+          
+          .toast {
+            max-width: 300px;
+            padding: 8px 12px;
+          }
+          
+          .toast-content {
+            font-size: 12px;
+          }
+          
+          .toast-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+          }
+          
+          .search-input-expanded {
+            font-size: 16px;
+            padding: 0 40px 0 0;
+          }
+          
+          .close-search-expanded {
+            width: 32px;
+            height: 32px;
+            right: 8px;
+            font-size: 1.1rem;
+          }
+          
+          .search-input-container {
+            padding: 0 12px;
+          }
+        }
+
+        a {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        button {
+          font-family: inherit;
+        }
+
+        select {
+          font-family: inherit;
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+
+        /* Animação para notificação (Toast) */
+        @keyframes toast-slide-up {
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* --- Padronização do Grid (Home e Busca) --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            padding: 0;
+            width: 100%;
+        }
+
+        .content-card {
+           position: relative;
+           display: block;
+           overflow: hidden;
+           border-radius: 12px;
+        }
+
+        .content-poster {
+           width: 100%;
+           height: auto;
+           aspect-ratio: 2/3; /* Proporção exata 2:3 */
+           object-fit: cover;
+           display: block;
+           border-radius: 12px;
+        }
+
+        /* Mobile: 2 colunas exatas */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        /* --- Estilos da Busca (Live Search) como PÁGINA NORMAL --- */
+        .live-search-results {
+            position: static;
+            width: 100%;
+            height: auto;
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .page-title-home {
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+        }
+        
+        .live-search-loading, .no-results-live {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh; /* Ocupa altura mínima para estética */
+            color: var(--secondary);
+            font-size: 1rem;
+            flex-direction: column;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .live-search-loading i, .no-results-live i {
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        /* --- Container Principal --- */
+        .container {
+            padding: 0 16px 100px 16px;
+            width: 100%;
+        }
+
+        /* --- Header Adjustments --- */
+        .header-content {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            padding: 0 16px;
+        }
+        
+        .main-nav-bar.search-active {
+            padding: 0 10px;
+        }
+
+        /* Ajuste do input quando não há botão X interno */
+        .search-input-expanded {
+            width: 100%;
+            /* Garante que o input ocupe todo o espaço disponível no container */
         }
       `}</style>
     </>
   )
 }
+
+// Header
+const Header = () => {
+  return (
+    <header className="github-header">
+      <div className="header-content">
+        <Link href="/" className="logo-container">
+          <img 
+            src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" 
+            alt="Yoshikawa Bot" 
+            className="logo-image"
+          />
+          <div className="logo-text">
+            <span className="logo-name">Yoshikawa</span>
+            <span className="beta-tag">STREAMING</span>
+          </div>
+        </Link>
+      </div>
+    </header>
+  )
+                       }
