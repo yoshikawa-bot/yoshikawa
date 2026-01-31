@@ -89,7 +89,7 @@ export default function Home() {
       setSearchResults(allResults)
       
     } catch (error) {
-      console.error('Erro na busca:', error)
+      console.error(error)
       showToast('Erro na busca em tempo real', 'error')
       setSearchResults([])
     } finally {
@@ -145,7 +145,7 @@ export default function Home() {
       setRecommendations(allPopular)
 
     } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error)
+      console.error(error)
     }
   }
 
@@ -155,7 +155,7 @@ export default function Home() {
       const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
       setFavorites(initialFavorites)
     } catch (error) {
-      console.error('Erro ao carregar favoritos:', error)
+      console.error(error)
       setFavorites([])
     }
   }
@@ -189,7 +189,7 @@ export default function Home() {
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
+        console.error(error)
         showToast('Erro ao salvar favoritos', 'error')
       }
 
@@ -495,7 +495,7 @@ export default function Home() {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
           padding: 0.5rem 1.5rem;
           display: flex;
@@ -779,13 +779,10 @@ export default function Home() {
           z-index: 1;
         }
 
-        .search-circle:hover {
-        }
-
-        .search-circle:active {
-        }
-
         .search-circle.active {
+          background: rgba(20, 20, 20, 0.4);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          color: var(--text);
         }
 
         .search-circle i {
