@@ -205,8 +205,7 @@ export default function Home() {
             height: var(--pill-height);
             width: 90%;
             max-width: var(--pill-max-width);
-            padding-left: 1.75rem;
-            padding-right: 1.75rem;
+            padding: 0 1.75rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -339,10 +338,9 @@ export default function Home() {
           .nav-pill {
             display: flex;
             align-items: center;
-            justify-content: space-around;
+            justify-content: space-between;
             height: var(--pill-height);
-            padding-left: 1.75rem;
-            padding-right: 1.75rem;
+            padding: 0 1.75rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -359,7 +357,8 @@ export default function Home() {
           }
 
           .nav-btn {
-            flex: 1;
+            flex: 0 0 auto;
+            width: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -426,9 +425,8 @@ export default function Home() {
             pointer-events: auto;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding-left: 1.75rem;
-            padding-right: 1.75rem;
+            gap: 12px;
+            padding: 0 1.75rem;
             height: 40px;
             border-radius: 28px;
             border: var(--pill-border);
@@ -446,13 +444,13 @@ export default function Home() {
           }
 
           .toast-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 11px;
             flex-shrink: 0;
           }
           .toast.success .toast-icon { background: #10b981; color: #fff; }
@@ -460,17 +458,6 @@ export default function Home() {
           .toast.error   .toast-icon { background: #ef4444; color: #fff; }
 
           .toast-msg { flex: 1; font-size: 14px; color: #f1f5f9; }
-
-          .toast-x {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 13px;
-            padding: 2px;
-            transition: color 0.15s;
-          }
-          .toast-x:hover { color: #f1f5f9; }
 
           .empty-state {
             display: flex;
@@ -503,7 +490,8 @@ export default function Home() {
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
             .header-pill { top: 14px; width: 92%; }
-            .nav-pill { width: calc(var(--pill-max-width) - 78px); padding-left: 1rem; padding-right: 1rem; }
+            .nav-pill { width: calc(var(--pill-max-width) - 78px); padding: 0 1rem; }
+            .toast { padding: 0 1rem; }
           }
 
           @media (max-width: 480px) {
@@ -512,7 +500,8 @@ export default function Home() {
               --pill-max-width: 95vw;
             }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .nav-pill { padding-left: 1.75rem; padding-right: 1.75rem; }
+            .nav-pill { padding: 0 1.25rem; }
+            .toast { padding: 0 1.25rem; }
             .nav-btn i { font-size: 22px; }
             .search-circle i { font-size: 24px; }
             .bottom-nav { gap: 8px; }
@@ -536,12 +525,11 @@ export default function Home() {
 
       <div className="toast-wrap">
         {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`}>
+          <div key={t.id} className={`toast ${t.type}`} onClick={() => setToasts(p => p.filter(x => x.id !== t.id))}>
             <div className="toast-icon">
               <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
             </div>
             <div className="toast-msg">{t.message}</div>
-            <button className="toast-x" onClick={() => setToasts(p => p.filter(x => x.id !== t.id))}><i className="fas fa-times"></i></button>
           </div>
         ))}
       </div>
