@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
@@ -44,7 +44,14 @@ export default function Home() {
     const id = Date.now()
     const newToast = { id, message, type }
     
-    setToasts(prev => [...prev, newToast])
+    setToasts(prev => {
+      // Limita a 2 notificações
+      const updated = [...prev, newToast]
+      if (updated.length > 2) {
+        return updated.slice(-2) // Mantém apenas as 2 últimas
+      }
+      return updated
+    })
     
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
@@ -338,8 +345,8 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  // Components
-  const HeroSection = ({ content }) => {
+  // Components com React.memo para evitar re-renders
+  const HeroSection = React.memo(({ content }) => {
     if (!content) return null
 
     return (
@@ -396,9 +403,11 @@ export default function Home() {
         </div>
       </div>
     )
-  }
+  })
 
-  const ContentRow = ({ title, items, icon }) => {
+  HeroSection.displayName = 'HeroSection'
+
+  const ContentRow = React.memo(({ title, items, icon }) => {
     const scrollRef = useRef(null)
 
     const scroll = (direction) => {
@@ -433,9 +442,11 @@ export default function Home() {
         </div>
       </div>
     )
-  }
+  })
 
-  const ContentCard = ({ item }) => {
+  ContentRow.displayName = 'ContentRow'
+
+  const ContentCard = React.memo(({ item }) => {
     const [imageLoaded, setImageLoaded] = useState(false)
 
     return (
@@ -484,9 +495,11 @@ export default function Home() {
         </div>
       </Link>
     )
-  }
+  })
 
-  const ContentGrid = ({ items }) => {
+  ContentCard.displayName = 'ContentCard'
+
+  const ContentGrid = React.memo(({ items }) => {
     if (!items || items.length === 0) {
       return (
         <div className="empty-state">
@@ -503,7 +516,9 @@ export default function Home() {
         ))}
       </div>
     )
-  }
+  })
+
+  ContentGrid.displayName = 'ContentGrid'
 
   const SearchView = () => (
     <div className="search-view">
@@ -795,16 +810,16 @@ export default function Home() {
           left: 0;
           right: 0;
           z-index: 100;
-          background: rgba(20,20,20,0.85);
-          backdrop-filter: saturate(180%) blur(20px);
-          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          background: rgba(20,20,20,0.75);
+          backdrop-filter: saturate(180%) blur(20px) !important;
+          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
           border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .header-content {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 1.25rem 1.5rem;
+          padding: 0.75rem 1.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -874,8 +889,8 @@ export default function Home() {
         /* Main */
         .app-main {
           min-height: 100vh;
-          padding-top: 85px;
-          padding-bottom: 90px;
+          padding-top: 70px;
+          padding-bottom: 80px;
         }
 
         .content-wrapper {
@@ -1462,13 +1477,13 @@ export default function Home() {
           bottom: 0;
           left: 0;
           right: 0;
-          background: rgba(31, 31, 31, 0.85);
-          backdrop-filter: saturate(180%) blur(20px);
-          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          background: rgba(31, 31, 31, 0.75);
+          backdrop-filter: saturate(180%) blur(20px) !important;
+          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           justify-content: space-around;
-          padding: 0.75rem 0;
+          padding: 0.6rem 0;
           z-index: 100;
         }
 
@@ -1509,67 +1524,68 @@ export default function Home() {
           transform: scale(1.05);
         }
 
-        /* Toast Notifications - Lateral Esquerda */
+        /* Toast Notifications - Centralizadas */
         .toast-container-left {
           position: fixed;
-          left: 1.5rem;
-          bottom: 120px;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: 100px;
           z-index: 9999;
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
-          max-width: 280px;
+          gap: 0.5rem;
+          max-width: 320px;
+          width: 90%;
         }
 
         .toast-left {
-          background: rgba(31, 31, 31, 0.8);
-          backdrop-filter: saturate(180%) blur(20px);
-          -webkit-backdrop-filter: saturate(180%) blur(20px);
-          border-radius: 10px;
-          padding: 0.875rem 1rem;
+          background: rgba(31, 31, 31, 0.75);
+          backdrop-filter: saturate(180%) blur(20px) !important;
+          -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+          border-radius: 12px;
+          padding: 1rem 1.25rem;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          gap: 0.875rem;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+          animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .toast-left.removing {
-          animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+          animation: slideOutToast 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
         }
 
-        @keyframes slideInLeft {
+        @keyframes slideInToast {
           from {
             opacity: 0;
-            transform: translateX(-100%) scale(0.9);
+            transform: translateY(20px) scale(0.95);
           }
           to {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateY(0) scale(1);
           }
         }
 
-        @keyframes slideOutLeft {
+        @keyframes slideOutToast {
           from {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateY(0) scale(1);
           }
           to {
             opacity: 0;
-            transform: translateX(-100%) scale(0.9);
+            transform: translateY(20px) scale(0.95);
           }
         }
 
         .toast-left i {
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           flex-shrink: 0;
         }
 
         .toast-left span {
-          font-size: 0.9rem;
+          font-size: 0.95rem;
           font-weight: 500;
-          line-height: 1.3;
+          line-height: 1.4;
           color: var(--text-primary);
         }
 
@@ -1700,21 +1716,20 @@ export default function Home() {
           }
 
           .toast-container-left {
-            left: 1rem;
-            bottom: 100px;
-            max-width: 240px;
+            bottom: 90px;
+            max-width: 90%;
           }
 
           .toast-left {
-            padding: 0.75rem 0.875rem;
+            padding: 0.875rem 1rem;
           }
 
           .toast-left i {
-            font-size: 1rem;
+            font-size: 1.1rem;
           }
 
           .toast-left span {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
           }
         }
 
@@ -1798,21 +1813,20 @@ export default function Home() {
           }
 
           .toast-container-left {
-            left: 0.75rem;
-            bottom: 90px;
-            max-width: 220px;
+            bottom: 85px;
+            max-width: 92%;
           }
 
           .toast-left {
-            padding: 0.65rem 0.75rem;
+            padding: 0.75rem 0.875rem;
           }
 
           .toast-left i {
-            font-size: 0.95rem;
+            font-size: 1rem;
           }
 
           .toast-left span {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
           }
         }
       `}</style>
