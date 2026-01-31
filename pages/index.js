@@ -482,12 +482,14 @@ export default function Home() {
         }
 
         .github-header {
-          background-color: var(--header-bg);
-          border-bottom: 1px solid var(--header-border);
+          background-color: rgba(20, 20, 20, 0.7);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           padding: 0.75rem 0;
           position: sticky;
           top: 0;
           z-index: 100;
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
         }
 
         .header-content {
@@ -590,11 +592,11 @@ export default function Home() {
 
         .content-card {
           background-color: rgba(30, 30, 30, 1);
-          border-radius: 12px;
+          border-radius: 20px;
           overflow: hidden;
           transition: all 0.3s ease;
           cursor: pointer;
-          border: none;
+          border: 1px solid rgba(255, 255, 255, 0.15);
           position: relative;
           text-decoration: none;
           color: inherit;
@@ -611,13 +613,16 @@ export default function Home() {
           height: 100%;
           object-fit: cover;
           display: block;
+          border-radius: 20px;
         }
 
         .favorite-btn {
           position: absolute;
           top: 8px;
           right: 8px;
-          background: rgba(0, 0, 0, 0.8);
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
           border: none;
           border-radius: 50%;
           width: 32px;
@@ -632,12 +637,16 @@ export default function Home() {
         }
 
         .favorite-btn:hover {
-          background: rgba(255, 107, 107, 0.9);
+          background: rgba(255, 107, 107, 0.6);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
           transform: scale(1.1);
         }
 
         .favorite-btn.active {
-          background: var(--primary);
+          background: rgba(255, 107, 107, 0.8);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
           color: white;
         }
 
@@ -665,8 +674,10 @@ export default function Home() {
         }
 
         .main-nav-bar {
-          background-color: var(--header-bg);
-          border: 2px solid var(--header-border);
+          background-color: rgba(20, 20, 20, 0.7);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
           display: flex;
@@ -742,8 +753,10 @@ export default function Home() {
         }
 
         .search-circle {
-          background-color: var(--header-bg);
-          border: 2px solid var(--header-border);
+          background-color: rgba(20, 20, 20, 0.7);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 50%;
           width: 70px;
           height: 70px;
@@ -762,20 +775,21 @@ export default function Home() {
         }
 
         .search-circle:hover {
-          background-color: var(--primary);
-          color: var(--text);
-          border-color: var(--primary);
+          background-color: rgba(255, 107, 107, 0.3);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border-color: rgba(255, 107, 107, 0.5);
         }
 
         .search-circle:active {
           transform: scale(0.95);
-          background-color: var(--primary-dark);
         }
 
         .search-circle.active {
-          background-color: var(--primary);
-          border-color: var(--primary);
-          color: white;
+          background-color: rgba(20, 20, 20, 0.7);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border-color: rgba(255, 255, 255, 0.1);
         }
 
         .search-circle i {
@@ -850,8 +864,10 @@ export default function Home() {
         }
 
         .toast {
-          background: var(--popup-bg);
-          border: 1px solid var(--popup-border);
+          background: rgba(40, 40, 40, 0.7);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
           padding: 12px 16px;
           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
@@ -959,7 +975,7 @@ export default function Home() {
           .main-nav-bar {
             height: 65px;
             border-radius: 35px;
-            border: 1px solid var(--header-border);
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
           
           .nav-item i {
@@ -969,7 +985,7 @@ export default function Home() {
           .search-circle {
             width: 65px;
             height: 65px;
-            border: 1px solid var(--header-border);
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
           
           .search-circle i {
