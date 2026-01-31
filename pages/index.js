@@ -89,7 +89,7 @@ export default function Home() {
       setSearchResults(allResults)
       
     } catch (error) {
-      console.error(error)
+      console.error('Erro na busca:', error)
       showToast('Erro na busca em tempo real', 'error')
       setSearchResults([])
     } finally {
@@ -145,7 +145,7 @@ export default function Home() {
       setRecommendations(allPopular)
 
     } catch (error) {
-      console.error(error)
+      console.error('Erro ao carregar conteúdo:', error)
     }
   }
 
@@ -155,7 +155,7 @@ export default function Home() {
       const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
       setFavorites(initialFavorites)
     } catch (error) {
-      console.error(error)
+      console.error('Erro ao carregar favoritos:', error)
       setFavorites([])
     }
   }
@@ -189,7 +189,7 @@ export default function Home() {
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
-        console.error(error)
+        console.error('Erro ao salvar favoritos:', error)
         showToast('Erro ao salvar favoritos', 'error')
       }
 
@@ -495,12 +495,13 @@ export default function Home() {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 9999px;
-          padding: 0.5rem 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 40px;
+          height: 70px;
+          padding: 0 30px;
           display: flex;
           align-items: center;
-          gap: 1rem;
+          justify-content: space-between;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
         }
 
@@ -546,7 +547,6 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           padding: 0;
-          margin-left: 0.5rem;
           transition: transform 0.2s;
         }
 
@@ -571,10 +571,6 @@ export default function Home() {
           max-width: 1280px;
           margin: auto;
           padding-bottom: 7rem;
-        }
-
-        .home-sections.hidden {
-          display: none;
         }
 
         .section {
@@ -683,7 +679,7 @@ export default function Home() {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 2px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
           display: flex;
@@ -762,7 +758,7 @@ export default function Home() {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 2px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 50%;
           width: 70px;
           height: 70px;
@@ -777,13 +773,6 @@ export default function Home() {
           position: relative;
           opacity: 1;
           z-index: 1;
-        }
-
-        .search-circle.active {
-          background: rgba(20, 20, 20, 0.4) !important;
-          border: 2px solid rgba(255, 255, 255, 0.1) !important;
-          color: var(--text) !important;
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
         }
 
         .search-circle i {
@@ -879,11 +868,6 @@ export default function Home() {
           opacity: 1;
         }
 
-        .toast.hiding {
-          transform: translateY(100px);
-          opacity: 0;
-        }
-
         .toast-icon {
           width: 24px;
           height: 24px;
@@ -965,7 +949,9 @@ export default function Home() {
           }
 
           .header-content {
-            padding: 0.4rem 1.2rem;
+            height: 65px;
+            padding: 0 20px;
+            border-radius: 35px;
           }
 
           .logo-image {
@@ -995,7 +981,7 @@ export default function Home() {
           .main-nav-bar {
             height: 65px;
             border-radius: 35px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
           }
           
           .nav-item i {
@@ -1005,7 +991,7 @@ export default function Home() {
           .search-circle {
             width: 65px;
             height: 65px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
           }
           
           .search-circle i {
@@ -1032,6 +1018,25 @@ export default function Home() {
         }
 
         @media (max-width: 480px) {
+          .header-content {
+            height: 60px;
+            padding: 0 15px;
+            border-radius: 35px;
+          }
+
+          .logo-image {
+            width: 24px;
+            height: 24px;
+          }
+
+          .logo-name {
+            font-size: 0.95rem;
+          }
+
+          .header-plus-btn {
+            font-size: 1.2rem;
+          }
+
           .bottom-nav-container {
             gap: 8px;
           }
@@ -1118,4 +1123,4 @@ const Header = () => {
       </div>
     </header>
   )
-}
+                     }
