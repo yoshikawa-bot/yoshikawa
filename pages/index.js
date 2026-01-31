@@ -20,7 +20,6 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
-  const [scrolled, setScrolled] = useState(false)
 
   const searchInputRef = useRef(null)
   const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -33,16 +32,6 @@ export default function Home() {
     recommendations: 'Populares',
     favorites: 'Favoritos'
   }
-
-  const headerLabel = scrolled
-    ? (searchActive ? 'Resultados' : sectionTitles[activeSection] || 'Conteúdo')
-    : 'Yoshikawa'
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60)
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   const showToast = (message, type = 'info') => {
     const id = Date.now()
@@ -182,25 +171,45 @@ export default function Home() {
           button { font-family: inherit; }
           img { max-width: 100%; height: auto; }
 
-          /* ─── HEADER PILL ─── */
+          /* ─── SHARED PILL STYLE ─── */
+          /* Variáveis centralizadas para manter navbar, header e search idênticos */
+          :root {
+            --pill-height: 64px;
+            --pill-radius: 40px;
+            --pill-bg: rgba(30, 30, 30, 0.55);
+            --pill-border: 1px solid rgba(255, 255, 255, 0.12);
+            --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --pill-blur: blur(40px);
+            --pill-max-width: 680px; /* largura máxima ampla */
+          }
+
+          /* ─── HEADER (topo da página,FullWidth até --pill-max-width) ─── */
           .header-pill {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 100;
+            height: var(--pill-height);
+            background: var(--pill-bg);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            border-bottom: var(--pill-border);
+            box-shadow: var(--pill-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          /* Inner do header — mesmo tamanho que a navbar */
+          .header-inner {
+            width: 100%;
+            max-width: var(--pill-max-width);
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            height: 56px;
             padding: 0 1.5rem;
-            border-radius: 40px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(30,30,30,0.55);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
           }
 
           .header-left {
@@ -208,23 +217,85 @@ export default function Home() {
             align-items: center;
             gap: 0.6rem;
             text-decoration: none;
+            flex-shrink: 0;
           }
 
           .header-logo {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             object-fit: cover;
             flex-shrink: 0;
           }
 
           .header-label {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #f0f6fc;
-            transition: opacity 0.3s;
             white-space: nowrap;
           }
+
+          /* Notificações (toasts) — ficam dentro do header, à direita do título */
+          .header-toasts {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: flex-end;
+            overflow: hidden;
+            max-width: 280px;
+          }
+
+          .header-toast {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            white-space: nowrap;
+            animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            flex-shrink: 0;
+          }
+
+          @keyframes toast-slide-in {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+
+          .header-toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+          }
+          .header-toast.success .header-toast-icon { background: #10b981; color: #fff; }
+          .header-toast.info    .header-toast-icon { background: #4dabf7; color: #fff; }
+          .header-toast.error   .header-toast-icon { background: #ef4444; color: #fff; }
+
+          .header-toast-msg {
+            font-size: 13px;
+            color: #f1f5f9;
+          }
+
+          .header-toast-x {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s;
+          }
+          .header-toast-x:hover { color: #f1f5f9; }
 
           .header-plus {
             background: none;
@@ -238,14 +309,20 @@ export default function Home() {
             padding: 4px;
             opacity: 0.7;
             transition: opacity 0.2s;
+            flex-shrink: 0;
+            margin-left: 0.75rem;
           }
           .header-plus:hover { opacity: 1; }
 
           /* ─── MAIN CONTENT ─── */
+          /* padding-top = altura do header fixo para o conteúdo não ficar atrás */
           .container {
             max-width: 1280px;
             margin: 0 auto;
-            padding: 5.5rem 1.5rem 8rem;
+            padding-top: calc(var(--pill-height) + 1.8rem); /* abaixo do header */
+            padding-bottom: 8rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
           }
 
           .page-title {
@@ -270,7 +347,7 @@ export default function Home() {
             border-radius: 20px;
             overflow: hidden;
             aspect-ratio: 2/3;
-            border: 1px solid rgba(255,255,255,0.13);
+            border: 1px solid rgba(255, 255, 255, 0.13);
             background: #1e1e1e;
             cursor: pointer;
             text-decoration: none;
@@ -278,7 +355,7 @@ export default function Home() {
           }
           .content-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
           }
 
           .content-poster {
@@ -288,7 +365,7 @@ export default function Home() {
             display: block;
           }
 
-          /* ─── FAVORITE BTN (blur sobre o poster) ─── */
+          /* ─── FAVORITE BTN ─── */
           .fav-btn {
             position: absolute;
             top: 8px;
@@ -297,8 +374,8 @@ export default function Home() {
             width: 34px;
             height: 34px;
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.18);
-            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             color: #fff;
@@ -309,8 +386,8 @@ export default function Home() {
             cursor: pointer;
             transition: background 0.2s, transform 0.2s;
           }
-          .fav-btn:hover { background: rgba(255,107,107,0.45); transform: scale(1.08); }
-          .fav-btn.active { background: rgba(255,107,107,0.6); }
+          .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
+          .fav-btn.active { background: rgba(255, 107, 107, 0.6); }
 
           /* ─── BOTTOM NAV ─── */
           .bottom-nav {
@@ -324,26 +401,28 @@ export default function Home() {
             z-index: 1000;
           }
 
+          /* Nav pill — mesmo height e estilo que o header */
           .nav-pill {
             display: flex;
             align-items: center;
             justify-content: space-around;
-            height: 66px;
-            padding: 0 12px;
-            border-radius: 40px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(30,30,30,0.55);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-            flex-grow: 1;
-            max-width: 340px;
+            height: var(--pill-height);
+            max-width: var(--pill-max-width);
+            padding: 0 1.5rem;
+            border-radius: var(--pill-radius);
+            border: var(--pill-border);
+            background: var(--pill-bg);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            box-shadow: var(--pill-shadow);
+            /* A largura do nav-pill se expande junto com o search-circle para espelhar o header */
+            width: calc(var(--pill-max-width) - 80px);
             transition: all 0.3s;
           }
 
           .nav-pill.search-mode {
             justify-content: flex-start;
-            padding: 0 16px;
+            padding: 0 1.5rem;
           }
 
           .nav-btn {
@@ -362,16 +441,7 @@ export default function Home() {
           .nav-btn:hover i { color: #ff6b6b; transform: scale(1.08); }
           .nav-btn.active i { color: #ff6b6b; }
 
-          .nav-btn.collapse {
-            flex: 0;
-            width: 0;
-            overflow: hidden;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s;
-          }
-
-          /* search input inside nav pill */
+          /* Search input dentro da nav pill */
           .search-wrap {
             width: 100%;
             display: flex;
@@ -391,89 +461,40 @@ export default function Home() {
 
           /* ─── SEARCH CIRCLE ─── */
           .search-circle {
-            width: 66px;
-            height: 66px;
+            width: var(--pill-height);
+            height: var(--pill-height);
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(30,30,30,0.55);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            border: var(--pill-border);
+            background: var(--pill-bg);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            box-shadow: var(--pill-shadow);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             cursor: pointer;
             color: #f1f5f9;
-            border: 1px solid rgba(255,255,255,0.12);
           }
           .search-circle i { font-size: 28px; }
 
-          /* ─── TOAST ─── */
-          .toast-wrap {
-            position: fixed;
-            bottom: 110px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 90%;
-            max-width: 360px;
-          }
-
-          .toast {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(30,30,30,0.55);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-            animation: toast-in 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
-          }
-
-          @keyframes toast-in {
-            from { opacity: 0; transform: translateY(16px) scale(0.96); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-          }
-
-          .toast-icon {
-            width: 24px; height: 24px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; flex-shrink: 0;
-          }
-          .toast.success .toast-icon { background: #10b981; color: #fff; }
-          .toast.info    .toast-icon { background: #4dabf7; color: #fff; }
-          .toast.error   .toast-icon { background: #ef4444; color: #fff; }
-
-          .toast-msg { flex: 1; font-size: 14px; color: #f1f5f9; }
-
-          .toast-x {
-            background: none; border: none;
-            color: #94a3b8; cursor: pointer;
-            font-size: 13px; padding: 2px;
-            transition: color 0.15s;
-          }
-          .toast-x:hover { color: #f1f5f9; }
-
           /* ─── EMPTY / LOADING STATES ─── */
           .empty-state {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            min-height: 50vh; color: #94a3b8;
-            text-align: center; width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            color: #94a3b8;
+            text-align: center;
+            width: 100%;
           }
           .empty-state i { font-size: 2rem; margin-bottom: 12px; }
 
           .spinner {
-            width: 36px; height: 36px;
-            border: 3px solid rgba(255,255,255,0.1);
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
             border-top-color: #ff6b6b;
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
@@ -483,20 +504,23 @@ export default function Home() {
 
           /* ─── RESPONSIVE ─── */
           @media (max-width: 768px) {
+            :root {
+              --pill-height: 58px;
+              --pill-max-width: 90vw;
+            }
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
-            .container { padding: 5rem 12px 8rem; }
-            .header-pill { height: 50px; padding: 0 1rem; top: 14px; }
-            .nav-pill { height: 60px; }
-            .search-circle { width: 60px; height: 60px; }
-            .search-circle i { font-size: 25px; }
-            .bottom-nav { bottom: 18px; gap: 10px; }
+            .container { padding-left: 12px; padding-right: 12px; }
+            .nav-pill { width: calc(var(--pill-max-width) - 72px); padding: 0 1rem; }
           }
 
           @media (max-width: 480px) {
-            .nav-pill { height: 56px; padding: 0 8px; }
-            .search-circle { width: 56px; height: 56px; }
-            .search-circle i { font-size: 23px; }
+            :root {
+              --pill-height: 54px;
+              --pill-max-width: 95vw;
+            }
+            .nav-pill { padding: 0 0.75rem; }
             .nav-btn i { font-size: 22px; }
+            .search-circle i { font-size: 24px; }
             .bottom-nav { gap: 8px; }
           }
 
@@ -508,27 +532,32 @@ export default function Home() {
 
       {/* ─── HEADER ─── */}
       <header className="header-pill">
-        <Link href="/" className="header-left">
-          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
-          <span className="header-label">{headerLabel}</span>
-        </Link>
-        <button className="header-plus" title="Adicionar">
-          <i className="fas fa-plus"></i>
-        </button>
-      </header>
+        <div className="header-inner">
+          <Link href="/" className="header-left">
+            <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
+            <span className="header-label">
+              {searchActive ? 'Resultados' : (sectionTitles[activeSection] || 'Yoshikawa')}
+            </span>
+          </Link>
 
-      {/* ─── TOASTS ─── */}
-      <div className="toast-wrap">
-        {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`}>
-            <div className="toast-icon">
-              <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
-            </div>
-            <div className="toast-msg">{t.message}</div>
-            <button className="toast-x" onClick={() => setToasts(p => p.filter(x => x.id !== t.id))}><i className="fas fa-times"></i></button>
+          {/* Notificações dentro do header */}
+          <div className="header-toasts">
+            {toasts.map(t => (
+              <div key={t.id} className={`header-toast ${t.type}`}>
+                <div className="header-toast-icon">
+                  <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
+                </div>
+                <span className="header-toast-msg">{t.message}</span>
+                <button className="header-toast-x" onClick={() => setToasts(p => p.filter(x => x.id !== t.id))}><i className="fas fa-times"></i></button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <button className="header-plus" title="Adicionar">
+            <i className="fas fa-plus"></i>
+          </button>
+        </div>
+      </header>
 
       {/* ─── MAIN ─── */}
       <main className="container">
@@ -542,7 +571,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* search results */}
+        {/* search results vazio */}
         {searchActive && !loading && searchResults.length === 0 && (
           <div className="empty-state">
             {searchQuery.trim() ? <><i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}"</p></> : <p>Comece a digitar para pesquisar...</p>}
@@ -566,7 +595,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* empty favorites */}
+        {/* favoritos vazio */}
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state"><i className="fas fa-heart"></i><p>Nenhum favorito adicionado ainda.</p></div>
         )}
