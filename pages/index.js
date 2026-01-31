@@ -482,14 +482,14 @@ export default function Home() {
         }
 
         .github-header {
-          background-color: rgba(20, 20, 20, 0.7);
+          background-color: rgba(0, 0, 0, 0.3);
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           padding: 0.75rem 0;
           position: sticky;
           top: 0;
           z-index: 100;
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
         }
 
         .header-content {
@@ -620,10 +620,10 @@ export default function Home() {
           position: absolute;
           top: 8px;
           right: 8px;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border: none;
+          background: rgba(0, 0, 0, 0.2);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 50%;
           width: 32px;
           height: 32px;
@@ -637,16 +637,16 @@ export default function Home() {
         }
 
         .favorite-btn:hover {
-          background: rgba(255, 107, 107, 0.6);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background: rgba(255, 107, 107, 0.3);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           transform: scale(1.1);
         }
 
         .favorite-btn.active {
-          background: rgba(255, 107, 107, 0.8);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background: rgba(255, 107, 107, 0.5);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           color: white;
         }
 
@@ -674,9 +674,9 @@ export default function Home() {
         }
 
         .main-nav-bar {
-          background-color: rgba(20, 20, 20, 0.7);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background-color: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
@@ -753,9 +753,9 @@ export default function Home() {
         }
 
         .search-circle {
-          background-color: rgba(20, 20, 20, 0.7);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background-color: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 50%;
           width: 70px;
@@ -775,10 +775,7 @@ export default function Home() {
         }
 
         .search-circle:hover {
-          background-color: rgba(255, 107, 107, 0.3);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border-color: rgba(255, 107, 107, 0.5);
+          transform: scale(1.05);
         }
 
         .search-circle:active {
@@ -786,9 +783,9 @@ export default function Home() {
         }
 
         .search-circle.active {
-          background-color: rgba(20, 20, 20, 0.7);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background-color: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           border-color: rgba(255, 255, 255, 0.1);
         }
 
@@ -864,13 +861,13 @@ export default function Home() {
         }
 
         .toast {
-          background: rgba(40, 40, 40, 0.7);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(40px);
+          -webkit-backdrop-filter: blur(40px);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
           padding: 12px 16px;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
           display: flex;
           align-items: center;
           gap: 12px;
