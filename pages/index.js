@@ -89,7 +89,7 @@ export default function Home() {
       setSearchResults(allResults)
       
     } catch (error) {
-      console.error('Erro na busca:', error)
+      console.error(error)
       showToast('Erro na busca em tempo real', 'error')
       setSearchResults([])
     } finally {
@@ -145,7 +145,7 @@ export default function Home() {
       setRecommendations(allPopular)
 
     } catch (error) {
-      console.error('Erro ao carregar conteúdo:', error)
+      console.error(error)
     }
   }
 
@@ -155,7 +155,7 @@ export default function Home() {
       const initialFavorites = savedFavorites ? JSON.parse(savedFavorites) : []
       setFavorites(initialFavorites)
     } catch (error) {
-      console.error('Erro ao carregar favoritos:', error)
+      console.error(error)
       setFavorites([])
     }
   }
@@ -189,7 +189,7 @@ export default function Home() {
       try {
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavorites))
       } catch (error) {
-        console.error('Erro ao salvar favoritos:', error)
+        console.error(error)
         showToast('Erro ao salvar favoritos', 'error')
       }
 
@@ -358,89 +358,87 @@ export default function Home() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
-      <div className="app-wrapper">
-        <Header />
-        
-        <ToastContainer />
+      <Header />
+      
+      <ToastContainer />
 
-        <main className="container">
-          
-          {loading && !searchActive && (
-            <div className="loading active">
-              <div className="spinner"></div>
-              <p>Carregando conteúdo...</p>
+      <main className="container">
+        
+        {loading && !searchActive && (
+          <div className="loading active">
+            <div className="spinner"></div>
+            <p>Carregando conteúdo...</p>
+          </div>
+        )}
+
+        {searchActive ? (
+            <LiveSearchResults />
+        ) : (
+            <div className="home-sections">
+                <h1 className="page-title-home">{pageTitle}</h1>
+                <section className="section">
+                    <ContentGrid 
+                        items={getActiveItems()} 
+                        isFavorite={isFavorite} 
+                        toggleFavorite={toggleFavorite}
+                        extraClass="main-grid"
+                    />
+                </section>
+            </div>
+        )}
+      </main>
+
+      <div className="bottom-nav-container">
+        <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
+          {!searchActive ? (
+            <>
+              <button 
+                className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
+                onClick={() => setActiveSection('releases')}
+              >
+                <i className="fas fa-film"></i>
+                <span>Lançamentos</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
+                onClick={() => setActiveSection('recommendations')}
+              >
+                <i className="fas fa-fire"></i>
+                <span>Populares</span>
+              </button>
+              <button 
+                className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
+                onClick={() => setActiveSection('favorites')}
+              >
+                <i className="fas fa-heart"></i>
+                <span>Favoritos</span>
+              </button>
+            </>
+          ) : (
+            <div className="search-input-container">
+              <input 
+                ref={searchInputRef}
+                type="text"
+                className="search-input-expanded" 
+                placeholder="Pesquisar..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyPress={handleKeyPress}
+              />
             </div>
           )}
-
-          {searchActive ? (
-              <LiveSearchResults />
-          ) : (
-              <div className="home-sections">
-                  <h1 className="page-title-home">{pageTitle}</h1>
-                  <section className="section">
-                      <ContentGrid 
-                          items={getActiveItems()} 
-                          isFavorite={isFavorite} 
-                          toggleFavorite={toggleFavorite}
-                          extraClass="main-grid"
-                      />
-                  </section>
-              </div>
-          )}
-        </main>
-
-        <div className="bottom-nav-container">
-          <div className={`main-nav-bar ${searchActive ? 'search-active' : ''}`}>
-            {!searchActive ? (
-              <>
-                <button 
-                  className={`nav-item ${activeSection === 'releases' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('releases')}
-                >
-                  <i className="fas fa-film"></i>
-                  <span>Lançamentos</span>
-                </button>
-                <button 
-                  className={`nav-item ${activeSection === 'recommendations' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('recommendations')}
-                >
-                  <i className="fas fa-fire"></i>
-                  <span>Populares</span>
-                </button>
-                <button 
-                  className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`}
-                  onClick={() => setActiveSection('favorites')}
-                >
-                  <i className="fas fa-heart"></i>
-                  <span>Favoritos</span>
-                </button>
-              </>
-            ) : (
-              <div className="search-input-container">
-                <input 
-                  ref={searchInputRef}
-                  type="text"
-                  className="search-input-expanded" 
-                  placeholder="Pesquisar..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyPress={handleKeyPress}
-                />
-              </div>
-            )}
-          </div>
-          
-          <button 
-            className={`search-circle ${searchActive ? 'active' : ''}`}
-            onClick={() => setSearchActive(!searchActive)}
-          >
-            <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
-          </button>
         </div>
+        
+        <button 
+          className={`search-circle ${searchActive ? 'active' : ''}`}
+          onClick={() => setSearchActive(!searchActive)}
+        >
+          <i className={searchActive ? "fas fa-times" : "fas fa-search"}></i>
+        </button>
       </div>
 
-      <style jsx>{`
-        .app-wrapper {
+      <style jsx global>{`
+        :root {
           --primary: #ff6b6b;
           --primary-dark: #e05555;
           --secondary: #94a3b8;
@@ -464,7 +462,15 @@ export default function Home() {
           --popup-bg: rgba(40, 40, 40, 0.95);
           --popup-border: rgba(255, 255, 255, 0.3);
           --option-bg: rgba(0, 0, 0, 0.3);
+        }
 
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
           font-family: 'Inter', Arial, sans-serif;
           background: #000000;
           color: var(--text);
@@ -475,13 +481,7 @@ export default function Home() {
           overflow-y: auto;
         }
 
-        .app-wrapper * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        .app-wrapper .github-header {
+        .github-header {
           position: fixed;
           top: 20px;
           left: 50%;
@@ -491,21 +491,20 @@ export default function Home() {
           max-width: 90%;
         }
 
-        .app-wrapper .header-content {
+        .header-content {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
-          height: 70px;
-          padding: 0 30px;
+          padding: 0.5rem 1.5rem;
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 1rem;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
         }
 
-        .app-wrapper .logo-container {
+        .logo-container {
           display: flex;
           align-items: center;
           gap: 0.75rem;
@@ -513,7 +512,7 @@ export default function Home() {
           text-decoration: none;
         }
 
-        .app-wrapper .logo-image {
+        .logo-image {
           width: 28px;
           height: 28px;
           border-radius: 6px;
@@ -521,19 +520,23 @@ export default function Home() {
           flex-shrink: 0;
         }
 
-        .app-wrapper .logo-text {
+        .logo-text {
           display: flex;
           align-items: center;
           gap: 0;
         }
 
-        .app-wrapper .logo-name {
+        .logo-name {
           font-size: 1.1rem;
           font-weight: 600;
           color: var(--header-text);
         }
 
-        .app-wrapper .header-plus-btn {
+        .beta-tag {
+          display: none;
+        }
+
+        .header-plus-btn {
           background: none;
           border: none;
           color: var(--text);
@@ -543,21 +546,26 @@ export default function Home() {
           align-items: center;
           justify-content: center;
           padding: 0;
+          margin-left: 0.5rem;
           transition: transform 0.2s;
         }
 
-        .app-wrapper .header-plus-btn:hover {
+        .header-plus-btn:hover {
           transform: scale(1.1);
         }
 
-        .app-wrapper .container {
+        .header-right {
+          display: none;
+        }
+
+        .container {
           max-width: 1280px;
           margin: 0 auto;
           padding: 5rem 1.5rem 1.5rem;
           min-height: calc(100vh - 80px);
         }
 
-        .app-wrapper .home-sections {
+        .home-sections {
           display: block;
           width: 100%;
           max-width: 1280px;
@@ -565,11 +573,15 @@ export default function Home() {
           padding-bottom: 7rem;
         }
 
-        .app-wrapper .section {
+        .home-sections.hidden {
+          display: none;
+        }
+
+        .section {
           margin-bottom: 2rem;
         }
 
-        .app-wrapper .page-title-home {
+        .page-title-home {
             font-size: 1.6rem;
             font-weight: 700;
             color: var(--text);
@@ -577,14 +589,14 @@ export default function Home() {
             padding-top: 1rem;
         }
 
-        .app-wrapper .content-grid {
+        .content-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
           gap: 1.5rem;
           width: 100%;
         }
 
-        .app-wrapper .content-card {
+        .content-card {
           background-color: rgba(30, 30, 30, 1);
           border-radius: 20px;
           overflow: hidden;
@@ -597,12 +609,12 @@ export default function Home() {
           aspect-ratio: 2/3;
         }
 
-        .app-wrapper .content-card:hover {
+        .content-card:hover {
           transform: translateY(-3px);
           box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
 
-        .app-wrapper .content-poster {
+        .content-poster {
           width: 100%;
           height: 100%;
           object-fit: cover;
@@ -610,7 +622,7 @@ export default function Home() {
           border-radius: 20px;
         }
 
-        .app-wrapper .favorite-btn {
+        .favorite-btn {
           position: absolute;
           top: 8px;
           right: 8px;
@@ -630,17 +642,21 @@ export default function Home() {
           z-index: 10;
         }
 
-        .app-wrapper .favorite-btn:hover {
+        .favorite-btn:hover {
           background: rgba(255, 107, 107, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           transform: scale(1.1);
         }
 
-        .app-wrapper .favorite-btn.active {
+        .favorite-btn.active {
           background: rgba(255, 107, 107, 0.6);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           color: white;
         }
 
-        .app-wrapper .favorite-btn.active i {
+        .favorite-btn.active i {
           animation: heart-pop 0.5s;
         }
 
@@ -650,7 +666,7 @@ export default function Home() {
           100% { transform: scale(1); }
         }
 
-        .app-wrapper .bottom-nav-container {
+        .bottom-nav-container {
           position: fixed;
           bottom: 25px;
           left: 50%;
@@ -663,11 +679,11 @@ export default function Home() {
           z-index: 1000;
         }
 
-        .app-wrapper .main-nav-bar {
+        .main-nav-bar {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
           display: flex;
@@ -681,12 +697,12 @@ export default function Home() {
           overflow: hidden;
         }
 
-        .app-wrapper .main-nav-bar.search-active {
+        .main-nav-bar.search-active {
           justify-content: flex-start;
           padding: 0;
         }
 
-        .app-wrapper .nav-item {
+        .nav-item {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -702,11 +718,13 @@ export default function Home() {
           background: none;
           position: relative;
           height: 100%;
+          justify-content: center;
           opacity: 1;
           transform: scale(1);
+          text-decoration: none;
         }
 
-        .app-wrapper .main-nav-bar.search-active .nav-item {
+        .main-nav-bar.search-active .nav-item {
           opacity: 0;
           transform: scale(0.8);
           pointer-events: none;
@@ -715,34 +733,36 @@ export default function Home() {
           min-width: 0;
         }
 
-        .app-wrapper .nav-item span {
+        .nav-item span {
           display: none;
         }
 
-        .app-wrapper .nav-item i {
+        .nav-item i {
           font-size: 26px;
+          margin-bottom: 0;
           transition: color 0.3s ease, transform 0.3s ease;
           color: var(--text);
         }
 
-        .app-wrapper .nav-item:hover i {
+        .nav-item:hover i {
             transform: scale(1.1);
             color: var(--primary);
         }
 
-        .app-wrapper .nav-item:active i {
+        .nav-item:active i {
           transform: scale(0.95);
         }
 
-        .app-wrapper .nav-item.active i {
+        .nav-item.active i {
           color: var(--primary);
+          transform: none;
         }
 
-        .app-wrapper .search-circle {
+        .search-circle {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 50%;
           width: 70px;
           height: 70px;
@@ -753,16 +773,24 @@ export default function Home() {
           flex-shrink: 0;
           cursor: pointer;
           color: var(--text);
+          transition: none;
           position: relative;
+          opacity: 1;
           z-index: 1;
         }
 
-        .app-wrapper .search-circle i {
+        .search-circle.active {
+          background: rgba(20, 20, 20, 0.4);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          color: var(--text);
+        }
+
+        .search-circle i {
           font-size: 32px;
           z-index: 1;
         }
 
-        .app-wrapper .search-input-container {
+        .search-input-container {
           position: relative;
           flex: 1;
           display: flex;
@@ -771,7 +799,7 @@ export default function Home() {
           padding: 0 15px;
         }
 
-        .app-wrapper .search-input-expanded {
+        .search-input-expanded {
           background: transparent;
           border: none;
           color: var(--text);
@@ -782,12 +810,12 @@ export default function Home() {
           font-family: 'Inter', sans-serif;
         }
 
-        .app-wrapper .search-input-expanded::placeholder {
+        .search-input-expanded::placeholder {
           color: var(--text);
           opacity: 0.7;
         }
 
-        .app-wrapper .loading {
+        .loading {
           display: none;
           justify-content: center;
           align-items: center;
@@ -796,11 +824,11 @@ export default function Home() {
           flex-direction: column;
         }
 
-        .app-wrapper .loading.active {
+        .loading.active {
           display: flex;
         }
 
-        .app-wrapper .spinner {
+        .spinner {
           border: 3px solid rgba(255, 255, 255, 0.1);
           border-top: 3px solid var(--primary);
           border-radius: 50%;
@@ -815,7 +843,7 @@ export default function Home() {
           100% { transform: rotate(360deg); }
         }
 
-        .app-wrapper .toast-container {
+        .toast-container {
           position: fixed;
           bottom: 120px;
           left: 50%;
@@ -828,7 +856,7 @@ export default function Home() {
           width: 90%;
         }
 
-        .app-wrapper .toast {
+        .toast {
           background: rgba(20, 20, 20, 0.4);
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
@@ -845,12 +873,17 @@ export default function Home() {
           max-width: 400px;
         }
 
-        .app-wrapper .toast.show {
+        .toast.show {
           transform: translateY(0);
           opacity: 1;
         }
 
-        .app-wrapper .toast-icon {
+        .toast.hiding {
+          transform: translateY(100px);
+          opacity: 0;
+        }
+
+        .toast-icon {
           width: 24px;
           height: 24px;
           border-radius: 50%;
@@ -861,24 +894,24 @@ export default function Home() {
           font-size: 14px;
         }
 
-        .app-wrapper .toast-success .toast-icon {
+        .toast-success .toast-icon {
           background: var(--success);
           color: white;
         }
 
-        .app-wrapper .toast-info .toast-icon {
+        .toast-info .toast-icon {
           background: var(--accent);
           color: white;
         }
 
-        .app-wrapper .toast-content {
+        .toast-content {
           flex: 1;
           font-size: 14px;
           line-height: 1.4;
           color: var(--text);
         }
 
-        .app-wrapper .toast-close {
+        .toast-close {
           background: none;
           border: none;
           color: var(--secondary);
@@ -889,16 +922,16 @@ export default function Home() {
           flex-shrink: 0;
         }
 
-        .app-wrapper .toast-close:hover {
+        .toast-close:hover {
           color: var(--text);
           background: rgba(255, 255, 255, 0.1);
         }
 
-        .app-wrapper .toast-close:active {
+        .toast-close:active {
           transform: scale(0.95);
         }
 
-        .app-wrapper .live-search-results {
+        .live-search-results {
             position: static;
             width: 100%;
             height: auto;
@@ -907,8 +940,7 @@ export default function Home() {
             margin-bottom: 20px;
         }
         
-        .app-wrapper .live-search-loading, 
-        .app-wrapper .no-results-live {
+        .live-search-loading, .no-results-live {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -920,22 +952,138 @@ export default function Home() {
             width: 100%;
         }
         
-        .app-wrapper .live-search-loading i, 
-        .app-wrapper .no-results-live i {
+        .live-search-loading i, .no-results-live i {
             margin-bottom: 10px;
             font-size: 2rem;
         }
 
-        .app-wrapper a {
+        @media (max-width: 768px) {
+          .github-header {
+            top: 15px;
+            max-width: 95%;
+          }
+
+          .header-content {
+            padding: 0.4rem 1.2rem;
+          }
+
+          .logo-image {
+            width: 26px;
+            height: 26px;
+          }
+
+          .logo-name {
+            font-size: 1rem;
+          }
+
+          .header-plus-btn {
+            font-size: 1.3rem;
+          }
+
+          .container {
+            padding: 4.5rem 1rem 1rem;
+          }
+
+          .bottom-nav-container {
+            bottom: 20px;
+            max-width: 95%;
+            width: 95%;
+            gap: 10px;
+          }
+          
+          .main-nav-bar {
+            height: 65px;
+            border-radius: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          
+          .nav-item i {
+            font-size: 24px;
+          }
+          
+          .search-circle {
+            width: 65px;
+            height: 65px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          
+          .search-circle i {
+            font-size: 28px;
+          }
+
+          .content-grid {
+              grid-template-columns: repeat(2, 1fr) !important;
+          }
+
+          .toast-container {
+            bottom: 110px;
+            max-width: 350px;
+          }
+          
+          .toast {
+            max-width: 350px;
+            padding: 10px 14px;
+          }
+          
+          .toast-content {
+            font-size: 13px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .bottom-nav-container {
+            gap: 8px;
+          }
+          
+          .main-nav-bar {
+            height: 60px;
+            padding: 0 8px;
+          }
+          
+          .nav-item i {
+            font-size: 22px;
+          }
+          
+          .search-circle {
+            width: 60px;
+            height: 60px;
+          }
+          
+          .search-circle i {
+            font-size: 26px;
+          }
+
+          .toast-container {
+            bottom: 100px;
+            max-width: 300px;
+          }
+          
+          .toast {
+            max-width: 300px;
+            padding: 8px 12px;
+          }
+          
+          .toast-content {
+            font-size: 12px;
+          }
+          
+          .toast-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+          }
+        }
+
+        a {
           color: inherit;
           text-decoration: none;
         }
 
-        .app-wrapper button {
+        button {
           font-family: inherit;
         }
 
-        .app-wrapper img {
+        img {
           max-width: 100%;
           height: auto;
         }
@@ -943,142 +1091,6 @@ export default function Home() {
         @keyframes toast-slide-up {
           0% { opacity: 0; transform: translateY(20px) scale(0.95); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @media (max-width: 768px) {
-          .app-wrapper .github-header {
-            top: 15px;
-            max-width: 95%;
-          }
-
-          .app-wrapper .header-content {
-            height: 65px;
-            padding: 0 20px;
-            border-radius: 35px;
-          }
-
-          .app-wrapper .logo-image {
-            width: 26px;
-            height: 26px;
-          }
-
-          .app-wrapper .logo-name {
-            font-size: 1rem;
-          }
-
-          .app-wrapper .header-plus-btn {
-            font-size: 1.3rem;
-          }
-
-          .app-wrapper .container {
-            padding: 4.5rem 1rem 1rem;
-          }
-
-          .app-wrapper .bottom-nav-container {
-            bottom: 20px;
-            max-width: 95%;
-            width: 95%;
-            gap: 10px;
-          }
-          
-          .app-wrapper .main-nav-bar {
-            height: 65px;
-            border-radius: 35px;
-          }
-          
-          .app-wrapper .nav-item i {
-            font-size: 24px;
-          }
-          
-          .app-wrapper .search-circle {
-            width: 65px;
-            height: 65px;
-          }
-          
-          .app-wrapper .search-circle i {
-            font-size: 28px;
-          }
-
-          .app-wrapper .content-grid {
-              grid-template-columns: repeat(2, 1fr) !important;
-          }
-
-          .app-wrapper .toast-container {
-            bottom: 110px;
-            max-width: 350px;
-          }
-          
-          .app-wrapper .toast {
-            max-width: 350px;
-            padding: 10px 14px;
-          }
-          
-          .app-wrapper .toast-content {
-            font-size: 13px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .app-wrapper .header-content {
-            height: 60px;
-            padding: 0 15px;
-            border-radius: 35px;
-          }
-
-          .app-wrapper .logo-image {
-            width: 24px;
-            height: 24px;
-          }
-
-          .app-wrapper .logo-name {
-            font-size: 0.95rem;
-          }
-
-          .app-wrapper .header-plus-btn {
-            font-size: 1.2rem;
-          }
-
-          .app-wrapper .bottom-nav-container {
-            gap: 8px;
-          }
-          
-          .app-wrapper .main-nav-bar {
-            height: 60px;
-            padding: 0 8px;
-          }
-          
-          .app-wrapper .nav-item i {
-            font-size: 22px;
-          }
-          
-          .app-wrapper .search-circle {
-            width: 60px;
-            height: 60px;
-          }
-          
-          .app-wrapper .search-circle i {
-            font-size: 26px;
-          }
-
-          .app-wrapper .toast-container {
-            bottom: 100px;
-            max-width: 300px;
-          }
-          
-          .app-wrapper .toast {
-            max-width: 300px;
-            padding: 8px 12px;
-          }
-          
-          .app-wrapper .toast-content {
-            font-size: 12px;
-          }
-          
-          .app-wrapper .toast-icon {
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-          }
         }
       `}</style>
     </>
