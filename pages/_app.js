@@ -1,5 +1,5 @@
 import Head from 'next/head'; // Importação necessária para gerenciar o cabeçalho da página
-import '../styles/globals.css'
+import '../pages/index.js'
 
 export default function App({ Component, pageProps }) {
   return (
