@@ -482,25 +482,26 @@ export default function Home() {
         }
 
         .github-header {
-          background-color: rgba(0, 0, 0, 0.3);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 0.75rem 0;
-          position: sticky;
-          top: 0;
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
           z-index: 100;
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          width: auto;
+          max-width: 90%;
         }
 
         .header-content {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
+          background: rgba(20, 20, 20, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 40px;
+          padding: 0.5rem 1.5rem;
           display: flex;
-          justify-content: space-between;
           align-items: center;
           gap: 1rem;
-          position: relative;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
         }
 
         .logo-container {
@@ -508,54 +509,59 @@ export default function Home() {
           align-items: center;
           gap: 0.75rem;
           flex-shrink: 0;
-          cursor: pointer;
           text-decoration: none;
         }
 
         .logo-image {
-          width: 32px;
-          height: 32px;
+          width: 28px;
+          height: 28px;
           border-radius: 6px;
           object-fit: cover;
           flex-shrink: 0;
-          transition: all 0.3s;
-        }
-
-        .logo-image:hover {
-          transform: scale(1.05);
         }
 
         .logo-text {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0;
         }
 
         .logo-name {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           font-weight: 600;
           color: var(--header-text);
         }
 
         .beta-tag {
-          background: var(--primary);
-          color: white;
-          font-size: 0.7rem;
-          padding: 0.2rem 0.5rem;
-          border-radius: 12px;
-          font-weight: 500;
+          display: none;
+        }
+
+        .header-plus-btn {
+          background: none;
+          border: none;
+          color: var(--text);
+          font-size: 1.5rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          margin-left: 0.5rem;
+          transition: transform 0.2s;
+        }
+
+        .header-plus-btn:hover {
+          transform: scale(1.1);
         }
 
         .header-right {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
+          display: none;
         }
 
         .container {
           max-width: 1280px;
           margin: 0 auto;
-          padding: 1.5rem;
+          padding: 5rem 1.5rem 1.5rem;
           min-height: calc(100vh - 80px);
         }
 
@@ -620,9 +626,9 @@ export default function Home() {
           position: absolute;
           top: 8px;
           right: 8px;
-          background: rgba(0, 0, 0, 0.2);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(20, 20, 20, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 50%;
           width: 32px;
@@ -637,16 +643,16 @@ export default function Home() {
         }
 
         .favorite-btn:hover {
-          background: rgba(255, 107, 107, 0.3);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(255, 107, 107, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           transform: scale(1.1);
         }
 
         .favorite-btn.active {
-          background: rgba(255, 107, 107, 0.5);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(255, 107, 107, 0.6);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           color: white;
         }
 
@@ -674,9 +680,9 @@ export default function Home() {
         }
 
         .main-nav-bar {
-          background-color: rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(20, 20, 20, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 40px;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
@@ -685,10 +691,10 @@ export default function Home() {
           align-items: center;
           height: 70px;
           flex-grow: 1;
-          overflow: hidden;
           padding: 0 10px;
           position: relative;
           transition: all 0.3s ease;
+          overflow: hidden;
         }
 
         .main-nav-bar.search-active {
@@ -753,9 +759,9 @@ export default function Home() {
         }
 
         .search-circle {
-          background-color: rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(20, 20, 20, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           border: 2px solid rgba(255, 255, 255, 0.1);
           border-radius: 50%;
           width: 70px;
@@ -767,26 +773,19 @@ export default function Home() {
           flex-shrink: 0;
           cursor: pointer;
           color: var(--text);
-          transition: all 0.3s ease;
+          transition: none;
           position: relative;
           opacity: 1;
-          transform: scale(1);
           z-index: 1;
         }
 
         .search-circle:hover {
-          transform: scale(1.05);
         }
 
         .search-circle:active {
-          transform: scale(0.95);
         }
 
         .search-circle.active {
-          background-color: rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
-          border-color: rgba(255, 255, 255, 0.1);
         }
 
         .search-circle i {
@@ -861,9 +860,9 @@ export default function Home() {
         }
 
         .toast {
-          background: rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
+          background: rgba(20, 20, 20, 0.4);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
           padding: 12px 16px;
@@ -962,6 +961,32 @@ export default function Home() {
         }
 
         @media (max-width: 768px) {
+          .github-header {
+            top: 15px;
+            max-width: 95%;
+          }
+
+          .header-content {
+            padding: 0.4rem 1.2rem;
+          }
+
+          .logo-image {
+            width: 26px;
+            height: 26px;
+          }
+
+          .logo-name {
+            font-size: 1rem;
+          }
+
+          .header-plus-btn {
+            font-size: 1.3rem;
+          }
+
+          .container {
+            padding: 4.5rem 1rem 1rem;
+          }
+
           .bottom-nav-container {
             bottom: 20px;
             max-width: 95%;
@@ -1087,9 +1112,11 @@ const Header = () => {
           />
           <div className="logo-text">
             <span className="logo-name">Yoshikawa</span>
-            <span className="beta-tag">STREAMING</span>
           </div>
         </Link>
+        <button className="header-plus-btn" title="Adicionar">
+          <i className="fas fa-plus"></i>
+        </button>
       </div>
     </header>
   )
