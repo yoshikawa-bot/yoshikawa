@@ -496,7 +496,7 @@ export default function Home() {
           backdrop-filter: blur(60px);
           -webkit-backdrop-filter: blur(60px);
           border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 40px;
+          border-radius: 9999px;
           padding: 0.5rem 1.5rem;
           display: flex;
           align-items: center;
@@ -780,9 +780,10 @@ export default function Home() {
         }
 
         .search-circle.active {
-          background: rgba(20, 20, 20, 0.4);
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          color: var(--text);
+          background: rgba(20, 20, 20, 0.4) !important;
+          border: 2px solid rgba(255, 255, 255, 0.1) !important;
+          color: var(--text) !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
         }
 
         .search-circle i {
