@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
 const SECTION_TITLES = {
   releases: 'Lançamentos',
@@ -78,6 +79,29 @@ export const ToastContainer = ({ toast, closeToast }) => {
         <div className="toast-msg">{toast.message}</div>
       </div>
     </div>
+  )
+}
+
+// Componente Hero Novo
+export const HeroBanner = ({ item }) => {
+  if (!item) return null;
+
+  const backdropUrl = item.backdrop_path 
+    ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` 
+    : (item.poster_path ? `https://image.tmdb.org/t/p/w1280${item.poster_path}` : DEFAULT_BACKDROP);
+
+  return (
+    <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
+      <div className="hero-backdrop">
+        <img src={backdropUrl} alt={item.title || item.name} loading="eager" />
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <span className="hero-tag">Destaque</span>
+          <h2 className="hero-title">{item.title || item.name}</h2>
+          <p className="hero-overview">{item.overview ? item.overview.slice(0, 120) + '...' : ''}</p>
+        </div>
+      </div>
+    </Link>
   )
 }
 
@@ -367,12 +391,15 @@ export default function Home() {
     })
   }
 
-  const getActiveItems = () => {
-    if (activeSection === 'releases') return releases
-    if (activeSection === 'recommendations') return recommendations
-    if (activeSection === 'favorites') return favorites
-    return releases
-  }
+  // Lógica para definir o conteúdo a ser exibido
+  const activeList = searchActive 
+    ? searchResults 
+    : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites));
+
+  // Lógica para destacar o Hero
+  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 0;
+  const heroItem = showHero ? activeList[0] : null;
+  const displayItems = showHero ? activeList.slice(1) : activeList;
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
@@ -501,12 +528,12 @@ export default function Home() {
           }
 
           .info-content {
-            /* USA O MESMO PADRÃO DAS NOTIFICAÇÕES (PILL) */
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            border: var(--pill-border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            /* AJUSTE BRAVE/ADBLOCK: Aumentei opacidade e forcei background fallback */
+            background-color: rgba(20, 20, 20, 0.85); /* Fallback mais sólido */
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             border-radius: 20px;
             padding: 1.2rem;
             display: flex;
@@ -515,6 +542,8 @@ export default function Home() {
             color: #e2e8f0;
             font-size: 0.95rem;
             line-height: 1.5;
+            position: relative;
+            transform: translateZ(0); /* Força nova layer */
           }
 
           .info-icon {
@@ -537,34 +566,99 @@ export default function Home() {
             padding-right: 2.5rem;
           }
 
-          /* Efeito IA Pensando (Esquerda -> Direita) */
           .page-title {
             font-size: 1.6rem;
             font-weight: 700;
             margin-bottom: 1.2rem;
-            
-            /* Gradiente: Branco -> Cinza Escuro -> Branco */
-            background: linear-gradient(
-              90deg,
-              #f1f5f9 0%,
-              #f1f5f9 40%,
-              #64748b 50%, 
-              #f1f5f9 60%,
-              #f1f5f9 100%
-            );
+            background: linear-gradient(to right, #f1f5f9 0%, #f1f5f9 40%, #64748b 50%, #f1f5f9 60%, #f1f5f9 100%);
             background-size: 200% auto;
-            
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             color: #f1f5f9;
-            
-            animation: shimmerEffect 4s linear infinite;
+            animation: textShimmer 3.5s linear infinite;
           }
 
-          @keyframes shimmerEffect {
-            0% { background-position: -100% center; }
-            100% { background-position: 100% center; }
+          @keyframes textShimmer {
+            to { background-position: 200% center; }
+          }
+
+          /* HERO STYLES */
+          .hero-wrapper {
+            display: block;
+            width: 100%;
+            margin-bottom: 2rem;
+            text-decoration: none;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+          
+          .hero-wrapper:hover {
+            transform: scale(1.01);
+          }
+
+          .hero-backdrop {
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 500px;
+            position: relative;
+          }
+
+          .hero-backdrop img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+
+          .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
+          }
+
+          .hero-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem;
+            z-index: 2;
+          }
+
+          .hero-tag {
+            display: inline-block;
+            background: #ff6b6b;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+          }
+
+          .hero-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            line-height: 1.2;
+          }
+
+          .hero-overview {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem;
+            max-width: 600px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
 
           .content-grid {
@@ -621,33 +715,38 @@ export default function Home() {
             max-width: 100%;
           }
 
-          /* BOTÃO DE CURTIR: Apenas o coração */
           .fav-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             z-index: 2;
             width: 32px;
             height: 32px;
-            background: transparent;
-            border: none;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: border-color 0.2s, transform 0.1s;
+            outline: none; /* Remove outline padrão */
           }
           
           .fav-btn:hover { 
-            transform: scale(1.15);
+            border-color: rgba(255,255,255,0.6); 
+            background: rgba(0,0,0,0.5) !important;
           }
 
-          /* Sombra no coração para ver em posters brancos */
-          .fav-btn i { 
-            font-size: 18px; 
-            transition: color 0.2s; 
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.7));
+          /* AJUSTE BOTÃO FAVORITAR: Sem borda branca ao clicar, apenas scale */
+          .fav-btn:active, .fav-btn:focus {
+            border-color: transparent;
+            transform: scale(0.92);
           }
+
+          .fav-btn i { font-size: 14px; transition: color 0.2s; }
           
           @keyframes heart-zoom {
             0% { transform: scale(1); }
@@ -855,6 +954,8 @@ export default function Home() {
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
+            .hero-title { font-size: 1.5rem; }
+            .hero-wrapper { border-radius: 16px; margin-bottom: 1.5rem; }
           }
 
           @media (max-width: 480px) {
@@ -869,6 +970,9 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
+            .hero-backdrop { aspect-ratio: 4/3; }
+            .hero-title { font-size: 1.3rem; }
+            .hero-content { padding: 1.2rem; }
           }
         `}</style>
       </Head>
@@ -898,10 +1002,13 @@ export default function Home() {
             <i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}"</p>
           </div>
         )}
+        
+        {/* HERO SECTION */}
+        {!loading && showHero && <HeroBanner item={heroItem} />}
 
-        {(searchActive ? searchResults : getActiveItems()).length > 0 && !loading && (
+        {displayItems.length > 0 && !loading && (
           <div className="content-grid">
-            {(searchActive ? searchResults : getActiveItems()).map(item => (
+            {displayItems.map(item => (
               <MovieCard 
                 key={getItemKey(item)} 
                 item={item} 
