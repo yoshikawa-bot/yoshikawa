@@ -22,7 +22,8 @@ const useDebounce = (callback, delay) => {
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) => {
+// --- HEADER ATUALIZADO ---
+export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, setActiveSection }) => {
   const handleBtnClick = (e) => {
     e.stopPropagation();
     if (scrolled) {
@@ -30,6 +31,11 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
     } else {
       toggleInfo();
     }
+  };
+
+  const handleFilterClick = (section) => {
+    setActiveSection(section);
+    toggleInfo(); // Fecha o popup após selecionar
   };
 
   return (
@@ -42,7 +48,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
         
         <button 
           className="header-plus" 
-          title={scrolled ? "Voltar ao topo" : "Informações"}
+          title={scrolled ? "Voltar ao topo" : "Menu"}
           onClick={handleBtnClick}
         >
           <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"}></i>
@@ -54,9 +60,16 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
           className={`info-popup ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="info-content">
-            <i className="fas fa-shield-alt info-icon"></i>
-            <p>Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.</p>
+          <div className="info-content-menu">
+            <button onClick={() => handleFilterClick('releases')}>
+              <i className="fas fa-film"></i> Lançamentos
+            </button>
+            <button onClick={() => handleFilterClick('recommendations')}>
+              <i className="fas fa-fire"></i> Populares
+            </button>
+            <button onClick={() => handleFilterClick('favorites')}>
+              <i className="fas fa-heart"></i> Favoritos
+            </button>
           </div>
         </div>
       )}
@@ -82,27 +95,60 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// Componente Hero Novo
-export const HeroBanner = ({ item }) => {
-  if (!item) return null;
+// --- NOVO HERO CAROUSEL ---
+export const HeroCarousel = ({ items, toggleFavorite, isFavorite }) => {
+  const scrollRef = useRef(null);
 
-  const backdropUrl = item.backdrop_path 
-    ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` 
-    : (item.poster_path ? `https://image.tmdb.org/t/p/w1280${item.poster_path}` : DEFAULT_BACKDROP);
+  // Animação de "dica" ao carregar
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && items.length > 1) {
+      setTimeout(() => {
+        el.scrollTo({ left: 60, behavior: 'smooth' });
+        setTimeout(() => {
+          el.scrollTo({ left: 0, behavior: 'smooth' });
+        }, 600);
+      }, 800);
+    }
+  }, [items]); // Roda quando os itens mudam (carregamento inicial)
+
+  if (!items || items.length === 0) return null;
 
   return (
-    <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
-      <div className="hero-backdrop">
-        <img src={backdropUrl} alt={item.title || item.name} loading="eager" />
-        <div className="hero-overlay"></div>
-        <div className="hero-content">
-          <span className="hero-tag">Destaque</span>
-          <h2 className="hero-title">{item.title || item.name}</h2>
-          <p className="hero-overview">{item.overview ? item.overview.slice(0, 120) + '...' : ''}</p>
-        </div>
-      </div>
-    </Link>
-  )
+    <div className="hero-carousel-container" ref={scrollRef}>
+      {items.map((item) => {
+        const backdropUrl = item.backdrop_path 
+          ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` 
+          : (item.poster_path ? `https://image.tmdb.org/t/p/w1280${item.poster_path}` : DEFAULT_BACKDROP);
+        
+        const fav = isFavorite(item);
+
+        return (
+          <div key={getItemKey(item)} className="hero-slide">
+            <Link href={`/${item.media_type}/${item.id}`} className="hero-link">
+              <img src={backdropUrl} alt={item.title || item.name} className="hero-img" loading="eager" />
+              <div className="hero-overlay"></div>
+              <div className="hero-content">
+                <span className="hero-tag">Top do Dia</span>
+                <h2 className="hero-title">{item.title || item.name}</h2>
+              </div>
+            </Link>
+            
+            <button 
+              className="hero-fav-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(item);
+              }}
+            >
+              <i className={`${fav ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: fav ? '#ff6b6b' : '#fff' }}></i>
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  );
 }
 
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
@@ -383,7 +429,7 @@ export default function Home() {
         next = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
         showToast('Removido dos favoritos', 'info')
       } else {
-        next = [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path }]
+        next = [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path, backdrop_path: item.backdrop_path }]
         showToast('Adicionado aos favoritos!', 'success')
       }
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(next)) } catch { showToast('Erro ao salvar', 'error') }
@@ -391,15 +437,19 @@ export default function Home() {
     })
   }
 
-  // Lógica para definir o conteúdo a ser exibido
+  // Lista ativa
   const activeList = searchActive 
     ? searchResults 
     : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites));
 
-  // Lógica para destacar o Hero
-  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 0;
-  const heroItem = showHero ? activeList[0] : null;
-  const displayItems = showHero ? activeList.slice(1) : activeList;
+  // Lógica do Hero: Pegar os top 5 do dia (populares)
+  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && recommendations.length > 0;
+  const heroItems = showHero ? recommendations.slice(0, 5) : [];
+  
+  // Se mostrar Hero, a lista abaixo não deve repetir os itens se for a mesma seção
+  const displayItems = (showHero && activeSection === 'recommendations') 
+    ? activeList.slice(5) 
+    : activeList;
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
@@ -506,7 +556,7 @@ export default function Home() {
             transform: translate(-50%, 0) scale(0.9);
             z-index: 900; 
             width: 90%;
-            max-width: 400px;
+            max-width: 280px;
             opacity: 0;
             animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
@@ -527,34 +577,43 @@ export default function Home() {
             100% { opacity: 0; transform: translate(-50%, 0) scale(0.9); pointer-events: none; }
           }
 
-          .info-content {
-            /* AJUSTE BRAVE/ADBLOCK: Aumentei opacidade e forcei background fallback */
-            background-color: rgba(20, 20, 20, 0.85); /* Fallback mais sólido */
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
+          .info-content-menu {
+            /* Fundo sólido sem transparência como solicitado */
+            background-color: #1a1a1a; 
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             border-radius: 20px;
-            padding: 1.2rem;
+            padding: 8px;
             display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            flex-direction: column;
+            gap: 4px;
             position: relative;
-            transform: translateZ(0); /* Força nova layer */
           }
 
-          .info-icon {
-            color: #f59e0b;
-            font-size: 1.2rem;
-            margin-top: 2px;
+          .info-content-menu button {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
           }
 
-          .info-content strong {
+          .info-content-menu button:hover {
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            font-weight: 600;
+          }
+          
+          .info-content-menu button i {
+            width: 20px;
+            text-align: center;
+            color: #ff6b6b;
           }
 
           .container {
@@ -562,14 +621,15 @@ export default function Home() {
             margin: 0 auto;
             padding-top: calc(var(--pill-height) + 20px + 1.8rem);
             padding-bottom: 8rem;
-            padding-left: 2.5rem;
-            padding-right: 2.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
           }
 
           .page-title {
             font-size: 1.6rem;
             font-weight: 700;
             margin-bottom: 1.2rem;
+            margin-top: 2rem; /* Espaço entre Hero e Título */
             background: linear-gradient(to right, #f1f5f9 0%, #f1f5f9 40%, #64748b 50%, #f1f5f9 60%, #f1f5f9 100%);
             background-size: 200% auto;
             background-clip: text;
@@ -583,31 +643,42 @@ export default function Home() {
             to { background-position: 200% center; }
           }
 
-          /* HERO STYLES */
-          .hero-wrapper {
-            display: block;
+          /* HERO CAROUSEL STYLES */
+          .hero-carousel-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 16px;
             width: 100%;
-            margin-bottom: 2rem;
-            text-decoration: none;
+            margin-bottom: 0.5rem;
+            padding-bottom: 10px; /* Para scrollbar não colar */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+          }
+          .hero-carousel-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+          }
+
+          .hero-slide {
             position: relative;
+            flex: 0 0 100%; /* Mostra 1 inteiro */
+            scroll-snap-align: center;
             border-radius: 24px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-          }
-          
-          .hero-wrapper:hover {
-            transform: scale(1.01);
-          }
-
-          .hero-backdrop {
-            width: 100%;
             aspect-ratio: 16/9;
             max-height: 500px;
-            position: relative;
           }
 
-          .hero-backdrop img {
+          .hero-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            text-decoration: none;
+          }
+
+          .hero-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -649,17 +720,31 @@ export default function Home() {
             margin-bottom: 0.5rem;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
             line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
-          .hero-overview {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.95rem;
-            max-width: 600px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+          .hero-fav-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.2s;
           }
+          .hero-fav-btn:active { transform: scale(0.9); }
 
           .content-grid {
             display: grid;
@@ -732,7 +817,7 @@ export default function Home() {
             justify-content: center;
             cursor: pointer;
             transition: border-color 0.2s, transform 0.1s;
-            outline: none; /* Remove outline padrão */
+            outline: none; 
           }
           
           .fav-btn:hover { 
@@ -740,7 +825,6 @@ export default function Home() {
             background: rgba(0,0,0,0.5) !important;
           }
 
-          /* AJUSTE BOTÃO FAVORITAR: Sem borda branca ao clicar, apenas scale */
           .fav-btn:active, .fav-btn:focus {
             border-color: transparent;
             transform: scale(0.92);
@@ -955,7 +1039,7 @@ export default function Home() {
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
             .hero-title { font-size: 1.5rem; }
-            .hero-wrapper { border-radius: 16px; margin-bottom: 1.5rem; }
+            .hero-slide { aspect-ratio: 4/5; max-height: 60vh; }
           }
 
           @media (max-width: 480px) {
@@ -970,7 +1054,6 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-            .hero-backdrop { aspect-ratio: 4/3; }
             .hero-title { font-size: 1.3rem; }
             .hero-content { padding: 1.2rem; }
           }
@@ -983,13 +1066,13 @@ export default function Home() {
         showInfo={showInfoPopup} 
         toggleInfo={togglePopup}
         infoClosing={infoClosing}
+        setActiveSection={setActiveSection}
       />
       
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
       <main className="container">
-        <h1 className="page-title">{pageTitle}</h1>
-
+        
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
             <div className="spinner"></div>
@@ -1003,8 +1086,17 @@ export default function Home() {
           </div>
         )}
         
-        {/* HERO SECTION */}
-        {!loading && showHero && <HeroBanner item={heroItem} />}
+        {/* HERO SECTION - Movido para antes do Título */}
+        {!loading && showHero && (
+          <HeroCarousel 
+            items={heroItems} 
+            toggleFavorite={toggleFavorite} 
+            isFavorite={isFavorite} 
+          />
+        )}
+
+        {/* PAGE TITLE - Movido para baixo do Hero */}
+        <h1 className="page-title">{pageTitle}</h1>
 
         {displayItems.length > 0 && !loading && (
           <div className="content-grid">
