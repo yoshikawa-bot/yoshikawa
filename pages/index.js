@@ -79,123 +79,130 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// ─── HERO CAROUSEL ──────────────────────────────────────────────
+// ─── HERO CAROUSEL (REVERTIDO PARA O ORIGINAL) ──────────────────
 export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
-  const [realIndex, setRealIndex] = useState(1)
-  const [isTransitioning, setIsTransitioning] = useState(true)
-  const [dragOffset, setDragOffset] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-
-  const trackRef = useRef(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [loaded, setLoaded] = useState(false)
   const touchStartX = useRef(null)
-  const touchStartTime = useRef(null)
+  const touchEndX = useRef(null)
   const intervalRef = useRef(null)
 
-  // Clones for infinite loop
-  const ext = items.length > 0 ? [items[items.length - 1], ...items, items[0]] : []
+  // Duplicate items for infinite loop
+  const extendedItems = items.length > 0
+    ? [items[items.length - 1], ...items, items[0]]
+    : []
 
-  // Auto-advance
+  const [realIndex, setRealIndex] = useState(1) // start at 1 because of prepended clone
+  const [isTransitioning, setIsTransitioning] = useState(true)
+  const trackRef = useRef(null)
+
+  useEffect(() => {
+    // Trigger the subtle "peek" animation after mount
+    const t = setTimeout(() => setLoaded(true), 100)
+    return () => clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     if (items.length < 2) return
-    intervalRef.current = setInterval(goNext, 5000)
+    intervalRef.current = setInterval(() => {
+      goNext()
+    }, 5000)
     return () => clearInterval(intervalRef.current)
-  }, [realIndex, items.length])
+  }, [items.length, realIndex])
 
-  const goNext = () => { setIsTransitioning(true); setRealIndex(p => p + 1) }
-  const goPrev = () => { setIsTransitioning(true); setRealIndex(p => p - 1) }
+  const goNext = () => {
+    setIsTransitioning(true)
+    setRealIndex(prev => prev + 1)
+  }
 
-  // Snap back on infinite loop boundaries
+  const goPrev = () => {
+    setIsTransitioning(true)
+    setRealIndex(prev => prev - 1)
+  }
+
+  // Handle infinite loop snap
   useEffect(() => {
+    if (!isTransitioning) return
     const track = trackRef.current
-    if (!track || !isTransitioning) return
-    const onEnd = () => {
+    if (!track) return
+
+    const handleTransitionEnd = () => {
       setIsTransitioning(false)
-      if (realIndex === 0) setRealIndex(items.length)
-      if (realIndex === items.length + 1) setRealIndex(1)
+      // If we landed on the first clone (index 0), snap to real last
+      if (realIndex === 0) {
+        setIsTransitioning(false)
+        setRealIndex(items.length)
+      }
+      // If we landed on the last clone (items.length + 1), snap to real first
+      if (realIndex === items.length + 1) {
+        setIsTransitioning(false)
+        setRealIndex(1)
+      }
     }
-    track.addEventListener('transitionend', onEnd)
-    return () => track.removeEventListener('transitionend', onEnd)
+
+    track.addEventListener('transitionend', handleTransitionEnd)
+    return () => track.removeEventListener('transitionend', handleTransitionEnd)
   }, [realIndex, items.length, isTransitioning])
 
-  // ── Drag / swipe ──
-  const startDrag = (clientX) => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    touchStartX.current = clientX
-    touchStartTime.current = Date.now()
-    setIsDragging(true)
+  // Touch handlers
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
   }
-  const moveDrag = (clientX) => {
-    if (touchStartX.current === null) return
-    setDragOffset(clientX - touchStartX.current)
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX
   }
-  const endDrag = () => {
-    if (touchStartX.current === null) return
-    const elapsed = Date.now() - touchStartTime.current
-    const velocity = Math.abs(dragOffset) / elapsed
-    if (Math.abs(dragOffset) > 50 || velocity > 0.3) {
-      dragOffset < 0 ? goNext() : goPrev()
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return
+    const diff = touchStartX.current - touchEndX.current
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) goNext()
+      else goPrev()
     }
-    setDragOffset(0)
-    setIsDragging(false)
     touchStartX.current = null
+    touchEndX.current = null
   }
-
-  const onTouchStart  = (e) => startDrag(e.touches[0].clientX)
-  const onTouchMove   = (e) => { e.preventDefault(); moveDrag(e.touches[0].clientX) }
-  const onTouchEnd    = () => endDrag()
-  const onMouseDown   = (e) => { e.preventDefault(); startDrag(e.clientX) }
-  const onMouseMove   = (e) => { if (isDragging) moveDrag(e.clientX) }
-  const onMouseUp     = () => { if (isDragging) endDrag() }
-  const onMouseLeave  = () => { if (isDragging) endDrag() }
 
   if (items.length === 0) return null
 
-  const currentItem = ext[realIndex] || items[0]
+  const currentItem = extendedItems[realIndex] || items[0]
   const favActive = isFavorite(currentItem)
 
   const handleFavClick = (e) => {
-    e.preventDefault(); e.stopPropagation()
+    e.preventDefault()
+    e.stopPropagation()
     toggleFavorite(currentItem)
   }
 
-  const baseX = -(realIndex * 100)
-
   return (
-    <div className={`hero-carousel`}>
-      <div
+    <div className={`hero-carousel ${loaded ? 'loaded' : ''}`}>
+      <div 
         className="hero-track-wrapper"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <div
+        <div 
           ref={trackRef}
           className="hero-track"
           style={{
-            transform: `translateX(calc(${baseX}% + ${dragOffset}px))`,
-            transition: (isTransitioning && !isDragging) ? 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
-            willChange: 'transform'
+            transform: `translateX(-${realIndex * 100}%)`,
+            transition: isTransitioning ? 'transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none'
           }}
         >
-          {ext.map((item, idx) => {
-            const bUrl = item.backdrop_path
-              ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+          {extendedItems.map((item, idx) => {
+            const bUrl = item.backdrop_path 
+              ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` 
               : (item.poster_path ? `https://image.tmdb.org/t/p/w1280${item.poster_path}` : DEFAULT_BACKDROP)
             return (
               <div key={idx} className="hero-slide">
                 <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
                   <div className="hero-backdrop">
-                    <img src={bUrl} alt={item.title || item.name} loading={idx === 1 ? 'eager' : 'lazy'} draggable={false} />
+                    <img src={bUrl} alt={item.title || item.name} loading={idx === 1 ? 'eager' : 'lazy'} draggable="false" />
                     <div className="hero-overlay"></div>
                     <div className="hero-content">
-                      <span className="hero-tag">Destaque</span>
+                      <span className="hero-tag">Top do Dia</span>
                       <h2 className="hero-title">{item.title || item.name}</h2>
-                      {/* Descrição visível apenas em telas maiores */}
-                      <p className="hero-overview desktop-only">{item.overview ? item.overview.slice(0, 150) + '...' : ''}</p>
+                      <p className="hero-overview">{item.overview ? item.overview.slice(0, 120) + '...' : ''}</p>
                     </div>
                   </div>
                 </Link>
@@ -205,11 +212,13 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
         </div>
       </div>
 
-      <button className="fav-btn hero-fav-overlay" onClick={handleFavClick}>
-        <i
-          className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`}
-          style={{ color: favActive ? '#ff6b6b' : '#ffffff' }}
-        ></i>
+      {/* Favorite button — outside the Link */}
+      <button 
+        className="hero-fav-btn"
+        onClick={handleFavClick}
+        title={favActive ? 'Remover dos favoritos' : 'Favoritar'}
+      >
+        <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
       </button>
     </div>
   )
@@ -441,7 +450,6 @@ export default function Home() {
   // ── Derived ──
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
   const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 3
-  // STRICTLY 3 items for Hero
   const heroItems = showHero ? activeList.slice(0, 3) : []
   const displayItems = showHero ? activeList.slice(3) : activeList
 
@@ -559,92 +567,82 @@ export default function Home() {
           @keyframes textShimmer { to { background-position: 200% center; } }
           .page-title-below { margin-top: 0; margin-bottom: 1.2rem; }
 
-          /* ═══ HERO CAROUSEL ═══ */
+          /* ─── HERO CAROUSEL (RESTORED) ─── */
           .hero-carousel {
             width: 100%;
             position: relative;
-            /* Remover border-radius do container principal para deixar os slides controlarem isso */
-            border-radius: 0;
-            overflow: visible; /* Permitir ver as bordas dos cards */
+            overflow: hidden;
+            border-radius: 24px;
             margin-bottom: 2rem;
-            user-select: none;
-            -webkit-user-select: none;
+            /* Subtle peek animation on load */
           }
-          .hero-track-wrapper { width: 100%; overflow: hidden; cursor: grab; }
-          .hero-track-wrapper:active { cursor: grabbing; }
-          .hero-track { display: flex; width: 100%; }
+          .hero-carousel .hero-track-wrapper { overflow: hidden; }
+          .hero-carousel .hero-track { display: flex; width: 100%; }
+          .hero-slide { min-width: 100%; width: 100%; flex-shrink: 0; }
 
-          .hero-slide {
-            min-width: 100%; flex-shrink: 0;
-            /* Pequeno padding lateral para dar sensação de cards separados */
-            padding: 0 4px;
+          @keyframes hero-peek {
+            0%   { transform: translateX(0); }
+            40%  { transform: translateX(-3.5%); }
+            100% { transform: translateX(0); }
           }
-          
+          .hero-carousel:not(.loaded) .hero-track {
+            animation: hero-peek 1.1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+          }
+          .hero-carousel.loaded .hero-track { animation: none !important; }
+
           .hero-wrapper {
             display: block; width: 100%;
             text-decoration: none; position: relative;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            /* Borda sutil para separar */
-            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
+          .hero-wrapper:hover { transform: scale(1.01); }
 
-          /* BACKDROP (PC) */
           .hero-backdrop {
-            width: 100%;
-            aspect-ratio: 2.35 / 1; 
-            max-height: 480px;
+            width: 100%; aspect-ratio: 16/9; max-height: 500px;
             position: relative;
-            background: #111;
           }
           .hero-backdrop img {
-            width: 100%; height: 100%;
-            object-fit: cover; 
-            /* Importante: foca no topo/centro para não cortar cabeças */
-            object-position: center 20%;
-            display: block;
-            pointer-events: none;
-            transition: transform 10s ease; 
+            width: 100%; height: 100%; object-fit: cover; display: block;
           }
-          .hero-slide:hover .hero-backdrop img { transform: scale(1.03); }
-
           .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.1) 70%, transparent 100%);
-            z-index: 1;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
           }
           .hero-content {
             position: absolute; bottom: 0; left: 0;
-            width: 100%; padding: 2rem 2.5rem; z-index: 2;
-            display: flex; flex-direction: column; align-items: flex-start;
+            width: 100%; padding: 2rem; z-index: 2;
           }
           .hero-tag {
-            display: inline-block;
-            background: #ff6b6b; color: #fff;
-            padding: 4px 10px; border-radius: 6px;
-            font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase; margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(255,107,107,0.4);
+            display: inline-block; background: #ff6b6b; color: #fff;
+            padding: 4px 10px; border-radius: 8px; font-size: 0.75rem;
+            font-weight: 700; text-transform: uppercase; margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
           }
           .hero-title {
             font-size: 2rem; font-weight: 800; color: #fff;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.8);
-            line-height: 1.1; max-width: 80%;
+            margin-bottom: 0.5rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            line-height: 1.2;
           }
           .hero-overview {
-            color: rgba(255,255,255,0.85);
-            font-size: 0.9rem;
-            max-width: 600px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.5;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            color: rgba(255, 255, 255, 0.85); font-size: 0.95rem;
+            max-width: 600px; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
-          .hero-fav-overlay { position: absolute; top: 12px; right: 12px; z-index: 10; }
+          .hero-fav-btn {
+            position: absolute; bottom: 22px; right: 22px; z-index: 10;
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.15s, border-color 0.2s, background 0.2s;
+            outline: none;
+          }
+          .hero-fav-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.7); transform: scale(1.08); }
+          .hero-fav-btn:active { transform: scale(0.92); }
+          .hero-fav-btn i { font-size: 18px; transition: color 0.2s; }
 
           /* ═══ CARDS ═══ */
           .content-grid {
@@ -657,7 +655,9 @@ export default function Home() {
             position: relative; border-radius: 20px; overflow: hidden;
             aspect-ratio: 2/3; border: 1px solid rgba(255,255,255,0.13);
             background: #1e1e1e;
+            transition: transform 0.25s, box-shadow 0.25s;
           }
+          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45); }
           .content-poster { width: 100%; height: 100%; object-fit: cover; display: block; }
           .card-title {
             margin-top: 10px; font-size: 13px; font-weight: 500;
@@ -782,36 +782,11 @@ export default function Home() {
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
             
-            /* ─── MOBILE HERO FIX ─── */
-            .hero-carousel {
-               margin-bottom: 1.5rem;
-               /* Overflow visible para mostrar parte do próximo card se quiser, ou hidden */
-               overflow: hidden; 
-            }
-            .hero-slide {
-               padding: 0 6px; /* Aumenta espaço entre cards */
-            }
-            .hero-wrapper {
-               border-radius: 16px; /* Arredondado visível */
-            }
-            .hero-backdrop {
-              /* FORÇA O CORTE HORIZONTAL. 
-                 2.2/1 é uma faixa bem larga, cortando o excesso vertical. */
-              aspect-ratio: 2.2 / 1; 
-              height: auto;
-            }
-            .hero-content {
-               padding: 1rem 1.2rem;
-            }
-            .hero-title {
-               font-size: 1.2rem;
-               margin-bottom: 0;
-            }
-            .hero-tag {
-               font-size: 0.65rem; padding: 2px 8px; margin-bottom: 4px;
-            }
-            /* Esconder descrição no mobile para não poluir o banner fino */
-            .desktop-only { display: none; }
+            /* HERO RESTORED CSS */
+            .hero-title { font-size: 1.5rem; }
+            .hero-wrapper { border-radius: 16px; }
+            .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
+            .hero-fav-btn { bottom: 16px; right: 16px; width: 38px; height: 38px; }
           }
 
           @media (max-width: 480px) {
@@ -823,6 +798,13 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
+            
+            /* HERO BACKDROP RESTORED TO 4:3 */
+            .hero-backdrop { aspect-ratio: 4/3; }
+            .hero-title { font-size: 1.3rem; }
+            .hero-content { padding: 1.2rem; }
+            .hero-fav-btn { bottom: 14px; right: 14px; width: 36px; height: 36px; }
+            .hero-fav-btn i { font-size: 16px; }
           }
         `}</style>
       </Head>
