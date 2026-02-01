@@ -59,6 +59,17 @@ export default function Home() {
     }
   }, [searchActive])
 
+  // Helper para buscar 2 páginas de uma vez para ter mais conteúdo
+  const fetchTMDBPages = async (endpoint) => {
+    const [p1, p2] = await Promise.all([
+      fetch(`${endpoint}&page=1`),
+      fetch(`${endpoint}&page=2`)
+    ])
+    const d1 = await p1.json()
+    const d2 = await p2.json()
+    return [...(d1.results || []), ...(d2.results || [])]
+  }
+
   const fetchSearchResults = async (query) => {
     if (!query.trim()) {
       setSearchResults([])
@@ -67,16 +78,15 @@ export default function Home() {
     }
     setLoading(true)
     try {
-      const [moviesRes, tvRes] = await Promise.all([
-        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`)
+      const [moviesData, tvData] = await Promise.all([
+        fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
       ])
-      const moviesData = await moviesRes.json()
-      const tvData = await tvRes.json()
+      
       setSearchResults([
-        ...(moviesData.results || []).map(i => ({ ...i, media_type: 'movie' })),
-        ...(tvData.results || []).map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 30))
+        ...moviesData.map(i => ({ ...i, media_type: 'movie' })),
+        ...tvData.map(i => ({ ...i, media_type: 'tv' }))
+      ].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 40))
     } catch (err) {
       showToast('Erro na busca', 'error')
       setSearchResults([])
@@ -97,23 +107,24 @@ export default function Home() {
 
   const loadHomeContent = async () => {
     try {
-      const [r1, r2, r3, r4] = await Promise.all([
-        fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`),
-        fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR&page=1`)
+      const [moviesNow, tvNow, moviesPop, tvPop] = await Promise.all([
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
-      const [d1, d2, d3, d4] = await Promise.all([r1.json(), r2.json(), r3.json(), r4.json()])
 
+      // Sort by date recent
       setReleases([
-        ...(d1.results || []).map(i => ({ ...i, media_type: 'movie' })),
-        ...(d2.results || []).map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)).slice(0, 15))
+        ...moviesNow.map(i => ({ ...i, media_type: 'movie' })),
+        ...tvNow.map(i => ({ ...i, media_type: 'tv' }))
+      ].filter(i => i.poster_path).sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)).slice(0, 36))
 
+      // Random sortish
       setRecommendations([
-        ...(d3.results || []).map(i => ({ ...i, media_type: 'movie' })),
-        ...(d4.results || []).map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort(() => 0.5 - Math.random()).slice(0, 15))
+        ...moviesPop.map(i => ({ ...i, media_type: 'movie' })),
+        ...tvPop.map(i => ({ ...i, media_type: 'tv' }))
+      ].filter(i => i.poster_path).sort(() => 0.5 - Math.random()).slice(0, 36))
     } catch (err) {
       console.error(err)
     }
@@ -183,14 +194,14 @@ export default function Home() {
           img { max-width: 100%; height: auto; }
 
           :root {
-            --pill-height: 64px;
+            /* Reduced height from 72px to 62px */
+            --pill-height: 62px;
             --pill-radius: 44px;
             --pill-bg: rgba(20, 20, 20, 0.35);
             --pill-border: 1px solid rgba(255, 255, 255, 0.12);
             --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
             --pill-blur: blur(16px);
             --pill-max-width: 680px;
-            --pill-pad: 1.75rem;
           }
 
           .header-pill {
@@ -206,7 +217,7 @@ export default function Home() {
             height: var(--pill-height);
             width: 90%;
             max-width: var(--pill-max-width);
-            padding: 0 var(--pill-pad);
+            padding: 0 1.5rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -223,15 +234,16 @@ export default function Home() {
             flex-shrink: 0;
           }
 
-          .header-emoji {
-            font-size: 1.5rem;
-            line-height: 1;
+          .header-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            object-fit: cover;
             flex-shrink: 0;
-            user-select: none;
           }
 
           .header-label {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             color: #f0f6fc;
             white-space: nowrap;
@@ -242,7 +254,7 @@ export default function Home() {
             background: none;
             border: none;
             color: #f1f5f9;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -306,15 +318,15 @@ export default function Home() {
             top: 8px;
             right: 8px;
             z-index: 2;
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.18);
             background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             color: #fff;
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -324,33 +336,40 @@ export default function Home() {
           .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
           .fav-btn.active { background: rgba(255, 107, 107, 0.6); }
 
-          /* Bottom nav: mesmo max-width do header, padding interno alinhado */
+          /* Navbar Bottom Container matching Header Logic */
           .bottom-nav {
             position: fixed;
             bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
             z-index: 1000;
+            /* Matches header dimensions exactly */
             width: 90%;
             max-width: var(--pill-max-width);
+          }
+
+          .nav-pill {
             display: flex;
             align-items: center;
             justify-content: space-between;
             height: var(--pill-height);
-            padding: 0 var(--pill-pad);
+            padding: 0 1.5rem;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
+            /* Fill remaining space */
+            flex: 1;
+            transition: all 0.3s;
           }
 
-          .nav-buttons {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            flex: 1;
+          .nav-pill.search-mode {
+            justify-content: flex-start;
           }
 
           .nav-btn {
@@ -366,12 +385,12 @@ export default function Home() {
             transition: color 0.2s;
             height: 100%;
           }
-          .nav-btn i { font-size: 24px; transition: color 0.2s, transform 0.15s; color: #f1f5f9; }
+          .nav-btn i { font-size: 20px; transition: color 0.2s, transform 0.15s; color: #f1f5f9; }
           .nav-btn:hover i { color: #ff6b6b; transform: scale(1.08); }
           .nav-btn.active i { color: #ff6b6b; }
 
           .search-wrap {
-            flex: 1;
+            width: 100%;
             display: flex;
             align-items: center;
             height: 100%;
@@ -382,42 +401,43 @@ export default function Home() {
             border: none;
             outline: none;
             color: #f1f5f9;
-            font-size: 16px;
+            font-size: 15px;
             font-family: inherit;
           }
           .search-wrap input::placeholder { color: #f1f5f9; opacity: 0.5; }
 
-          .search-toggle {
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
+          .search-circle {
+            width: var(--pill-height);
+            height: var(--pill-height);
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.06);
+            border: var(--pill-border);
+            background: var(--pill-bg);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            box-shadow: var(--pill-shadow);
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
             cursor: pointer;
             color: #f1f5f9;
-            transition: background 0.2s;
           }
-          .search-toggle:hover { background: rgba(255, 255, 255, 0.12); }
-          .search-toggle i { font-size: 18px; }
+          .search-circle i { font-size: 22px; }
 
-          /* Toasts: mesmo max-width e padding do header */
           .toast-wrap {
             position: fixed;
             bottom: calc(25px + var(--pill-height) + 14px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
-            width: 90%;
-            max-width: var(--pill-max-width);
             display: flex;
             flex-direction: column;
-            align-items: stretch;
+            align-items: center;
             gap: 8px;
             pointer-events: none;
+            /* Match navbar width logic */
+            width: 90%;
+            max-width: var(--pill-max-width);
           }
 
           .toast {
@@ -425,7 +445,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 0 var(--pill-pad);
+            padding: 0 1.5rem;
             height: 40px;
             border-radius: 28px;
             border: var(--pill-border);
@@ -435,6 +455,7 @@ export default function Home() {
             box-shadow: var(--pill-shadow);
             white-space: nowrap;
             animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 100%;
           }
 
           @keyframes toast-in {
@@ -449,14 +470,14 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             flex-shrink: 0;
           }
           .toast.success .toast-icon { background: #10b981; color: #fff; }
           .toast.info    .toast-icon { background: #4dabf7; color: #fff; }
           .toast.error   .toast-icon { background: #ef4444; color: #fff; }
 
-          .toast-msg { flex: 1; font-size: 14px; color: #f1f5f9; }
+          .toast-msg { flex: 1; font-size: 13px; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; }
 
           .empty-state {
             display: flex;
@@ -483,24 +504,30 @@ export default function Home() {
 
           @media (max-width: 768px) {
             :root {
-              --pill-height: 58px;
+              --pill-height: 56px; /* Slightly reduced */
               --pill-max-width: 90vw;
             }
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
-            .header-pill { top: 14px; width: 92%; }
+            .header-pill { top: 14px; width: 92%; padding: 0 1.25rem; }
             .bottom-nav { width: 92%; }
+            .nav-pill { padding: 0 1rem; }
+            .toast-wrap { width: 92%; }
+            .toast { padding: 0 1rem; }
           }
 
           @media (max-width: 480px) {
             :root {
               --pill-height: 54px;
               --pill-max-width: 95vw;
-              --pill-pad: 1.25rem;
             }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .nav-btn i { font-size: 22px; }
-            .search-toggle i { font-size: 16px; }
+            .header-pill { width: 94%; }
+            .bottom-nav { width: 94%; gap: 8px; }
+            .toast-wrap { width: 94%; }
+            .nav-pill { padding: 0 1.25rem; }
+            .nav-btn i { font-size: 19px; }
+            .search-circle i { font-size: 20px; }
           }
 
           @media (prefers-reduced-motion: reduce) {
@@ -511,7 +538,7 @@ export default function Home() {
 
       <header className="header-pill">
         <Link href="/" className="header-left">
-          <span className="header-emoji">💘</span>
+          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
           <span className="header-label">{headerLabel}</span>
         </Link>
         <button className="header-plus" title="Adicionar">
@@ -568,18 +595,21 @@ export default function Home() {
       </main>
 
       <div className="bottom-nav">
-        {searchActive ? (
-          <div className="search-wrap">
-            <input ref={searchInputRef} type="text" placeholder="Pesquisar..." value={searchQuery} onChange={handleSearchChange} onKeyDown={e => e.key === 'Enter' && searchQuery.trim() && debouncedSearch(searchQuery)} />
-          </div>
-        ) : (
-          <div className="nav-buttons">
-            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}><i className="fas fa-film"></i></button>
-            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}><i className="fas fa-fire"></i></button>
-            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
-          </div>
-        )}
-        <button className="search-toggle" onClick={() => setSearchActive(s => !s)}>
+        <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
+          {searchActive ? (
+            <div className="search-wrap">
+              <input ref={searchInputRef} type="text" placeholder="Pesquisar..." value={searchQuery} onChange={handleSearchChange} onKeyDown={e => e.key === 'Enter' && searchQuery.trim() && debouncedSearch(searchQuery)} />
+            </div>
+          ) : (
+            <>
+              <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}><i className="fas fa-film"></i></button>
+              <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}><i className="fas fa-fire"></i></button>
+              <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
+            </>
+          )}
+        </div>
+
+        <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
           <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
         </button>
       </div>
