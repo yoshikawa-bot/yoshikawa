@@ -79,147 +79,205 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// ─── HERO CAROUSEL (REVERTIDO PARA O ORIGINAL) ──────────────────
+// ─── HERO STACK ─────────────────────────────────────────────────
+// Emulates old multitasking window-stack UX: 2 cards stacked,
+// swipe/drag the front card sideways → it flies off, the back card
+// rises into the foreground, then the order flips.
 export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [loaded, setLoaded] = useState(false)
+  // We only use the first 2 items
+  const cards = items.slice(0, 2)
+
+  // frontIndex: which of the 2 cards is currently on top
+  const [frontIndex, setFrontIndex] = useState(0)
+  // drag state
+  const [dragX, setDragX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  // exit animation: null | 'left' | 'right'
+  const [exitDir, setExitDir] = useState(null)
+  // entrance animation for the card that was behind
+  const [entering, setEntering] = useState(false)
+
   const touchStartX = useRef(null)
-  const touchEndX = useRef(null)
-  const intervalRef = useRef(null)
+  const mouseStartX = useRef(null)
+  const containerRef = useRef(null)
 
-  // Duplicate items for infinite loop
-  const extendedItems = items.length > 0
-    ? [items[items.length - 1], ...items, items[0]]
-    : []
+  if (cards.length < 2) return null
 
-  const [realIndex, setRealIndex] = useState(1) // start at 1 because of prepended clone
-  const [isTransitioning, setIsTransitioning] = useState(true)
-  const trackRef = useRef(null)
+  const backIndex = frontIndex === 0 ? 1 : 0
+  const frontCard = cards[frontIndex]
+  const backCard = cards[backIndex]
 
-  useEffect(() => {
-    // Trigger the subtle "peek" animation after mount
-    const t = setTimeout(() => setLoaded(true), 100)
-    return () => clearTimeout(t)
-  }, [])
+  // ── helpers ──
+  const getBackdropUrl = (item) =>
+    item.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+      : item.poster_path
+        ? `https://image.tmdb.org/t/p/w1280${item.poster_path}`
+        : DEFAULT_BACKDROP
 
-  useEffect(() => {
-    if (items.length < 2) return
-    intervalRef.current = setInterval(() => {
-      goNext()
-    }, 5000)
-    return () => clearInterval(intervalRef.current)
-  }, [items.length, realIndex])
-
-  const goNext = () => {
-    setIsTransitioning(true)
-    setRealIndex(prev => prev + 1)
+  const triggerSwap = (dir) => {
+    setExitDir(dir) // kick off exit animation
   }
 
-  const goPrev = () => {
-    setIsTransitioning(true)
-    setRealIndex(prev => prev - 1)
+  // when exit animation ends → swap indices, reset
+  const handleExitEnd = () => {
+    setEntering(true)
+    setFrontIndex(backIndex)
+    setExitDir(null)
+    setDragX(0)
+    // tiny delay so React re-renders the new front before we remove the class
+    setTimeout(() => setEntering(false), 350)
   }
 
-  // Handle infinite loop snap
-  useEffect(() => {
-    if (!isTransitioning) return
-    const track = trackRef.current
-    if (!track) return
-
-    const handleTransitionEnd = () => {
-      setIsTransitioning(false)
-      // If we landed on the first clone (index 0), snap to real last
-      if (realIndex === 0) {
-        setIsTransitioning(false)
-        setRealIndex(items.length)
-      }
-      // If we landed on the last clone (items.length + 1), snap to real first
-      if (realIndex === items.length + 1) {
-        setIsTransitioning(false)
-        setRealIndex(1)
-      }
-    }
-
-    track.addEventListener('transitionend', handleTransitionEnd)
-    return () => track.removeEventListener('transitionend', handleTransitionEnd)
-  }, [realIndex, items.length, isTransitioning])
-
-  // Touch handlers
-  const handleTouchStart = (e) => {
+  // ── TOUCH ──
+  const onTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX
+    setIsDragging(true)
   }
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX
+  const onTouchMove = (e) => {
+    if (touchStartX.current === null) return
+    setDragX(e.touches[0].clientX - touchStartX.current)
   }
-  const handleTouchEnd = () => {
-    if (touchStartX.current === null || touchEndX.current === null) return
-    const diff = touchStartX.current - touchEndX.current
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) goNext()
-      else goPrev()
+  const onTouchEnd = () => {
+    if (touchStartX.current === null) return
+    const diff = dragX
+    if (Math.abs(diff) > 50) {
+      triggerSwap(diff > 0 ? 'right' : 'left')
+    } else {
+      setDragX(0)
     }
     touchStartX.current = null
-    touchEndX.current = null
+    setIsDragging(false)
   }
 
-  if (items.length === 0) return null
-
-  const currentItem = extendedItems[realIndex] || items[0]
-  const favActive = isFavorite(currentItem)
-
-  const handleFavClick = (e) => {
+  // ── MOUSE (desktop drag) ──
+  const onMouseDown = (e) => {
     e.preventDefault()
-    e.stopPropagation()
-    toggleFavorite(currentItem)
+    mouseStartX.current = e.clientX
+    setIsDragging(true)
+    setDragX(0)
+  }
+  const onMouseMove = (e) => {
+    if (mouseStartX.current === null) return
+    setDragX(e.clientX - mouseStartX.current)
+  }
+  const onMouseUp = () => {
+    if (mouseStartX.current === null) return
+    if (Math.abs(dragX) > 50) {
+      triggerSwap(dragX > 0 ? 'right' : 'left')
+    } else {
+      setDragX(0)
+    }
+    mouseStartX.current = null
+    setIsDragging(false)
+  }
+  const onMouseLeave = () => {
+    if (mouseStartX.current !== null) {
+      setDragX(0)
+      mouseStartX.current = null
+      setIsDragging(false)
+    }
+  }
+
+  // ── computed styles ──
+  // Front card: follows drag while dragging, flies off on exit
+  const getFrontStyle = () => {
+    if (exitDir) {
+      // exit flight
+      const px = exitDir === 'right' ? '120%' : '-120%'
+      return {
+        transform: `translateX(${px}) rotate(${exitDir === 'right' ? '8deg' : '-8deg'})`,
+        transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease',
+        opacity: 0,
+        zIndex: 2,
+        pointerEvents: 'none'
+      }
+    }
+    // interactive drag
+    const rot = (dragX / 300) * 6 // subtle rotation while dragging
+    return {
+      transform: `translateX(${dragX}px) rotate(${rot}deg)`,
+      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      zIndex: 2,
+      pointerEvents: exitDir ? 'none' : 'auto',
+      cursor: isDragging ? 'grabbing' : 'grab'
+    }
+  }
+
+  // Back card: sits behind, slightly scaled down & offset, rises up on swap
+  const getBackStyle = () => {
+    if (entering) {
+      // already in foreground position after swap, animate from scaled state
+      return {
+        transform: 'scale(1) translateY(0)',
+        opacity: 1,
+        transition: 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s ease',
+        zIndex: 1
+      }
+    }
+    // resting behind: scale down + push down slightly
+    const progress = Math.min(Math.abs(dragX) / 180, 1) // 0→1 as drag grows
+    const scale = 0.92 + progress * 0.08 // 0.92 → 1.0
+    const y = 12 - progress * 12 // 12px → 0
+    const opacity = 0.7 + progress * 0.3
+    return {
+      transform: `scale(${scale}) translateY(${y}px)`,
+      opacity,
+      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease',
+      zIndex: 1
+    }
+  }
+
+  // ── render a single hero card face ──
+  const renderCard = (item, style, onAnimEnd, extraClass = '') => {
+    const favActive = isFavorite(item)
+    const handleFav = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      toggleFavorite(item)
+    }
+    return (
+      <div
+        className={`hero-stack-card ${extraClass}`}
+        style={style}
+        onAnimationEnd={onAnimEnd}
+      >
+        <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
+          <div className="hero-backdrop">
+            <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
+            <div className="hero-overlay"></div>
+            <div className="hero-content">
+              <span className="hero-tag">Top do Dia</span>
+              <h2 className="hero-title">{item.title || item.name}</h2>
+              <p className="hero-overview">{item.overview ? item.overview.slice(0, 90) + '...' : ''}</p>
+            </div>
+          </div>
+        </Link>
+        {/* Favorite button — top right, individual per card */}
+        <button className="hero-fav-btn" onClick={handleFav} title={favActive ? 'Remover dos favoritos' : 'Favoritar'}>
+          <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
+        </button>
+      </div>
+    )
   }
 
   return (
-    <div className={`hero-carousel ${loaded ? 'loaded' : ''}`}>
-      <div 
-        className="hero-track-wrapper"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div 
-          ref={trackRef}
-          className="hero-track"
-          style={{
-            transform: `translateX(-${realIndex * 100}%)`,
-            transition: isTransitioning ? 'transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none'
-          }}
-        >
-          {extendedItems.map((item, idx) => {
-            const bUrl = item.backdrop_path 
-              ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` 
-              : (item.poster_path ? `https://image.tmdb.org/t/p/w1280${item.poster_path}` : DEFAULT_BACKDROP)
-            return (
-              <div key={idx} className="hero-slide">
-                <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
-                  <div className="hero-backdrop">
-                    <img src={bUrl} alt={item.title || item.name} loading={idx === 1 ? 'eager' : 'lazy'} draggable="false" />
-                    <div className="hero-overlay"></div>
-                    <div className="hero-content">
-                      <span className="hero-tag">Top do Dia</span>
-                      <h2 className="hero-title">{item.title || item.name}</h2>
-                      <p className="hero-overview">{item.overview ? item.overview.slice(0, 120) + '...' : ''}</p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+    <div
+      className="hero-carousel"
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Back card (rendered first so it's behind in DOM, but we use z-index) */}
+      {renderCard(backCard, getBackStyle(), null, 'hero-back')}
 
-      {/* Favorite button — outside the Link */}
-      <button 
-        className="hero-fav-btn"
-        onClick={handleFavClick}
-        title={favActive ? 'Remover dos favoritos' : 'Favoritar'}
-      >
-        <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
-      </button>
+      {/* Front card */}
+      {renderCard(frontCard, getFrontStyle(), exitDir ? handleExitEnd : null, `hero-front ${exitDir ? `exit-${exitDir}` : ''} ${entering ? '' : ''}`)}
     </div>
   )
 }
@@ -449,9 +507,9 @@ export default function Home() {
 
   // ── Derived ──
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 3
-  const heroItems = showHero ? activeList.slice(0, 3) : []
-  const displayItems = showHero ? activeList.slice(3) : activeList
+  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 2
+  const heroItems = showHero ? activeList.slice(0, 2) : []
+  const displayItems = showHero ? activeList.slice(2) : activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
@@ -567,40 +625,61 @@ export default function Home() {
           @keyframes textShimmer { to { background-position: 200% center; } }
           .page-title-below { margin-top: 0; margin-bottom: 1.2rem; }
 
-          /* ─── HERO CAROUSEL (RESTORED) ─── */
+          /* ─── HERO STACK ─── */
           .hero-carousel {
             width: 100%;
             position: relative;
-            overflow: hidden;
-            border-radius: 24px;
+            /* height is governed by the aspect-ratio inside .hero-backdrop */
             margin-bottom: 2rem;
-            /* Subtle peek animation on load */
+            /* give enough vertical room for the back card's offset */
+            padding-bottom: 14px;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
           }
-          .hero-carousel .hero-track-wrapper { overflow: hidden; }
-          .hero-carousel .hero-track { display: flex; width: 100%; }
-          .hero-slide { min-width: 100%; width: 100%; flex-shrink: 0; }
 
-          @keyframes hero-peek {
-            0%   { transform: translateX(0); }
-            40%  { transform: translateX(-3.5%); }
-            100% { transform: translateX(0); }
+          .hero-stack-card {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            /* We need to size the container by the front card. Use a trick:
+               the first child (back) is position:absolute, the front is relative
+               but we handle it via JS z-index so both are absolute.
+               We'll use a pseudo-height via aspect-ratio on the inner wrapper. */
           }
-          .hero-carousel:not(.loaded) .hero-track {
-            animation: hero-peek 1.1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+
+          /* Make the carousel size itself from its children by giving it a relative
+             height via aspect-ratio on a hidden sizer, then absolute-position both cards */
+          .hero-carousel::before {
+            content: '';
+            display: block;
+            /* match .hero-backdrop aspect-ratio: 16/9, capped at 500px via max-height below */
+            aspect-ratio: 16 / 9;
+            max-height: 500px;
+            /* push down by the back-card offset so nothing clips */
+            margin-bottom: 0;
           }
-          .hero-carousel.loaded .hero-track { animation: none !important; }
+
+          .hero-stack-card {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            /* height: fill the aspect-ratio sizer */
+            height: calc(100% - 14px); /* subtract the padding-bottom we added */
+            will-change: transform;
+          }
 
           .hero-wrapper {
-            display: block; width: 100%;
+            display: block; width: 100%; height: 100%;
             text-decoration: none; position: relative;
             border-radius: 24px; overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
-          .hero-wrapper:hover { transform: scale(1.01); }
+          .hero-front .hero-wrapper { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+          .hero-back .hero-wrapper { box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 
           .hero-backdrop {
-            width: 100%; aspect-ratio: 16/9; max-height: 500px;
+            width: 100%; height: 100%;
             position: relative;
           }
           .hero-backdrop img {
@@ -626,13 +705,20 @@ export default function Home() {
             line-height: 1.2;
           }
           .hero-overview {
-            color: rgba(255, 255, 255, 0.85); font-size: 0.95rem;
-            max-width: 600px; display: -webkit-box;
-            -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.78rem;
+            max-width: 600px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.45;
           }
+
+          /* Fav button: top-right, per-card */
           .hero-fav-btn {
-            position: absolute; bottom: 22px; right: 22px; z-index: 10;
-            width: 42px; height: 42px; border-radius: 50%;
+            position: absolute; top: 14px; right: 14px; z-index: 10;
+            width: 40px; height: 40px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.25);
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -642,7 +728,7 @@ export default function Home() {
           }
           .hero-fav-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.7); transform: scale(1.08); }
           .hero-fav-btn:active { transform: scale(0.92); }
-          .hero-fav-btn i { font-size: 18px; transition: color 0.2s; }
+          .hero-fav-btn i { font-size: 17px; transition: color 0.2s; }
 
           /* ═══ CARDS ═══ */
           .content-grid {
@@ -781,12 +867,11 @@ export default function Home() {
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
-            
-            /* HERO RESTORED CSS */
+
             .hero-title { font-size: 1.5rem; }
             .hero-wrapper { border-radius: 16px; }
             .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
-            .hero-fav-btn { bottom: 16px; right: 16px; width: 38px; height: 38px; }
+            .hero-fav-btn { top: 12px; right: 12px; width: 36px; height: 36px; }
           }
 
           @media (max-width: 480px) {
@@ -798,13 +883,12 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-            
-            /* HERO BACKDROP RESTORED TO 4:3 */
-            .hero-backdrop { aspect-ratio: 4/3; }
+
+            .hero-carousel::before { aspect-ratio: 4 / 3; }
             .hero-title { font-size: 1.3rem; }
             .hero-content { padding: 1.2rem; }
-            .hero-fav-btn { bottom: 14px; right: 14px; width: 36px; height: 36px; }
-            .hero-fav-btn i { font-size: 16px; }
+            .hero-fav-btn { top: 10px; right: 10px; width: 34px; height: 34px; }
+            .hero-fav-btn i { font-size: 15px; }
           }
         `}</style>
       </Head>
