@@ -87,11 +87,11 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [dragDelta, setDragDelta] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const [animatingDirection, setAnimatingDirection] = useState<'next' | 'prev' | null>(null)
+  const [animatingDirection, setAnimatingDirection] = useState(null) // removido tipo TS
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const stackRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef<number | null>(null)
+  const containerRef = useRef(null)
+  const stackRef = useRef(null)
+  const touchStartX = useRef(null)
 
   const [width, setWidth] = useState(0)
 
@@ -125,13 +125,13 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
     }
   }
 
-  const handleStart = (clientX: number) => {
+  const handleStart = (clientX) => { // removido : number
     touchStartX.current = clientX
     setIsDragging(true)
     setAnimatingDirection(null)
   }
 
-  const handleMove = (clientX: number) => {
+  const handleMove = (clientX) => { // removido : number
     if (isDragging && touchStartX.current !== null) {
       setDragDelta(clientX - touchStartX.current)
     }
@@ -150,20 +150,23 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
     setIsDragging(false)
   }
 
-  const progress = isDragging ? Math.min(1, Math.abs(dragDelta) / width) : animatingDirection ? 1 : 0
+  const progress = isDragging 
+    ? Math.min(1, Math.abs(dragDelta) / width) 
+    : animatingDirection ? 1 : 0
+
   const hasTransition = !isDragging || animatingDirection !== null
 
   const frontItem = items[currentIndex % length]
   const backItem = length > 1 ? items[(currentIndex + 1) % length] : null
 
-  const getBackdrop = (item: any) =>
+  const getBackdrop = (item) => // removido : any
     item.backdrop_path
       ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
       : item.poster_path
       ? `https://image.tmdb.org/t/p/w1280${item.poster_path}`
       : DEFAULT_BACKDROP
 
-  const handleFavClick = (item: any) => (e: React.MouseEvent) => {
+  const handleFavClick = (item) => (e) => { // removido tipos
     e.preventDefault()
     e.stopPropagation()
     toggleFavorite(item)
@@ -973,4 +976,4 @@ export default function Home() {
       />
     </>
   )
-}
+        }
