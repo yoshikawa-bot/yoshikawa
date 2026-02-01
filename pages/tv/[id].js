@@ -25,25 +25,25 @@ const getItemKey = (item) => `${item.media_type}-${item.id}`
 
 // --- COMPONENTS ---
 
-export const Header = ({ label, scrolled, showInfo, setShowInfo }) => {
+export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) => {
   const handleBtnClick = (e) => {
-    e.stopPropagation(); // Previne fechar o popup imediatamente
+    e.stopPropagation();
     if (scrolled) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setShowInfo(!showInfo);
+      toggleInfo();
     }
   };
 
   return (
     <>
+      {/* Header com z-index maior para cobrir a saida do popup */}
       <header className="header-pill">
         <Link href="/" className="header-left">
           <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
           <span className="header-label">{label}</span>
         </Link>
         
-        {/* Lógica do botão: Se rolou, vira seta p/ cima. Se topo, vira Info */}
         <button 
           className="header-plus" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
@@ -54,8 +54,11 @@ export const Header = ({ label, scrolled, showInfo, setShowInfo }) => {
       </header>
 
       {/* Pop-up de Informação */}
-      {showInfo && !scrolled && (
-        <div className="info-popup" onClick={(e) => e.stopPropagation()}>
+      {showInfo && (
+        <div 
+          className={`info-popup ${infoClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="info-content">
             <i className="fas fa-shield-alt info-icon"></i>
             <p>Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.</p>
@@ -69,7 +72,11 @@ export const Header = ({ label, scrolled, showInfo, setShowInfo }) => {
 export const ToastContainer = ({ toasts, removeToast }) => (
   <div className="toast-wrap">
     {toasts.map(t => (
-      <div key={t.id} className={`toast ${t.type}`} onClick={() => removeToast(t.id)}>
+      <div 
+        key={t.id} 
+        className={`toast ${t.type} ${t.closing ? 'closing' : ''}`} 
+        onClick={() => removeToast(t.id)}
+      >
         <div className="toast-icon">
           <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
         </div>
@@ -85,12 +92,8 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const handleFavClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Ativa animação
     setAnimating(true);
     toggleFavorite(item);
-    
-    // Reseta animação após o tempo
     setTimeout(() => setAnimating(false), 300);
   };
 
@@ -162,6 +165,13 @@ export const BottomNav = ({
   </div>
 )
 
+export const Footer = () => (
+  <footer className="footer-credits">
+    <p>Desenvolvido por Kawa para os sistemas Yoshikawa</p>
+    <p className="footer-sub">Todos os direitos reservados &copy; {new Date().getFullYear()}</p>
+  </footer>
+)
+
 // --- MAIN PAGE ---
 
 export default function Home() {
@@ -178,24 +188,36 @@ export default function Home() {
   // States para Header/Popup
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
+  const [infoClosing, setInfoClosing] = useState(false)
 
   const searchInputRef = useRef(null)
 
-  // Scroll Handler: Gerencia estado scrolled e fecha popup ao rolar
+  // Lógica de fechar Popup com animação
+  const closePopup = useCallback(() => {
+    if (showInfoPopup && !infoClosing) {
+      setInfoClosing(true)
+      setTimeout(() => {
+        setShowInfoPopup(false)
+        setInfoClosing(false)
+      }, 300) // Tempo da animação de saída
+    }
+  }, [showInfoPopup, infoClosing])
+
+  const togglePopup = () => {
+    if (showInfoPopup) closePopup()
+    else setShowInfoPopup(true)
+  }
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setShowInfoPopup(false) // Fecha popup ao rolar
-      }
+      if (window.scrollY > 10) closePopup()
       setScrolled(window.scrollY > 60)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     
-    // Click outside handler para fechar o popup
     const handleClickOutside = (e) => {
-      // Se não clicou no popup nem no botão de abrir, fecha
       if (!e.target.closest('.info-popup') && !e.target.closest('.header-plus')) {
-        setShowInfoPopup(false)
+        closePopup()
       }
     }
     window.addEventListener('click', handleClickOutside)
@@ -204,12 +226,22 @@ export default function Home() {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('click', handleClickOutside)
     }
-  }, [])
+  }, [closePopup])
 
+  // Lógica de Toast com animação de saída
   const showToast = (message, type = 'info') => {
     const id = Date.now()
-    setToasts([{ id, message, type }])
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
+    setToasts(prev => [...prev, { id, message, type, closing: false }])
+    
+    // Auto remove após 3s
+    setTimeout(() => removeToast(id), 3000)
+  }
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.map(t => t.id === id ? { ...t, closing: true } : t))
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 400) // Tempo da animação de saída
   }
 
   useEffect(() => {
@@ -370,7 +402,7 @@ export default function Home() {
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
+            z-index: 1000; /* Header sempre por cima do popup */
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -428,31 +460,62 @@ export default function Home() {
           /* --- INFO POPUP --- */
           .info-popup {
             position: fixed;
-            top: calc(20px + var(--pill-height) + 10px);
+            /* Começa na mesma posição vertical do header para dar ilusão que está atrás */
+            top: 20px; 
             left: 50%;
-            transform: translateX(-50%);
-            z-index: 999;
+            transform: translate(-50%, 0) scale(0.9);
+            z-index: 900; /* Menor que header (1000) */
             width: 90%;
             max-width: 400px;
-            animation: popup-fade 0.3s ease-out forwards;
+            opacity: 0;
+            /* Animação de entrada */
+            animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: none; /* Previne clique enquanto invisível/atrás */
+          }
+          
+          .info-popup.closing {
+            animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
           }
 
-          @keyframes popup-fade {
-            from { opacity: 0; transform: translate(-50%, -10px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+          /* Estado final da entrada: deslizado para baixo */
+          @keyframes popup-slide-in {
+            0% { 
+              opacity: 0; 
+              transform: translate(-50%, 0) scale(0.9); 
+            }
+            100% { 
+              opacity: 1; 
+              /* Desloca para baixo a altura do header + margem */
+              transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1);
+              pointer-events: auto;
+            }
+          }
+
+          /* Estado final da saída: volta para trás do header */
+          @keyframes popup-slide-out {
+            0% { 
+              opacity: 1; 
+              transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1);
+            }
+            100% { 
+              opacity: 0; 
+              transform: translate(-50%, 0) scale(0.9);
+              pointer-events: none;
+            }
           }
 
           .info-content {
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            /* Copiando estilos exatos do Header/Nav para efeito fosco */
+            background: var(--pill-bg);
+            border: var(--pill-border);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            box-shadow: var(--pill-shadow);
             border-radius: 20px;
             padding: 1.2rem;
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             color: #e2e8f0;
             font-size: 0.95rem;
             line-height: 1.5;
@@ -550,39 +613,37 @@ export default function Home() {
             height: 32px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.5); 
+            background: rgba(0, 0, 0, 0.5); /* Fundo vidro escuro padrão */
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-            /* REMOVED TRANSFORM SCALE ON HOVER */
+            transition: border-color 0.2s; /* Remove bg transition */
           }
           
-          .fav-btn:hover { 
-            border-color: rgba(255,255,255,0.4); 
-            background: rgba(0,0,0,0.7);
+          /* Garantir que o fundo não muda no hover/active */
+          .fav-btn:hover, .fav-btn:active { 
+            border-color: rgba(255,255,255,0.6); 
+            background: rgba(0,0,0,0.5) !important;
           }
 
           .fav-btn i { font-size: 14px; transition: color 0.2s; }
           
-          /* Keyframes for Heart Pulse */
           @keyframes heart-zoom {
             0% { transform: scale(1); }
             50% { transform: scale(1.4); }
             100% { transform: scale(1); }
           }
           
-          .heart-pulse {
-            animation: heart-zoom 0.3s ease-in-out;
-          }
+          .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
 
           /* --- BOTTOM NAV --- */
           .bottom-nav {
             position: fixed;
-            bottom: 25px;
+            /* Igual ao padding top do header (20px) */
+            bottom: 20px; 
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -619,14 +680,14 @@ export default function Home() {
             border: none;
             cursor: pointer;
             height: 100%;
-            color: rgba(255, 255, 255, 0.5); /* Inactive Grey */
+            color: rgba(255, 255, 255, 0.5);
             transition: color 0.2s;
           }
           .nav-btn i { font-size: 20px; transition: transform 0.15s; }
           .nav-btn:hover { color: #ffffff; }
           .nav-btn:hover i { transform: scale(1.1); }
           
-          .nav-btn.active { color: #ffffff; } /* Active White */
+          .nav-btn.active { color: #ffffff; }
           .nav-btn.active i { transform: scale(1.05); }
 
           .search-wrap {
@@ -670,7 +731,7 @@ export default function Home() {
           /* --- TOASTS --- */
           .toast-wrap {
             position: fixed;
-            bottom: calc(25px + var(--pill-height) + 12px);
+            bottom: calc(20px + var(--pill-height) + 12px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 990;
@@ -697,13 +758,24 @@ export default function Home() {
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             white-space: nowrap;
-            animation: toast-pop-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            /* Entrada */
+            animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             transform-origin: center bottom;
           }
 
-          @keyframes toast-pop-up {
+          .toast.closing {
+            /* Saída: inverso da entrada */
+            animation: toast-out 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+          }
+
+          @keyframes toast-in {
             from { opacity: 0; transform: translateY(60px) scale(0.6); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          
+          @keyframes toast-out {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to   { opacity: 0; transform: translateY(60px) scale(0.6); }
           }
 
           .toast-icon {
@@ -721,6 +793,22 @@ export default function Home() {
           .toast.error   .toast-icon { background: #ef4444; color: #fff; }
 
           .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
+
+          /* --- FOOTER --- */
+          .footer-credits {
+            margin-top: 4rem;
+            padding: 2rem 1rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+          }
+          .footer-sub {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            opacity: 0.7;
+          }
 
           /* --- STATES --- */
           .empty-state {
@@ -753,9 +841,9 @@ export default function Home() {
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
             .header-pill { top: 14px; width: 92%; padding: 0 1.25rem; }
-            .bottom-nav { width: 92%; }
+            .bottom-nav { width: 92%; bottom: 14px; } /* Igualando mobile top */
             .nav-pill { padding: 0 1rem; }
-            .toast-wrap { width: 92%; }
+            .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
           }
 
@@ -779,10 +867,11 @@ export default function Home() {
         label={headerLabel} 
         scrolled={scrolled} 
         showInfo={showInfoPopup} 
-        setShowInfo={setShowInfoPopup} 
+        toggleInfo={togglePopup}
+        infoClosing={infoClosing}
       />
       
-      <ToastContainer toasts={toasts} removeToast={(id) => setToasts(p => p.filter(t => t.id !== id))} />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <main className="container">
         <h1 className="page-title">{pageTitle}</h1>
@@ -816,6 +905,8 @@ export default function Home() {
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state"><i className="fas fa-heart"></i><p>Nenhum favorito adicionado ainda.</p></div>
         )}
+
+        <Footer />
       </main>
 
       <BottomNav 
