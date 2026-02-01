@@ -183,13 +183,14 @@ export default function Home() {
           img { max-width: 100%; height: auto; }
 
           :root {
-            --pill-height: 72px;
+            --pill-height: 64px;
             --pill-radius: 44px;
             --pill-bg: rgba(20, 20, 20, 0.35);
             --pill-border: 1px solid rgba(255, 255, 255, 0.12);
             --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
             --pill-blur: blur(16px);
             --pill-max-width: 680px;
+            --pill-pad: 1.75rem;
           }
 
           .header-pill {
@@ -205,7 +206,7 @@ export default function Home() {
             height: var(--pill-height);
             width: 90%;
             max-width: var(--pill-max-width);
-            padding: 0 1.75rem;
+            padding: 0 var(--pill-pad);
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -222,12 +223,11 @@ export default function Home() {
             flex-shrink: 0;
           }
 
-          .header-logo {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            object-fit: cover;
+          .header-emoji {
+            font-size: 1.5rem;
+            line-height: 1;
             flex-shrink: 0;
+            user-select: none;
           }
 
           .header-label {
@@ -324,36 +324,33 @@ export default function Home() {
           .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
           .fav-btn.active { background: rgba(255, 107, 107, 0.6); }
 
+          /* Bottom nav: mesmo max-width do header, padding interno alinhado */
           .bottom-nav {
             position: fixed;
             bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 14px;
             z-index: 1000;
-          }
-
-          .nav-pill {
+            width: 90%;
+            max-width: var(--pill-max-width);
             display: flex;
             align-items: center;
             justify-content: space-between;
             height: var(--pill-height);
-            padding: 0 1.75rem;
+            padding: 0 var(--pill-pad);
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
-            width: calc(var(--pill-max-width) - 86px);
-            max-width: calc(var(--pill-max-width) - 86px);
-            transition: all 0.3s;
           }
 
-          .nav-pill.search-mode {
-            justify-content: flex-start;
+          .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 1;
           }
 
           .nav-btn {
@@ -374,7 +371,7 @@ export default function Home() {
           .nav-btn.active i { color: #ff6b6b; }
 
           .search-wrap {
-            width: 100%;
+            flex: 1;
             display: flex;
             align-items: center;
             height: 100%;
@@ -390,33 +387,35 @@ export default function Home() {
           }
           .search-wrap input::placeholder { color: #f1f5f9; opacity: 0.5; }
 
-          .search-circle {
-            width: var(--pill-height);
-            height: var(--pill-height);
+          .search-toggle {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
             cursor: pointer;
             color: #f1f5f9;
+            transition: background 0.2s;
           }
-          .search-circle i { font-size: 28px; }
+          .search-toggle:hover { background: rgba(255, 255, 255, 0.12); }
+          .search-toggle i { font-size: 18px; }
 
+          /* Toasts: mesmo max-width e padding do header */
           .toast-wrap {
             position: fixed;
             bottom: calc(25px + var(--pill-height) + 14px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 999;
+            width: 90%;
+            max-width: var(--pill-max-width);
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             gap: 8px;
             pointer-events: none;
           }
@@ -426,7 +425,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 0 1.75rem;
+            padding: 0 var(--pill-pad);
             height: 40px;
             border-radius: 28px;
             border: var(--pill-border);
@@ -484,27 +483,24 @@ export default function Home() {
 
           @media (max-width: 768px) {
             :root {
-              --pill-height: 64px;
+              --pill-height: 58px;
               --pill-max-width: 90vw;
             }
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
             .header-pill { top: 14px; width: 92%; }
-            .nav-pill { width: calc(var(--pill-max-width) - 78px); padding: 0 1rem; }
-            .toast { padding: 0 1rem; }
+            .bottom-nav { width: 92%; }
           }
 
           @media (max-width: 480px) {
             :root {
-              --pill-height: 60px;
+              --pill-height: 54px;
               --pill-max-width: 95vw;
+              --pill-pad: 1.25rem;
             }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .nav-pill { padding: 0 1.25rem; }
-            .toast { padding: 0 1.25rem; }
             .nav-btn i { font-size: 22px; }
-            .search-circle i { font-size: 24px; }
-            .bottom-nav { gap: 8px; }
+            .search-toggle i { font-size: 16px; }
           }
 
           @media (prefers-reduced-motion: reduce) {
@@ -515,7 +511,7 @@ export default function Home() {
 
       <header className="header-pill">
         <Link href="/" className="header-left">
-          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
+          <span className="header-emoji">💘</span>
           <span className="header-label">{headerLabel}</span>
         </Link>
         <button className="header-plus" title="Adicionar">
@@ -572,21 +568,18 @@ export default function Home() {
       </main>
 
       <div className="bottom-nav">
-        <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
-          {searchActive ? (
-            <div className="search-wrap">
-              <input ref={searchInputRef} type="text" placeholder="Pesquisar..." value={searchQuery} onChange={handleSearchChange} onKeyDown={e => e.key === 'Enter' && searchQuery.trim() && debouncedSearch(searchQuery)} />
-            </div>
-          ) : (
-            <>
-              <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}><i className="fas fa-film"></i></button>
-              <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}><i className="fas fa-fire"></i></button>
-              <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
-            </>
-          )}
-        </div>
-
-        <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
+        {searchActive ? (
+          <div className="search-wrap">
+            <input ref={searchInputRef} type="text" placeholder="Pesquisar..." value={searchQuery} onChange={handleSearchChange} onKeyDown={e => e.key === 'Enter' && searchQuery.trim() && debouncedSearch(searchQuery)} />
+          </div>
+        ) : (
+          <div className="nav-buttons">
+            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}><i className="fas fa-film"></i></button>
+            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}><i className="fas fa-fire"></i></button>
+            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
+          </div>
+        )}
+        <button className="search-toggle" onClick={() => setSearchActive(s => !s)}>
           <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
         </button>
       </div>
