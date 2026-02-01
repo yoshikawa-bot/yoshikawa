@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// --- CONSTANTS ---
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
@@ -12,7 +11,6 @@ const SECTION_TITLES = {
   favorites: 'Favoritos'
 }
 
-// --- UTILS ---
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -22,8 +20,6 @@ const useDebounce = (callback, delay) => {
 }
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
-
-// --- COMPONENTS ---
 
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) => {
   const handleBtnClick = (e) => {
@@ -52,7 +48,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
         </button>
       </header>
 
-      {/* Pop-up de Informação */}
       {showInfo && (
         <div 
           className={`info-popup ${infoClosing ? 'closing' : ''}`} 
@@ -68,7 +63,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
   )
 }
 
-// Toast container agora renderiza apenas 1 toast por vez
 export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null;
 
@@ -173,8 +167,6 @@ export const Footer = () => (
   </footer>
 )
 
-// --- MAIN PAGE ---
-
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
@@ -185,51 +177,46 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   
-  // --- STATE DE TOAST (FILA) ---
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
 
-  // --- STATE HEADER/POPUP ---
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
 
   const searchInputRef = useRef(null)
+  const toastTimerRef = useRef(null)
 
-  // -- GERENCIAMENTO DE TOASTS --
   const showToast = (message, type = 'info') => {
-    // Adiciona na fila
     setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
   }
 
-  // Effect: Processa a fila
   useEffect(() => {
-    // Se não tem toast atual, e tem algo na fila
-    if (!currentToast && toastQueue.length > 0) {
-      // Pega o próximo
-      const nextToast = toastQueue[0]
-      // Remove da fila
-      setToastQueue(prev => prev.slice(1))
-      // Define como atual (começa aberto)
-      setCurrentToast({ ...nextToast, closing: false })
-
-      // Define timer para fechar automaticamente
-      setTimeout(() => {
-        // Só fecha se ainda for o mesmo e estiver aberto
-        setCurrentToast(t => {
-          if (t && t.id === nextToast.id) return { ...t, closing: true }
-          return t
-        })
-      }, 3000)
+    if (toastQueue.length > 0) {
+      if (currentToast && !currentToast.closing) {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        setCurrentToast(prev => ({ ...prev, closing: true }))
+      } else if (!currentToast) {
+        const nextToast = toastQueue[0]
+        setToastQueue(prev => prev.slice(1))
+        setCurrentToast({ ...nextToast, closing: false })
+        
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => {
+          setCurrentToast(t => {
+            if (t && t.id === nextToast.id) return { ...t, closing: true }
+            return t
+          })
+        }, 3000)
+      }
     }
-  }, [currentToast, toastQueue])
+  }, [toastQueue, currentToast])
 
-  // Effect: Limpa o toast do DOM após animação de saída
   useEffect(() => {
     if (currentToast?.closing) {
       const timer = setTimeout(() => {
-        setCurrentToast(null) // Isso dispara o próximo da fila
-      }, 400) // 400ms = tempo da animação CSS
+        setCurrentToast(null)
+      }, 400) 
       return () => clearTimeout(timer)
     }
   }, [currentToast])
@@ -238,7 +225,6 @@ export default function Home() {
     if (currentToast) setCurrentToast({ ...currentToast, closing: true })
   }
 
-  // -- GERENCIAMENTO DE POPUP --
   const closePopup = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
@@ -426,7 +412,6 @@ export default function Home() {
             --pill-max-width: 680px;
           }
 
-          /* --- HEADER --- */
           .header-pill {
             position: fixed;
             top: 20px;
@@ -487,7 +472,6 @@ export default function Home() {
           }
           .header-plus:hover { color: #ffffff; }
 
-          /* --- INFO POPUP --- */
           .info-popup {
             position: fixed;
             top: 20px; 
@@ -499,6 +483,7 @@ export default function Home() {
             opacity: 0;
             animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
+            will-change: transform, opacity;
           }
           
           .info-popup.closing {
@@ -516,13 +501,11 @@ export default function Home() {
           }
 
           .info-content {
-            /* Garante o background com alpha e o blur */
-            background: rgba(35, 35, 35, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            
+            background: rgba(30, 30, 30, 0.75);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             border-radius: 20px;
             padding: 1.2rem;
             display: flex;
@@ -544,7 +527,6 @@ export default function Home() {
             font-weight: 600;
           }
 
-          /* --- CONTAINER --- */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -561,7 +543,6 @@ export default function Home() {
             margin-bottom: 1.2rem;
           }
 
-          /* --- CARDS --- */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -615,7 +596,6 @@ export default function Home() {
             max-width: 100%;
           }
 
-          /* FAVORITE BUTTON */
           .fav-btn {
             position: absolute;
             top: 8px;
@@ -650,7 +630,6 @@ export default function Home() {
           
           .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
 
-          /* --- BOTTOM NAV --- */
           .bottom-nav {
             position: fixed;
             bottom: 20px; 
@@ -738,7 +717,6 @@ export default function Home() {
           .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
           .search-circle i { font-size: 22px; }
 
-          /* --- TOASTS --- */
           .toast-wrap {
             position: fixed;
             bottom: calc(20px + var(--pill-height) + 12px);
@@ -767,13 +745,11 @@ export default function Home() {
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             white-space: nowrap;
-            /* Entrada */
             animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             transform-origin: center bottom;
           }
 
           .toast.closing {
-            /* Saída */
             animation: toast-out 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
           }
 
@@ -803,7 +779,6 @@ export default function Home() {
 
           .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
 
-          /* --- FOOTER --- */
           .footer-credits {
             margin-top: 4rem;
             padding: 2rem 1rem;
@@ -819,7 +794,6 @@ export default function Home() {
             opacity: 0.7;
           }
 
-          /* --- STATES --- */
           .empty-state {
             display: flex;
             flex-direction: column;
