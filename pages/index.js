@@ -79,202 +79,205 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// ─── HERO CAROUSEL (PILHA VERTICAL COM PEEK BOTTOM) ──────────────────
+// ─── HERO STACK ─────────────────────────────────────────────────
+// Emulates old multitasking window-stack UX: 2 cards stacked,
+// swipe/drag the front card sideways → it flies off, the back card
+// rises into the foreground, then the order flips.
 export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
-  if (items.length === 0) return null
+  // We only use the first 2 items
+  const cards = items.slice(0, 2)
 
-  const length = items.length
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [dragDelta, setDragDelta] = useState(0)
+  // frontIndex: which of the 2 cards is currently on top
+  const [frontIndex, setFrontIndex] = useState(0)
+  // drag state
+  const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const [animatingDirection, setAnimatingDirection] = useState(null) // removido tipo TS
+  // exit animation: null | 'left' | 'right'
+  const [exitDir, setExitDir] = useState(null)
+  // entrance animation for the card that was behind
+  const [entering, setEntering] = useState(false)
 
-  const containerRef = useRef(null)
-  const stackRef = useRef(null)
   const touchStartX = useRef(null)
+  const mouseStartX = useRef(null)
+  const containerRef = useRef(null)
 
-  const [width, setWidth] = useState(0)
+  if (cards.length < 2) return null
 
-  useEffect(() => {
-    const resize = () => {
-      if (containerRef.current) setWidth(containerRef.current.offsetWidth)
-    }
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [])
+  const backIndex = frontIndex === 0 ? 1 : 0
+  const frontCard = cards[frontIndex]
+  const backCard = cards[backIndex]
 
-  useEffect(() => {
-    if (length < 2) return
-    const interval = setInterval(() => {
-      if (!isDragging && !animatingDirection) goNext()
-    }, 6000)
-    return () => clearInterval(interval)
-  }, [length, isDragging, animatingDirection])
-
-  const goNext = () => setAnimatingDirection('next')
-
-  const handleTransitionEnd = () => {
-    if (animatingDirection) {
-      setCurrentIndex(prev => {
-        const delta = animatingDirection === 'next' ? 1 : -1
-        return (prev + delta + length) % length
-      })
-      setAnimatingDirection(null)
-      setDragDelta(0)
-    }
-  }
-
-  const handleStart = (clientX) => { // removido : number
-    touchStartX.current = clientX
-    setIsDragging(true)
-    setAnimatingDirection(null)
-  }
-
-  const handleMove = (clientX) => { // removido : number
-    if (isDragging && touchStartX.current !== null) {
-      setDragDelta(clientX - touchStartX.current)
-    }
-  }
-
-  const handleEnd = () => {
-    if (!isDragging) return
-
-    const threshold = width * 0.3
-    if (Math.abs(dragDelta) > threshold && length > 1) {
-      const dir = dragDelta < 0 ? 'next' : 'prev'
-      setAnimatingDirection(dir)
-    } else {
-      setDragDelta(0)
-    }
-    setIsDragging(false)
-  }
-
-  const progress = isDragging 
-    ? Math.min(1, Math.abs(dragDelta) / width) 
-    : animatingDirection ? 1 : 0
-
-  const hasTransition = !isDragging || animatingDirection !== null
-
-  const frontItem = items[currentIndex % length]
-  const backItem = length > 1 ? items[(currentIndex + 1) % length] : null
-
-  const getBackdrop = (item) => // removido : any
+  // ── helpers ──
+  const getBackdropUrl = (item) =>
     item.backdrop_path
       ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
       : item.poster_path
-      ? `https://image.tmdb.org/t/p/w1280${item.poster_path}`
-      : DEFAULT_BACKDROP
+        ? `https://image.tmdb.org/t/p/w1280${item.poster_path}`
+        : DEFAULT_BACKDROP
 
-  const handleFavClick = (item) => (e) => { // removido tipos
-    e.preventDefault()
-    e.stopPropagation()
-    toggleFavorite(item)
+  const triggerSwap = (dir) => {
+    setExitDir(dir) // kick off exit animation
   }
 
-  const peekY = 40
-  const peekScale = 0.93
+  // when exit animation ends → swap indices, reset
+  const handleExitEnd = () => {
+    setEntering(true)
+    setFrontIndex(backIndex)
+    setExitDir(null)
+    setDragX(0)
+    // tiny delay so React re-renders the new front before we remove the class
+    setTimeout(() => setEntering(false), 350)
+  }
 
-  let frontTransform = 'translateX(0px) translateY(0px) scale(1)'
-  let backTransform = `translateY(${peekY}px) scale(${peekScale})`
-  let frontOpacity = 1
-  let backOpacity = 0.85
+  // ── TOUCH ──
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    setIsDragging(true)
+  }
+  const onTouchMove = (e) => {
+    if (touchStartX.current === null) return
+    setDragX(e.touches[0].clientX - touchStartX.current)
+  }
+  const onTouchEnd = () => {
+    if (touchStartX.current === null) return
+    const diff = dragX
+    if (Math.abs(diff) > 50) {
+      triggerSwap(diff > 0 ? 'right' : 'left')
+    } else {
+      setDragX(0)
+    }
+    touchStartX.current = null
+    setIsDragging(false)
+  }
 
-  if (progress > 0) {
-    const directionSign = animatingDirection === 'prev' ? -1 : 1
-    const dragSign = dragDelta < 0 ? 1 : -1
-
-    frontTransform = `translateX(${dragDelta}px) translateY(${-40 * progress}px) scale(${1 - 0.07 * progress})`
-    backTransform = `translateY(${peekY - peekY * progress}px) scale(${peekScale + (1 - peekScale) * progress}) translateX(${dragDelta * 0.3}px)`
-
-    if (animatingDirection) {
-      frontTransform = `translateX(${directionSign * dragSign * 120}%) translateY(-80px) scale(0.9)`
-      frontOpacity = 0.6
-      backTransform = 'translateY(0px) scale(1) translateX(0px)'
-      backOpacity = 1
+  // ── MOUSE (desktop drag) ──
+  const onMouseDown = (e) => {
+    e.preventDefault()
+    mouseStartX.current = e.clientX
+    setIsDragging(true)
+    setDragX(0)
+  }
+  const onMouseMove = (e) => {
+    if (mouseStartX.current === null) return
+    setDragX(e.clientX - mouseStartX.current)
+  }
+  const onMouseUp = () => {
+    if (mouseStartX.current === null) return
+    if (Math.abs(dragX) > 50) {
+      triggerSwap(dragX > 0 ? 'right' : 'left')
+    } else {
+      setDragX(0)
+    }
+    mouseStartX.current = null
+    setIsDragging(false)
+  }
+  const onMouseLeave = () => {
+    if (mouseStartX.current !== null) {
+      setDragX(0)
+      mouseStartX.current = null
+      setIsDragging(false)
     }
   }
 
-  const transitionStyle = hasTransition
-    ? 'transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.6s ease'
-    : 'none'
+  // ── computed styles ──
+  // Front card: follows drag while dragging, flies off on exit
+  const getFrontStyle = () => {
+    if (exitDir) {
+      // exit flight
+      const px = exitDir === 'right' ? '120%' : '-120%'
+      return {
+        transform: `translateX(${px}) rotate(${exitDir === 'right' ? '8deg' : '-8deg'})`,
+        transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease',
+        opacity: 0,
+        zIndex: 2,
+        pointerEvents: 'none'
+      }
+    }
+    // interactive drag
+    const rot = (dragX / 300) * 6 // subtle rotation while dragging
+    return {
+      transform: `translateX(${dragX}px) rotate(${rot}deg)`,
+      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      zIndex: 2,
+      pointerEvents: exitDir ? 'none' : 'auto',
+      cursor: isDragging ? 'grabbing' : 'grab'
+    }
+  }
 
-  if (length === 1) {
+  // Back card: sits behind, slightly scaled down & offset, rises up on swap
+  const getBackStyle = () => {
+    if (entering) {
+      // already in foreground position after swap, animate from scaled state
+      return {
+        transform: 'scale(1) translateY(0)',
+        opacity: 1,
+        transition: 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s ease',
+        zIndex: 1
+      }
+    }
+    // resting behind: scale down + push down slightly
+    const progress = Math.min(Math.abs(dragX) / 180, 1) // 0→1 as drag grows
+    const scale = 0.92 + progress * 0.08 // 0.92 → 1.0
+    const y = 12 - progress * 12 // 12px → 0
+    const opacity = 0.7 + progress * 0.3
+    return {
+      transform: `scale(${scale}) translateY(${y}px)`,
+      opacity,
+      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease',
+      zIndex: 1
+    }
+  }
+
+  // ── render a single hero card face ──
+  const renderCard = (item, style, onAnimEnd, extraClass = '') => {
+    const favActive = isFavorite(item)
+    const handleFav = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      toggleFavorite(item)
+    }
     return (
-      <div className="hero-carousel single" ref={containerRef}>
-        <div className="hero-sizing">
-          <div className="hero-card">
-            <Link href={`/${frontItem.media_type}/${frontItem.id}`} className="hero-wrapper">
-              <div className="hero-backdrop">
-                <img src={getBackdrop(frontItem)} alt={frontItem.title || frontItem.name} loading="eager" draggable="false" />
-                <div className="hero-overlay"></div>
-              </div>
-              <div className="hero-content">
-                <span className="hero-tag">Top do Dia</span>
-                <h2 className="hero-title">{frontItem.title || frontItem.name}</h2>
-                <p className="hero-overview">{frontItem.overview ? frontItem.overview.slice(0, 100) + '...' : ''}</p>
-              </div>
-            </Link>
-            <button className="hero-fav-btn" onClick={handleFavClick(frontItem)}>
-              <i className={`${isFavorite(frontItem) ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: isFavorite(frontItem) ? '#ff6b6b' : '#fff' }} />
-            </button>
+      <div
+        className={`hero-stack-card ${extraClass}`}
+        style={style}
+        onAnimationEnd={onAnimEnd}
+      >
+        <Link href={`/${item.media_type}/${item.id}`} className="hero-wrapper">
+          <div className="hero-backdrop">
+            <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
+            <div className="hero-overlay"></div>
+            <div className="hero-content">
+              <span className="hero-tag">Top do Dia</span>
+              <h2 className="hero-title">{item.title || item.name}</h2>
+              <p className="hero-overview">{item.overview ? item.overview.slice(0, 90) + '...' : ''}</p>
+            </div>
           </div>
-        </div>
+        </Link>
+        {/* Favorite button — top right, individual per card */}
+        <button className="hero-fav-btn" onClick={handleFav} title={favActive ? 'Remover dos favoritos' : 'Favoritar'}>
+          <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="hero-carousel" ref={containerRef}>
-      <div className="hero-sizing">
-        <div
-          className="hero-stack"
-          ref={stackRef}
-          onTransitionEnd={handleTransitionEnd}
-          onTouchStart={e => handleStart(e.touches[0].clientX)}
-          onTouchMove={e => handleMove(e.touches[0].clientX)}
-          onTouchEnd={handleEnd}
-          onMouseDown={e => e.button === 0 && handleStart(e.clientX)}
-          onMouseMove={e => isDragging && handleMove(e.clientX)}
-          onMouseUp={handleEnd}
-          onMouseLeave={handleEnd}
-        >
-          {backItem && (
-            <div className="hero-card back" style={{ transform: backTransform, opacity: backOpacity, transition: transitionStyle }}>
-              <Link href={`/${backItem.media_type}/${backItem.id}`} className="hero-wrapper">
-                <div className="hero-backdrop">
-                  <img src={getBackdrop(backItem)} alt={backItem.title || backItem.name} loading="lazy" draggable="false" />
-                  <div className="hero-overlay back"></div>
-                </div>
-                <div className="hero-content back">
-                  <h2 className="hero-title back">{backItem.title || backItem.name}</h2>
-                  <p className="hero-overview back">{backItem.overview ? backItem.overview.slice(0, 70) + '...' : ''}</p>
-                </div>
-              </Link>
-              <button className="hero-fav-btn" onClick={handleFavClick(backItem)}>
-                <i className={`${isFavorite(backItem) ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: isFavorite(backItem) ? '#ff6b6b' : '#aaa' }} />
-              </button>
-            </div>
-          )}
+    <div
+      className="hero-carousel"
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Back card (rendered first so it's behind in DOM, but we use z-index) */}
+      {renderCard(backCard, getBackStyle(), null, 'hero-back')}
 
-          <div className="hero-card front" style={{ transform: frontTransform, opacity: frontOpacity, transition: transitionStyle }}>
-            <Link href={`/${frontItem.media_type}/${frontItem.id}`} className="hero-wrapper">
-              <div className="hero-backdrop">
-                <img src={getBackdrop(frontItem)} alt={frontItem.title || frontItem.name} loading="eager" draggable="false" />
-                <div className="hero-overlay"></div>
-              </div>
-              <div className="hero-content">
-                <span className="hero-tag">Top do Dia</span>
-                <h2 className="hero-title">{frontItem.title || frontItem.name}</h2>
-                <p className="hero-overview">{frontItem.overview ? frontItem.overview.slice(0, 100) + '...' : ''}</p>
-              </div>
-            </Link>
-            <button className="hero-fav-btn" onClick={handleFavClick(frontItem)}>
-              <i className={`${isFavorite(frontItem) ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: isFavorite(frontItem) ? '#ff6b6b' : '#fff' }} />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Front card */}
+      {renderCard(frontCard, getFrontStyle(), exitDir ? handleExitEnd : null, `hero-front ${exitDir ? `exit-${exitDir}` : ''} ${entering ? '' : ''}`)}
     </div>
   )
 }
@@ -504,7 +507,7 @@ export default function Home() {
 
   // ── Derived ──
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 0
+  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 2
   const heroItems = showHero ? activeList.slice(0, 2) : []
   const displayItems = showHero ? activeList.slice(2) : activeList
 
@@ -622,140 +625,110 @@ export default function Home() {
           @keyframes textShimmer { to { background-position: 200% center; } }
           .page-title-below { margin-top: 0; margin-bottom: 1.2rem; }
 
-          /* ═══ HERO CAROUSEL (NOVO DESIGN DE PILHA VERTICAL) ═══ */
+          /* ─── HERO STACK ─── */
           .hero-carousel {
             width: 100%;
             position: relative;
+            /* height is governed by the aspect-ratio inside .hero-backdrop */
             margin-bottom: 2rem;
-            perspective: 1500px;
+            /* give enough vertical room for the back card's offset */
+            padding-bottom: 14px;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
           }
 
-          .hero-carousel.single { perspective: none; }
-
-          .hero-sizing {
-            position: relative;
+          .hero-stack-card {
+            position: absolute;
+            inset: 0;
             width: 100%;
+            /* We need to size the container by the front card. Use a trick:
+               the first child (back) is position:absolute, the front is relative
+               but we handle it via JS z-index so both are absolute.
+               We'll use a pseudo-height via aspect-ratio on the inner wrapper. */
+          }
+
+          /* Make the carousel size itself from its children by giving it a relative
+             height via aspect-ratio on a hidden sizer, then absolute-position both cards */
+          .hero-carousel::before {
+            content: '';
+            display: block;
+            /* match .hero-backdrop aspect-ratio: 16/9, capped at 500px via max-height below */
             aspect-ratio: 16 / 9;
             max-height: 500px;
-            border-radius: 24px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* push down by the back-card offset so nothing clips */
+            margin-bottom: 0;
           }
 
-          .hero-stack {
+          .hero-stack-card {
             position: absolute;
-            inset: 0;
-            transform-style: preserve-3d;
-          }
-
-          .hero-card {
-            position: absolute;
-            inset: 0;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            backface-visibility: hidden;
-          }
-
-          .hero-card.back .hero-overlay {
-            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
-          }
-
-          .hero-card.back .hero-content {
-            opacity: 0.8;
-          }
-
-          .hero-card.back .hero-tag { display: none; }
-
-          .hero-card.back .hero-title {
-            font-size: 1.6rem;
-          }
-
-          .hero-card.back .hero-overview {
-            font-size: 0.85rem;
+            top: 0; left: 0; right: 0;
+            /* height: fill the aspect-ratio sizer */
+            height: calc(100% - 14px); /* subtract the padding-bottom we added */
+            will-change: transform;
           }
 
           .hero-wrapper {
-            display: block; width: 100%;
+            display: block; width: 100%; height: 100%;
             text-decoration: none; position: relative;
             border-radius: 24px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
+          .hero-front .hero-wrapper { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+          .hero-back .hero-wrapper { box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 
           .hero-backdrop {
             width: 100%; height: 100%;
             position: relative;
           }
-
           .hero-backdrop img {
             width: 100%; height: 100%; object-fit: cover; display: block;
           }
-
           .hero-overlay {
             position: absolute; inset: 0;
             background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
           }
-
           .hero-content {
             position: absolute; bottom: 0; left: 0;
             width: 100%; padding: 2rem; z-index: 2;
           }
-
           .hero-tag {
             display: inline-block; background: #ff6b6b; color: #fff;
             padding: 4px 10px; border-radius: 8px; font-size: 0.75rem;
             font-weight: 700; text-transform: uppercase; margin-bottom: 8px;
             box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
           }
-
           .hero-title {
             font-size: 2rem; font-weight: 800; color: #fff;
             margin-bottom: 0.5rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
             line-height: 1.2;
           }
-
           .hero-overview {
             color: rgba(255, 255, 255, 0.85);
-            font-size: 0.92rem;
-            line-height: 1.4;
+            font-size: 0.78rem;
             max-width: 600px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-height: 1.45;
           }
 
+          /* Fav button: top-right, per-card */
           .hero-fav-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
+            position: absolute; top: 14px; right: 14px; z-index: 10;
+            width: 40px; height: 40px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.25);
             background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            z-index: 10;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.15s, border-color 0.2s, background 0.2s;
             outline: none;
           }
-
-          .hero-fav-btn:hover {
-            background: rgba(0,0,0,0.7);
-            transform: scale(1.08);
-          }
-
-          .hero-fav-btn:active {
-            transform: scale(0.92);
-          }
-
-          .hero-fav-btn i {
-            font-size: 18px;
-          }
+          .hero-fav-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.7); transform: scale(1.08); }
+          .hero-fav-btn:active { transform: scale(0.92); }
+          .hero-fav-btn i { font-size: 17px; transition: color 0.2s; }
 
           /* ═══ CARDS ═══ */
           .content-grid {
@@ -894,10 +867,11 @@ export default function Home() {
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
-            
+
             .hero-title { font-size: 1.5rem; }
-            .hero-sizing { border-radius: 16px; }
-            .hero-carousel { margin-bottom: 1.5rem; }
+            .hero-wrapper { border-radius: 16px; }
+            .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
+            .hero-fav-btn { top: 12px; right: 12px; width: 36px; height: 36px; }
           }
 
           @media (max-width: 480px) {
@@ -909,18 +883,12 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-            
-            .hero-sizing { aspect-ratio: 4 / 3; }
+
+            .hero-carousel::before { aspect-ratio: 4 / 3; }
             .hero-title { font-size: 1.3rem; }
             .hero-content { padding: 1.2rem; }
-            .hero-fav-btn {
-              top: 14px;
-              right: 14px;
-              width: 36px;
-              height: 36px;
-            }
-            .hero-fav-btn i { font-size: 16px; }
-            .hero-card.back .hero-title { font-size: 1.3rem; }
+            .hero-fav-btn { top: 10px; right: 10px; width: 34px; height: 34px; }
+            .hero-fav-btn i { font-size: 15px; }
           }
         `}</style>
       </Head>
@@ -976,4 +944,4 @@ export default function Home() {
       />
     </>
   )
-        }
+}
