@@ -54,7 +54,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
           onClick={(e) => e.stopPropagation()}
         >
           <div className="info-content">
-            <div className="info-blur-bg"></div>
             <i className="fas fa-shield-alt info-icon"></i>
             <p>Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.</p>
           </div>
@@ -378,9 +377,6 @@ export default function Home() {
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
-  // Titles que recebem o efeito shimmer (apenas os grandes no topo, não o do header)
-  const isMainTitle = !searchActive && ['Lançamentos', 'Populares', 'Favoritos'].includes(pageTitle)
-
   return (
     <>
       <Head>
@@ -416,7 +412,6 @@ export default function Home() {
             --pill-max-width: 680px;
           }
 
-          /* ─── HEADER ─── */
           .header-pill {
             position: fixed;
             top: 20px;
@@ -477,14 +472,6 @@ export default function Home() {
           }
           .header-plus:hover { color: #ffffff; }
 
-          /* ─── INFO POPUP ─── 
-             Fix Brave: backdrop-filter quebra em elementos com pointer-events: none
-             ou dentro de animações com transform. Solução: usar um elemento filho 
-             dedicado (.info-blur-bg) posicionado absolute com position:fixed 
-             que herda o blur de forma isolada, sem estar afetado pelo contexto 
-             de animação do pai. O elemento pai mantém pointer-events: none durante 
-             a animação mas o blur fica num layer separado que o Brave processa corretamente.
-          */
           .info-popup {
             position: fixed;
             top: 20px; 
@@ -514,7 +501,12 @@ export default function Home() {
           }
 
           .info-content {
-            position: relative;
+            /* Fix para o Blur do Popup: Usei uma cor um pouco mais transparente e reforcei os filtros */
+            background: rgba(30, 30, 30, 0.60);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px); /* Essencial para Safari/iOS */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             border-radius: 20px;
             padding: 1.2rem;
             display: flex;
@@ -523,42 +515,12 @@ export default function Home() {
             color: #e2e8f0;
             font-size: 0.95rem;
             line-height: 1.5;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            /* background sólido como fallback e camada de escurecimento por cima do blur */
-            background: rgba(20, 20, 20, 0.6);
-            overflow: hidden;
-          }
-
-          /* 
-             Camada de blur isolada: esse elemento fica dentro do .info-content 
-             mas usa position: fixed + inset para cobrir exatamente a mesma área.
-             Isso remove o blur do contexto de transformação do popup, que é o que 
-             quebra no Brave. O elemento não é afetado pelo transform do avô.
-          */
-          .info-blur-bg {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: rgba(30, 30, 30, 0.55);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            z-index: 0;
-            pointer-events: none;
           }
 
           .info-icon {
             color: #f59e0b;
             font-size: 1.2rem;
             margin-top: 2px;
-            position: relative;
-            z-index: 1;
-            flex-shrink: 0;
-          }
-
-          .info-content p {
-            position: relative;
-            z-index: 1;
           }
 
           .info-content strong {
@@ -566,7 +528,6 @@ export default function Home() {
             font-weight: 600;
           }
 
-          /* ─── LAYOUT ─── */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -576,50 +537,38 @@ export default function Home() {
             padding-right: 2.5rem;
           }
 
-          /* ─── PAGE TITLE com efeito shimmer escuro ─── */
+          /* Efeito IA Pensando (Shimmer Dark) */
           .page-title {
             font-size: 1.6rem;
             font-weight: 700;
-            color: #f1f5f9;
             margin-bottom: 1.2rem;
-            position: relative;
-            display: inline-block;
-            overflow: hidden;
-          }
-
-          /* 
-             Efeito "IA pensando": uma faixa escura/metalica desliza sob o texto 
-             da esquerda pra direita, em loop. Usamos ::after posicionado abaixo 
-             do texto (bottom alinhado) com um gradiente que simula o sweep.
-          */
-          .page-title--shimmer::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: -100%;
-            width: 100%;
-            height: 40%;
+            
+            /* Gradiente que simula o efeito de pensamento (Branco -> Cinza Escuro -> Branco) */
             background: linear-gradient(
-              90deg,
-              transparent 0%,
-              transparent 20%,
-              rgba(80, 80, 90, 0.55) 35%,
-              rgba(140, 140, 155, 0.7) 50%,
-              rgba(80, 80, 90, 0.55) 65%,
-              transparent 80%,
-              transparent 100%
+              to right,
+              #f1f5f9 0%,
+              #f1f5f9 40%,
+              #64748b 50%, 
+              #f1f5f9 60%,
+              #f1f5f9 100%
             );
-            animation: title-shimmer 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            pointer-events: none;
-            border-radius: 2px;
+            background-size: 200% auto;
+            
+            /* Aplica o background apenas ao texto */
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: #f1f5f9; /* Fallback */
+            
+            animation: textShimmer 3.5s linear infinite;
           }
 
-          @keyframes title-shimmer {
-            0%   { left: -100%; }
-            100% { left: 100%; }
+          @keyframes textShimmer {
+            to {
+              background-position: 200% center;
+            }
           }
 
-          /* ─── GRID & CARDS ─── */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -633,6 +582,7 @@ export default function Home() {
             width: 100%;
             cursor: pointer;
             text-decoration: none;
+            group: group;
           }
 
           .card-poster-frame {
@@ -657,11 +607,6 @@ export default function Home() {
             display: block;
           }
 
-          /* 
-             Card title: sempre reserva altura de 2 linhas usando min-height calculado 
-             com font-size (13px) * line-height (1.4) * 2 linhas.
-             13px * 1.4 * 2 = 36.4px ≈ 36.4px
-          */
           .card-title {
             margin-top: 10px;
             font-size: 13px;
@@ -669,7 +614,9 @@ export default function Home() {
             color: #ffffff;
             text-align: left;
             line-height: 1.4;
-            min-height: calc(13px * 1.4 * 2);
+            
+            /* Fix para manter sempre espaço de 2 linhas */
+            height: calc(1.4em * 2); 
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -712,7 +659,6 @@ export default function Home() {
           
           .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
 
-          /* ─── BOTTOM NAV ─── */
           .bottom-nav {
             position: fixed;
             bottom: 20px; 
@@ -800,7 +746,6 @@ export default function Home() {
           .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
           .search-circle i { font-size: 22px; }
 
-          /* ─── TOAST ─── */
           .toast-wrap {
             position: fixed;
             bottom: calc(20px + var(--pill-height) + 12px);
@@ -863,7 +808,6 @@ export default function Home() {
 
           .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
 
-          /* ─── FOOTER ─── */
           .footer-credits {
             margin-top: 4rem;
             padding: 2rem 1rem;
@@ -879,7 +823,6 @@ export default function Home() {
             opacity: 0.7;
           }
 
-          /* ─── EMPTY / LOADING ─── */
           .empty-state {
             display: flex;
             flex-direction: column;
@@ -902,7 +845,6 @@ export default function Home() {
           }
           @keyframes spin { to { transform: rotate(360deg); } }
 
-          /* ─── RESPONSIVE ─── */
           @media (max-width: 768px) {
             :root {
               --pill-height: 56px;
@@ -944,7 +886,7 @@ export default function Home() {
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
       <main className="container">
-        <h1 className={`page-title ${isMainTitle ? 'page-title--shimmer' : ''}`}>{pageTitle}</h1>
+        <h1 className="page-title">{pageTitle}</h1>
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
