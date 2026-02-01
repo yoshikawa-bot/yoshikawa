@@ -194,7 +194,8 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
                     <div className="hero-content">
                       <span className="hero-tag">Destaque</span>
                       <h2 className="hero-title">{item.title || item.name}</h2>
-                      <p className="hero-overview">{item.overview ? item.overview.slice(0, 150) + '...' : ''}</p>
+                      {/* Descrição visível apenas em telas maiores */}
+                      <p className="hero-overview desktop-only">{item.overview ? item.overview.slice(0, 150) + '...' : ''}</p>
                     </div>
                   </div>
                 </Link>
@@ -562,12 +563,12 @@ export default function Home() {
           .hero-carousel {
             width: 100%;
             position: relative;
-            border-radius: 24px;
-            overflow: hidden;
+            /* Remover border-radius do container principal para deixar os slides controlarem isso */
+            border-radius: 0;
+            overflow: visible; /* Permitir ver as bordas dos cards */
             margin-bottom: 2rem;
             user-select: none;
             -webkit-user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra mais marcada */
           }
           .hero-track-wrapper { width: 100%; overflow: hidden; cursor: grab; }
           .hero-track-wrapper:active { cursor: grabbing; }
@@ -575,19 +576,23 @@ export default function Home() {
 
           .hero-slide {
             min-width: 100%; flex-shrink: 0;
-            padding-right: 0; /* Removido gap para banner contínuo */
+            /* Pequeno padding lateral para dar sensação de cards separados */
+            padding: 0 4px;
           }
           
           .hero-wrapper {
             display: block; width: 100%;
             text-decoration: none; position: relative;
-            /* Wrapper do banner */
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            /* Borda sutil para separar */
+            border: 1px solid rgba(255,255,255,0.08);
           }
 
-          /* CSS AJUSTADO PARA BANNER HORIZONTAL */
+          /* BACKDROP (PC) */
           .hero-backdrop {
             width: 100%;
-            /* Formato de cinema wide no PC */
             aspect-ratio: 2.35 / 1; 
             max-height: 480px;
             position: relative;
@@ -595,16 +600,17 @@ export default function Home() {
           }
           .hero-backdrop img {
             width: 100%; height: 100%;
-            object-fit: cover; display: block;
+            object-fit: cover; 
+            /* Importante: foca no topo/centro para não cortar cabeças */
+            object-position: center 20%;
+            display: block;
             pointer-events: none;
-            /* Suavidade */
             transition: transform 10s ease; 
           }
           .hero-slide:hover .hero-backdrop img { transform: scale(1.03); }
 
           .hero-overlay {
             position: absolute; inset: 0;
-            /* Degradê ajustado para leitura horizontal */
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.1) 70%, transparent 100%);
             z-index: 1;
           }
@@ -776,17 +782,38 @@ export default function Home() {
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
             
-            /* HERO MOBILE: Formato Banner Horizontal */
-            .hero-backdrop {
-              /* Força o formato banner largo mesmo no celular */
-              aspect-ratio: 16/9; 
+            /* ─── MOBILE HERO FIX ─── */
+            .hero-carousel {
+               margin-bottom: 1.5rem;
+               /* Overflow visible para mostrar parte do próximo card se quiser, ou hidden */
+               overflow: hidden; 
             }
-            .hero-title { font-size: 1.4rem; max-width: 100%; }
-            .hero-content { padding: 1.2rem 1.4rem; }
-            .hero-overview { font-size: 0.8rem; -webkit-line-clamp: 2; max-width: 100%; }
-            .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
-            .hero-tag { font-size: 0.65rem; padding: 3px 8px; }
+            .hero-slide {
+               padding: 0 6px; /* Aumenta espaço entre cards */
+            }
+            .hero-wrapper {
+               border-radius: 16px; /* Arredondado visível */
+            }
+            .hero-backdrop {
+              /* FORÇA O CORTE HORIZONTAL. 
+                 2.2/1 é uma faixa bem larga, cortando o excesso vertical. */
+              aspect-ratio: 2.2 / 1; 
+              height: auto;
+            }
+            .hero-content {
+               padding: 1rem 1.2rem;
+            }
+            .hero-title {
+               font-size: 1.2rem;
+               margin-bottom: 0;
+            }
+            .hero-tag {
+               font-size: 0.65rem; padding: 2px 8px; margin-bottom: 4px;
+            }
+            /* Esconder descrição no mobile para não poluir o banner fino */
+            .desktop-only { display: none; }
           }
+
           @media (max-width: 480px) {
             :root { --pill-height: 54px; --pill-max-width: 95vw; }
             .container { padding-left: 1rem; padding-right: 1rem; }
