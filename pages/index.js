@@ -82,7 +82,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
 
 // ─── HERO CAROUSEL ──────────────────────────────────────────────
 export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
-  const [loaded, setLoaded] = useState(false)
   const [realIndex, setRealIndex] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(true)
   const [dragOffset, setDragOffset] = useState(0)
@@ -95,12 +94,6 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
 
   // Clones for infinite loop
   const ext = items.length > 0 ? [items[items.length - 1], ...items, items[0]] : []
-
-  // Trigger peek animation → loaded state
-  useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 50)
-    return () => clearTimeout(t)
-  }, [])
 
   // Auto-advance
   useEffect(() => {
@@ -169,7 +162,7 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
   const baseX = -(realIndex * 100)
 
   return (
-    <div className={`hero-carousel ${loaded ? 'loaded' : ''}`}>
+    <div className={`hero-carousel`}>
       <div
         className="hero-track-wrapper"
         onTouchStart={onTouchStart}
@@ -600,37 +593,26 @@ export default function Home() {
             width: 100%;
           }
 
-          /* Each slide is full-width but has right padding so the next one peeks in */
+          /* Each slide stays full-width; small right gap so next peeks during drag */
           .hero-slide {
             min-width: 100%;
             flex-shrink: 0;
-            padding-right: 14px;
+            padding-right: 10px;
           }
           .hero-slide:last-child { padding-right: 0; }
-
-          /* ── Peek on load: slide 30% to reveal next card, then snap back ── */
-          @keyframes hero-peek {
-            0%   { transform: translateX(0); }
-            50%  { transform: translateX(-30%); }
-            100% { transform: translateX(0); }
-          }
-          .hero-carousel:not(.loaded) .hero-track {
-            animation: hero-peek 1.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
-          }
-          .hero-carousel.loaded .hero-track {
-            animation: none !important;
-          }
 
           .hero-wrapper {
             display: block; width: 100%;
             text-decoration: none;
             position: relative;
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
           }
           .hero-backdrop {
-            width: 100%; aspect-ratio: 16/9; max-height: 500px;
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 320px;
             position: relative;
           }
           .hero-backdrop img {
@@ -640,45 +622,43 @@ export default function Home() {
           }
           .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.35) 45%, transparent 100%);
           }
           .hero-content {
             position: absolute; bottom: 0; left: 0;
-            width: 100%; padding: 2rem; z-index: 2;
+            width: 100%; padding: 1.4rem 1.6rem; z-index: 2;
           }
           .hero-tag {
             display: inline-block;
             background: #ff6b6b; color: #fff;
-            padding: 4px 10px; border-radius: 8px;
-            font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase; margin-bottom: 8px;
-            box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+            padding: 3px 9px; border-radius: 7px;
+            font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; margin-bottom: 6px;
+            box-shadow: 0 3px 10px rgba(255,107,107,0.3);
           }
           .hero-title {
-            font-size: 2rem; font-weight: 800; color: #fff;
-            margin-bottom: 0.35rem;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-size: 1.5rem; font-weight: 800; color: #fff;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
             line-height: 1.2;
           }
           .hero-overview {
-            color: rgba(255,255,255,0.75);
-            font-size: 0.76rem;
-            max-width: 560px;
+            color: rgba(255,255,255,0.72);
+            font-size: 0.74rem;
+            max-width: 520px;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.5;
+            line-height: 1.45;
           }
 
-          /* Hero fav button — top-right, same dimensions & look as card .fav-btn.
-             We layer it on top of the carousel via absolute positioning on .hero-carousel. */
+          /* Hero fav button — top-right, same dimensions & look as card .fav-btn */
           .hero-fav-overlay {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 8px;
+            right: 8px;
             z-index: 10;
-            /* sizes & styles inherited from .fav-btn */
           }
 
           /* ═══ CARDS ═══ */
@@ -848,7 +828,7 @@ export default function Home() {
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
-            .hero-title { font-size: 1.5rem; }
+            .hero-title { font-size: 1.3rem; }
             .hero-wrapper { border-radius: 16px; }
             .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
           }
@@ -861,9 +841,9 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-            .hero-backdrop { aspect-ratio: 4/3; }
-            .hero-title { font-size: 1.3rem; }
-            .hero-content { padding: 1.2rem; }
+            .hero-backdrop { aspect-ratio: 16/9; }
+            .hero-title { font-size: 1.15rem; }
+            .hero-content { padding: 1rem 1.1rem; }
           }
         `}</style>
       </Head>
