@@ -42,6 +42,8 @@ export default function Home() {
 
   const showToast = (message, type = 'info') => {
     const id = Date.now()
+    // Adiciona o toast. Para fazer a animação de saída, seria necessário lógica complexa de estado 'exiting',
+    // mas aqui garantimos a entrada correta "saindo de trás". A remoção é direta.
     setToasts([{ id, message, type }])
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
   }
@@ -59,15 +61,16 @@ export default function Home() {
     }
   }, [searchActive])
 
-  // Helper para buscar 2 páginas de uma vez para ter mais conteúdo
   const fetchTMDBPages = async (endpoint) => {
-    const [p1, p2] = await Promise.all([
-      fetch(`${endpoint}&page=1`),
-      fetch(`${endpoint}&page=2`)
-    ])
-    const d1 = await p1.json()
-    const d2 = await p2.json()
-    return [...(d1.results || []), ...(d2.results || [])]
+    try {
+      const [p1, p2] = await Promise.all([
+        fetch(`${endpoint}&page=1`),
+        fetch(`${endpoint}&page=2`)
+      ])
+      const d1 = await p1.json()
+      const d2 = await p2.json()
+      return [...(d1.results || []), ...(d2.results || [])]
+    } catch { return [] }
   }
 
   const fetchSearchResults = async (query) => {
@@ -114,13 +117,11 @@ export default function Home() {
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
 
-      // Sort by date recent
       setReleases([
         ...moviesNow.map(i => ({ ...i, media_type: 'movie' })),
         ...tvNow.map(i => ({ ...i, media_type: 'tv' }))
       ].filter(i => i.poster_path).sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)).slice(0, 36))
 
-      // Random sortish
       setRecommendations([
         ...moviesPop.map(i => ({ ...i, media_type: 'movie' })),
         ...tvPop.map(i => ({ ...i, media_type: 'tv' }))
@@ -163,16 +164,12 @@ export default function Home() {
   }
 
   const pageTitle = searchActive ? 'Resultados' : (sectionTitles[activeSection] || 'Conteúdo')
-
-  const headerLabel = scrolled
-    ? (searchActive ? 'Resultados' : sectionTitles[activeSection] || 'Conteúdo')
-    : 'Yoshikawa'
+  const headerLabel = scrolled ? (searchActive ? 'Resultados' : sectionTitles[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
   return (
     <>
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="description" content="Yoshikawa Streaming Player" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -187,6 +184,7 @@ export default function Home() {
             font-size: 16px;
             min-height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
           }
 
           a { color: inherit; text-decoration: none; }
@@ -194,22 +192,23 @@ export default function Home() {
           img { max-width: 100%; height: auto; }
 
           :root {
-            /* Reduced height from 72px to 62px */
             --pill-height: 62px;
             --pill-radius: 44px;
-            --pill-bg: rgba(20, 20, 20, 0.35);
-            --pill-border: 1px solid rgba(255, 255, 255, 0.12);
-            --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-            --pill-blur: blur(16px);
+            /* Changed to a visible grey tint */
+            --pill-bg: rgba(35, 35, 35, 0.65);
+            --pill-border: 1px solid rgba(255, 255, 255, 0.15);
+            --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            --pill-blur: blur(20px);
             --pill-max-width: 680px;
           }
 
+          /* --- HEADER --- */
           .header-pill {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 100;
+            z-index: 1000; /* High Z to stay on top */
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -247,7 +246,6 @@ export default function Home() {
             font-weight: 600;
             color: #f0f6fc;
             white-space: nowrap;
-            transition: opacity 0.3s;
           }
 
           .header-plus {
@@ -266,6 +264,7 @@ export default function Home() {
           }
           .header-plus:hover { opacity: 1; }
 
+          /* --- MAIN CONTAINER --- */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -282,27 +281,35 @@ export default function Home() {
             margin-bottom: 1.2rem;
           }
 
+          /* --- CARDS GRID --- */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 14px;
+            gap: 24px 14px; /* More vertical gap for titles */
             width: 100%;
           }
 
-          .content-card {
+          .card-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            cursor: pointer;
+            text-decoration: none;
+            group: group;
+          }
+
+          .card-poster-frame {
             position: relative;
-            display: block;
             border-radius: 20px;
             overflow: hidden;
             aspect-ratio: 2/3;
             border: 1px solid rgba(255, 255, 255, 0.13);
             background: #1e1e1e;
-            cursor: pointer;
-            text-decoration: none;
             transition: transform 0.25s, box-shadow 0.25s;
           }
-          .content-card:hover {
-            transform: translateY(-3px);
+          
+          .card-wrapper:hover .card-poster-frame {
+            transform: translateY(-4px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
           }
 
@@ -313,6 +320,22 @@ export default function Home() {
             display: block;
           }
 
+          .card-title {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #ffffff;
+            text-align: left;
+            line-height: 1.4;
+            /* Truncate logic */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+          }
+
           .fav-btn {
             position: absolute;
             top: 8px;
@@ -321,8 +344,8 @@ export default function Home() {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--pill-bg); /* Use shared grey tint */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             color: #fff;
@@ -331,12 +354,12 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
+            transition: all 0.2s;
           }
           .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
-          .fav-btn.active { background: rgba(255, 107, 107, 0.6); }
+          .fav-btn.active { background: rgba(255, 107, 107, 0.6); border-color: transparent; }
 
-          /* Navbar Bottom Container matching Header Logic */
+          /* --- NAVBAR BOTTOM --- */
           .bottom-nav {
             position: fixed;
             bottom: 25px;
@@ -345,8 +368,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 12px;
-            z-index: 1000;
-            /* Matches header dimensions exactly */
+            z-index: 1000; /* High Z to cover toasts exiting */
             width: 90%;
             max-width: var(--pill-max-width);
           }
@@ -363,18 +385,17 @@ export default function Home() {
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
-            /* Fill remaining space */
-            flex: 1;
-            transition: all 0.3s;
+            flex: 1; /* Occupy all available space strictly */
+            transition: background 0.3s;
+            overflow: hidden; /* Prevent spill */
           }
 
           .nav-pill.search-mode {
-            justify-content: flex-start;
+            /* padding stays the same to prevent width jump */
           }
 
           .nav-btn {
-            flex: 0 0 auto;
-            width: 48px;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -382,7 +403,6 @@ export default function Home() {
             border: none;
             color: #94a3b8;
             cursor: pointer;
-            transition: color 0.2s;
             height: 100%;
           }
           .nav-btn i { font-size: 20px; transition: color 0.2s, transform 0.15s; color: #f1f5f9; }
@@ -396,15 +416,16 @@ export default function Home() {
             height: 100%;
           }
           .search-wrap input {
-            flex: 1;
+            width: 100%;
             background: transparent;
             border: none;
             outline: none;
             color: #f1f5f9;
             font-size: 15px;
             font-family: inherit;
+            padding: 0 4px;
           }
-          .search-wrap input::placeholder { color: #f1f5f9; opacity: 0.5; }
+          .search-wrap input::placeholder { color: #cbd5e1; opacity: 0.6; }
 
           .search-circle {
             width: var(--pill-height);
@@ -421,21 +442,24 @@ export default function Home() {
             flex-shrink: 0;
             cursor: pointer;
             color: #f1f5f9;
+            transition: background 0.2s;
           }
+          .search-circle:hover { background: rgba(50,50,50,0.8); }
           .search-circle i { font-size: 22px; }
 
+          /* --- TOASTS (NOTIFICATIONS) --- */
           .toast-wrap {
             position: fixed;
-            bottom: calc(25px + var(--pill-height) + 14px);
+            /* Position toast relative to the bottom nav top edge */
+            bottom: calc(25px + var(--pill-height) + 12px);
             left: 50%;
             transform: translateX(-50%);
-            z-index: 999;
+            z-index: 990; /* BEHIND the navbar (1000) */
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 8px;
             pointer-events: none;
-            /* Match navbar width logic */
             width: 90%;
             max-width: var(--pill-max-width);
           }
@@ -446,39 +470,47 @@ export default function Home() {
             align-items: center;
             gap: 12px;
             padding: 0 1.5rem;
-            height: 40px;
-            border-radius: 28px;
+            height: 48px; /* Slightly taller for better visibility */
+            border-radius: 30px;
             border: var(--pill-border);
-            background: var(--pill-bg);
+            background: var(--pill-bg); /* Grey tint */
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             white-space: nowrap;
-            animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            max-width: 100%;
+            /* Animation: Zoom out from behind navbar */
+            animation: toast-pop-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform-origin: center bottom;
           }
 
-          @keyframes toast-in {
-            from { opacity: 0; transform: translateY(12px) scale(0.96); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
+          @keyframes toast-pop-up {
+            from {
+              opacity: 0;
+              transform: translateY(60px) scale(0.6); /* Starts down (behind nav) and small */
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
           }
 
           .toast-icon {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             flex-shrink: 0;
           }
           .toast.success .toast-icon { background: #10b981; color: #fff; }
           .toast.info    .toast-icon { background: #4dabf7; color: #fff; }
           .toast.error   .toast-icon { background: #ef4444; color: #fff; }
 
-          .toast-msg { flex: 1; font-size: 13px; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; }
+          .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
 
+          /* --- LOADING / EMPTY --- */
           .empty-state {
             display: flex;
             flex-direction: column;
@@ -490,7 +522,6 @@ export default function Home() {
             width: 100%;
           }
           .empty-state i { font-size: 2rem; margin-bottom: 12px; }
-
           .spinner {
             width: 36px;
             height: 36px;
@@ -502,18 +533,19 @@ export default function Home() {
           }
           @keyframes spin { to { transform: rotate(360deg); } }
 
+          /* --- RESPONSIVE --- */
           @media (max-width: 768px) {
             :root {
-              --pill-height: 56px; /* Slightly reduced */
+              --pill-height: 56px;
               --pill-max-width: 90vw;
             }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 10px; }
             .container { padding-left: 1.5rem; padding-right: 1.5rem; }
             .header-pill { top: 14px; width: 92%; padding: 0 1.25rem; }
             .bottom-nav { width: 92%; }
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; }
-            .toast { padding: 0 1rem; }
+            .toast { padding: 0 1rem; height: 44px; }
           }
 
           @media (max-width: 480px) {
@@ -528,10 +560,6 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
           }
         `}</style>
       </Head>
@@ -578,11 +606,14 @@ export default function Home() {
             {(searchActive ? searchResults : getActiveItems()).map(item => {
               const fav = isFavorite(item)
               return (
-                <Link key={getItemKey(item)} href={`/${item.media_type}/${item.id}`} className="content-card">
-                  <img src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
-                  <button className={`fav-btn ${fav ? 'active' : ''}`} onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item) }}>
-                    <i className={fav ? 'fas fa-heart' : 'far fa-heart'}></i>
-                  </button>
+                <Link key={getItemKey(item)} href={`/${item.media_type}/${item.id}`} className="card-wrapper">
+                  <div className="card-poster-frame">
+                    <img src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+                    <button className={`fav-btn ${fav ? 'active' : ''}`} onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item) }}>
+                      <i className={fav ? 'fas fa-heart' : 'far fa-heart'}></i>
+                    </button>
+                  </div>
+                  <span className="card-title">{item.title || item.name}</span>
                 </Link>
               )
             })}
