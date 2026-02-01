@@ -25,17 +25,46 @@ const getItemKey = (item) => `${item.media_type}-${item.id}`
 
 // --- COMPONENTS ---
 
-export const Header = ({ label }) => (
-  <header className="header-pill">
-    <Link href="/" className="header-left">
-      <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
-      <span className="header-label">{label}</span>
-    </Link>
-    <button className="header-plus" title="Adicionar">
-      <i className="fas fa-plus"></i>
-    </button>
-  </header>
-)
+export const Header = ({ label, scrolled, showInfo, setShowInfo }) => {
+  const handleBtnClick = (e) => {
+    e.stopPropagation(); // Previne fechar o popup imediatamente
+    if (scrolled) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setShowInfo(!showInfo);
+    }
+  };
+
+  return (
+    <>
+      <header className="header-pill">
+        <Link href="/" className="header-left">
+          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
+          <span className="header-label">{label}</span>
+        </Link>
+        
+        {/* Lógica do botão: Se rolou, vira seta p/ cima. Se topo, vira Info */}
+        <button 
+          className="header-plus" 
+          title={scrolled ? "Voltar ao topo" : "Informações"}
+          onClick={handleBtnClick}
+        >
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"}></i>
+        </button>
+      </header>
+
+      {/* Pop-up de Informação */}
+      {showInfo && !scrolled && (
+        <div className="info-popup" onClick={(e) => e.stopPropagation()}>
+          <div className="info-content">
+            <i className="fas fa-shield-alt info-icon"></i>
+            <p>Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.</p>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
 
 export const ToastContainer = ({ toasts, removeToast }) => (
   <div className="toast-wrap">
@@ -50,33 +79,44 @@ export const ToastContainer = ({ toasts, removeToast }) => (
   </div>
 )
 
-export const MovieCard = ({ item, isFavorite, toggleFavorite }) => (
-  <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
-    <div className="card-poster-frame">
-      <img 
-        src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-        alt={item.title || item.name} 
-        className="content-poster" 
-        loading="lazy" 
-      />
-      <button 
-        className="fav-btn" 
-        onClick={e => { 
-          e.preventDefault(); 
-          e.stopPropagation(); 
-          toggleFavorite(item) 
-        }}
-      >
-        {/* Lógica: Se favorito, icone cheio (fas) e vermelho. Se não, icone vazio (far) e branco */}
-        <i 
-          className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}
-          style={{ color: isFavorite ? '#dc2626' : '#ffffff' }} 
-        ></i>
-      </button>
-    </div>
-    <span className="card-title">{item.title || item.name}</span>
-  </Link>
-)
+export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
+  const [animating, setAnimating] = useState(false);
+
+  const handleFavClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Ativa animação
+    setAnimating(true);
+    toggleFavorite(item);
+    
+    // Reseta animação após o tempo
+    setTimeout(() => setAnimating(false), 300);
+  };
+
+  return (
+    <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
+      <div className="card-poster-frame">
+        <img 
+          src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+          alt={item.title || item.name} 
+          className="content-poster" 
+          loading="lazy" 
+        />
+        <button 
+          className="fav-btn" 
+          onClick={handleFavClick}
+        >
+          <i 
+            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
+            style={{ color: isFavorite ? '#ff6b6b' : '#ffffff' }} 
+          ></i>
+        </button>
+      </div>
+      <span className="card-title">{item.title || item.name}</span>
+    </Link>
+  )
+}
 
 export const BottomNav = ({ 
   activeSection, 
@@ -134,14 +174,36 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
   const [toasts, setToasts] = useState([])
+  
+  // States para Header/Popup
   const [scrolled, setScrolled] = useState(false)
+  const [showInfoPopup, setShowInfoPopup] = useState(false)
 
   const searchInputRef = useRef(null)
 
+  // Scroll Handler: Gerencia estado scrolled e fecha popup ao rolar
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60)
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setShowInfoPopup(false) // Fecha popup ao rolar
+      }
+      setScrolled(window.scrollY > 60)
+    }
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    
+    // Click outside handler para fechar o popup
+    const handleClickOutside = (e) => {
+      // Se não clicou no popup nem no botão de abrir, fecha
+      if (!e.target.closest('.info-popup') && !e.target.closest('.header-plus')) {
+        setShowInfoPopup(false)
+      }
+    }
+    window.addEventListener('click', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('click', handleClickOutside)
+    }
   }, [])
 
   const showToast = (message, type = 'info') => {
@@ -351,7 +413,7 @@ export default function Home() {
           .header-plus {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.5); /* Greyish */
+            color: rgba(255, 255, 255, 0.5);
             font-size: 1.2rem;
             cursor: pointer;
             display: flex;
@@ -362,6 +424,50 @@ export default function Home() {
             flex-shrink: 0;
           }
           .header-plus:hover { color: #ffffff; }
+
+          /* --- INFO POPUP --- */
+          .info-popup {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            width: 90%;
+            max-width: 400px;
+            animation: popup-fade 0.3s ease-out forwards;
+          }
+
+          @keyframes popup-fade {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+          }
+
+          .info-content {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 1.2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+          }
+
+          .info-icon {
+            color: #f59e0b; /* Amber warning color */
+            font-size: 1.2rem;
+            margin-top: 2px;
+          }
+
+          .info-content strong {
+            color: #fff;
+            font-weight: 600;
+          }
 
           /* --- CONTAINER --- */
           .container {
@@ -434,6 +540,7 @@ export default function Home() {
             max-width: 100%;
           }
 
+          /* FAVORITE BUTTON STYLES UPDATED */
           .fav-btn {
             position: absolute;
             top: 8px;
@@ -443,7 +550,6 @@ export default function Home() {
             height: 32px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            /* Always dark glassy background */
             background: rgba(0, 0, 0, 0.5); 
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -451,12 +557,27 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s, border-color 0.2s;
+            /* REMOVED TRANSFORM SCALE ON HOVER */
           }
-          .fav-btn i { font-size: 14px; transition: color 0.2s, transform 0.2s; }
-          .fav-btn:hover { transform: scale(1.1); border-color: rgba(255,255,255,0.4); }
-          .fav-btn:hover i { transform: scale(1.1); }
-          /* Icon color is handled inline in JSX */
+          
+          .fav-btn:hover { 
+            border-color: rgba(255,255,255,0.4); 
+            background: rgba(0,0,0,0.7);
+          }
+
+          .fav-btn i { font-size: 14px; transition: color 0.2s; }
+          
+          /* Keyframes for Heart Pulse */
+          @keyframes heart-zoom {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+          }
+          
+          .heart-pulse {
+            animation: heart-zoom 0.3s ease-in-out;
+          }
 
           /* --- BOTTOM NAV --- */
           .bottom-nav {
@@ -654,7 +775,12 @@ export default function Home() {
         `}</style>
       </Head>
 
-      <Header label={headerLabel} />
+      <Header 
+        label={headerLabel} 
+        scrolled={scrolled} 
+        showInfo={showInfoPopup} 
+        setShowInfo={setShowInfoPopup} 
+      />
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(p => p.filter(t => t.id !== id))} />
 
