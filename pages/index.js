@@ -49,7 +49,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
         </button>
       </header>
 
-      {/* Popup — glass pill, same blur system, no nested wrapper blocking it */}
       {showInfo && (
         <div 
           className={`info-popup ${infoClosing ? 'closing' : ''}`} 
@@ -178,7 +177,7 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
           className="hero-track"
           style={{
             transform: `translateX(calc(${baseX}% + ${dragOffset}px))`,
-            transition: (isTransitioning && !isDragging) ? 'transform 0.55s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none',
+            transition: (isTransitioning && !isDragging) ? 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
             willChange: 'transform'
           }}
         >
@@ -193,9 +192,9 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
                     <img src={bUrl} alt={item.title || item.name} loading={idx === 1 ? 'eager' : 'lazy'} draggable={false} />
                     <div className="hero-overlay"></div>
                     <div className="hero-content">
-                      <span className="hero-tag">Top do Dia</span>
+                      <span className="hero-tag">Destaque</span>
                       <h2 className="hero-title">{item.title || item.name}</h2>
-                      <p className="hero-overview">{item.overview ? item.overview.slice(0, 200) + '...' : ''}</p>
+                      <p className="hero-overview">{item.overview ? item.overview.slice(0, 150) + '...' : ''}</p>
                     </div>
                   </div>
                 </Link>
@@ -205,7 +204,6 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
         </div>
       </div>
 
-      {/* Fav button — top-right, identical style to card fav-btn */}
       <button className="fav-btn hero-fav-overlay" onClick={handleFavClick}>
         <i
           className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`}
@@ -442,6 +440,7 @@ export default function Home() {
   // ── Derived ──
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
   const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 3
+  // STRICTLY 3 items for Hero
   const heroItems = showHero ? activeList.slice(0, 3) : []
   const displayItems = showHero ? activeList.slice(3) : activeList
 
@@ -510,12 +509,10 @@ export default function Home() {
           }
           .header-plus:hover { color: #fff; }
 
-          /* ═══ POPUP — standalone glass pill ═══
-             The element IS the pill. No inner wrapper = backdrop-filter works. */
+          /* ═══ POPUP ═══ */
           .info-popup {
             position: fixed;
             top: 20px; left: 50%;
-            /* start state for animation */
             transform: translate(-50%, 0) scale(0.9);
             z-index: 900;
             width: 90%; max-width: 420px;
@@ -523,23 +520,14 @@ export default function Home() {
             animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
             will-change: transform, opacity;
-
-            /* Glass pill — same tokens as header / nav */
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 1.1rem 1.3rem;
-            border-radius: 22px;
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 1.1rem 1.3rem; border-radius: 22px;
             border: var(--pill-border);
-            /* Solid fallback behind the blur */
             background-color: rgba(28, 28, 28, 0.88);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
+            backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
           }
-          .info-popup.closing {
-            animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-          }
+          .info-popup.closing { animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
           @keyframes popup-slide-in {
             0%   { opacity: 0; transform: translate(-50%, 0) scale(0.9); }
             100% { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); pointer-events: auto; }
@@ -548,7 +536,6 @@ export default function Home() {
             0%   { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); }
             100% { opacity: 0; transform: translate(-50%, 0) scale(0.9); pointer-events: none; }
           }
-
           .info-icon { color: #f59e0b; font-size: 1.15rem; margin-top: 2px; flex-shrink: 0; }
           .info-text { font-size: 0.88rem; color: #cbd5e1; line-height: 1.55; }
           .info-text strong { color: #fff; font-weight: 600; }
@@ -580,86 +567,78 @@ export default function Home() {
             margin-bottom: 2rem;
             user-select: none;
             -webkit-user-select: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra mais marcada */
           }
-          .hero-track-wrapper {
-            width: 100%;
-            overflow: hidden;
-            cursor: grab;
-          }
+          .hero-track-wrapper { width: 100%; overflow: hidden; cursor: grab; }
           .hero-track-wrapper:active { cursor: grabbing; }
+          .hero-track { display: flex; width: 100%; }
 
-          .hero-track {
-            display: flex;
-            width: 100%;
-          }
-
-          /* Each slide stays full-width; small right gap so next peeks during drag */
           .hero-slide {
-            min-width: 100%;
-            flex-shrink: 0;
-            padding-right: 10px;
+            min-width: 100%; flex-shrink: 0;
+            padding-right: 0; /* Removido gap para banner contínuo */
           }
-          .hero-slide:last-child { padding-right: 0; }
-
+          
           .hero-wrapper {
             display: block; width: 100%;
-            text-decoration: none;
-            position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
+            text-decoration: none; position: relative;
+            /* Wrapper do banner */
           }
+
+          /* CSS AJUSTADO PARA BANNER HORIZONTAL */
           .hero-backdrop {
             width: 100%;
-            aspect-ratio: 16/9;
-            max-height: 320px;
+            /* Formato de cinema wide no PC */
+            aspect-ratio: 2.35 / 1; 
+            max-height: 480px;
             position: relative;
+            background: #111;
           }
           .hero-backdrop img {
             width: 100%; height: 100%;
             object-fit: cover; display: block;
             pointer-events: none;
+            /* Suavidade */
+            transition: transform 10s ease; 
           }
+          .hero-slide:hover .hero-backdrop img { transform: scale(1.03); }
+
           .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.35) 45%, transparent 100%);
+            /* Degradê ajustado para leitura horizontal */
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.1) 70%, transparent 100%);
+            z-index: 1;
           }
           .hero-content {
             position: absolute; bottom: 0; left: 0;
-            width: 100%; padding: 1.4rem 1.6rem; z-index: 2;
+            width: 100%; padding: 2rem 2.5rem; z-index: 2;
+            display: flex; flex-direction: column; align-items: flex-start;
           }
           .hero-tag {
             display: inline-block;
             background: #ff6b6b; color: #fff;
-            padding: 3px 9px; border-radius: 7px;
-            font-size: 0.7rem; font-weight: 700;
-            text-transform: uppercase; margin-bottom: 6px;
-            box-shadow: 0 3px 10px rgba(255,107,107,0.3);
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(255,107,107,0.4);
           }
           .hero-title {
-            font-size: 1.5rem; font-weight: 800; color: #fff;
-            margin-bottom: 0.25rem;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-            line-height: 1.2;
+            font-size: 2rem; font-weight: 800; color: #fff;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+            line-height: 1.1; max-width: 80%;
           }
           .hero-overview {
-            color: rgba(255,255,255,0.72);
-            font-size: 0.74rem;
-            max-width: 520px;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            max-width: 600px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.45;
+            line-height: 1.5;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
           }
-
-          /* Hero fav button — top-right, same dimensions & look as card .fav-btn */
-          .hero-fav-overlay {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 10;
-          }
+          .hero-fav-overlay { position: absolute; top: 12px; right: 12px; z-index: 10; }
 
           /* ═══ CARDS ═══ */
           .content-grid {
@@ -667,19 +646,12 @@ export default function Home() {
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 24px 14px; width: 100%;
           }
-          .card-wrapper {
-            display: flex; flex-direction: column;
-            width: 100%; cursor: pointer; text-decoration: none;
-          }
+          .card-wrapper { display: flex; flex-direction: column; width: 100%; cursor: pointer; text-decoration: none; }
           .card-poster-frame {
-            position: relative;
-            border-radius: 20px; overflow: hidden;
-            aspect-ratio: 2/3;
-            border: 1px solid rgba(255,255,255,0.13);
+            position: relative; border-radius: 20px; overflow: hidden;
+            aspect-ratio: 2/3; border: 1px solid rgba(255,255,255,0.13);
             background: #1e1e1e;
-            /* No transition — hover lift removed */
           }
-          /* No hover rule on .card-wrapper or .card-poster-frame */
           .content-poster { width: 100%; height: 100%; object-fit: cover; display: block; }
           .card-title {
             margin-top: 10px; font-size: 13px; font-weight: 500;
@@ -689,40 +661,25 @@ export default function Home() {
             -webkit-box-orient: vertical; overflow: hidden;
             text-overflow: ellipsis; max-width: 100%;
           }
-
-          /* ─── Shared fav button (cards + hero overlay) ─── */
           .fav-btn {
-            position: absolute;
-            top: 8px; right: 8px;
-            z-index: 2;
-            width: 32px; height: 32px;
-            border-radius: 50%;
+            position: absolute; top: 8px; right: 8px; z-index: 2;
+            width: 32px; height: 32px; border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.2);
             background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: border-color 0.2s, transform 0.1s;
-            outline: none;
+            cursor: pointer; transition: border-color 0.2s, transform 0.1s; outline: none;
           }
           .fav-btn:hover { border-color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.5) !important; }
           .fav-btn:active, .fav-btn:focus { border-color: transparent; transform: scale(0.92); }
           .fav-btn i { font-size: 14px; transition: color 0.2s; }
-
-          @keyframes heart-zoom {
-            0%   { transform: scale(1); }
-            50%  { transform: scale(1.4); }
-            100% { transform: scale(1); }
-          }
+          @keyframes heart-zoom { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
           .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
 
           /* ═══ BOTTOM NAV ═══ */
           .bottom-nav {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%);
-            display: flex; align-items: center; gap: 12px;
-            z-index: 1000;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 12px; z-index: 1000;
             width: 90%; max-width: var(--pill-max-width);
           }
           .nav-pill {
@@ -765,25 +722,18 @@ export default function Home() {
           .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
           .search-circle i { font-size: 22px; }
 
-          /* ═══ TOAST ═══ */
+          /* ═══ TOAST & FOOTER & STATES ═══ */
           .toast-wrap {
-            position: fixed;
-            bottom: calc(20px + var(--pill-height) + 12px);
-            left: 50%; transform: translateX(-50%);
-            z-index: 990;
+            position: fixed; bottom: calc(20px + var(--pill-height) + 12px);
+            left: 50%; transform: translateX(-50%); z-index: 990;
             display: flex; flex-direction: column; align-items: center;
-            pointer-events: none;
-            width: 90%; max-width: var(--pill-max-width);
+            pointer-events: none; width: 90%; max-width: var(--pill-max-width);
           }
           .toast {
-            pointer-events: auto;
-            display: flex; align-items: center; gap: 12px;
-            padding: 0 1.5rem; height: 48px;
-            border-radius: 30px; border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            white-space: nowrap;
+            pointer-events: auto; display: flex; align-items: center; gap: 12px;
+            padding: 0 1.5rem; height: 48px; border-radius: 30px; border: var(--pill-border);
+            background: var(--pill-bg); backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6); white-space: nowrap;
             animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             transform-origin: center bottom;
           }
@@ -796,15 +746,12 @@ export default function Home() {
           .toast.error   .toast-icon { background:#ef4444; color:#fff; }
           .toast-msg { font-size:13px; color:#fff; font-weight:500; }
 
-          /* ═══ FOOTER ═══ */
           .footer-credits {
             margin-top: 4rem; padding: 2rem 1rem; text-align: center;
             color: rgba(255,255,255,0.3); font-size: 0.85rem;
             border-top: 1px solid rgba(255,255,255,0.05); width: 100%;
           }
           .footer-sub { font-size: 0.75rem; margin-top: 4px; opacity: 0.7; }
-
-          /* ═══ EMPTY / LOADING ═══ */
           .empty-state {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 50vh; color: #94a3b8; text-align: center; width: 100%;
@@ -828,9 +775,17 @@ export default function Home() {
             .nav-pill { padding: 0 1rem; }
             .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
             .toast { padding: 0 1rem; height: 44px; }
-            .hero-title { font-size: 1.3rem; }
-            .hero-wrapper { border-radius: 16px; }
+            
+            /* HERO MOBILE: Formato Banner Horizontal */
+            .hero-backdrop {
+              /* Força o formato banner largo mesmo no celular */
+              aspect-ratio: 16/9; 
+            }
+            .hero-title { font-size: 1.4rem; max-width: 100%; }
+            .hero-content { padding: 1.2rem 1.4rem; }
+            .hero-overview { font-size: 0.8rem; -webkit-line-clamp: 2; max-width: 100%; }
             .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
+            .hero-tag { font-size: 0.65rem; padding: 3px 8px; }
           }
           @media (max-width: 480px) {
             :root { --pill-height: 54px; --pill-max-width: 95vw; }
@@ -841,9 +796,6 @@ export default function Home() {
             .nav-pill { padding: 0 1.25rem; }
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
-            .hero-backdrop { aspect-ratio: 16/9; }
-            .hero-title { font-size: 1.15rem; }
-            .hero-content { padding: 1rem 1.1rem; }
           }
         `}</style>
       </Head>
