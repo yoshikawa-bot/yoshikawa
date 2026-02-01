@@ -4,7 +4,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 
 // Reutilizando os componentes exportáveis com o novo design
-import { Header, BottomNav, ToastContainer } from './pages/index' // Supondo que estejam no mesmo arquivo ou exportados
+import { Header, BottomNav, ToastContainer } from '../pages/index.js' // Supondo que estejam no mesmo arquivo ou exportados
 
 export default function TVShow() {
   const router = useRouter()
