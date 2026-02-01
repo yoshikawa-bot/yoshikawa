@@ -501,11 +501,11 @@ export default function Home() {
           }
 
           .info-content {
-            /* Fix para o Blur do Popup: Usei uma cor um pouco mais transparente e reforcei os filtros */
-            background: rgba(30, 30, 30, 0.60);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px); /* Essencial para Safari/iOS */
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            /* USA O MESMO PADRÃO DAS NOTIFICAÇÕES (PILL) */
+            background: var(--pill-bg);
+            backdrop-filter: var(--pill-blur);
+            -webkit-backdrop-filter: var(--pill-blur);
+            border: var(--pill-border);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             border-radius: 20px;
             padding: 1.2rem;
@@ -537,15 +537,15 @@ export default function Home() {
             padding-right: 2.5rem;
           }
 
-          /* Efeito IA Pensando (Shimmer Dark) */
+          /* Efeito IA Pensando (Esquerda -> Direita) */
           .page-title {
             font-size: 1.6rem;
             font-weight: 700;
             margin-bottom: 1.2rem;
             
-            /* Gradiente que simula o efeito de pensamento (Branco -> Cinza Escuro -> Branco) */
+            /* Gradiente: Branco -> Cinza Escuro -> Branco */
             background: linear-gradient(
-              to right,
+              90deg,
               #f1f5f9 0%,
               #f1f5f9 40%,
               #64748b 50%, 
@@ -554,19 +554,17 @@ export default function Home() {
             );
             background-size: 200% auto;
             
-            /* Aplica o background apenas ao texto */
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            color: #f1f5f9; /* Fallback */
+            color: #f1f5f9;
             
-            animation: textShimmer 3.5s linear infinite;
+            animation: shimmerEffect 4s linear infinite;
           }
 
-          @keyframes textShimmer {
-            to {
-              background-position: 200% center;
-            }
+          @keyframes shimmerEffect {
+            0% { background-position: -100% center; }
+            100% { background-position: 100% center; }
           }
 
           .content-grid {
@@ -614,8 +612,6 @@ export default function Home() {
             color: #ffffff;
             text-align: left;
             line-height: 1.4;
-            
-            /* Fix para manter sempre espaço de 2 linhas */
             height: calc(1.4em * 2); 
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -625,31 +621,33 @@ export default function Home() {
             max-width: 100%;
           }
 
+          /* BOTÃO DE CURTIR: Apenas o coração */
           .fav-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: 10px;
+            right: 10px;
             z-index: 2;
             width: 32px;
             height: 32px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.5); 
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: transparent;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: transform 0.2s;
           }
           
-          .fav-btn:hover, .fav-btn:active { 
-            border-color: rgba(255,255,255,0.6); 
-            background: rgba(0,0,0,0.5) !important;
+          .fav-btn:hover { 
+            transform: scale(1.15);
           }
 
-          .fav-btn i { font-size: 14px; transition: color 0.2s; }
+          /* Sombra no coração para ver em posters brancos */
+          .fav-btn i { 
+            font-size: 18px; 
+            transition: color 0.2s; 
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.7));
+          }
           
           @keyframes heart-zoom {
             0% { transform: scale(1); }
