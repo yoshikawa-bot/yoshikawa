@@ -2,6 +2,17 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
+// --- CONSTANTS ---
+const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
+const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+
+const SECTION_TITLES = {
+  releases: 'Lançamentos',
+  recommendations: 'Populares',
+  favorites: 'Favoritos'
+}
+
+// --- UTILS ---
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -9,6 +20,109 @@ const useDebounce = (callback, delay) => {
     timeoutRef.current = setTimeout(() => callback(...args), delay)
   }, [callback, delay])
 }
+
+const getItemKey = (item) => `${item.media_type}-${item.id}`
+
+// --- COMPONENTS ---
+
+export const Header = ({ label }) => (
+  <header className="header-pill">
+    <Link href="/" className="header-left">
+      <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
+      <span className="header-label">{label}</span>
+    </Link>
+    <button className="header-plus" title="Adicionar">
+      <i className="fas fa-plus"></i>
+    </button>
+  </header>
+)
+
+export const ToastContainer = ({ toasts, removeToast }) => (
+  <div className="toast-wrap">
+    {toasts.map(t => (
+      <div key={t.id} className={`toast ${t.type}`} onClick={() => removeToast(t.id)}>
+        <div className="toast-icon">
+          <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
+        </div>
+        <div className="toast-msg">{t.message}</div>
+      </div>
+    ))}
+  </div>
+)
+
+export const MovieCard = ({ item, isFavorite, toggleFavorite }) => (
+  <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
+    <div className="card-poster-frame">
+      <img 
+        src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
+        alt={item.title || item.name} 
+        className="content-poster" 
+        loading="lazy" 
+      />
+      <button 
+        className="fav-btn" 
+        onClick={e => { 
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          toggleFavorite(item) 
+        }}
+      >
+        {/* Lógica: Se favorito, icone cheio (fas) e vermelho. Se não, icone vazio (far) e branco */}
+        <i 
+          className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}
+          style={{ color: isFavorite ? '#dc2626' : '#ffffff' }} 
+        ></i>
+      </button>
+    </div>
+    <span className="card-title">{item.title || item.name}</span>
+  </Link>
+)
+
+export const BottomNav = ({ 
+  activeSection, 
+  setActiveSection, 
+  searchActive, 
+  setSearchActive, 
+  searchQuery, 
+  setSearchQuery,
+  onSearchSubmit,
+  inputRef 
+}) => (
+  <div className="bottom-nav">
+    <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
+      {searchActive ? (
+        <div className="search-wrap">
+          <input 
+            ref={inputRef} 
+            type="text" 
+            placeholder="Pesquisar..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)} 
+          />
+        </div>
+      ) : (
+        <>
+          <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
+            <i className="fas fa-film"></i>
+          </button>
+          <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
+            <i className="fas fa-fire"></i>
+          </button>
+          <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+            <i className="fas fa-heart"></i>
+          </button>
+        </>
+      )}
+    </div>
+
+    <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
+      <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
+    </button>
+  </div>
+)
+
+// --- MAIN PAGE ---
 
 export default function Home() {
   const [releases, setReleases] = useState([])
@@ -23,16 +137,6 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false)
 
   const searchInputRef = useRef(null)
-  const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-  const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
-
-  const getItemKey = (item) => `${item.media_type}-${item.id}`
-
-  const sectionTitles = {
-    releases: 'Lançamentos',
-    recommendations: 'Populares',
-    favorites: 'Favoritos'
-  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60)
@@ -42,8 +146,6 @@ export default function Home() {
 
   const showToast = (message, type = 'info') => {
     const id = Date.now()
-    // Adiciona o toast. Para fazer a animação de saída, seria necessário lógica complexa de estado 'exiting',
-    // mas aqui garantimos a entrada correta "saindo de trás". A remoção é direta.
     setToasts([{ id, message, type }])
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
   }
@@ -100,8 +202,7 @@ export default function Home() {
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
-  const handleSearchChange = (e) => {
-    const q = e.target.value
+  const handleSearchChange = (q) => {
     setSearchQuery(q)
     if (!q.trim()) { setSearchResults([]); setLoading(false); return }
     setLoading(true)
@@ -148,7 +249,7 @@ export default function Home() {
         next = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
         showToast('Removido dos favoritos', 'info')
       } else {
-        next = [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path, release_date: item.release_date, first_air_date: item.first_air_date, overview: item.overview }]
+        next = [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path }]
         showToast('Adicionado aos favoritos!', 'success')
       }
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(next)) } catch { showToast('Erro ao salvar', 'error') }
@@ -163,8 +264,8 @@ export default function Home() {
     return releases
   }
 
-  const pageTitle = searchActive ? 'Resultados' : (sectionTitles[activeSection] || 'Conteúdo')
-  const headerLabel = scrolled ? (searchActive ? 'Resultados' : sectionTitles[activeSection] || 'Conteúdo') : 'Yoshikawa'
+  const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
+  const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
   return (
     <>
@@ -194,7 +295,6 @@ export default function Home() {
           :root {
             --pill-height: 62px;
             --pill-radius: 44px;
-            /* Changed to a visible grey tint */
             --pill-bg: rgba(35, 35, 35, 0.65);
             --pill-border: 1px solid rgba(255, 255, 255, 0.15);
             --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
@@ -208,7 +308,7 @@ export default function Home() {
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000; /* High Z to stay on top */
+            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -251,20 +351,19 @@ export default function Home() {
           .header-plus {
             background: none;
             border: none;
-            color: #f1f5f9;
+            color: rgba(255, 255, 255, 0.5); /* Greyish */
             font-size: 1.2rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 4px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            transition: color 0.2s;
             flex-shrink: 0;
           }
-          .header-plus:hover { opacity: 1; }
+          .header-plus:hover { color: #ffffff; }
 
-          /* --- MAIN CONTAINER --- */
+          /* --- CONTAINER --- */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -281,11 +380,11 @@ export default function Home() {
             margin-bottom: 1.2rem;
           }
 
-          /* --- CARDS GRID --- */
+          /* --- CARDS --- */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 24px 14px; /* More vertical gap for titles */
+            gap: 24px 14px;
             width: 100%;
           }
 
@@ -327,7 +426,6 @@ export default function Home() {
             color: #ffffff;
             text-align: left;
             line-height: 1.4;
-            /* Truncate logic */
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -345,21 +443,22 @@ export default function Home() {
             height: 32px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            background: var(--pill-bg); /* Use shared grey tint */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #fff;
-            font-size: 13px;
+            /* Always dark glassy background */
+            background: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
           }
-          .fav-btn:hover { background: rgba(255, 107, 107, 0.45); transform: scale(1.08); }
-          .fav-btn.active { background: rgba(255, 107, 107, 0.6); border-color: transparent; }
+          .fav-btn i { font-size: 14px; transition: color 0.2s, transform 0.2s; }
+          .fav-btn:hover { transform: scale(1.1); border-color: rgba(255,255,255,0.4); }
+          .fav-btn:hover i { transform: scale(1.1); }
+          /* Icon color is handled inline in JSX */
 
-          /* --- NAVBAR BOTTOM --- */
+          /* --- BOTTOM NAV --- */
           .bottom-nav {
             position: fixed;
             bottom: 25px;
@@ -368,7 +467,7 @@ export default function Home() {
             display: flex;
             align-items: center;
             gap: 12px;
-            z-index: 1000; /* High Z to cover toasts exiting */
+            z-index: 1000;
             width: 90%;
             max-width: var(--pill-max-width);
           }
@@ -385,13 +484,9 @@ export default function Home() {
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
-            flex: 1; /* Occupy all available space strictly */
+            flex: 1;
             transition: background 0.3s;
-            overflow: hidden; /* Prevent spill */
-          }
-
-          .nav-pill.search-mode {
-            /* padding stays the same to prevent width jump */
+            overflow: hidden;
           }
 
           .nav-btn {
@@ -401,13 +496,17 @@ export default function Home() {
             justify-content: center;
             background: none;
             border: none;
-            color: #94a3b8;
             cursor: pointer;
             height: 100%;
+            color: rgba(255, 255, 255, 0.5); /* Inactive Grey */
+            transition: color 0.2s;
           }
-          .nav-btn i { font-size: 20px; transition: color 0.2s, transform 0.15s; color: #f1f5f9; }
-          .nav-btn:hover i { color: #ff6b6b; transform: scale(1.08); }
-          .nav-btn.active i { color: #ff6b6b; }
+          .nav-btn i { font-size: 20px; transition: transform 0.15s; }
+          .nav-btn:hover { color: #ffffff; }
+          .nav-btn:hover i { transform: scale(1.1); }
+          
+          .nav-btn.active { color: #ffffff; } /* Active White */
+          .nav-btn.active i { transform: scale(1.05); }
 
           .search-wrap {
             width: 100%;
@@ -441,20 +540,19 @@ export default function Home() {
             justify-content: center;
             flex-shrink: 0;
             cursor: pointer;
-            color: #f1f5f9;
-            transition: background 0.2s;
+            color: rgba(255, 255, 255, 0.7);
+            transition: background 0.2s, color 0.2s;
           }
-          .search-circle:hover { background: rgba(50,50,50,0.8); }
+          .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
           .search-circle i { font-size: 22px; }
 
-          /* --- TOASTS (NOTIFICATIONS) --- */
+          /* --- TOASTS --- */
           .toast-wrap {
             position: fixed;
-            /* Position toast relative to the bottom nav top edge */
             bottom: calc(25px + var(--pill-height) + 12px);
             left: 50%;
             transform: translateX(-50%);
-            z-index: 990; /* BEHIND the navbar (1000) */
+            z-index: 990;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -470,28 +568,21 @@ export default function Home() {
             align-items: center;
             gap: 12px;
             padding: 0 1.5rem;
-            height: 48px; /* Slightly taller for better visibility */
+            height: 48px;
             border-radius: 30px;
             border: var(--pill-border);
-            background: var(--pill-bg); /* Grey tint */
+            background: var(--pill-bg);
             backdrop-filter: var(--pill-blur);
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             white-space: nowrap;
-            /* Animation: Zoom out from behind navbar */
             animation: toast-pop-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             transform-origin: center bottom;
           }
 
           @keyframes toast-pop-up {
-            from {
-              opacity: 0;
-              transform: translateY(60px) scale(0.6); /* Starts down (behind nav) and small */
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
+            from { opacity: 0; transform: translateY(60px) scale(0.6); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
           }
 
           .toast-icon {
@@ -510,7 +601,7 @@ export default function Home() {
 
           .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
 
-          /* --- LOADING / EMPTY --- */
+          /* --- STATES --- */
           .empty-state {
             display: flex;
             flex-direction: column;
@@ -533,7 +624,6 @@ export default function Home() {
           }
           @keyframes spin { to { transform: rotate(360deg); } }
 
-          /* --- RESPONSIVE --- */
           @media (max-width: 768px) {
             :root {
               --pill-height: 56px;
@@ -564,26 +654,9 @@ export default function Home() {
         `}</style>
       </Head>
 
-      <header className="header-pill">
-        <Link href="/" className="header-left">
-          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
-          <span className="header-label">{headerLabel}</span>
-        </Link>
-        <button className="header-plus" title="Adicionar">
-          <i className="fas fa-plus"></i>
-        </button>
-      </header>
-
-      <div className="toast-wrap">
-        {toasts.map(t => (
-          <div key={t.id} className={`toast ${t.type}`} onClick={() => setToasts(p => p.filter(x => x.id !== t.id))}>
-            <div className="toast-icon">
-              <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
-            </div>
-            <div className="toast-msg">{t.message}</div>
-          </div>
-        ))}
-      </div>
+      <Header label={headerLabel} />
+      
+      <ToastContainer toasts={toasts} removeToast={(id) => setToasts(p => p.filter(t => t.id !== id))} />
 
       <main className="container">
         <h1 className="page-title">{pageTitle}</h1>
@@ -603,20 +676,14 @@ export default function Home() {
 
         {(searchActive ? searchResults : getActiveItems()).length > 0 && !loading && (
           <div className="content-grid">
-            {(searchActive ? searchResults : getActiveItems()).map(item => {
-              const fav = isFavorite(item)
-              return (
-                <Link key={getItemKey(item)} href={`/${item.media_type}/${item.id}`} className="card-wrapper">
-                  <div className="card-poster-frame">
-                    <img src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
-                    <button className={`fav-btn ${fav ? 'active' : ''}`} onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item) }}>
-                      <i className={fav ? 'fas fa-heart' : 'far fa-heart'}></i>
-                    </button>
-                  </div>
-                  <span className="card-title">{item.title || item.name}</span>
-                </Link>
-              )
-            })}
+            {(searchActive ? searchResults : getActiveItems()).map(item => (
+              <MovieCard 
+                key={getItemKey(item)} 
+                item={item} 
+                isFavorite={isFavorite(item)} 
+                toggleFavorite={toggleFavorite} 
+              />
+            ))}
           </div>
         )}
 
@@ -625,25 +692,16 @@ export default function Home() {
         )}
       </main>
 
-      <div className="bottom-nav">
-        <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
-          {searchActive ? (
-            <div className="search-wrap">
-              <input ref={searchInputRef} type="text" placeholder="Pesquisar..." value={searchQuery} onChange={handleSearchChange} onKeyDown={e => e.key === 'Enter' && searchQuery.trim() && debouncedSearch(searchQuery)} />
-            </div>
-          ) : (
-            <>
-              <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}><i className="fas fa-film"></i></button>
-              <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}><i className="fas fa-fire"></i></button>
-              <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
-            </>
-          )}
-        </div>
-
-        <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
-          <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
-        </button>
-      </div>
+      <BottomNav 
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        searchActive={searchActive}
+        setSearchActive={setSearchActive}
+        searchQuery={searchQuery}
+        setSearchQuery={handleSearchChange}
+        onSearchSubmit={debouncedSearch}
+        inputRef={searchInputRef}
+      />
     </>
   )
 }
