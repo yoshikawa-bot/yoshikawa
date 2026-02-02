@@ -77,7 +77,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           <div className="info-text">
             <strong>Dados Técnicos</strong>
             <ul style={{ listStyle: 'none', marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 }}>
-              <li>Build: v2.4.0 (Stable)</li>
+              <li>Build: v2.4.1 (Stable)</li>
               <li>Engine: Next.js / React 18</li>
               <li>Source: TMDB API Public</li>
               <li>Latency: 24ms</li>
@@ -114,10 +114,14 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
         : DEFAULT_BACKDROP
 
   const favActive = isFavorite(item)
+  const [animating, setAnimating] = useState(false);
+
   const handleFav = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    toggleFavorite(item)
+    setAnimating(true);
+    toggleFavorite(item);
+    setTimeout(() => setAnimating(false), 300);
   }
 
   return (
@@ -134,8 +138,15 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             </div>
           </div>
         </Link>
-        <button className="hero-fav-btn" onClick={handleFav} title={favActive ? 'Remover dos favoritos' : 'Favoritar'}>
-          <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
+        <button 
+          className="fav-btn" 
+          onClick={handleFav} 
+          style={{ top: '14px', right: '14px' }}
+        >
+          <i
+            className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
+            style={{ color: favActive ? '#ff6b6b' : '#ffffff' }}
+          ></i>
         </button>
       </div>
     </div>
@@ -440,10 +451,10 @@ export default function Home() {
             color: rgba(255,255,255,0.5); font-size: 1.2rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
             width: 44px; height: 44px; border-radius: 50%;
-            transition: color 0.2s, background 0.2s;
+            transition: color 0.2s;
             flex-shrink: 0; z-index: 2;
           }
-          .header-btn-left:hover, .header-btn-right:hover { color: #fff; background: rgba(255,255,255,0.1); }
+          .header-btn-left:hover, .header-btn-right:hover { color: #fff; }
 
           .header-center {
             position: absolute; left: 50%; top: 50%;
@@ -519,6 +530,7 @@ export default function Home() {
 
           .hero-wrapper {
             display: block; width: 100%; 
+            /* Original desktop proportions */
             aspect-ratio: 16 / 9;
             max-height: 500px;
             text-decoration: none; position: relative;
@@ -563,20 +575,6 @@ export default function Home() {
             overflow: hidden;
             line-height: 1.45;
           }
-
-          .hero-fav-btn {
-            position: absolute; top: 14px; right: 14px; z-index: 10;
-            width: 40px; height: 40px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.25);
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: transform 0.15s, border-color 0.2s, background 0.2s;
-            outline: none;
-          }
-          .hero-fav-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.7); transform: scale(1.08); }
-          .hero-fav-btn:active { transform: scale(0.92); }
-          .hero-fav-btn i { font-size: 17px; transition: color 0.2s; }
 
           .content-grid {
             display: grid;
@@ -714,7 +712,6 @@ export default function Home() {
 
             .hero-title { font-size: 1.5rem; }
             .hero-wrapper { border-radius: 16px; aspect-ratio: 4/3; }
-            .hero-fav-btn { top: 12px; right: 12px; width: 36px; height: 36px; }
           }
 
           @media (max-width: 480px) {
@@ -727,11 +724,10 @@ export default function Home() {
             .nav-btn i { font-size: 19px; }
             .search-circle i { font-size: 20px; }
             
-            .hero-wrapper { aspect-ratio: 4 / 5; }
+            /* Original mobile proportions */
+            .hero-wrapper { aspect-ratio: 4 / 3; }
             .hero-title { font-size: 1.3rem; }
             .hero-content { padding: 1.2rem; }
-            .hero-fav-btn { top: 10px; right: 10px; width: 34px; height: 34px; }
-            .hero-fav-btn i { font-size: 15px; }
           }
         `}</style>
       </Head>
