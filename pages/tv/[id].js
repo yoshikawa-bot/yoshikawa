@@ -1,924 +1,555 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/router'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 
-// --- CONSTANTS ---
-const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+// --- Componentes UI Reutilizados (Adaptados) ---
 
-const SECTION_TITLES = {
-  releases: 'Lançamentos',
-  recommendations: 'Populares',
-  favorites: 'Favoritos'
-}
+const Header = ({ label, scrolled, goBack }) => (
+  <header className="header-pill">
+    <button className="header-btn-left" onClick={goBack} title="Voltar">
+      <i className="fas fa-arrow-left"></i>
+    </button>
 
-// --- UTILS ---
-const useDebounce = (callback, delay) => {
-  const timeoutRef = useRef(null)
-  return useCallback((...args) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => callback(...args), delay)
-  }, [callback, delay])
-}
-
-const getItemKey = (item) => `${item.media_type}-${item.id}`
-
-// --- COMPONENTS ---
-
-export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) => {
-  const handleBtnClick = (e) => {
-    e.stopPropagation();
-    if (scrolled) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      toggleInfo();
-    }
-  };
-
-  return (
-    <>
-      {/* Header com z-index maior para cobrir a saida do popup */}
-      <header className="header-pill">
-        <Link href="/" className="header-left">
-          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
-          <span className="header-label">{label}</span>
-        </Link>
-        
-        <button 
-          className="header-plus" 
-          title={scrolled ? "Voltar ao topo" : "Informações"}
-          onClick={handleBtnClick}
-        >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"}></i>
-        </button>
-      </header>
-
-      {/* Pop-up de Informação */}
-      {showInfo && (
-        <div 
-          className={`info-popup ${infoClosing ? 'closing' : ''}`} 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="info-content">
-            <i className="fas fa-shield-alt info-icon"></i>
-            <p>Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.</p>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-export const ToastContainer = ({ toasts, removeToast }) => (
-  <div className="toast-wrap">
-    {toasts.map(t => (
-      <div 
-        key={t.id} 
-        className={`toast ${t.type} ${t.closing ? 'closing' : ''}`} 
-        onClick={() => removeToast(t.id)}
-      >
-        <div className="toast-icon">
-          <i className={`fas ${t.type === 'success' ? 'fa-check' : t.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
-        </div>
-        <div className="toast-msg">{t.message}</div>
-      </div>
-    ))}
-  </div>
-)
-
-export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
-  const [animating, setAnimating] = useState(false);
-
-  const handleFavClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAnimating(true);
-    toggleFavorite(item);
-    setTimeout(() => setAnimating(false), 300);
-  };
-
-  return (
-    <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
-      <div className="card-poster-frame">
-        <img 
-          src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-          alt={item.title || item.name} 
-          className="content-poster" 
-          loading="lazy" 
-        />
-        <button 
-          className="fav-btn" 
-          onClick={handleFavClick}
-        >
-          <i 
-            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: isFavorite ? '#ff6b6b' : '#ffffff' }} 
-          ></i>
-        </button>
-      </div>
-      <span className="card-title">{item.title || item.name}</span>
-    </Link>
-  )
-}
-
-export const BottomNav = ({ 
-  activeSection, 
-  setActiveSection, 
-  searchActive, 
-  setSearchActive, 
-  searchQuery, 
-  setSearchQuery,
-  onSearchSubmit,
-  inputRef 
-}) => (
-  <div className="bottom-nav">
-    <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
-      {searchActive ? (
-        <div className="search-wrap">
-          <input 
-            ref={inputRef} 
-            type="text" 
-            placeholder="Pesquisar..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
-            onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)} 
-          />
-        </div>
-      ) : (
-        <>
-          <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-            <i className="fas fa-film"></i>
-          </button>
-          <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-            <i className="fas fa-fire"></i>
-          </button>
-          <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-            <i className="fas fa-heart"></i>
-          </button>
-        </>
-      )}
+    <div className="header-center">
+      <span className="header-label">{label}</span>
     </div>
 
-    <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
-      <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
+    <div className="header-btn-right-placeholder"></div>
+  </header>
+)
+
+const BottomNav = ({ selectedPlayer, togglePlayerMenu, isFavorite, toggleFavorite, showInfo }) => (
+  <div className="bottom-nav">
+    <div className="nav-pill">
+      <Link href="/" className="nav-btn">
+        <i className="fas fa-home"></i>
+      </Link>
+      <button className="nav-btn" onClick={showInfo}>
+        <i className="fas fa-info-circle"></i>
+      </button>
+      <button className={`nav-btn ${isFavorite ? 'active-fav' : ''}`} onClick={toggleFavorite}>
+        <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+      </button>
+    </div>
+    <button className="action-circle" onClick={togglePlayerMenu}>
+      <i className={selectedPlayer === 'superflix' ? 'fas fa-film' : 'fas fa-bolt'}></i>
     </button>
   </div>
 )
 
-export const Footer = () => (
-  <footer className="footer-credits">
-    <p>Desenvolvido por Kawa para os sistemas Yoshikawa</p>
-    <p className="footer-sub">Todos os direitos reservados &copy; {new Date().getFullYear()}</p>
-  </footer>
-)
+const ToastContainer = ({ toast, closeToast }) => {
+  if (!toast) return null;
+  return (
+    <div className="toast-wrap">
+      <div className={`toast ${toast.type}`} onClick={closeToast}>
+        <div className="toast-icon">
+          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
+        </div>
+        <div className="toast-msg">{toast.message}</div>
+      </div>
+    </div>
+  )
+}
 
-// --- MAIN PAGE ---
+// --- Componente Principal ---
 
-export default function Home() {
-  const [releases, setReleases] = useState([])
-  const [recommendations, setRecommendations] = useState([])
-  const [favorites, setFavorites] = useState([])
-  const [searchResults, setSearchResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeSection, setActiveSection] = useState('releases')
-  const [searchActive, setSearchActive] = useState(false)
-  const [toasts, setToasts] = useState([])
+export default function TVShow() {
+  const router = useRouter()
+  const { id } = router.query
+  const [tvShow, setTvShow] = useState(null)
+  const [season, setSeason] = useState(1)
+  const [episode, setEpisode] = useState(1)
+  const [seasonDetails, setSeasonDetails] = useState(null)
+  const [loading, setLoading] = useState(true)
   
-  // States para Header/Popup
-  const [scrolled, setScrolled] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState('superflix')
   const [showInfoPopup, setShowInfoPopup] = useState(false)
-  const [infoClosing, setInfoClosing] = useState(false)
+  const [showPlayerSelector, setShowPlayerSelector] = useState(false)
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
+  
+  const [toast, setToast] = useState(null)
+  const toastTimerRef = useRef(null)
+  
+  const [scrolled, setScrolled] = useState(false)
+  const episodeListRef = useRef(null)
 
-  const searchInputRef = useRef(null)
+  const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
+  const STREAM_BASE_URL = 'https://superflixapi.blog'
 
-  // Lógica de fechar Popup com animação
-  const closePopup = useCallback(() => {
-    if (showInfoPopup && !infoClosing) {
-      setInfoClosing(true)
-      setTimeout(() => {
-        setShowInfoPopup(false)
-        setInfoClosing(false)
-      }, 300) // Tempo da animação de saída
-    }
-  }, [showInfoPopup, infoClosing])
+  // --- Logic Helpers ---
 
-  const togglePopup = () => {
-    if (showInfoPopup) closePopup()
-    else setShowInfoPopup(true)
+  const showToastMsg = (message, type = 'info') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast({ message, type })
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000)
   }
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) closePopup()
-      setScrolled(window.scrollY > 60)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.info-popup') && !e.target.closest('.header-plus')) {
-        closePopup()
-      }
-    }
-    window.addEventListener('click', handleClickOutside)
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('click', handleClickOutside)
-    }
-  }, [closePopup])
-
-  // Lógica de Toast com animação de saída
-  const showToast = (message, type = 'info') => {
-    const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type, closing: false }])
-    
-    // Auto remove após 3s
-    setTimeout(() => removeToast(id), 3000)
-  }
-
-  const removeToast = (id) => {
-    setToasts(prev => prev.map(t => t.id === id ? { ...t, closing: true } : t))
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
-    }, 400) // Tempo da animação de saída
-  }
-
-  useEffect(() => {
-    loadHomeContent()
-    loadFavorites()
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
-    if (searchActive && searchInputRef.current) searchInputRef.current.focus()
-    if (!searchActive) {
-      setSearchResults([])
-      setSearchQuery('')
+    if (id) {
+      loadTvShow(id)
+      checkIfFavorite()
     }
-  }, [searchActive])
+  }, [id])
 
-  const fetchTMDBPages = async (endpoint) => {
-    try {
-      const [p1, p2] = await Promise.all([
-        fetch(`${endpoint}&page=1`),
-        fetch(`${endpoint}&page=2`)
-      ])
-      const d1 = await p1.json()
-      const d2 = await p2.json()
-      return [...(d1.results || []), ...(d2.results || [])]
-    } catch { return [] }
-  }
+  useEffect(() => {
+    if (showVideoPlayer) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = 'auto'
+    return () => { document.body.style.overflow = 'auto' }
+  }, [showVideoPlayer])
 
-  const fetchSearchResults = async (query) => {
-    if (!query.trim()) {
-      setSearchResults([])
-      setLoading(false)
-      return
+  useEffect(() => {
+    if (episodeListRef.current && seasonDetails) {
+      const activeCard = episodeListRef.current.querySelector('.episode-card.active')
+      if (activeCard) activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     }
-    setLoading(true)
+  }, [episode, seasonDetails])
+
+  const loadTvShow = async (tvId) => {
     try {
-      const [moviesData, tvData] = await Promise.all([
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-      ])
+      setLoading(true)
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+      if (!res.ok) throw new Error('Erro ao carregar')
+      const data = await res.json()
+      setTvShow(data)
       
-      setSearchResults([
-        ...moviesData.map(i => ({ ...i, media_type: 'movie' })),
-        ...tvData.map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 40))
+      const firstSeason = data.seasons?.find(s => s.season_number > 0) || data.seasons?.[0]
+      if (firstSeason) {
+        setSeason(firstSeason.season_number)
+        await loadSeasonDetails(firstSeason.season_number)
+      }
     } catch (err) {
-      showToast('Erro na busca', 'error')
-      setSearchResults([])
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  const debouncedSearch = useDebounce(fetchSearchResults, 300)
-
-  const handleSearchChange = (q) => {
-    setSearchQuery(q)
-    if (!q.trim()) { setSearchResults([]); setLoading(false); return }
-    setLoading(true)
-    debouncedSearch(q)
-  }
-
-  const loadHomeContent = async () => {
+  const loadSeasonDetails = async (seasonNum) => {
     try {
-      const [moviesNow, tvNow, moviesPop, tvPop] = await Promise.all([
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
-      ])
-
-      setReleases([
-        ...moviesNow.map(i => ({ ...i, media_type: 'movie' })),
-        ...tvNow.map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)).slice(0, 36))
-
-      setRecommendations([
-        ...moviesPop.map(i => ({ ...i, media_type: 'movie' })),
-        ...tvPop.map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort(() => 0.5 - Math.random()).slice(0, 36))
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const loadFavorites = () => {
-    try {
-      const s = localStorage.getItem('yoshikawaFavorites')
-      setFavorites(s ? JSON.parse(s) : [])
-    } catch { setFavorites([]) }
-  }
-
-  const isFavorite = (item) => favorites.some(f => f.id === item.id && f.media_type === item.media_type)
-
-  const toggleFavorite = (item) => {
-    setFavorites(prev => {
-      const wasFav = prev.some(f => f.id === item.id && f.media_type === item.media_type)
-      let next
-      if (wasFav) {
-        next = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
-        showToast('Removido dos favoritos', 'info')
-      } else {
-        next = [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path }]
-        showToast('Adicionado aos favoritos!', 'success')
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+      if (res.ok) {
+        const data = await res.json()
+        setSeasonDetails(data)
+        // Reset to ep 1 when changing seasons if not init
+        if (loading) setEpisode(1) 
       }
-      try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(next)) } catch { showToast('Erro ao salvar', 'error') }
-      return next
-    })
+    } catch (e) { console.error(e) }
   }
 
-  const getActiveItems = () => {
-    if (activeSection === 'releases') return releases
-    if (activeSection === 'recommendations') return recommendations
-    if (activeSection === 'favorites') return favorites
-    return releases
+  const checkIfFavorite = () => {
+    try {
+      const list = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
+      setIsFavorite(list.some(f => f.id === parseInt(id) && f.media_type === 'tv'))
+    } catch {}
   }
 
-  const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
-  const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
+  const toggleFavorite = () => {
+    if (!tvShow) return
+    try {
+      const list = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
+      let newList
+      if (isFavorite) {
+        newList = list.filter(f => !(f.id === parseInt(id) && f.media_type === 'tv'))
+        showToastMsg('Removido dos favoritos', 'info')
+      } else {
+        newList = [...list, { id: parseInt(id), media_type: 'tv', title: tvShow.name, poster_path: tvShow.poster_path }]
+        showToastMsg('Adicionado aos favoritos!', 'success')
+      }
+      localStorage.setItem('yoshikawaFavorites', JSON.stringify(newList))
+      setIsFavorite(!isFavorite)
+    } catch { showToastMsg('Erro ao salvar', 'error') }
+  }
+
+  const handleSeasonChange = async (e) => {
+    const s = parseInt(e.target.value)
+    setSeason(s)
+    await loadSeasonDetails(s)
+    setEpisode(1)
+  }
+
+  const getPlayerUrl = () => {
+    return selectedPlayer === 'superflix'
+      ? `${STREAM_BASE_URL}/serie/${id}/${season}/${episode}#noEpList#noLink#transparent`
+      : `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
+  }
+
+  const handlePlayerSelect = (p) => {
+    setSelectedPlayer(p)
+    setShowPlayerSelector(false)
+    showToastMsg(`Player: ${p === 'superflix' ? 'SuperFlix (Dub)' : 'VidSrc (Leg)'}`, 'success')
+  }
+
+  // --- Renders ---
+
+  if (loading && !tvShow) return <div className="loading-screen"><div className="spinner"></div></div>
+  if (!tvShow) return null
+
+  const currentEpData = seasonDetails?.episodes?.find(e => e.episode_number === episode)
+  const backdrop = currentEpData?.still_path 
+    ? `https://image.tmdb.org/t/p/original${currentEpData.still_path}`
+    : (tvShow.backdrop_path ? `https://image.tmdb.org/t/p/original${tvShow.backdrop_path}` : '');
+
+  const availableSeasons = tvShow.seasons?.filter(s => s.season_number > 0 && s.episode_count > 0) || []
 
   return (
     <>
       <Head>
-        <title>Yoshikawa Player</title>
+        <title>{tvShow.name} | Yoshikawa</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <style>{`
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-
-          body {
-            font-family: 'Inter', Arial, sans-serif;
-            background: #000;
-            color: #f1f5f9;
-            line-height: 1.6;
-            font-size: 16px;
-            min-height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-          }
-
-          a { color: inherit; text-decoration: none; }
-          button { font-family: inherit; }
-          img { max-width: 100%; height: auto; }
-
-          :root {
-            --pill-height: 62px;
-            --pill-radius: 44px;
-            --pill-bg: rgba(35, 35, 35, 0.65);
-            --pill-border: 1px solid rgba(255, 255, 255, 0.15);
-            --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            --pill-blur: blur(20px);
-            --pill-max-width: 680px;
-          }
-
-          /* --- HEADER --- */
-          .header-pill {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000; /* Header sempre por cima do popup */
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            height: var(--pill-height);
-            width: 90%;
-            max-width: var(--pill-max-width);
-            padding: 0 1.5rem;
-            border-radius: var(--pill-radius);
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-          }
-
-          .header-left {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            text-decoration: none;
-            flex-shrink: 0;
-          }
-
-          .header-logo {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            object-fit: cover;
-            flex-shrink: 0;
-          }
-
-          .header-label {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #f0f6fc;
-            white-space: nowrap;
-          }
-
-          .header-plus {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-            transition: color 0.2s;
-            flex-shrink: 0;
-          }
-          .header-plus:hover { color: #ffffff; }
-
-          /* --- INFO POPUP --- */
-          .info-popup {
-            position: fixed;
-            /* Começa na mesma posição vertical do header para dar ilusão que está atrás */
-            top: 20px; 
-            left: 50%;
-            transform: translate(-50%, 0) scale(0.9);
-            z-index: 900; /* Menor que header (1000) */
-            width: 90%;
-            max-width: 400px;
-            opacity: 0;
-            /* Animação de entrada */
-            animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: none; /* Previne clique enquanto invisível/atrás */
-          }
-          
-          .info-popup.closing {
-            animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-          }
-
-          /* Estado final da entrada: deslizado para baixo */
-          @keyframes popup-slide-in {
-            0% { 
-              opacity: 0; 
-              transform: translate(-50%, 0) scale(0.9); 
-            }
-            100% { 
-              opacity: 1; 
-              /* Desloca para baixo a altura do header + margem */
-              transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1);
-              pointer-events: auto;
-            }
-          }
-
-          /* Estado final da saída: volta para trás do header */
-          @keyframes popup-slide-out {
-            0% { 
-              opacity: 1; 
-              transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1);
-            }
-            100% { 
-              opacity: 0; 
-              transform: translate(-50%, 0) scale(0.9);
-              pointer-events: none;
-            }
-          }
-
-          .info-content {
-            /* Copiando estilos exatos do Header/Nav para efeito fosco */
-            background: var(--pill-bg);
-            border: var(--pill-border);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            border-radius: 20px;
-            padding: 1.2rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            line-height: 1.5;
-          }
-
-          .info-icon {
-            color: #f59e0b; /* Amber warning color */
-            font-size: 1.2rem;
-            margin-top: 2px;
-          }
-
-          .info-content strong {
-            color: #fff;
-            font-weight: 600;
-          }
-
-          /* --- CONTAINER --- */
-          .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding-top: calc(var(--pill-height) + 20px + 1.8rem);
-            padding-bottom: 8rem;
-            padding-left: 2.5rem;
-            padding-right: 2.5rem;
-          }
-
-          .page-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 1.2rem;
-          }
-
-          /* --- CARDS --- */
-          .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 24px 14px;
-            width: 100%;
-          }
-
-          .card-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            cursor: pointer;
-            text-decoration: none;
-            group: group;
-          }
-
-          .card-poster-frame {
-            position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            aspect-ratio: 2/3;
-            border: 1px solid rgba(255, 255, 255, 0.13);
-            background: #1e1e1e;
-            transition: transform 0.25s, box-shadow 0.25s;
-          }
-          
-          .card-wrapper:hover .card-poster-frame {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-          }
-
-          .content-poster {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-          }
-
-          .card-title {
-            margin-top: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #ffffff;
-            text-align: left;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-          }
-
-          /* FAVORITE BUTTON STYLES UPDATED */
-          .fav-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 2;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.5); /* Fundo vidro escuro padrão */
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: border-color 0.2s; /* Remove bg transition */
-          }
-          
-          /* Garantir que o fundo não muda no hover/active */
-          .fav-btn:hover, .fav-btn:active { 
-            border-color: rgba(255,255,255,0.6); 
-            background: rgba(0,0,0,0.5) !important;
-          }
-
-          .fav-btn i { font-size: 14px; transition: color 0.2s; }
-          
-          @keyframes heart-zoom {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.4); }
-            100% { transform: scale(1); }
-          }
-          
-          .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
-
-          /* --- BOTTOM NAV --- */
-          .bottom-nav {
-            position: fixed;
-            /* Igual ao padding top do header (20px) */
-            bottom: 20px; 
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 1000;
-            width: 90%;
-            max-width: var(--pill-max-width);
-          }
-
-          .nav-pill {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: var(--pill-height);
-            padding: 0 1.5rem;
-            border-radius: var(--pill-radius);
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            flex: 1;
-            transition: background 0.3s;
-            overflow: hidden;
-          }
-
-          .nav-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: none;
-            border: none;
-            cursor: pointer;
-            height: 100%;
-            color: rgba(255, 255, 255, 0.5);
-            transition: color 0.2s;
-          }
-          .nav-btn i { font-size: 20px; transition: transform 0.15s; }
-          .nav-btn:hover { color: #ffffff; }
-          .nav-btn:hover i { transform: scale(1.1); }
-          
-          .nav-btn.active { color: #ffffff; }
-          .nav-btn.active i { transform: scale(1.05); }
-
-          .search-wrap {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            height: 100%;
-          }
-          .search-wrap input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #f1f5f9;
-            font-size: 15px;
-            font-family: inherit;
-            padding: 0 4px;
-          }
-          .search-wrap input::placeholder { color: #cbd5e1; opacity: 0.6; }
-
-          .search-circle {
-            width: var(--pill-height);
-            height: var(--pill-height);
-            border-radius: 50%;
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.7);
-            transition: background 0.2s, color 0.2s;
-          }
-          .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
-          .search-circle i { font-size: 22px; }
-
-          /* --- TOASTS --- */
-          .toast-wrap {
-            position: fixed;
-            bottom: calc(20px + var(--pill-height) + 12px);
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 990;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            pointer-events: none;
-            width: 90%;
-            max-width: var(--pill-max-width);
-          }
-
-          .toast {
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 1.5rem;
-            height: 48px;
-            border-radius: 30px;
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            white-space: nowrap;
-            /* Entrada */
-            animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transform-origin: center bottom;
-          }
-
-          .toast.closing {
-            /* Saída: inverso da entrada */
-            animation: toast-out 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
-          }
-
-          @keyframes toast-in {
-            from { opacity: 0; transform: translateY(60px) scale(0.6); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-          }
-          
-          @keyframes toast-out {
-            from { opacity: 1; transform: translateY(0) scale(1); }
-            to   { opacity: 0; transform: translateY(60px) scale(0.6); }
-          }
-
-          .toast-icon {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            flex-shrink: 0;
-          }
-          .toast.success .toast-icon { background: #10b981; color: #fff; }
-          .toast.info    .toast-icon { background: #4dabf7; color: #fff; }
-          .toast.error   .toast-icon { background: #ef4444; color: #fff; }
-
-          .toast-msg { font-size: 13px; color: #fff; font-weight: 500; }
-
-          /* --- FOOTER --- */
-          .footer-credits {
-            margin-top: 4rem;
-            padding: 2rem 1rem;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            width: 100%;
-          }
-          .footer-sub {
-            font-size: 0.75rem;
-            margin-top: 4px;
-            opacity: 0.7;
-          }
-
-          /* --- STATES --- */
-          .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 50vh;
-            color: #94a3b8;
-            text-align: center;
-            width: 100%;
-          }
-          .empty-state i { font-size: 2rem; margin-bottom: 12px; }
-          .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #ff6b6b;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            margin-bottom: 12px;
-          }
-          @keyframes spin { to { transform: rotate(360deg); } }
-
-          @media (max-width: 768px) {
-            :root {
-              --pill-height: 56px;
-              --pill-max-width: 90vw;
-            }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 10px; }
-            .container { padding-left: 1.5rem; padding-right: 1.5rem; }
-            .header-pill { top: 14px; width: 92%; padding: 0 1.25rem; }
-            .bottom-nav { width: 92%; bottom: 14px; } /* Igualando mobile top */
-            .nav-pill { padding: 0 1rem; }
-            .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
-            .toast { padding: 0 1rem; height: 44px; }
-          }
-
-          @media (max-width: 480px) {
-            :root {
-              --pill-height: 54px;
-              --pill-max-width: 95vw;
-            }
-            .container { padding-left: 1rem; padding-right: 1rem; }
-            .header-pill { width: 94%; }
-            .bottom-nav { width: 94%; gap: 8px; }
-            .toast-wrap { width: 94%; }
-            .nav-pill { padding: 0 1.25rem; }
-            .nav-btn i { font-size: 19px; }
-            .search-circle i { font-size: 20px; }
-          }
-        `}</style>
       </Head>
 
       <Header 
-        label={headerLabel} 
+        label={scrolled ? tvShow.name : 'Assistindo'} 
         scrolled={scrolled} 
-        showInfo={showInfoPopup} 
-        toggleInfo={togglePopup}
-        infoClosing={infoClosing}
+        goBack={() => router.back()} 
       />
-      
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      <ToastContainer toast={toast} closeToast={() => setToast(null)} />
 
       <main className="container">
-        <h1 className="page-title">{pageTitle}</h1>
-
-        {loading && (searchActive || releases.length === 0) && (
-          <div className="empty-state">
-            <div className="spinner"></div>
-            <span>{searchActive ? 'Buscando...' : 'Carregando...'}</span>
+        
+        {/* HERO / PLAYER TRIGGER */}
+        <div className="hero-section">
+          <div className="hero-wrapper" onClick={() => setShowVideoPlayer(true)}>
+            <div className="hero-backdrop">
+              {backdrop && <img src={backdrop} alt="Cover" />}
+              <div className="hero-overlay"></div>
+              <div className="play-icon-container">
+                <i className="fas fa-play"></i>
+              </div>
+              <div className="hero-content">
+                <span className="hero-tag">S{season} : E{episode}</span>
+                <h2 className="hero-title">{currentEpData?.name || `Episódio ${episode}`}</h2>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
 
-        {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
-          <div className="empty-state">
-            <i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}"</p>
+        {/* CONTROLS & INFO */}
+        <div className="meta-controls">
+          <div className="title-block">
+            <h1 className="show-title">{tvShow.name}</h1>
+            <p className="show-overview">{currentEpData?.overview || tvShow.overview || 'Sem descrição disponível.'}</p>
           </div>
-        )}
-
-        {(searchActive ? searchResults : getActiveItems()).length > 0 && !loading && (
-          <div className="content-grid">
-            {(searchActive ? searchResults : getActiveItems()).map(item => (
-              <MovieCard 
-                key={getItemKey(item)} 
-                item={item} 
-                isFavorite={isFavorite(item)} 
-                toggleFavorite={toggleFavorite} 
-              />
-            ))}
+          
+          <div className="season-select-wrapper">
+            <select value={season} onChange={handleSeasonChange}>
+              {availableSeasons.map(s => (
+                <option key={s.season_number} value={s.season_number}>Temporada {s.season_number}</option>
+              ))}
+            </select>
+            <i className="fas fa-chevron-down select-icon"></i>
           </div>
-        )}
+        </div>
 
-        {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
-          <div className="empty-state"><i className="fas fa-heart"></i><p>Nenhum favorito adicionado ainda.</p></div>
-        )}
+        {/* EPISODES LIST */}
+        <div className="episodes-scroller" ref={episodeListRef}>
+          {seasonDetails?.episodes?.map(ep => (
+            <div 
+              key={ep.episode_number} 
+              className={`episode-card ${ep.episode_number === episode ? 'active' : ''}`}
+              onClick={() => setEpisode(ep.episode_number)}
+            >
+              <div className="ep-poster-frame">
+                {ep.still_path ? (
+                   <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" loading="lazy"/>
+                ) : (
+                   <div className="no-img"><i className="fas fa-video"></i></div>
+                )}
+                <div className="ep-number">{ep.episode_number}</div>
+                {ep.episode_number === episode && <div className="playing-overlay"><i className="fas fa-play"></i></div>}
+              </div>
+              <span className="ep-title">{ep.name}</span>
+            </div>
+          ))}
+        </div>
 
-        <Footer />
       </main>
 
+      {/* VIDEO POPUP OVERLAY */}
+      {showVideoPlayer && (
+        <div className="video-overlay blur-bg" onClick={() => setShowVideoPlayer(false)}>
+          <div className="video-container" onClick={e => e.stopPropagation()}>
+            <div className="video-header">
+              <span>{tvShow.name} - S{season}:E{episode}</span>
+              <button onClick={() => setShowVideoPlayer(false)}><i className="fas fa-times"></i></button>
+            </div>
+            <div className="iframe-wrapper">
+              <iframe src={getPlayerUrl()} allowFullScreen allow="autoplay; encrypted-media"></iframe>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PLAYER SELECTOR POPUP */}
+      {showPlayerSelector && (
+        <>
+          <div className="popup-backdrop" onClick={() => setShowPlayerSelector(false)}></div>
+          <div className="selector-popup">
+            <div className="popup-header">Fonte de Vídeo</div>
+            <button className={`selector-opt ${selectedPlayer === 'superflix' ? 'active' : ''}`} onClick={() => handlePlayerSelect('superflix')}>
+              <i className="fas fa-film"></i>
+              <div>
+                <strong>SuperFlix</strong>
+                <span>Dublado (Lento)</span>
+              </div>
+            </button>
+            <button className={`selector-opt ${selectedPlayer === 'vidsrc' ? 'active' : ''}`} onClick={() => handlePlayerSelect('vidsrc')}>
+              <i className="fas fa-bolt"></i>
+              <div>
+                <strong>VidSrc</strong>
+                <span>Legendado (Rápido)</span>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* INFO POPUP */}
+      {showInfoPopup && (
+        <>
+           <div className="popup-backdrop" onClick={() => setShowInfoPopup(false)}></div>
+           <div className="info-popup-card">
+              <div className="info-header">
+                <img src={`https://image.tmdb.org/t/p/w200${tvShow.poster_path}`} className="info-poster"/>
+                <div className="info-meta-text">
+                  <h3>{tvShow.name}</h3>
+                  <div className="tags">
+                    <span>{tvShow.first_air_date?.split('-')[0]}</span>
+                    <span><i className="fas fa-star" style={{color:'#ffca28', marginRight:4}}></i>{tvShow.vote_average.toFixed(1)}</span>
+                  </div>
+                  <div className="genres">{tvShow.genres?.map(g => g.name).slice(0,2).join(', ')}</div>
+                </div>
+              </div>
+              <p className="info-desc">{tvShow.overview}</p>
+              <button className="close-btn" onClick={() => setShowInfoPopup(false)}>Fechar</button>
+           </div>
+        </>
+      )}
+
       <BottomNav 
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        searchActive={searchActive}
-        setSearchActive={setSearchActive}
-        searchQuery={searchQuery}
-        setSearchQuery={handleSearchChange}
-        onSearchSubmit={debouncedSearch}
-        inputRef={searchInputRef}
+        selectedPlayer={selectedPlayer}
+        togglePlayerMenu={() => setShowPlayerSelector(!showPlayerSelector)}
+        isFavorite={isFavorite}
+        toggleFavorite={toggleFavorite}
+        showInfo={() => setShowInfoPopup(true)}
       />
+
+      <style jsx>{`
+        /* --- GLOBAL VARIABLES & RESET --- */
+        :root {
+          --pill-height: 62px;
+          --pill-radius: 44px;
+          --pill-bg: rgba(35, 35, 35, 0.65);
+          --pill-border: 1px solid rgba(255, 255, 255, 0.15);
+          --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+          --pill-blur: blur(20px);
+          --pill-max-width: 680px;
+          --accent: #ff6b6b;
+          --bg: #000;
+          --text: #f1f5f9;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        button { background: none; border: none; cursor: pointer; color: inherit; }
+        a { text-decoration: none; color: inherit; }
+
+        /* --- LOADING --- */
+        .loading-screen { display: flex; height: 100vh; align-items: center; justify-content: center; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- HEADER --- */
+        .header-pill {
+          position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+          z-index: 100; width: 90%; max-width: var(--pill-max-width); height: var(--pill-height);
+          display: flex; align-items: center; justify-content: space-between; padding: 0 0.8rem;
+          border-radius: var(--pill-radius); border: var(--pill-border); background: var(--pill-bg);
+          backdrop-filter: var(--pill-blur); box-shadow: var(--pill-shadow);
+        }
+        .header-btn-left { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: rgba(255,255,255,0.7); transition: 0.2s; }
+        .header-btn-left:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .header-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+        .header-btn-right-placeholder { width: 44px; }
+
+        /* --- MAIN LAYOUT --- */
+        .container {
+          max-width: 1000px; margin: 0 auto;
+          padding: calc(var(--pill-height) + 30px) 1.5rem 8rem 1.5rem;
+          animation: fade-in 0.5s ease;
+        }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- HERO / PLAYER TRIGGER --- */
+        .hero-section { width: 100%; margin-bottom: 2rem; }
+        .hero-wrapper {
+          position: relative; width: 100%; aspect-ratio: 16/9; max-height: 500px;
+          border-radius: 24px; overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+          cursor: pointer; transition: transform 0.2s;
+        }
+        .hero-wrapper:active { transform: scale(0.98); }
+        .hero-backdrop { width: 100%; height: 100%; position: relative; }
+        .hero-backdrop img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); }
+        .play-icon-container {
+          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          width: 64px; height: 64px; border-radius: 50%;
+          background: rgba(255, 107, 107, 0.9); color: white;
+          display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+          box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+          transition: transform 0.2s; padding-left: 4px;
+        }
+        .hero-wrapper:hover .play-icon-container { transform: translate(-50%, -50%) scale(1.1); }
+        .hero-content { position: absolute; bottom: 0; left: 0; padding: 1.5rem; width: 100%; }
+        .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
+        .hero-title { font-size: 1.5rem; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+        /* --- META & SELECTOR --- */
+        .meta-controls { margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+        .show-title { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+        .show-overview { font-size: 0.9rem; color: #94a3b8; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .season-select-wrapper { position: relative; max-width: 200px; }
+        .season-select-wrapper select {
+          width: 100%; appearance: none;
+          background: rgba(30,30,30,0.8); border: 1px solid rgba(255,255,255,0.15);
+          color: #fff; padding: 10px 16px; border-radius: 12px;
+          font-size: 0.9rem; outline: none; cursor: pointer;
+        }
+        .select-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 0.8rem; color: #94a3b8; }
+
+        /* --- EPISODES LIST --- */
+        .episodes-scroller {
+          display: flex; gap: 14px; overflow-x: auto; padding-bottom: 1rem;
+          scrollbar-width: none;
+        }
+        .episodes-scroller::-webkit-scrollbar { display: none; }
+        
+        .episode-card {
+          flex: 0 0 160px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;
+          transition: opacity 0.2s;
+        }
+        .episode-card:not(.active) { opacity: 0.6; }
+        .episode-card:hover { opacity: 1; }
+        
+        .ep-poster-frame {
+          position: relative; width: 100%; aspect-ratio: 16/9;
+          border-radius: 12px; overflow: hidden; background: #1e1e1e;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .episode-card.active .ep-poster-frame { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2); }
+        
+        .ep-poster-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.2); }
+        .ep-number { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.6); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        
+        .playing-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1.2rem; }
+        
+        .ep-title { font-size: 0.85rem; font-weight: 500; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- BOTTOM NAV --- */
+        .bottom-nav {
+          position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+          width: 90%; max-width: var(--pill-max-width); z-index: 100;
+          display: flex; gap: 12px;
+        }
+        .nav-pill {
+          flex: 1; height: var(--pill-height); background: var(--pill-bg);
+          border: var(--pill-border); border-radius: var(--pill-radius);
+          backdrop-filter: var(--pill-blur); box-shadow: var(--pill-shadow);
+          display: flex; justify-content: space-around; align-items: center;
+        }
+        .nav-btn { font-size: 1.25rem; color: rgba(255,255,255,0.5); width: 100%; height: 100%; transition: 0.2s; }
+        .nav-btn:hover { color: #fff; transform: scale(1.1); }
+        .nav-btn.active-fav { color: var(--accent); }
+        
+        .action-circle {
+          width: var(--pill-height); height: var(--pill-height); flex-shrink: 0;
+          border-radius: 50%; background: var(--pill-bg); border: var(--pill-border);
+          backdrop-filter: var(--pill-blur); box-shadow: var(--pill-shadow);
+          display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+          transition: 0.2s;
+        }
+        .action-circle:active { transform: scale(0.9); }
+
+        /* --- POPUPS & OVERLAYS --- */
+        .popup-backdrop { position: fixed; inset: 0; z-index: 200; }
+        
+        .video-overlay {
+          position: fixed; inset: 0; z-index: 999;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+          animation: fade-in 0.3s;
+        }
+        .video-container { width: 95%; max-width: 1100px; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .video-header { display: flex; justify-content: space-between; padding: 12px 16px; background: #111; font-size: 0.9rem; color: #ccc; }
+        .iframe-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
+        .iframe-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
+        .selector-popup {
+          position: fixed; bottom: calc(20px + var(--pill-height) + 12px); right: 5%;
+          width: 220px; background: rgba(30,30,30,0.95); border: var(--pill-border);
+          backdrop-filter: blur(12px); border-radius: 20px; padding: 10px; z-index: 201;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform-origin: bottom right;
+          animation: pop-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .popup-header { font-size: 0.75rem; color: #888; text-transform: uppercase; padding: 8px 12px; letter-spacing: 1px; }
+        .selector-opt {
+          width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px;
+          border-radius: 12px; text-align: left; transition: 0.2s;
+        }
+        .selector-opt:hover { background: rgba(255,255,255,0.1); }
+        .selector-opt.active { background: rgba(255, 107, 107, 0.15); color: var(--accent); }
+        .selector-opt i { font-size: 1.2rem; }
+        .selector-opt div { display: flex; flex-direction: column; }
+        .selector-opt span { font-size: 0.7rem; opacity: 0.7; }
+
+        .info-popup-card {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          width: 90%; max-width: 400px; background: #1a1a1a; border: var(--pill-border);
+          border-radius: 24px; padding: 24px; z-index: 201; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+          animation: fade-up 0.3s ease;
+        }
+        .info-header { display: flex; gap: 16px; margin-bottom: 16px; }
+        .info-poster { width: 80px; border-radius: 8px; }
+        .info-meta-text h3 { margin-bottom: 6px; line-height: 1.2; }
+        .tags { font-size: 0.85rem; color: #aaa; margin-bottom: 6px; }
+        .genres { font-size: 0.8rem; color: var(--accent); }
+        .info-desc { font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px; max-height: 150px; overflow-y: auto; }
+        .close-btn { width: 100%; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; }
+
+        .toast-wrap { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 300; pointer-events: none; }
+        .toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #1a1a1a; border: 1px solid #333; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: fade-in 0.3s; }
+        .toast-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; }
+        .toast.success .toast-icon { background: #10b981; }
+        .toast.info .toast-icon { background: #3b82f6; }
+        .toast.error .toast-icon { background: #ef4444; }
+        .toast-msg { font-size: 0.9rem; font-weight: 500; }
+
+        @keyframes pop-up { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes fade-up { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+        @media (max-width: 768px) {
+          :root { --pill-height: 56px; }
+          .hero-wrapper { aspect-ratio: 4/3; }
+          .hero-title { font-size: 1.25rem; }
+          .container { padding-left: 1rem; padding-right: 1rem; }
+          .video-container { width: 100%; border-radius: 0; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+          .iframe-wrapper { aspect-ratio: 16/9; width: 100%; }
+        }
+      `}</style>
     </>
   )
 }
