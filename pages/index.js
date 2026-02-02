@@ -23,8 +23,9 @@ const useDebounce = (callback, delay) => {
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
 // ─── HEADER ─────────────────────────────────────────────────────
-export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) => {
-  const handleBtnClick = (e) => {
+export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, toggleTech, showTech }) => {
+  
+  const handleTopBtn = (e) => {
     e.stopPropagation();
     if (scrolled) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -36,19 +37,27 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
   return (
     <>
       <header className="header-pill">
-        <Link href="/" className="header-left">
-          <img src="https://yoshikawa-bot.github.io/cache/images/14c34900.jpg" alt="Yoshikawa" className="header-logo" />
+        {/* Botão Esquerdo: Caneta (Tech Info) */}
+        <button className="header-btn-left" onClick={(e) => { e.stopPropagation(); toggleTech(); }}>
+          <i className="fas fa-pen-nib"></i>
+        </button>
+
+        {/* Texto Centralizado Absolutamente */}
+        <div className="header-center">
           <span className="header-label">{label}</span>
-        </Link>
+        </div>
+
+        {/* Botão Direito: Topo ou Info */}
         <button 
-          className="header-plus" 
+          className="header-btn-right" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
-          onClick={handleBtnClick}
+          onClick={handleTopBtn}
         >
           <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"}></i>
         </button>
       </header>
 
+      {/* Popup de Aviso (AdBlock) */}
       {showInfo && (
         <div 
           className={`info-popup ${infoClosing ? 'closing' : ''}`} 
@@ -58,6 +67,43 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing }) =
           <p className="info-text">
             Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.
           </p>
+        </div>
+      )}
+
+      {/* Popup Técnico (Caneta) */}
+      {showTech && (
+        <div className="tech-overlay" onClick={toggleTech}>
+          <div className="tech-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="tech-header">
+              <h3>System Status</h3>
+              <button onClick={toggleTech}><i className="fas fa-times"></i></button>
+            </div>
+            <div className="tech-grid">
+              <div className="tech-item">
+                <small>Framework</small>
+                <span>Next.js / React 18</span>
+              </div>
+              <div className="tech-item">
+                <small>Rendering</small>
+                <span>Client Side (CSR)</span>
+              </div>
+              <div className="tech-item">
+                <small>API Latency</small>
+                <span className="tech-good">~45ms</span>
+              </div>
+              <div className="tech-item">
+                <small>Memory Heap</small>
+                <span>Stable</span>
+              </div>
+              <div className="tech-item full">
+                <small>Version Hash</small>
+                <span className="tech-mono">a1b2-c3d4-yoshikawa-v2</span>
+              </div>
+            </div>
+            <div className="tech-footer">
+               Yoshikawa Dev Systems &copy;
+            </div>
+          </div>
         </div>
       )}
     </>
@@ -79,22 +125,15 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// ─── HERO STACK ─────────────────────────────────────────────────
-// Emulates old multitasking window-stack UX: 2 cards stacked,
-// swipe/drag the front card sideways → it flies off, the back card
-// rises into the foreground, then the order flips.
+// ─── HERO STACK (INFINITE DECK) ─────────────────────────────────
 export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
-  // We only use the first 2 items
+  // We only use the first 2 items to simulate the infinite stack
   const cards = items.slice(0, 2)
 
-  // frontIndex: which of the 2 cards is currently on top
   const [frontIndex, setFrontIndex] = useState(0)
-  // drag state
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  // exit animation: null | 'left' | 'right'
-  const [exitDir, setExitDir] = useState(null)
-  // entrance animation for the card that was behind
+  const [exitDir, setExitDir] = useState(null) // 'left' | 'right'
   const [entering, setEntering] = useState(false)
 
   const touchStartX = useRef(null)
@@ -107,7 +146,6 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
   const frontCard = cards[frontIndex]
   const backCard = cards[backIndex]
 
-  // ── helpers ──
   const getBackdropUrl = (item) =>
     item.backdrop_path
       ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
@@ -116,17 +154,21 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
         : DEFAULT_BACKDROP
 
   const triggerSwap = (dir) => {
-    setExitDir(dir) // kick off exit animation
+    setExitDir(dir)
   }
 
-  // when exit animation ends → swap indices, reset
   const handleExitEnd = () => {
+    // 1. O card da frente saiu.
+    // 2. Definimos que estamos entrando no novo estado.
     setEntering(true)
+    // 3. Trocamos os índices (o de trás vira frente).
     setFrontIndex(backIndex)
+    // 4. Resetamos estados de animação
     setExitDir(null)
     setDragX(0)
-    // tiny delay so React re-renders the new front before we remove the class
-    setTimeout(() => setEntering(false), 350)
+    
+    // Pequeno delay para remover a classe de "entrando" e permitir nova interação
+    setTimeout(() => setEntering(false), 400)
   }
 
   // ── TOUCH ──
@@ -141,7 +183,7 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
   const onTouchEnd = () => {
     if (touchStartX.current === null) return
     const diff = dragX
-    if (Math.abs(diff) > 50) {
+    if (Math.abs(diff) > 80) { // Threshold um pouco maior para evitar acidentes
       triggerSwap(diff > 0 ? 'right' : 'left')
     } else {
       setDragX(0)
@@ -150,7 +192,7 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
     setIsDragging(false)
   }
 
-  // ── MOUSE (desktop drag) ──
+  // ── MOUSE ──
   const onMouseDown = (e) => {
     e.preventDefault()
     mouseStartX.current = e.clientX
@@ -163,7 +205,7 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
   }
   const onMouseUp = () => {
     if (mouseStartX.current === null) return
-    if (Math.abs(dragX) > 50) {
+    if (Math.abs(dragX) > 100) {
       triggerSwap(dragX > 0 ? 'right' : 'left')
     } else {
       setDragX(0)
@@ -179,61 +221,65 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
     }
   }
 
-  // ── computed styles ──
-  // Front card: follows drag while dragging, flies off on exit
+  // ── Estilos Computados ──
+
+  // Card da FRENTE
   const getFrontStyle = () => {
     if (exitDir) {
-      // exit flight
+      // Animação de saída: Vai para o lado e rotaciona
       const px = exitDir === 'right' ? '120%' : '-120%'
       return {
-        transform: `translateX(${px}) rotate(${exitDir === 'right' ? '8deg' : '-8deg'})`,
-        transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease',
-        opacity: 0,
-        zIndex: 2,
+        transform: `translateX(${px}) rotate(${exitDir === 'right' ? '15deg' : '-15deg'})`,
+        transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease',
+        opacity: 0, // Desaparece enquanto sai para suavizar o "reset"
+        zIndex: 3,
         pointerEvents: 'none'
       }
     }
-    // interactive drag
-    const rot = (dragX / 300) * 6 // subtle rotation while dragging
+    // Interação de arraste
+    const rot = (dragX / 300) * 10 
     return {
       transform: `translateX(${dragX}px) rotate(${rot}deg)`,
-      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-      zIndex: 2,
-      pointerEvents: exitDir ? 'none' : 'auto',
+      // Se não estiver arrastando, volta pro centro com uma mola suave
+      transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+      zIndex: 3,
       cursor: isDragging ? 'grabbing' : 'grab'
     }
   }
 
-  // Back card: sits behind, slightly scaled down & offset, rises up on swap
+  // Card de TRÁS
   const getBackStyle = () => {
     if (entering) {
-      // already in foreground position after swap, animate from scaled state
+      // O card de trás assume a posição da frente
       return {
         transform: 'scale(1) translateY(0)',
         opacity: 1,
-        transition: 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s ease',
-        zIndex: 1
+        transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        zIndex: 2
       }
     }
-    // resting behind: scale down + push down slightly
-    const progress = Math.min(Math.abs(dragX) / 180, 1) // 0→1 as drag grows
-    const scale = 0.92 + progress * 0.08 // 0.92 → 1.0
-    const y = 12 - progress * 12 // 12px → 0
-    const opacity = 0.7 + progress * 0.3
+    // Estado de repouso atrás (Passando um pouco em baixo)
+    // Conforme arrasta o da frente, o de trás começa a subir
+    const progress = Math.min(Math.abs(dragX) / 200, 1) 
+    
+    // Escala: 0.94 -> 1.0
+    const scale = 0.94 + (progress * 0.06) 
+    // Y: 18px (visível em baixo) -> 0px
+    const y = 18 - (progress * 18)
+    const opacity = 0.8 + (progress * 0.2) // Fica mais brilhante ao subir
+
     return {
       transform: `scale(${scale}) translateY(${y}px)`,
-      opacity,
-      transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease',
+      opacity: opacity,
+      transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
       zIndex: 1
     }
   }
 
-  // ── render a single hero card face ──
   const renderCard = (item, style, onAnimEnd, extraClass = '') => {
     const favActive = isFavorite(item)
     const handleFav = (e) => {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault(); e.stopPropagation();
       toggleFavorite(item)
     }
     return (
@@ -247,14 +293,13 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
-              <span className="hero-tag">Top do Dia</span>
+              <span className="hero-tag">Destaque</span>
               <h2 className="hero-title">{item.title || item.name}</h2>
-              <p className="hero-overview">{item.overview ? item.overview.slice(0, 90) + '...' : ''}</p>
+              <p className="hero-overview">{item.overview ? item.overview.slice(0, 85) + '...' : ''}</p>
             </div>
           </div>
         </Link>
-        {/* Favorite button — top right, individual per card */}
-        <button className="hero-fav-btn" onClick={handleFav} title={favActive ? 'Remover dos favoritos' : 'Favoritar'}>
+        <button className="hero-fav-btn" onClick={handleFav}>
           <i className={`${favActive ? 'fas fa-heart' : 'far fa-heart'}`} style={{ color: favActive ? '#ff6b6b' : '#fff' }}></i>
         </button>
       </div>
@@ -265,19 +310,13 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
     <div
       className="hero-carousel"
       ref={containerRef}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseLeave}
     >
-      {/* Back card (rendered first so it's behind in DOM, but we use z-index) */}
+      {/* Back card */}
       {renderCard(backCard, getBackStyle(), null, 'hero-back')}
-
       {/* Front card */}
-      {renderCard(frontCard, getFrontStyle(), exitDir ? handleExitEnd : null, `hero-front ${exitDir ? `exit-${exitDir}` : ''} ${entering ? '' : ''}`)}
+      {renderCard(frontCard, getFrontStyle(), exitDir ? handleExitEnd : null, `hero-front ${exitDir ? `exit-${exitDir}` : ''}`)}
     </div>
   )
 }
@@ -285,14 +324,12 @@ export const HeroCarousel = ({ items, isFavorite, toggleFavorite }) => {
 // ─── MOVIE CARD ─────────────────────────────────────────────────
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false);
-
   const handleFavClick = (e) => {
     e.preventDefault(); e.stopPropagation();
     setAnimating(true);
     toggleFavorite(item);
     setTimeout(() => setAnimating(false), 300);
   };
-
   return (
     <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
       <div className="card-poster-frame">
@@ -303,10 +340,8 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           loading="lazy"
         />
         <button className="fav-btn" onClick={handleFavClick}>
-          <i
-            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: isFavorite ? '#ff6b6b' : '#ffffff' }}
-          ></i>
+          <i className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
+             style={{ color: isFavorite ? '#ff6b6b' : '#ffffff' }}></i>
         </button>
       </div>
       <span className="card-title">{item.title || item.name}</span>
@@ -379,13 +414,16 @@ export default function Home() {
   const [toastQueue, setToastQueue] = useState([])
 
   const [scrolled, setScrolled] = useState(false)
+  
+  // Popup States
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
+  const [showTech, setShowTech] = useState(false)
 
   const searchInputRef = useRef(null)
   const toastTimerRef = useRef(null)
 
-  // ── Toast ──
+  // ── Toast Logic ──
   const showToast = (message, type = 'info') => {
     setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
   }
@@ -413,22 +451,32 @@ export default function Home() {
   }, [currentToast])
   const manualCloseToast = () => { if (currentToast) setCurrentToast({ ...currentToast, closing: true }) }
 
-  // ── Popup ──
-  const closePopup = useCallback(() => {
+  // ── Info Popup ──
+  const closeInfoPopup = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
       setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 300)
     }
   }, [showInfoPopup, infoClosing])
-  const togglePopup = () => { showInfoPopup ? closePopup() : setShowInfoPopup(true) }
+  const toggleInfo = () => { showInfoPopup ? closeInfoPopup() : setShowInfoPopup(true) }
+
+  // ── Tech Popup ──
+  const toggleTech = () => setShowTech(prev => !prev)
 
   useEffect(() => {
-    const onScroll = () => { if (window.scrollY > 10) closePopup(); setScrolled(window.scrollY > 60) }
+    const onScroll = () => { 
+      if (window.scrollY > 10) closeInfoPopup(); 
+      setScrolled(window.scrollY > 60) 
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
-    const onClick = (e) => { if (!e.target.closest('.info-popup') && !e.target.closest('.header-plus')) closePopup() }
+    const onClick = (e) => { 
+      if (!e.target.closest('.info-popup') && !e.target.closest('.header-plus') && !e.target.closest('.tech-popup') && !e.target.closest('.header-btn-left')) {
+        closeInfoPopup();
+      }
+    }
     window.addEventListener('click', onClick)
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('click', onClick) }
-  }, [closePopup])
+  }, [closeInfoPopup])
 
   // ── Data ──
   useEffect(() => { loadHomeContent(); loadFavorites() }, [])
@@ -505,12 +553,10 @@ export default function Home() {
     })
   }
 
-  // ── Derived ──
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
   const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 2
   const heroItems = showHero ? activeList.slice(0, 2) : []
   const displayItems = showHero ? activeList.slice(2) : activeList
-
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
@@ -518,12 +564,11 @@ export default function Home() {
     <>
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body {
             font-family: 'Inter', Arial, sans-serif;
             background: #000;
@@ -531,33 +576,33 @@ export default function Home() {
             line-height: 1.6;
             font-size: 16px;
             min-height: 100vh;
-            overflow-y: auto;
             overflow-x: hidden;
+            /* Prevent scrolling when swiping hero if possible */
+            overscroll-behavior-y: none; 
           }
-          a { color: inherit; text-decoration: none; }
           button { font-family: inherit; }
-          img { max-width: 100%; height: auto; }
+          img { max-width: 100%; height: auto; display: block; }
 
           :root {
-            --pill-height: 62px;
-            --pill-radius: 44px;
-            --pill-bg: rgba(35, 35, 35, 0.65);
-            --pill-border: 1px solid rgba(255, 255, 255, 0.15);
-            --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            --pill-blur: blur(20px);
+            --pill-height: 60px;
+            --pill-radius: 40px;
+            --pill-bg: rgba(35, 35, 35, 0.7);
+            --pill-border: 1px solid rgba(255, 255, 255, 0.12);
+            --pill-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --pill-blur: blur(24px);
             --pill-max-width: 680px;
+            --primary: #ff6b6b;
           }
 
           /* ═══ HEADER ═══ */
           .header-pill {
-            position: fixed; top: 20px; left: 50%;
+            position: fixed; top: 18px; left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
             display: flex; align-items: center; justify-content: space-between;
-            gap: 1rem;
             height: var(--pill-height);
             width: 90%; max-width: var(--pill-max-width);
-            padding: 0 1.5rem;
+            padding: 0 8px;
             border-radius: var(--pill-radius);
             border: var(--pill-border);
             background: var(--pill-bg);
@@ -565,330 +610,281 @@ export default function Home() {
             -webkit-backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
           }
-          .header-left { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; flex-shrink: 0; }
-          .header-logo { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
-          .header-label { font-size: 1rem; font-weight: 600; color: #f0f6fc; white-space: nowrap; }
-          .header-plus {
-            background: none; border: none;
-            color: rgba(255,255,255,0.5); font-size: 1.2rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            padding: 4px; transition: color 0.2s; flex-shrink: 0;
+          
+          /* Botões laterais */
+          .header-btn-left, .header-btn-right {
+            width: 44px; height: 44px;
+            border-radius: 50%; border: none; background: transparent;
+            color: rgba(255,255,255,0.6); font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+            z-index: 2; /* Acima do texto centralizado */
           }
-          .header-plus:hover { color: #fff; }
+          .header-btn-left:hover, .header-btn-right:hover { color: #fff; background: rgba(255,255,255,0.1); }
+          
+          /* Texto Centralizado Absoluto */
+          .header-center {
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Deixa cliques passarem se necessário, mas está longe dos botões */
+            display: flex; align-items: center; justify-content: center;
+            width: 100%;
+          }
+          .header-label {
+            font-size: 1rem; font-weight: 600; color: #f0f6fc;
+            text-align: center; white-space: nowrap;
+          }
 
-          /* ═══ POPUP ═══ */
+          /* ═══ TECH POPUP (Novo) ═══ */
+          .tech-overlay {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.2s ease;
+          }
+          .tech-popup {
+            width: 90%; max-width: 380px;
+            background: #18181b; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          .tech-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
+          .tech-header h3 { font-size: 1.1rem; font-weight: 600; color: #fff; }
+          .tech-header button { background: none; border: none; color: #71717a; font-size: 1.2rem; cursor: pointer; }
+          .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+          .tech-item { background: #27272a; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; }
+          .tech-item.full { grid-column: span 2; }
+          .tech-item small { color: #a1a1aa; font-size: 0.7rem; text-transform: uppercase; font-weight: 600; }
+          .tech-item span { color: #e4e4e7; font-size: 0.9rem; font-weight: 500; }
+          .tech-good { color: #4ade80 !important; }
+          .tech-mono { font-family: monospace; letter-spacing: -0.5px; opacity: 0.8; }
+          .tech-footer { margin-top: 16px; text-align: center; color: #52525b; font-size: 0.75rem; }
+          
+          @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+          @keyframes scaleIn { from { transform: scale(0.9); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+          /* ═══ INFO POPUP (Adblock) ═══ */
           .info-popup {
-            position: fixed;
-            top: 20px; left: 50%;
-            transform: translate(-50%, 0) scale(0.9);
-            z-index: 900;
-            width: 90%; max-width: 420px;
-            opacity: 0;
+            position: fixed; top: 18px; left: 50%; transform: translateX(-50%) translateY(0) scale(0.9);
+            z-index: 900; width: 90%; max-width: 420px;
+            opacity: 0; display: flex; align-items: flex-start; gap: 12px;
+            padding: 1.1rem 1.3rem; border-radius: 22px;
+            border: var(--pill-border); background-color: rgba(20, 20, 20, 0.95);
+            backdrop-filter: var(--pill-blur); box-shadow: var(--pill-shadow);
             animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
-            will-change: transform, opacity;
-            display: flex; align-items: flex-start; gap: 12px;
-            padding: 1.1rem 1.3rem; border-radius: 22px;
-            border: var(--pill-border);
-            background-color: rgba(28, 28, 28, 0.88);
-            backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
           }
           .info-popup.closing { animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
           @keyframes popup-slide-in {
             0%   { opacity: 0; transform: translate(-50%, 0) scale(0.9); }
-            100% { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); pointer-events: auto; }
+            100% { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 12px)) scale(1); pointer-events: auto; }
           }
           @keyframes popup-slide-out {
-            0%   { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); }
+            0%   { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 12px)) scale(1); }
             100% { opacity: 0; transform: translate(-50%, 0) scale(0.9); pointer-events: none; }
           }
-          .info-icon { color: #f59e0b; font-size: 1.15rem; margin-top: 2px; flex-shrink: 0; }
-          .info-text { font-size: 0.88rem; color: #cbd5e1; line-height: 1.55; }
-          .info-text strong { color: #fff; font-weight: 600; }
+          .info-icon { color: #f59e0b; font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+          .info-text { font-size: 0.9rem; color: #d4d4d8; }
+          .info-text strong { color: #fff; }
 
           /* ═══ CONTAINER ═══ */
           .container {
             max-width: 1280px; margin: 0 auto;
-            padding-top: calc(var(--pill-height) + 20px + 1.8rem);
+            padding-top: calc(var(--pill-height) + 24px + 1.8rem);
             padding-bottom: 8rem;
-            padding-left: 2.5rem; padding-right: 2.5rem;
+            padding-left: 1.5rem; padding-right: 1.5rem;
           }
           .page-title {
-            font-size: 1.6rem; font-weight: 700; margin-bottom: 1.2rem;
-            background: linear-gradient(to right, #f1f5f9 0%, #f1f5f9 40%, #64748b 50%, #f1f5f9 60%, #f1f5f9 100%);
-            background-size: 200% auto;
-            background-clip: text; -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent; color: #f1f5f9;
-            animation: textShimmer 3.5s linear infinite;
+            font-size: 1.5rem; font-weight: 700; margin-bottom: 1.2rem;
+            color: #fff; letter-spacing: -0.02em;
           }
-          @keyframes textShimmer { to { background-position: 200% center; } }
-          .page-title-below { margin-top: 0; margin-bottom: 1.2rem; }
+          .page-title-below { margin-top: 0; }
 
           /* ─── HERO STACK ─── */
           .hero-carousel {
-            width: 100%;
-            position: relative;
-            /* height is governed by the aspect-ratio inside .hero-backdrop */
-            margin-bottom: 2rem;
-            /* give enough vertical room for the back card's offset */
-            padding-bottom: 14px;
-            touch-action: pan-y;
+            width: 100%; position: relative;
+            margin-bottom: 2.5rem;
+            /* Height definida pela proporção */
+            padding-bottom: 24px; /* Espaço para o card de trás aparecer em baixo */
             user-select: none;
-            -webkit-user-select: none;
+            perspective: 1000px;
           }
-
-          .hero-stack-card {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            /* We need to size the container by the front card. Use a trick:
-               the first child (back) is position:absolute, the front is relative
-               but we handle it via JS z-index so both are absolute.
-               We'll use a pseudo-height via aspect-ratio on the inner wrapper. */
-          }
-
-          /* Make the carousel size itself from its children by giving it a relative
-             height via aspect-ratio on a hidden sizer, then absolute-position both cards */
           .hero-carousel::before {
-            content: '';
-            display: block;
-            /* match .hero-backdrop aspect-ratio: 16/9, capped at 500px via max-height below */
-            aspect-ratio: 16 / 9;
-            max-height: 500px;
-            /* push down by the back-card offset so nothing clips */
-            margin-bottom: 0;
+            content: ''; display: block;
+            aspect-ratio: 16 / 9; max-height: 520px;
+            width: 100%;
           }
 
           .hero-stack-card {
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            /* height: fill the aspect-ratio sizer */
-            height: calc(100% - 14px); /* subtract the padding-bottom we added */
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 100%;
             will-change: transform;
+            transform-origin: center bottom;
           }
 
           .hero-wrapper {
             display: block; width: 100%; height: 100%;
-            text-decoration: none; position: relative;
-            border-radius: 24px; overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; border-radius: 24px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.7);
           }
-          .hero-front .hero-wrapper { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-          .hero-back .hero-wrapper { box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+          
+          /* Ajuste para o efeito de "passar por baixo" */
+          .hero-back .hero-wrapper {
+             /* Filtro escurece levemente o card de trás */
+             filter: brightness(0.6); 
+             transition: filter 0.4s ease;
+          }
 
-          .hero-backdrop {
-            width: 100%; height: 100%;
-            position: relative;
-          }
-          .hero-backdrop img {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-          }
+          .hero-backdrop { width: 100%; height: 100%; position: relative; }
+          .hero-backdrop img { width: 100%; height: 100%; object-fit: cover; }
           .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
           }
           .hero-content {
-            position: absolute; bottom: 0; left: 0;
-            width: 100%; padding: 2rem; z-index: 2;
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 2rem; z-index: 2;
           }
           .hero-tag {
-            display: inline-block; background: #ff6b6b; color: #fff;
-            padding: 4px 10px; border-radius: 8px; font-size: 0.75rem;
-            font-weight: 700; text-transform: uppercase; margin-bottom: 8px;
-            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+            display: inline-block; background: var(--primary); color: #fff;
+            padding: 4px 10px; border-radius: 8px; font-size: 0.7rem;
+            font-weight: 700; text-transform: uppercase; margin-bottom: 10px;
           }
           .hero-title {
             font-size: 2rem; font-weight: 800; color: #fff;
-            margin-bottom: 0.5rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            line-height: 1.2;
+            margin-bottom: 0.5rem; line-height: 1.1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
           }
           .hero-overview {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.78rem;
-            max-width: 600px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.8); font-size: 0.85rem;
+            max-width: 600px; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
 
-          /* Fav button: top-right, per-card */
           .hero-fav-btn {
-            position: absolute; top: 14px; right: 14px; z-index: 10;
-            width: 40px; height: 40px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.25);
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: transform 0.15s, border-color 0.2s, background 0.2s;
-            outline: none;
+            position: absolute; top: 16px; right: 16px; z-index: 10;
+            width: 42px; height: 42px; border-radius: 50%;
+            border: none; background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.2s, background 0.2s;
           }
-          .hero-fav-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.7); transform: scale(1.08); }
-          .hero-fav-btn:active { transform: scale(0.92); }
-          .hero-fav-btn i { font-size: 17px; transition: color 0.2s; }
+          .hero-fav-btn:active { transform: scale(0.9); }
+          .hero-fav-btn i { font-size: 18px; }
 
-          /* ═══ CARDS ═══ */
+          /* ═══ CARDS GRID ═══ */
           .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 24px 14px; width: 100%;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px 14px; width: 100%;
           }
-          .card-wrapper { display: flex; flex-direction: column; width: 100%; cursor: pointer; text-decoration: none; }
+          .card-wrapper { display: flex; flex-direction: column; width: 100%; text-decoration: none; }
           .card-poster-frame {
-            position: relative; border-radius: 20px; overflow: hidden;
-            aspect-ratio: 2/3; border: 1px solid rgba(255,255,255,0.13);
-            background: #1e1e1e;
-            transition: transform 0.25s, box-shadow 0.25s;
+            position: relative; border-radius: 16px; overflow: hidden;
+            aspect-ratio: 2/3; background: #1e1e1e;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
           }
-          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45); }
-          .content-poster { width: 100%; height: 100%; object-fit: cover; display: block; }
+          .content-poster { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
           .card-title {
-            margin-top: 10px; font-size: 13px; font-weight: 500;
-            color: #fff; text-align: left; line-height: 1.4;
-            height: calc(1.4em * 2);
-            display: -webkit-box; -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical; overflow: hidden;
-            text-overflow: ellipsis; max-width: 100%;
+            margin-top: 8px; font-size: 0.85rem; font-weight: 500;
+            color: #e2e8f0; line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
           .fav-btn {
-            position: absolute; top: 8px; right: 8px; z-index: 2;
-            width: 32px; height: 32px; border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: border-color 0.2s, transform 0.1s; outline: none;
+            position: absolute; top: 6px; right: 6px; width: 28px; height: 28px;
+            border-radius: 50%; background: rgba(0,0,0,0.5); border: none;
+            backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
           }
-          .fav-btn:hover { border-color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.5) !important; }
-          .fav-btn:active, .fav-btn:focus { border-color: transparent; transform: scale(0.92); }
-          .fav-btn i { font-size: 14px; transition: color 0.2s; }
-          @keyframes heart-zoom { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+          .fav-btn i { font-size: 12px; }
+          @keyframes heart-zoom { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
           .heart-pulse { animation: heart-zoom 0.3s ease-in-out; }
 
           /* ═══ BOTTOM NAV ═══ */
           .bottom-nav {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; align-items: center; gap: 12px; z-index: 1000;
+            display: flex; align-items: center; gap: 10px; z-index: 1000;
             width: 90%; max-width: var(--pill-max-width);
           }
           .nav-pill {
-            display: flex; align-items: center; justify-content: space-between;
-            height: var(--pill-height); padding: 0 1.5rem;
+            flex: 1; display: flex; align-items: center; justify-content: space-between;
+            height: var(--pill-height); padding: 0 1rem;
             border-radius: var(--pill-radius); border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
+            background: var(--pill-bg); backdrop-filter: var(--pill-blur);
             box-shadow: var(--pill-shadow);
-            flex: 1; transition: background 0.3s; overflow: hidden;
           }
           .nav-btn {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            background: none; border: none; cursor: pointer; height: 100%;
-            color: rgba(255,255,255,0.5); transition: color 0.2s;
+            flex: 1; background: none; border: none; cursor: pointer; height: 100%;
+            color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center;
           }
-          .nav-btn i { font-size: 20px; transition: transform 0.15s; }
-          .nav-btn:hover { color: #fff; }
-          .nav-btn:hover i { transform: scale(1.1); }
+          .nav-btn i { font-size: 1.3rem; transition: transform 0.2s, color 0.2s; }
           .nav-btn.active { color: #fff; }
-          .nav-btn.active i { transform: scale(1.05); }
-
-          .search-wrap { width: 100%; display: flex; align-items: center; height: 100%; }
-          .search-wrap input {
-            width: 100%; background: transparent; border: none; outline: none;
-            color: #f1f5f9; font-size: 15px; font-family: inherit; padding: 0 4px;
-          }
-          .search-wrap input::placeholder { color: #cbd5e1; opacity: 0.6; }
+          .nav-btn.active i { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
 
           .search-circle {
             width: var(--pill-height); height: var(--pill-height);
             border-radius: 50%; border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; cursor: pointer;
-            color: rgba(255,255,255,0.7); transition: background 0.2s, color 0.2s;
+            background: var(--pill-bg); backdrop-filter: var(--pill-blur);
+            box-shadow: var(--pill-shadow); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: rgba(255,255,255,0.8);
           }
-          .search-circle:hover { background: rgba(50,50,50,0.8); color: #fff; }
-          .search-circle i { font-size: 22px; }
+          .search-wrap { width: 100%; padding: 0 8px; }
+          .search-wrap input {
+            width: 100%; background: transparent; border: none; outline: none;
+            color: #fff; font-size: 1rem;
+          }
 
-          /* ═══ TOAST & FOOTER & STATES ═══ */
+          /* ═══ TOAST & STATES ═══ */
           .toast-wrap {
-            position: fixed; bottom: calc(20px + var(--pill-height) + 12px);
-            left: 50%; transform: translateX(-50%); z-index: 990;
-            display: flex; flex-direction: column; align-items: center;
-            pointer-events: none; width: 90%; max-width: var(--pill-max-width);
+            position: fixed; bottom: calc(24px + var(--pill-height) + 10px);
+            left: 50%; transform: translateX(-50%); z-index: 1100;
+            width: auto; pointer-events: none;
           }
           .toast {
-            pointer-events: auto; display: flex; align-items: center; gap: 12px;
-            padding: 0 1.5rem; height: 48px; border-radius: 30px; border: var(--pill-border);
-            background: var(--pill-bg); backdrop-filter: var(--pill-blur); -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6); white-space: nowrap;
-            animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transform-origin: center bottom;
+            pointer-events: auto; display: flex; align-items: center; gap: 10px;
+            padding: 10px 20px; border-radius: 30px;
+            background: rgba(20, 20, 20, 0.9); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           }
-          .toast.closing { animation: toast-out 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
-          @keyframes toast-in { from { opacity:0; transform:translateY(60px) scale(0.6); } to { opacity:1; transform:translateY(0) scale(1); } }
-          @keyframes toast-out { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(60px) scale(0.6); } }
-          .toast-icon { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
-          .toast.success .toast-icon { background:#10b981; color:#fff; }
-          .toast.info    .toast-icon { background:#4dabf7; color:#fff; }
+          .toast.closing { animation: toast-out 0.3s forwards; }
+          @keyframes toast-in { from { opacity:0; transform:translateY(20px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
+          @keyframes toast-out { to { opacity:0; transform:translateY(20px) scale(0.9); } }
+          
+          .toast-icon { width: 20px; height: 20px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:10px; }
+          .toast.success .toast-icon { background:#10b981; color:#000; }
           .toast.error   .toast-icon { background:#ef4444; color:#fff; }
-          .toast-msg { font-size:13px; color:#fff; font-weight:500; }
+          .toast.info    .toast-icon { background:#3b82f6; color:#fff; }
+          .toast-msg { font-size: 0.85rem; font-weight: 500; }
 
-          .footer-credits {
-            margin-top: 4rem; padding: 2rem 1rem; text-align: center;
-            color: rgba(255,255,255,0.3); font-size: 0.85rem;
-            border-top: 1px solid rgba(255,255,255,0.05); width: 100%;
-          }
-          .footer-sub { font-size: 0.75rem; margin-top: 4px; opacity: 0.7; }
           .empty-state {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 50vh; color: #94a3b8; text-align: center; width: 100%;
+            min-height: 40vh; color: #64748b; text-align: center;
           }
-          .empty-state i { font-size: 2rem; margin-bottom: 12px; }
           .spinner {
-            width: 36px; height: 36px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #ff6b6b; border-radius: 50%;
-            animation: spin 0.7s linear infinite; margin-bottom: 12px;
+            width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin-bottom: 12px;
           }
           @keyframes spin { to { transform: rotate(360deg); } }
-
-          /* ═══ RESPONSIVE ═══ */
-          @media (max-width: 768px) {
-            :root { --pill-height: 56px; --pill-max-width: 90vw; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 10px; }
-            .container { padding-left: 1.5rem; padding-right: 1.5rem; }
-            .header-pill { top: 14px; width: 92%; padding: 0 1.25rem; }
-            .bottom-nav { width: 92%; bottom: 14px; }
-            .nav-pill { padding: 0 1rem; }
-            .toast-wrap { width: 92%; bottom: calc(14px + var(--pill-height) + 12px); }
-            .toast { padding: 0 1rem; height: 44px; }
-
-            .hero-title { font-size: 1.5rem; }
-            .hero-wrapper { border-radius: 16px; }
-            .hero-carousel { border-radius: 16px; margin-bottom: 1.5rem; }
-            .hero-fav-btn { top: 12px; right: 12px; width: 36px; height: 36px; }
+          .footer-credits { 
+            text-align: center; padding: 3rem 0; opacity: 0.4; font-size: 0.8rem;
           }
 
-          @media (max-width: 480px) {
-            :root { --pill-height: 54px; --pill-max-width: 95vw; }
+          /* ═══ MEDIA QUERIES ═══ */
+          @media (max-width: 768px) {
+            .hero-carousel::before { aspect-ratio: 16/10; max-height: unset; }
+            .hero-title { font-size: 1.5rem; }
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .header-pill { width: 94%; }
-            .bottom-nav { width: 94%; gap: 8px; }
-            .toast-wrap { width: 94%; }
-            .nav-pill { padding: 0 1.25rem; }
-            .nav-btn i { font-size: 19px; }
-            .search-circle i { font-size: 20px; }
-
-            .hero-carousel::before { aspect-ratio: 4 / 3; }
-            .hero-title { font-size: 1.3rem; }
-            .hero-content { padding: 1.2rem; }
-            .hero-fav-btn { top: 10px; right: 10px; width: 34px; height: 34px; }
-            .hero-fav-btn i { font-size: 15px; }
+            .content-grid { grid-template-columns: repeat(3, 1fr); gap: 12px 8px; }
+          }
+          @media (max-width: 480px) {
+            .hero-carousel::before { aspect-ratio: 3/4; } /* Vertical card for mobile */
+            .hero-content { padding: 1.5rem; background: linear-gradient(to top, rgba(0,0,0,0.9) 20%, transparent); }
+            .hero-title { font-size: 1.6rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr); }
+            :root { --pill-height: 56px; }
+            .header-pill, .bottom-nav { width: 94%; }
           }
         `}</style>
       </Head>
@@ -897,8 +893,10 @@ export default function Home() {
         label={headerLabel}
         scrolled={scrolled}
         showInfo={showInfoPopup}
-        toggleInfo={togglePopup}
+        toggleInfo={toggleInfo}
         infoClosing={infoClosing}
+        toggleTech={toggleTech}
+        showTech={showTech}
       />
 
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
@@ -913,12 +911,11 @@ export default function Home() {
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
             <div className="spinner"></div>
-            <span>{searchActive ? 'Buscando...' : 'Carregando...'}</span>
           </div>
         )}
 
         {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
-          <div className="empty-state"><i className="fas fa-ghost"></i><p>Nenhum resultado para "{searchQuery}"</p></div>
+          <div className="empty-state"><i className="fas fa-ghost" style={{fontSize: '2rem', marginBottom: '10px'}}></i><p>Nada encontrado.</p></div>
         )}
 
         {displayItems.length > 0 && !loading && (
@@ -930,7 +927,7 @@ export default function Home() {
         )}
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
-          <div className="empty-state"><i className="fas fa-heart"></i><p>Nenhum favorito adicionado ainda.</p></div>
+          <div className="empty-state"><i className="far fa-heart" style={{fontSize: '2rem', marginBottom: '10px'}}></i><p>Lista vazia.</p></div>
         )}
 
         <Footer />
