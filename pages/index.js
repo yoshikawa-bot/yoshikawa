@@ -482,8 +482,8 @@ export default function Home() {
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
   const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 0
-  const heroItem = showHero ? activeList[0] : null
-  const displayItems = showHero ? activeList.slice(1) : activeList
+  const heroItem = showHero ? (activeSection === 'releases' ? (releases.length > 0 ? releases[0] : null) : (recommendations.length > 0 ? recommendations[0] : null)) : null
+  const displayItems = showHero ? (activeSection === 'releases' ? releases.slice(1) : recommendations.slice(1)) : activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
@@ -569,6 +569,10 @@ export default function Home() {
           
           .header-btn-left:active, .header-btn-right:active {
             transform: scale(0.95);
+          }
+          
+          .header-btn-left, .header-btn-right {
+            transform: scale(1);
           }
 
           .header-center {
@@ -702,6 +706,7 @@ export default function Home() {
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateY(0);
           }
           
           .hero-wrapper:hover {
@@ -721,6 +726,7 @@ export default function Home() {
             object-fit: cover; 
             display: block;
             transition: transform 0.3s ease;
+            transform: scale(1);
           }
           
           .hero-wrapper:hover .hero-backdrop img {
@@ -798,6 +804,7 @@ export default function Home() {
             border: 1px solid rgba(255,255,255,0.13);
             background: #1e1e1e;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateY(0);
           }
           
           .card-wrapper:hover .card-poster-frame { 
@@ -811,6 +818,7 @@ export default function Home() {
             object-fit: cover; 
             display: block; 
             transition: transform 0.3s ease;
+            transform: scale(1);
           }
           
           .card-wrapper:hover .content-poster {
@@ -851,6 +859,7 @@ export default function Home() {
             cursor: pointer; 
             transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease; 
             outline: none;
+            transform: scale(1);
           }
           
           .fav-btn:hover { 
@@ -875,7 +884,8 @@ export default function Home() {
           }
           
           .heart-pulse { 
-            animation: heart-zoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            animation: heart-zoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(1);
           }
 
           .bottom-nav {
@@ -923,7 +933,8 @@ export default function Home() {
           
           .nav-btn i { 
             font-size: 20px; 
-            transition: transform 0.2s ease; 
+            transition: transform 0.2s ease;
+            transform: scale(1);
           }
           
           .nav-btn:hover { 
@@ -981,6 +992,7 @@ export default function Home() {
             cursor: pointer;
             color: rgba(255,255,255,0.7); 
             transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+            transform: scale(1);
           }
           
           .search-circle:hover { 
