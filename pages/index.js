@@ -22,7 +22,6 @@ const useDebounce = (callback, delay) => {
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-// --- HEADER (Topo) ---
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
     e.stopPropagation()
@@ -41,7 +40,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
-          <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
+          <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
         </button>
 
         <div className="pill-container glass-panel">
@@ -53,20 +52,22 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"} style={{ fontSize: '14px' }}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
-      {/* Popups */}
       {showInfo && (
         <div 
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-shield-halved info-icon"></i>
-          <p className="info-text">
-            Use <strong>Brave</strong> ou <strong>AdBlock</strong>.
-          </p>
+          <div className="popup-icon-wrapper">
+            <i className="fas fa-shield-halved"></i>
+          </div>
+          <div className="popup-content">
+            <p className="popup-title">Proteção Recomendada</p>
+            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
+          </div>
         </div>
       )}
 
@@ -75,13 +76,12 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
-          <div className="info-text">
-            <strong>Tech Data</strong>
-            <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
-              <li>v2.6.0 Slim</li>
-              <li>React 18 / TMDB</li>
-            </ul>
+          <div className="popup-icon-wrapper tech">
+            <i className="fas fa-microchip"></i>
+          </div>
+          <div className="popup-content">
+            <p className="popup-title">Informações Técnicas</p>
+            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
           </div>
         </div>
       )}
@@ -89,7 +89,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
-// --- NAVBAR (Inferior) ---
 export const BottomNav = ({
   activeSection, setActiveSection,
   searchActive, setSearchActive,
@@ -159,10 +158,13 @@ export const ToastContainer = ({ toast, closeToast }) => {
   return (
     <div className="toast-wrap">
       <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
-        <div className="toast-icon">
-          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
+        <div className="toast-icon-wrapper">
+          <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
         </div>
-        <div className="toast-msg">{toast.message}</div>
+        <div className="toast-content">
+          <div className="toast-title">{toast.type === 'success' ? 'Sucesso' : toast.type === 'error' ? 'Erro' : 'Info'}</div>
+          <div className="toast-msg">{toast.message}</div>
+        </div>
       </div>
     </div>
   )
@@ -313,11 +315,11 @@ export default function Home() {
   const closePopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
-      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 300)
+      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
     }
     if (showTechPopup && !techClosing) {
       setTechClosing(true)
-      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 300)
+      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
     }
   }, [showInfoPopup, infoClosing, showTechPopup, techClosing])
 
@@ -482,7 +484,7 @@ export default function Home() {
       
       if (exists) { 
         updated = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
-        showToast('Removido', 'info') 
+        showToast('Removido dos favoritos', 'info') 
       } else { 
         updated = [...prev, { 
           id: item.id, 
@@ -490,13 +492,13 @@ export default function Home() {
           title: item.title || item.name, 
           poster_path: item.poster_path 
         }]
-        showToast('Adicionado', 'success') 
+        showToast('Adicionado aos favoritos', 'success') 
       }
       
       try { 
         localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) 
       } catch { 
-        showToast('Erro ao salvar', 'error') 
+        showToast('Erro ao salvar favoritos', 'error') 
       }
       
       return updated
@@ -544,7 +546,6 @@ export default function Home() {
             --ios-blue: #0A84FF;
           }
 
-          /* --- SIMPLE GLASS (blur comum, sem SVG pesado) --- */
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
@@ -609,47 +610,97 @@ export default function Home() {
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS (animações similares às notificações, mais fluidas) --- */
           .info-popup {
             position: fixed;
-            top: calc(20px + var(--pill-height) + 8px); 
+            top: calc(20px + var(--pill-height) / 2); 
             left: 50%;
-            transform: translateX(-50%) translateY(-30px);
+            z-index: 900;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex; 
+            align-items: flex-start; 
+            gap: 14px;
+            padding: 16px 18px; 
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
             opacity: 0;
             pointer-events: none;
-            z-index: 900;
-            min-width: 280px;
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            padding: 0.8rem 1.2rem; 
-            border-radius: 20px;
-            animation: popupSlideIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            animation: popupZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
           .info-popup.closing { 
-            animation: popupSlideOut 0.3s ease forwards; 
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
-          @keyframes popupSlideIn {
-            to {
+          @keyframes popupZoomIn {
+            0% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(-50%) scale(0.3);
+            }
+            100% {
               opacity: 1;
-              transform: translateX(-50%) translateY(0);
+              transform: translateX(-50%) translateY(0) scale(1);
               pointer-events: auto;
             }
           }
 
-          @keyframes popupSlideOut {
-            to {
+          @keyframes popupZoomOut {
+            0% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
+            100% {
               opacity: 0;
-              transform: translateX(-50%) translateY(-20px);
+              transform: translateX(-50%) translateY(-30%) scale(0.5);
+              pointer-events: none;
             }
           }
           
-          .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
-          .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
+          .popup-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+          }
 
-          /* --- CONTAINER & LAYOUT --- */
+          .popup-icon-wrapper.tech {
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+          }
+
+          .popup-icon-wrapper i {
+            font-size: 20px;
+            color: #fff;
+          }
+
+          .popup-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .popup-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+            line-height: 1.3;
+          }
+
+          .popup-text {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            line-height: 1.4;
+          }
+
           .container {
             max-width: 1280px; 
             margin: 0 auto;
@@ -668,7 +719,6 @@ export default function Home() {
           }
           .page-title-below { margin-top: 0; }
 
-          /* --- HERO (centralizado e sempre o mais popular) --- */
           .hero-static-container { width: 100%; position: relative; margin-bottom: 2rem; }
           .hero-wrapper {
             display: block; 
@@ -703,7 +753,6 @@ export default function Home() {
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
           }
 
-          /* --- CARDS (sem animação de hover) --- */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -745,7 +794,6 @@ export default function Home() {
           .heart-pulse { animation: heartZoom 0.4s ease; }
           @keyframes heartZoom { 50% { transform: scale(1.4); } }
 
-          /* --- NAVBAR PILL --- */
           .nav-btn {
             flex: 1; display: flex; align-items: center; justify-content: center;
             height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
@@ -760,36 +808,108 @@ export default function Home() {
             color: #fff; font-size: 15px; font-family: inherit;
           }
 
-          /* --- TOAST (mantido, já fluido) --- */
           .toast-wrap {
             position: fixed; 
-            bottom: calc(20px + var(--pill-height) + 12px);
-            left: 50%; transform: translateX(-50%); 
-            z-index: 990; pointer-events: none;
+            bottom: calc(20px + var(--pill-height) / 2);
+            left: 50%; 
+            z-index: 990; 
+            pointer-events: none;
           }
           
           .toast {
             pointer-events: auto;
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 16px; 
-            border-radius: 24px;
-            animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            display: flex; 
+            align-items: center; 
+            gap: 14px;
+            padding: 14px 18px; 
+            border-radius: 22px;
+            min-width: 280px;
+            transform: translateX(-50%) translateY(50%) scale(0.3);
+            transform-origin: bottom center;
+            opacity: 0;
+            animation: toastZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
-          .toast.closing { animation: floatDown 0.3s forwards; }
-          @keyframes floatUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
-          @keyframes floatDown { to { opacity:0; transform:translateY(10px); } }
-          
-          .toast-icon { 
-              width:16px; height:16px; border-radius:50%; display:flex; 
-              align-items:center; justify-content:center; font-size:9px; 
-              position: relative; z-index: 5;
+          .toast.closing { 
+            animation: toastZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
-          .toast.success .toast-icon { background: #34c759; color: #000; }
-          .toast.info .toast-icon { background: #007aff; color: #fff; }
-          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
 
-          /* --- FOOTER & MISC --- */
+          @keyframes toastZoomIn {
+            0% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(50%) scale(0.3);
+            }
+            100% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
+          }
+
+          @keyframes toastZoomOut {
+            0% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(30%) scale(0.5);
+            }
+          }
+          
+          .toast-icon-wrapper { 
+            width: 32px; 
+            height: 32px; 
+            min-width: 32px;
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            z-index: 5;
+          }
+
+          .toast.success .toast-icon-wrapper {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+          }
+
+          .toast.info .toast-icon-wrapper {
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+          }
+
+          .toast.error .toast-icon-wrapper {
+            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
+          }
+
+          .toast-icon-wrapper i {
+            font-size: 16px;
+            color: #fff;
+          }
+
+          .toast-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+
+          .toast-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.3;
+          }
+
+          .toast-msg { 
+            font-size: 0.75rem; 
+            font-weight: 400; 
+            color: rgba(255, 255, 255, 0.7); 
+            position: relative; 
+            z-index: 5; 
+            line-height: 1.4;
+          }
+
           .footer-credits {
             margin-top: 3rem; padding: 2rem; text-align: center;
             color: rgba(255,255,255,0.2); font-size: 0.75rem;
@@ -810,6 +930,12 @@ export default function Home() {
             .hero-content { padding: 1.5rem; }
             .bar-container { width: 94%; gap: 8px; }
             .card-poster-frame { border-radius: 14px; }
+            .info-popup { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i { font-size: 18px; }
+            .popup-title { font-size: 0.88rem; }
+            .popup-text { font-size: 0.75rem; }
+            .toast { min-width: 260px; padding: 12px 16px; }
           }
         `}</style>
       </Head>
@@ -881,4 +1007,4 @@ export default function Home() {
       />
     </>
   )
-            }
+}
