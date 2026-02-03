@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
 const SECTION_TITLES = {
   releases: 'Lançamentos',
@@ -33,25 +34,42 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
   return (
     <>
-      <header className={`bar-container top-bar ${scrolled ? 'scrolled-mode' : ''}`}>
+      <header className="bar-container top-bar">
         <button 
-          className="round-btn glass-panel tech-btn" 
+          className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
-          <i className="fas fa-microchip"></i>
+          <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
         </button>
 
-        <div className="pill-container glass-panel title-pill">
+        <div className="pill-container glass-panel">
           <span key={label} className="bar-label">{label}</span>
         </div>
 
         <button 
-          className="round-btn glass-panel info-btn" 
+          className="round-btn glass-panel" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"}></i>
+          <i 
+            className="fas fa-info-circle"
+            style={{
+              fontSize: '14px',
+              opacity: scrolled ? 0 : 1,
+              transform: `translate(-50%, -50%) scale(${scrolled ? 0.8 : 1})`,
+              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          ></i>
+          <i 
+            className="fas fa-chevron-up"
+            style={{
+              fontSize: '14px',
+              opacity: scrolled ? 1 : 0,
+              transform: `translate(-50%, -50%) scale(${scrolled ? 1 : 0.8})`,
+              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          ></i>
         </button>
       </header>
 
@@ -111,28 +129,24 @@ export const BottomNav = ({
   return (
     <div className="bar-container bottom-bar">
       <button 
-        className="round-btn glass-panel share-btn" 
+        className="round-btn glass-panel" 
         onClick={handleShare}
         title="Compartilhar"
       >
-        <i className="fas fa-arrow-up-from-bracket"></i>
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      <div className={`pill-container glass-panel nav-pill ${searchActive ? 'search-mode' : ''}`}>
-        {searchActive ? (
-          <div className="search-wrap">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Buscar..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
-              autoFocus
-            />
-          </div>
-        ) : (
-          <div className="nav-buttons-wrapper">
+      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
+        <div className="pill-content">
+          <div 
+            className="nav-buttons"
+            style={{
+              opacity: searchActive ? 0 : 1,
+              transform: `scale(${searchActive ? 0.92 : 1})`,
+              pointerEvents: searchActive ? 'none' : 'auto',
+              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
             <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
               <i className="fas fa-film"></i>
             </button>
@@ -143,11 +157,47 @@ export const BottomNav = ({
               <i className="fas fa-heart"></i>
             </button>
           </div>
-        )}
+
+          <div 
+            className="search-wrap-abs"
+            style={{
+              opacity: searchActive ? 1 : 0,
+              transform: `scale(${searchActive ? 1 : 0.92})`,
+              pointerEvents: searchActive ? 'auto' : 'none',
+              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
+            />
+          </div>
+        </div>
       </div>
 
-      <button className="round-btn glass-panel search-trigger-btn" onClick={() => setSearchActive(s => !s)}>
-        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'}></i>
+      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
+        <i 
+          className="fas fa-magnifying-glass"
+          style={{
+            fontSize: '15px',
+            opacity: searchActive ? 0 : 1,
+            transform: `translate(-50%, -50%) scale(${searchActive ? 0.8 : 1}) rotate(${searchActive ? 90 : 0}deg)`,
+            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}
+        ></i>
+        <i 
+          className="fas fa-xmark"
+          style={{
+            fontSize: '17px',
+            opacity: searchActive ? 1 : 0,
+            transform: `translate(-50%, -50%) scale(${searchActive ? 1 : 0.8}) rotate(${searchActive ? 0 : -90}deg)`,
+            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}
+        ></i>
       </button>
     </div>
   )
@@ -178,20 +228,19 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
     e.stopPropagation()
     setAnimating(true)
     toggleFavorite(item)
-    setTimeout(() => setAnimating(false), 600)
+    setTimeout(() => setAnimating(false), 500)
   }
 
   return (
     <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
       <div className="card-poster-frame">
-        <div className="poster-shine"></div>
         <img
           src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER}
           alt={item.title || item.name}
           className="content-poster"
           loading="lazy"
         />
-        <button className={`fav-btn glass-panel ${isFavorite ? 'active' : ''}`} onClick={handleFavClick}>
+        <button className="fav-btn glass-panel" onClick={handleFavClick}>
           <i
             className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
             style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
@@ -350,9 +399,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (searchActive && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current.focus(), 100)
-    }
+    if (searchActive && searchInputRef.current) searchInputRef.current.focus()
     if (!searchActive) { 
       setSearchResults([])
       setSearchQuery('') 
@@ -527,30 +574,27 @@ export default function Home() {
             background-attachment: fixed;
           }
           
-          a { color: inherit; text-decoration: none; cursor: pointer; }
-          button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
+          a { color: inherit; text-decoration: none; }
+          button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; }
           img { max-width: 100%; height: auto; display: block; }
 
           :root {
-            --pill-height: 46px;
-            --pill-radius: 23px;
+            --pill-height: 44px;
+            --pill-radius: 50px;
             --pill-max-width: 520px;
             --ios-blue: #0A84FF;
-            --glass-bg: rgba(255, 255, 255, 0.07);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
           }
 
           .glass-panel {
             position: relative;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: all 0.4s var(--ease-elastic);
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           .bar-container {
@@ -564,15 +608,13 @@ export default function Home() {
             gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
-            pointer-events: none;
           }
-          
-          .bar-container > * { pointer-events: auto; }
 
-          .top-bar { top: 20px; transition: top 0.4s var(--ease-smooth); }
-          .bottom-bar { bottom: 20px; transition: bottom 0.4s var(--ease-smooth); }
+          .top-bar { top: 20px; }
+          .bottom-bar { bottom: 20px; }
 
           .round-btn {
+            position: relative;
             width: var(--pill-height);
             height: var(--pill-height);
             border-radius: 50%;
@@ -581,17 +623,17 @@ export default function Home() {
             justify-content: center;
             color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
-            transition: all 0.3s var(--ease-elastic);
-            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
-          .round-btn i { transition: transform 0.4s var(--ease-elastic); font-size: 15px; }
-          .round-btn:hover { background: rgba(255, 255, 255, 0.12); transform: scale(1.05); box-shadow: 0 0 15px rgba(255,255,255,0.05); }
-          .round-btn:hover i { transform: scale(1.15); }
-          .round-btn:active { transform: scale(0.92); transition-duration: 0.1s; }
+          .round-btn:hover { transform: scale(1.08); }
+          .round-btn:active { transform: scale(0.92); }
 
-          .share-btn i { font-size: 15px; transform: translateY(-1px); }
-          .search-trigger-btn i { font-size: 15px; }
+          .round-btn i {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+          }
 
           .pill-container {
             height: var(--pill-height);
@@ -601,24 +643,59 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+          }
+
+          .pill-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+          }
+
+          .nav-buttons {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+          }
+
+          .search-wrap-abs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+          }
+
+          .search-wrap-abs input {
+            width: 100%; 
+            background: transparent; 
+            border: none; 
+            outline: none;
+            color: #fff; 
+            font-size: 15px; 
+            font-family: inherit;
           }
 
           .bar-label {
-            font-size: 0.92rem; 
+            font-size: 0.9rem; 
             font-weight: 600; 
             color: #fff;
             white-space: nowrap;
             letter-spacing: -0.01em;
-            animation: labelSlideUp 0.5s var(--ease-elastic) forwards;
+            animation: labelFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             position: relative; 
             z-index: 5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
           }
           
-          @keyframes labelSlideUp { 
-            from { opacity: 0; transform: translateY(15px) scale(0.9); filter: blur(4px); } 
-            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
+          @keyframes labelFadeIn { 
+            from { opacity: 0; transform: translateY(8px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
           }
 
           .info-popup {
@@ -637,22 +714,21 @@ export default function Home() {
             transform-origin: top center;
             opacity: 0;
             pointer-events: none;
-            animation: popupSpring 0.6s var(--ease-elastic) forwards;
-            background: rgba(30, 30, 30, 0.85);
+            animation: popupZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
           .info-popup.closing { 
-            animation: popupExit 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; 
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
-          @keyframes popupSpring {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
             100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
           }
 
-          @keyframes popupExit {
+          @keyframes popupZoomOut {
             0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.9); pointer-events: none; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
           }
           
           .popup-icon-wrapper {
@@ -665,17 +741,11 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
           }
 
           .popup-icon-wrapper.tech {
             background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
             box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
-          }
-
-          @keyframes iconPop {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
           }
 
           .popup-icon-wrapper i {
@@ -688,12 +758,6 @@ export default function Home() {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            animation: contentFade 0.5s ease 0.1s backwards;
-          }
-          
-          @keyframes contentFade {
-            from { opacity: 0; transform: translateX(10px); }
-            to { opacity: 1; transform: translateX(0); }
           }
 
           .popup-title {
@@ -718,31 +782,27 @@ export default function Home() {
             padding-bottom: 7rem;
             padding-left: 2rem; 
             padding-right: 2rem;
-            min-height: 100vh;
           }
           
           .page-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 2rem;
-            animation: headerEnter 0.8s var(--ease-elastic) forwards;
+            margin-bottom: 1.5rem;
+            animation: headerFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
-          @keyframes headerEnter {
-            from { opacity: 0; transform: translateY(30px); }
+          @keyframes headerFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
           }
           
           .page-title {
-            font-size: 1.7rem; 
+            font-size: 1.5rem; 
             font-weight: 700; 
             margin: 0;
             color: #fff;
             letter-spacing: -0.03em;
-            background: linear-gradient(to right, #fff, rgba(255,255,255,0.6));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
           }
           
           .status-dots {
@@ -755,40 +815,36 @@ export default function Home() {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            transition: transform 0.3s var(--ease-elastic);
+            animation: dotPulse 2s ease-in-out infinite;
           }
-          
-          .dot:hover { transform: scale(1.4); }
           
           .dot.yellow {
             background: linear-gradient(135deg, #FFD60A, #FFC300);
-            box-shadow: 0 0 10px rgba(255, 214, 10, 0.3);
-            animation: breath 3s infinite ease-in-out;
+            box-shadow: 0 2px 8px rgba(255, 214, 10, 0.4);
           }
           
           .dot.blue {
             background: linear-gradient(135deg, #0A84FF, #007AFF);
-            box-shadow: 0 0 10px rgba(10, 132, 255, 0.3);
-            animation: breath 3s infinite ease-in-out 1s;
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+            animation-delay: 0.3s;
           }
           
           .dot.red {
             background: linear-gradient(135deg, #FF453A, #FF3B30);
-            box-shadow: 0 0 10px rgba(255, 69, 58, 0.3);
-            animation: breath 3s infinite ease-in-out 2s;
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
+            animation-delay: 0.6s;
           }
           
-          @keyframes breath {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 15px currentColor; }
+          @keyframes dotPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.7; }
           }
 
           .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 28px 16px; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 24px 12px; 
             width: 100%;
-            perspective: 1000px;
           }
           
           .card-wrapper { 
@@ -796,70 +852,44 @@ export default function Home() {
             flex-direction: column; 
             width: 100%; 
             position: relative;
-            text-decoration: none;
-            animation: cardEntrance 0.7s var(--ease-elastic) backwards;
-            transform-style: preserve-3d;
+            animation: cardFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
           }
           
-          @keyframes cardEntrance {
-            from { opacity: 0; transform: translateY(40px) scale(0.9); }
+          @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.92); }
             to { opacity: 1; transform: translateY(0) scale(1); }
           }
           
           .card-wrapper:nth-child(1) { animation-delay: 0.05s; }
-          .card-wrapper:nth-child(2) { animation-delay: 0.1s; }
+          .card-wrapper:nth-child(2) { animation-delay: 0.10s; }
           .card-wrapper:nth-child(3) { animation-delay: 0.15s; }
-          .card-wrapper:nth-child(4) { animation-delay: 0.2s; }
+          .card-wrapper:nth-child(4) { animation-delay: 0.20s; }
           .card-wrapper:nth-child(5) { animation-delay: 0.25s; }
-          .card-wrapper:nth-child(6) { animation-delay: 0.3s; }
+          .card-wrapper:nth-child(6) { animation-delay: 0.30s; }
           .card-wrapper:nth-child(7) { animation-delay: 0.35s; }
-          .card-wrapper:nth-child(8) { animation-delay: 0.4s; }
+          .card-wrapper:nth-child(8) { animation-delay: 0.40s; }
           .card-wrapper:nth-child(9) { animation-delay: 0.45s; }
-          .card-wrapper:nth-child(10) { animation-delay: 0.5s; }
-          .card-wrapper:nth-child(11) { animation-delay: 0.55s; }
-          .card-wrapper:nth-child(12) { animation-delay: 0.6s; }
-          
+
           .card-poster-frame {
             position: relative; 
-            border-radius: 18px; 
+            border-radius: 16px; 
             overflow: hidden;
             aspect-ratio: 2/3; 
             background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.08);
-            transition: all 0.4s var(--ease-elastic);
-            z-index: 1;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.18);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
-          .poster-shine {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            pointer-events: none;
-            z-index: 2;
-          }
-
           .card-wrapper:hover .card-poster-frame {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.2);
-            z-index: 10;
-          }
-          
-          .card-wrapper:hover .poster-shine { opacity: 1; }
-          
-          .card-wrapper:active .card-poster-frame {
-            transform: scale(0.96) translateY(-5px);
-            transition-duration: 0.2s;
+            transform: translateY(-10px);
+            box-shadow: 0 24px 48px rgba(0,0,0,0.6);
           }
           
           .content-poster { 
             width: 100%; 
             height: 100%; 
             object-fit: cover;
-            transition: transform 0.7s var(--ease-smooth);
-            will-change: transform;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
           .card-wrapper:hover .content-poster {
@@ -867,77 +897,61 @@ export default function Home() {
           }
           
           .card-title {
-            margin-top: 12px; 
-            font-size: 0.85rem; 
+            margin-top: 10px; 
+            font-size: 0.8rem; 
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.75); 
-            line-height: 1.35;
+            color: rgba(255, 255, 255, 0.85); 
+            line-height: 1.3;
             display: -webkit-box; 
             -webkit-line-clamp: 1; 
             -webkit-box-orient: vertical; 
             overflow: hidden; 
             text-overflow: ellipsis;
-            transition: all 0.3s ease;
-            padding: 0 4px;
-            transform-origin: left;
+            transition: color 0.4s ease;
           }
           
           .card-wrapper:hover .card-title {
             color: #fff;
-            transform: translateX(2px);
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
           }
           
           .fav-btn {
             position: absolute; 
-            top: 10px; 
-            right: 10px; 
-            width: 36px; 
-            height: 36px; 
+            top: 8px; 
+            right: 8px; 
+            width: 32px; 
+            height: 32px; 
             border-radius: 50%;
             display: flex; 
             align-items: center; 
             justify-content: center;
             opacity: 0; 
-            transform: scale(0.5) rotate(-45deg); 
-            transition: all 0.4s var(--ease-elastic);
+            transform: scale(0.7); 
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: none;
             z-index: 20;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
           }
           
-          .card-poster-frame:hover .fav-btn, .fav-btn.active { 
+          .card-poster-frame:hover .fav-btn, .fav-btn:active { 
             opacity: 1; 
-            transform: scale(1) rotate(0); 
+            transform: scale(1); 
           }
-          
-          .fav-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.15) !important; }
-          .fav-btn:active { transform: scale(0.9) !important; }
           
           @media (hover: none) { 
             .fav-btn { 
               opacity: 1; 
               transform: scale(1); 
-              background: rgba(0,0,0,0.3); 
+              background: rgba(0,0,0,0.4); 
             } 
           }
           
           .heart-pulse { 
-            animation: heartBurst 0.6s var(--ease-elastic); 
+            animation: heartZoom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
           }
           
-          @keyframes heartBurst { 
+          @keyframes heartZoom { 
             0% { transform: scale(1); }
-            50% { transform: scale(1.8); }
+            50% { transform: scale(1.6); }
             100% { transform: scale(1); }
-          }
-
-          .nav-buttons-wrapper {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            align-items: center;
-            justify-content: space-between;
           }
 
           .nav-btn {
@@ -947,49 +961,21 @@ export default function Home() {
             justify-content: center;
             height: 100%; 
             color: rgba(255,255,255,0.4); 
-            transition: all 0.3s var(--ease-smooth);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative; 
             z-index: 5;
-            border-radius: inherit;
           }
           
           .nav-btn i { 
             font-size: 18px;
-            transition: transform 0.4s var(--ease-elastic), color 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
-          .nav-btn:hover { background: rgba(255,255,255,0.08); }
-          .nav-btn:hover i { transform: scale(1.2) translateY(-2px); color: #fff; }
-          .nav-btn:active i { transform: scale(0.9); }
+          .nav-btn:hover i, .nav-btn.active i {
+            transform: scale(1.2);
+          }
           
           .nav-btn.active { color: #fff; }
-          .nav-btn.active i { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
-          
-          .search-wrap { 
-            width: 100%; 
-            padding: 0 16px; 
-            position: relative; 
-            z-index: 5; 
-            animation: searchEnter 0.4s var(--ease-elastic);
-          }
-          
-          @keyframes searchEnter {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          
-          .search-wrap input {
-            width: 100%; 
-            background: transparent; 
-            border: none; 
-            outline: none;
-            color: #fff; 
-            font-size: 16px; 
-            font-family: inherit;
-            caret-color: var(--ios-blue);
-          }
-          
-          .search-wrap input::placeholder { color: rgba(255,255,255,0.3); }
 
           .toast-wrap {
             position: fixed; 
@@ -997,9 +983,6 @@ export default function Home() {
             left: 50%; 
             z-index: 950; 
             pointer-events: none;
-            width: 100%;
-            display: flex;
-            justify-content: center;
           }
           
           .toast {
@@ -1008,27 +991,26 @@ export default function Home() {
             align-items: center; 
             gap: 14px;
             padding: 14px 18px; 
-            border-radius: 24px;
+            border-radius: 22px;
             min-width: 280px;
+            transform: translateX(-50%) translateY(50%) scale(0.3);
             transform-origin: bottom center;
-            animation: toastPop 0.5s var(--ease-elastic) forwards;
-            background: rgba(25, 25, 25, 0.9);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+            opacity: 0;
+            animation: toastZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
           .toast.closing { 
-            animation: toastDrop 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; 
+            animation: toastZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
-          @keyframes toastPop {
-            0% { opacity: 0; transform: translateY(50px) scale(0.5); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+          @keyframes toastZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
           }
 
-          @keyframes toastDrop {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(20px) scale(0.9); }
+          @keyframes toastZoomOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(30%) scale(0.5); }
           }
           
           .toast-icon-wrapper { 
@@ -1041,27 +1023,21 @@ export default function Home() {
             justify-content: center; 
             position: relative; 
             z-index: 5;
-            animation: iconSpin 0.6s var(--ease-elastic);
-          }
-          
-          @keyframes iconSpin {
-            from { transform: rotate(-180deg) scale(0); }
-            to { transform: rotate(0) scale(1); }
           }
 
           .toast.success .toast-icon-wrapper {
             background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
           }
 
           .toast.info .toast-icon-wrapper {
             background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
           }
 
           .toast.error .toast-icon-wrapper {
             background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
-            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.4);
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
           }
 
           .toast-icon-wrapper i {
@@ -1076,67 +1052,64 @@ export default function Home() {
           }
 
           .toast-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #fff;
-            line-height: 1.2;
-          }
-
-          .toast-msg { 
-            font-size: 0.8rem; 
-            font-weight: 400; 
-            color: rgba(255, 255, 255, 0.75); 
             line-height: 1.3;
           }
 
+          .toast-msg { 
+            font-size: 0.75rem; 
+            font-weight: 400; 
+            color: rgba(255, 255, 255, 0.7); 
+            position: relative; 
+            z-index: 5; 
+            line-height: 1.4;
+          }
+
           .footer-credits {
-            margin-top: 4rem; 
+            margin-top: 3rem; 
             padding: 2rem; 
             text-align: center;
             color: rgba(255,255,255,0.3); 
             font-size: 0.75rem;
             border-top: 1px solid rgba(255,255,255,0.05);
-            animation: footerFade 1s ease forwards;
+            animation: footerFadeIn 0.8s ease forwards;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            transition: opacity 0.3s ease;
+            gap: 6px;
           }
           
-          .footer-credits:hover { opacity: 1; }
-          
           .footer-main {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 500;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.4);
           }
           
           .footer-author {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.3);
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
             font-style: italic;
           }
           
           .footer-tech {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.25);
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.2);
             font-family: 'Courier New', monospace;
-            letter-spacing: 0.5px;
           }
           
-          @keyframes footerFade {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 0.8; transform: translateY(0); }
+          @keyframes footerFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
           
           .spinner {
-            width: 28px; 
-            height: 28px; 
-            border: 3px solid rgba(255,255,255,0.1);
+            width: 24px; 
+            height: 24px; 
+            border: 2px solid rgba(255,255,255,0.1);
             border-top-color: #fff; 
             border-radius: 50%; 
-            animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
-            margin: 0 auto;
+            animation: spin 0.8s linear infinite;
           }
           
           @keyframes spin { 
@@ -1147,46 +1120,31 @@ export default function Home() {
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: center;
-            color: rgba(255,255,255,0.4); 
-            margin-top: 4rem; 
-            gap: 12px;
-            animation: emptyFade 0.6s var(--ease-elastic) forwards;
-            min-height: 200px;
+            color: #555; 
+            margin-top: 3rem; 
+            gap: 8px;
+            animation: emptyStateFadeIn 0.6s ease forwards;
           }
           
-          .empty-state i {
-            font-size: 32px;
-            margin-bottom: 8px;
-            opacity: 0.5;
-            animation: float 3s ease-in-out infinite;
-          }
-          
-          @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-          }
-          
-          @keyframes emptyFade {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+          @keyframes emptyStateFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
           }
 
           @media (max-width: 768px) {
-            .container { padding-left: 1.2rem; padding-right: 1.2rem; padding-top: 6rem; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 12px; }
-            .bar-container { width: 92%; gap: 10px; }
-            .card-poster-frame { border-radius: 16px; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
+            .bar-container { width: 94%; gap: 8px; }
+            .card-poster-frame { border-radius: 14px; }
             .info-popup { min-width: 280px; padding: 14px 16px; }
             .popup-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
             .popup-icon-wrapper i { font-size: 18px; }
-            .popup-title { font-size: 0.9rem; }
+            .popup-title { font-size: 0.88rem; }
             .popup-text { font-size: 0.75rem; }
-            .toast { min-width: 90%; bottom: 85px; padding: 12px 16px; }
-            .page-title { font-size: 1.4rem; }
+            .toast { min-width: 260px; padding: 12px 16px; }
+            .page-title { font-size: 1.3rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
-            .card-title { font-size: 0.8rem; }
           }
         `}</style>
       </Head>
@@ -1242,7 +1200,6 @@ export default function Home() {
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state">
-            <i className="far fa-folder-open"></i>
             <p>Lista vazia</p>
           </div>
         )}
@@ -1262,4 +1219,4 @@ export default function Home() {
       />
     </>
   )
-}
+    }
