@@ -521,7 +521,7 @@ export default function Home() {
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
             {/* Scale mantido em 25 para distorção forte */}
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
@@ -571,7 +571,7 @@ export default function Home() {
             background: transparent !important;
             /* Adiciona blur incolor ao container principal */
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(3px);
           }
 
           /* Camada de Distorção SVG (fica atrás do blur principal) */
