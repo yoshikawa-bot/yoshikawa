@@ -37,19 +37,19 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
     <>
       <header className="bar-container top-bar">
         <button 
-          className="round-btn glass-panel liquid-effect" 
+          className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
           <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
         </button>
 
-        <div className="pill-container glass-panel liquid-effect">
+        <div className="pill-container glass-panel">
           <span key={label} className="bar-label">{label}</span>
         </div>
 
         <button 
-          className="round-btn glass-panel liquid-effect" 
+          className="round-btn glass-panel" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
@@ -57,10 +57,10 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </button>
       </header>
 
-      {/* Popups - Usam classe 'standard-glass' para blur normal incolor */}
+      {/* Popups */}
       {showInfo && (
         <div 
-          className={`info-popup standard-glass ${infoClosing ? 'closing' : ''}`} 
+          className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-shield-halved info-icon"></i>
@@ -72,14 +72,14 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
       {showTech && (
         <div 
-          className={`info-popup standard-glass ${techClosing ? 'closing' : ''}`} 
+          className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
           <div className="info-text">
             <strong>Tech Data</strong>
             <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
-              <li>v2.8.0 Blur+Distort</li>
+              <li>v2.6.0 Slim</li>
               <li>React 18 / TMDB</li>
             </ul>
           </div>
@@ -113,14 +113,14 @@ export const BottomNav = ({
   return (
     <div className="bar-container bottom-bar">
       <button 
-        className="round-btn glass-panel liquid-effect" 
+        className="round-btn glass-panel" 
         onClick={handleShare}
         title="Compartilhar"
       >
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      <div className={`pill-container glass-panel liquid-effect ${searchActive ? 'search-mode' : ''}`}>
+      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
         {searchActive ? (
           <div className="search-wrap">
             <input
@@ -147,7 +147,7 @@ export const BottomNav = ({
         )}
       </div>
 
-      <button className="round-btn glass-panel liquid-effect" onClick={() => setSearchActive(s => !s)}>
+      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
         <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
     </div>
@@ -158,8 +158,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
-      {/* Toast usa standard-glass para blur normal incolor */}
-      <div className={`toast standard-glass ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
+      <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon">
           <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
         </div>
@@ -198,13 +197,12 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
-              <span className="hero-tag">Destaque Popular</span>
               <h2 className="hero-title">{item.title || item.name}</h2>
             </div>
           </div>
         </Link>
         <button 
-          className="fav-btn glass-panel liquid-effect" 
+          className="fav-btn glass-panel" 
           onClick={handleFav} 
           style={{ top: '16px', right: '16px' }}
         >
@@ -238,7 +236,7 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           className="content-poster"
           loading="lazy"
         />
-        <button className="fav-btn glass-panel liquid-effect" onClick={handleFavClick}>
+        <button className="fav-btn glass-panel" onClick={handleFavClick}>
           <i
             className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
             style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
@@ -456,7 +454,7 @@ export default function Home() {
         ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
       ]
         .filter(i => i.poster_path)
-        .sort(() => 0.5 - Math.random()) // Shuffle aleatório simples
+        .sort(() => 0.5 - Math.random())
         .slice(0, 36)
       
       setReleases(releasesData)
@@ -506,10 +504,7 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  
-  // HERO UPDATE: Agora pega o primeiro item dos Populares (recommendations) se disponível
-  const heroItem = !searchActive && recommendations.length > 0 ? recommendations[0] : null
-  
+  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -517,11 +512,11 @@ export default function Home() {
 
   return (
     <>
+      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
       <svg style={{ display: 'none' }}>
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
-            {/* Scale mantido em 25 para distorção forte */}
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="60" xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
@@ -542,6 +537,7 @@ export default function Home() {
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
+            /* Fundo suave para o efeito de vidro brilhar */
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
@@ -553,78 +549,49 @@ export default function Home() {
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
-            --liquid-highlight: rgba(255, 255, 255, 0.2);
+            --liquid-tint: rgba(20, 20, 20, 0.45);
+            --liquid-highlight: rgba(255, 255, 255, 0.12);
             --pill-max-width: 680px;
             --ios-blue: #0A84FF;
           }
 
-          /* CLASSE BASE PARA PAINÉIS */
+          /* --- LIQUID GLASS STYLES --- */
+          /* Substituição completa da lógica antiga de blur */
           .glass-panel {
             position: relative;
+            background: transparent;
             z-index: 10;
-            overflow: hidden;
+            overflow: hidden; /* Mantém o líquido dentro da borda */
             transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
-          /* --- TIPO 1: LIQUID DISTORTION + BLUR INCOLOR (NAVBARS & BUTTONS) --- */
-          .glass-panel.liquid-effect {
-            background: transparent !important;
-            /* Adiciona blur incolor ao container principal */
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(3px);
-          }
-
-          /* Camada de Distorção SVG (fica atrás do blur principal) */
-          .glass-panel.liquid-effect::before {
+          /* Camada de Distorção (Fundo) */
+          .glass-panel::before {
             content: '';
             position: absolute;
-            inset: -5px;
-            background: transparent;
-            backdrop-filter: blur(0px); /* Necessário para o filtro SVG funcionar */
-            -webkit-backdrop-filter: blur(0px);
-            filter: url(#liquid-glass);
+            inset: -5px; /* Extende para evitar bordas duras na distorção */
+            background: var(--liquid-tint);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            /* O Filtro Mágico */
+            filter: url(#liquid-glass) saturate(140%) brightness(1.1);
             z-index: -2;
             pointer-events: none;
           }
 
-          /* Borda e Brilho Arco-Íris - CORRIGIDO PARA BORDAS MAIS NÍTIDAS */
-          .glass-panel.liquid-effect::after {
+          /* Camada Especular (Bordas e Brilho) */
+          .glass-panel::after {
             content: '';
             position: absolute;
             inset: 0;
             z-index: -1;
             border-radius: inherit;
             box-shadow: 
-                inset 0.5px 0.5px 0px var(--liquid-highlight),
-                inset -0.5px -0.5px 0px rgba(255, 255, 255, 0.05),
-                0 2px 10px rgba(0,0,0,0.3); /* Sombra externa mais definida */
-            
-            /* Borda ligeiramente mais visível para definição */
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            
-            /* Efeito de Luz Rainbow/Refração Sutil */
-            background: linear-gradient(
-              135deg, 
-              rgba(255,255,255,0.05) 0%, 
-              rgba(255,255,255,0) 20%, 
-              rgba(255,255,255,0) 80%, 
-              rgba(200,200,255,0.05) 100%
-            );
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
+                inset 1px 1px 0px var(--liquid-highlight),
+                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
+                0 4px 24px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             pointer-events: none;
-          }
-
-          /* --- TIPO 2: STANDARD BLUR INCOLOR (POPUPS & TOASTS) --- */
-          .standard-glass {
-            /* Fundo praticamente transparente para não escurecer */
-            background: rgba(255, 255, 255, 0.01) !important;
-            /* Blur forte e sem saturação extra */
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            /* Borda fina e nítida */
-            border: 1px solid rgba(255,255,255,0.15);
-            /* Sombra suave para destacar */
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
           }
 
           .bar-container {
@@ -651,7 +618,7 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.95);
+            color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
           }
           
@@ -666,6 +633,7 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
+            /* Importante para o pseudo-elemento respeitar o shape */
             isolation: isolate; 
           }
 
@@ -677,35 +645,34 @@ export default function Home() {
             letter-spacing: -0.01em;
             animation: fadeIn 0.4s ease forwards;
             position: relative; z-index: 5;
-            text-shadow: none;
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS REVISADOS (STANDARD BLUR INCOLOR) --- */
+          /* --- POPUPS --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
             transform: translateX(-50%) scale(0.95);
-            z-index: 2000; 
+            z-index: 900;
             width: auto; 
             min-width: 280px;
             opacity: 0;
             animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: auto;
+            pointer-events: none;
             display: flex; 
             align-items: center; 
             gap: 12px;
             padding: 0.8rem 1.2rem; 
-            border-radius: 16px;
+            border-radius: 20px;
           }
           
           .info-popup.closing { animation: popupOut 0.2s ease forwards; }
-          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); } }
+          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
           @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
           
           .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
-          .info-text { font-size: 0.85rem; color: #fff; margin: 0; position: relative; z-index: 5; text-shadow: none; }
+          .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
 
           /* --- CONTAINER & LAYOUT --- */
           .container {
@@ -723,7 +690,6 @@ export default function Home() {
             margin-bottom: 1rem;
             color: #fff;
             letter-spacing: -0.03em;
-            text-shadow: none;
           }
           .page-title-below { margin-top: 0; }
 
@@ -755,16 +721,6 @@ export default function Home() {
             padding: 2rem; z-index: 2;
           }
           
-          .hero-tag {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 8px;
-            letter-spacing: 0.05em;
-          }
-
           .hero-title {
             font-size: 2.2rem; font-weight: 800; color: #fff;
             letter-spacing: -0.03em; margin: 0; line-height: 1;
@@ -794,12 +750,20 @@ export default function Home() {
           .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
           .content-poster { width: 100%; height: 100%; object-fit: cover; }
           
+          .card-title {
+            margin-top: 10px; font-size: 0.8rem; font-weight: 500;
+            color: rgba(255, 255, 255, 0.85); line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; 
+            overflow: hidden; text-overflow: ellipsis;
+          }
+          
           .fav-btn {
             position: absolute; top: 8px; right: 8px; 
             width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
             border: none;
+            /* Override glass z-index inside cards */
             z-index: 20;
           }
           .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
@@ -814,22 +778,21 @@ export default function Home() {
             height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
             position: relative; z-index: 5;
           }
-          .nav-btn i { font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+          .nav-btn i { font-size: 18px; }
           .nav-btn.active { color: #fff; }
           
           .search-wrap { width: 100%; padding: 0 12px; position: relative; z-index: 5; }
           .search-wrap input {
             width: 100%; background: transparent; border: none; outline: none;
             color: #fff; font-size: 15px; font-family: inherit;
-            text-shadow: none;
           }
 
-          /* --- TOAST REVISADO (STANDARD BLUR INCOLOR) --- */
+          /* --- FLUID THIN TOAST --- */
           .toast-wrap {
             position: fixed; 
             bottom: calc(20px + var(--pill-height) + 12px);
             left: 50%; transform: translateX(-50%); 
-            z-index: 2000; pointer-events: none;
+            z-index: 990; pointer-events: none;
           }
           
           .toast {
@@ -851,7 +814,7 @@ export default function Home() {
           }
           .toast.success .toast-icon { background: #34c759; color: #000; }
           .toast.info .toast-icon { background: #007aff; color: #fff; }
-          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; text-shadow: none; }
+          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
 
           /* --- FOOTER & MISC --- */
           .footer-credits {
