@@ -41,7 +41,8 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
-          <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
+          {/* Ícone alterado para slider/config */}
+          <i className="fas fa-sliders" style={{ fontSize: '13px' }}></i>
         </button>
 
         <div className="pill-container glass-panel">
@@ -50,10 +51,10 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
         <button 
           className="round-btn glass-panel" 
-          title={scrolled ? "Voltar ao topo" : "Informações"}
+          title={scrolled ? "Voltar ao topo" : "Avisos"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"} style={{ fontSize: '14px' }}></i>
+          <i className={scrolled ? "fas fa-arrow-up" : "fas fa-bell"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
@@ -63,7 +64,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-shield-halved info-icon"></i>
+          <i className="fas fa-shield-cat info-icon"></i>
           <p className="info-text">
             Use <strong>Brave</strong> ou <strong>AdBlock</strong>.
           </p>
@@ -75,11 +76,11 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
+          <i className="fas fa-code-branch info-icon" style={{ color: '#60a5fa' }}></i>
           <div className="info-text">
             <strong>Tech Data</strong>
             <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
-              <li>v2.6.0 Slim</li>
+              <li>v2.7.0 Fluid</li>
               <li>React 18 / TMDB</li>
             </ul>
           </div>
@@ -117,7 +118,7 @@ export const BottomNav = ({
         onClick={handleShare}
         title="Compartilhar"
       >
-        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
+        <i className="fas fa-share-nodes" style={{ fontSize: '15px' }}></i>
       </button>
 
       <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
@@ -135,13 +136,13 @@ export const BottomNav = ({
         ) : (
           <>
             <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-              <i className="fas fa-film"></i>
+              <i className="fas fa-clock"></i> {/* Ícone Lançamentos atualizado */}
             </button>
             <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-              <i className="fas fa-fire-flame-curved"></i>
+              <i className="fas fa-fire"></i> {/* Ícone Populares atualizado */}
             </button>
             <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-              <i className="fas fa-heart"></i>
+              <i className="fas fa-bookmark"></i> {/* Ícone Favoritos atualizado */}
             </button>
           </>
         )}
@@ -160,7 +161,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
     <div className="toast-wrap">
       <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon">
-          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
+          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-bolt' : 'fa-info'}`}></i>
         </div>
         <div className="toast-msg">{toast.message}</div>
       </div>
@@ -197,14 +198,16 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
+              <div className="hero-badge">Destaque Popular</div>
               <h2 className="hero-title">{item.title || item.name}</h2>
+              <p className="hero-desc">{item.overview ? item.overview.slice(0, 100) + '...' : 'Assista agora.'}</p>
             </div>
           </div>
         </Link>
         <button 
           className="fav-btn glass-panel" 
           onClick={handleFav} 
-          style={{ top: '16px', right: '16px' }}
+          style={{ top: '20px', right: '20px', width: '40px', height: '40px', fontSize: '18px' }}
         >
           <i
             className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
@@ -259,6 +262,10 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState([])
   const [favorites, setFavorites] = useState([])
   const [searchResults, setSearchResults] = useState([])
+  
+  // Novo estado para o Hero (sempre o #1 popular)
+  const [heroFeatured, setHeroFeatured] = useState(null)
+  
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
@@ -454,11 +461,18 @@ export default function Home() {
         ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
       ]
         .filter(i => i.poster_path)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 36)
+        // Sem randomização completa, vamos ordenar por popularidade para pegar o Top 1 pro Hero
+        .sort((a, b) => b.popularity - a.popularity)
       
+      // Definir o Hero como o Top 1 Popular
+      if (recommendationsData.length > 0) {
+        setHeroFeatured(recommendationsData[0])
+      }
+
       setReleases(releasesData)
-      setRecommendations(recommendationsData)
+      // Randomiza o resto da lista de populares para exibição
+      setRecommendations([...recommendationsData].sort(() => 0.5 - Math.random()).slice(0, 36))
+
     } catch (error) {
       console.error('Load error:', error)
     }
@@ -504,7 +518,6 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -512,7 +525,6 @@ export default function Home() {
 
   return (
     <>
-      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
       <svg style={{ display: 'none' }}>
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
@@ -537,7 +549,6 @@ export default function Home() {
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
-            /* Fundo suave para o efeito de vidro brilhar */
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
@@ -549,48 +560,51 @@ export default function Home() {
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
-            --liquid-tint: rgba(20, 20, 20, 0.45);
-            --liquid-highlight: rgba(255, 255, 255, 0.12);
+            --liquid-tint: rgba(20, 20, 20, 0.55);
+            --liquid-highlight: rgba(255, 255, 255, 0.1);
             --pill-max-width: 680px;
             --ios-blue: #0A84FF;
+            /* NOVA TRANSIÇÃO FLUIDA */
+            --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
           }
 
-          /* --- LIQUID GLASS STYLES --- */
-          /* Substituição completa da lógica antiga de blur */
+          /* --- GLASS & BLUR FIX --- */
           .glass-panel {
             position: relative;
             background: transparent;
             z-index: 10;
-            overflow: hidden; /* Mantém o líquido dentro da borda */
-            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            /* CORREÇÃO CRUCIAL: Herdar bordas e cortar excesso */
+            border-radius: inherit;
+            overflow: hidden; 
+            transform: translateZ(0); /* Força GPU e recorte no Safari */
+            transition: transform 0.3s var(--ease-fluid);
           }
 
-          /* Camada de Distorção (Fundo) */
           .glass-panel::before {
             content: '';
             position: absolute;
-            inset: -5px; /* Extende para evitar bordas duras na distorção */
+            inset: 0;
             background: var(--liquid-tint);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            /* O Filtro Mágico */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             filter: url(#liquid-glass) saturate(140%) brightness(1.1);
             z-index: -2;
             pointer-events: none;
+            /* CORREÇÃO: Herdar borda */
+            border-radius: inherit;
           }
 
-          /* Camada Especular (Bordas e Brilho) */
           .glass-panel::after {
             content: '';
             position: absolute;
             inset: 0;
             z-index: -1;
+            /* CORREÇÃO: Herdar borda */
             border-radius: inherit;
             box-shadow: 
                 inset 1px 1px 0px var(--liquid-highlight),
-                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
-                0 4px 24px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+                inset -0.5px -0.5px 0px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             pointer-events: none;
           }
 
@@ -613,6 +627,7 @@ export default function Home() {
           .round-btn {
             width: var(--pill-height);
             height: var(--pill-height);
+            /* Importante: Definir o raio aqui para a glass-panel herdar */
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -622,18 +637,18 @@ export default function Home() {
             flex-shrink: 0;
           }
           
-          .round-btn:hover { transform: scale(1.05); }
-          .round-btn:active { transform: scale(0.95); }
+          .round-btn:hover { transform: scale(1.08); }
+          .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
             height: var(--pill-height);
             flex: 1;
+            /* Importante: Raio definido aqui */
             border-radius: var(--pill-radius);
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            /* Importante para o pseudo-elemento respeitar o shape */
             isolation: isolate; 
           }
 
@@ -643,38 +658,45 @@ export default function Home() {
             color: #fff;
             white-space: nowrap;
             letter-spacing: -0.01em;
-            animation: fadeIn 0.4s ease forwards;
+            animation: fadeIn 0.5s var(--ease-fluid) forwards;
             position: relative; z-index: 5;
           }
-          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS --- */
+          /* --- POPUPS REFINADOS --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
-            transform: translateX(-50%) scale(0.95);
+            /* Ajuste de animação fluida */
+            transform-origin: top center;
             z-index: 900;
             width: auto; 
             min-width: 280px;
             opacity: 0;
-            animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: popupIn 0.4s var(--ease-fluid) forwards;
             pointer-events: none;
             display: flex; 
             align-items: center; 
             gap: 12px;
-            padding: 0.8rem 1.2rem; 
-            border-radius: 20px;
+            padding: 1rem 1.4rem; 
+            border-radius: 24px; /* Raio maior para precisão */
           }
           
-          .info-popup.closing { animation: popupOut 0.2s ease forwards; }
-          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
-          @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
+          .info-popup.closing { animation: popupOut 0.3s var(--ease-fluid) forwards; }
           
-          .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
+          @keyframes popupIn { 
+            0% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-10px); } 
+            100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); pointer-events: auto; } 
+          }
+          @keyframes popupOut { 
+            to { opacity: 0; transform: translateX(-50%) scale(0.95) translateY(-5px); } 
+          }
+          
+          .info-icon { font-size: 1.2rem; color: var(--ios-blue); position: relative; z-index: 5; }
           .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
 
-          /* --- CONTAINER & LAYOUT --- */
+          /* --- CONTAINER --- */
           .container {
             max-width: 1280px; 
             margin: 0 auto;
@@ -687,51 +709,76 @@ export default function Home() {
           .page-title {
             font-size: 1.5rem; 
             font-weight: 700; 
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             color: #fff;
             letter-spacing: -0.03em;
+            opacity: 0.9;
           }
           .page-title-below { margin-top: 0; }
 
-          /* --- HERO CLEAN --- */
-          .hero-static-container { width: 100%; position: relative; margin-bottom: 2rem; }
+          /* --- HERO ATUALIZADO (Full Fill) --- */
+          .hero-static-container { width: 100%; position: relative; margin-bottom: 2.5rem; }
           .hero-wrapper {
             display: block; 
             width: 100%; 
-            aspect-ratio: 2.35 / 1;
+            /* Aumentei a altura para garantir melhor preenchimento visual */
+            height: 55vh; 
+            max-height: 500px;
+            min-height: 300px;
             position: relative;
-            border-radius: 24px; 
+            border-radius: 28px; 
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1); 
             transform: translateZ(0);
           }
           
+          .hero-backdrop { width: 100%; height: 100%; position: relative; }
           .hero-backdrop img {
-            width: 100%; height: 100%; object-fit: cover; 
-            transition: transform 1s ease;
+            width: 100%; height: 100%; 
+            /* Garante o preenchimento completo */
+            object-fit: cover; 
+            object-position: center top;
+            transition: transform 1.5s var(--ease-fluid);
           }
+          
+          .hero-wrapper:hover .hero-backdrop img { transform: scale(1.03); }
           
           .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            background: linear-gradient(to top, #050505 0%, rgba(5,5,5,0.6) 40%, transparent 100%);
           }
           
           .hero-content {
             position: absolute; bottom: 0; left: 0; width: 100%; 
-            padding: 2rem; z-index: 2;
+            padding: 2.5rem; z-index: 2;
+            display: flex; flex-direction: column; gap: 8px;
+            max-width: 800px;
+          }
+
+          .hero-badge {
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; 
+            font-weight: 600; text-transform: uppercase; align-self: flex-start;
+            margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.1);
           }
           
           .hero-title {
-            font-size: 2.2rem; font-weight: 800; color: #fff;
-            letter-spacing: -0.03em; margin: 0; line-height: 1;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-size: 2.5rem; font-weight: 800; color: #fff;
+            letter-spacing: -0.04em; line-height: 1.1;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+          }
+          
+          .hero-desc {
+             font-size: 1rem; color: rgba(255,255,255,0.8); 
+             line-height: 1.5; max-width: 600px;
+             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
 
-          /* --- CARDS --- */
+          /* --- CARDS ATUALIZADOS (Sem Animação de Pulo) --- */
           .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 24px 12px; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 28px 16px; 
             width: 100%;
           }
           
@@ -739,47 +786,57 @@ export default function Home() {
           
           .card-poster-frame {
             position: relative; 
-            border-radius: 16px; 
+            border-radius: 18px; 
             overflow: hidden;
             aspect-ratio: 2/3; 
             background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.18); 
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid rgba(255,255,255,0.12); 
+            /* Transição apenas para a borda e brilho, removido transform */
+            transition: border-color 0.3s var(--ease-fluid);
           }
           
-          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
+          /* Efeito sutil ao passar o mouse */
+          .card-wrapper:hover .card-poster-frame { 
+            border-color: rgba(255,255,255,0.5); 
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+          }
+          
           .content-poster { width: 100%; height: 100%; object-fit: cover; }
           
           .card-title {
-            margin-top: 10px; font-size: 0.8rem; font-weight: 500;
-            color: rgba(255, 255, 255, 0.85); line-height: 1.3;
+            margin-top: 12px; font-size: 0.85rem; font-weight: 500;
+            color: rgba(255, 255, 255, 0.8); line-height: 1.3;
             display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; 
             overflow: hidden; text-overflow: ellipsis;
+            transition: color 0.2s;
           }
+          .card-wrapper:hover .card-title { color: #fff; }
           
           .fav-btn {
-            position: absolute; top: 8px; right: 8px; 
-            width: 32px; height: 32px; border-radius: 50%;
+            position: absolute; top: 10px; right: 10px; 
+            width: 34px; height: 34px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
+            cursor: pointer; opacity: 0; transform: scale(0.9); 
+            transition: all 0.3s var(--ease-fluid);
             border: none;
-            /* Override glass z-index inside cards */
             z-index: 20;
           }
           .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
           @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.4); } }
           
-          .heart-pulse { animation: heartZoom 0.4s ease; }
-          @keyframes heartZoom { 50% { transform: scale(1.4); } }
+          .heart-pulse { animation: heartZoom 0.4s var(--ease-fluid); }
+          @keyframes heartZoom { 50% { transform: scale(1.3); } }
 
           /* --- NAVBAR PILL --- */
           .nav-btn {
             flex: 1; display: flex; align-items: center; justify-content: center;
-            height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
+            height: 100%; color: rgba(255,255,255,0.4); 
+            transition: color 0.3s var(--ease-fluid);
             position: relative; z-index: 5;
           }
-          .nav-btn i { font-size: 18px; }
+          .nav-btn i { font-size: 19px; }
           .nav-btn.active { color: #fff; }
+          .nav-btn:active { transform: scale(0.95); }
           
           .search-wrap { width: 100%; padding: 0 12px; position: relative; z-index: 5; }
           .search-wrap input {
@@ -787,33 +844,34 @@ export default function Home() {
             color: #fff; font-size: 15px; font-family: inherit;
           }
 
-          /* --- FLUID THIN TOAST --- */
+          /* --- FLUID TOAST --- */
           .toast-wrap {
             position: fixed; 
-            bottom: calc(20px + var(--pill-height) + 12px);
+            bottom: calc(20px + var(--pill-height) + 16px);
             left: 50%; transform: translateX(-50%); 
             z-index: 990; pointer-events: none;
           }
           
           .toast {
             pointer-events: auto;
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 16px; 
-            border-radius: 24px;
-            animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 18px; 
+            border-radius: 28px;
+            animation: floatUp 0.5s var(--ease-fluid) forwards;
           }
           
-          .toast.closing { animation: floatDown 0.3s forwards; }
-          @keyframes floatUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
-          @keyframes floatDown { to { opacity:0; transform:translateY(10px); } }
+          .toast.closing { animation: floatDown 0.4s var(--ease-fluid) forwards; }
+          @keyframes floatUp { from { opacity:0; transform:translateY(20px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
+          @keyframes floatDown { to { opacity:0; transform:translateY(10px) scale(0.95); } }
           
           .toast-icon { 
-              width:16px; height:16px; border-radius:50%; display:flex; 
-              align-items:center; justify-content:center; font-size:9px; 
+              width:20px; height:20px; border-radius:50%; display:flex; 
+              align-items:center; justify-content:center; font-size:10px; 
               position: relative; z-index: 5;
           }
           .toast.success .toast-icon { background: #34c759; color: #000; }
           .toast.info .toast-icon { background: #007aff; color: #fff; }
+          .toast.error .toast-icon { background: #ff3b30; color: #fff; }
           .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
 
           /* --- FOOTER & MISC --- */
@@ -830,10 +888,10 @@ export default function Home() {
           .empty-state { display: flex; flex-direction: column; align-items: center; color: #555; margin-top: 3rem; gap: 8px; }
 
           @media (max-width: 768px) {
-            .container { padding-left: 1rem; padding-right: 1rem; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
-            .hero-wrapper { aspect-ratio: 1.7/1; border-radius: 20px; }
-            .hero-title { font-size: 1.6rem; }
+            .container { padding-left: 1.2rem; padding-right: 1.2rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 12px; }
+            .hero-wrapper { height: 45vh; border-radius: 24px; }
+            .hero-title { font-size: 1.8rem; }
             .hero-content { padding: 1.5rem; }
             .bar-container { width: 94%; gap: 8px; }
             .card-poster-frame { border-radius: 14px; }
@@ -855,11 +913,16 @@ export default function Home() {
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
       <main className="container">
-        {!loading && heroItem && (
-          <HeroFixed item={heroItem} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+        {/* Renderiza o Hero com o estado fixo de Populares, se disponível, senão fallback */}
+        {!loading && (
+          <HeroFixed 
+            item={heroFeatured || releases[0]} 
+            isFavorite={isFavorite} 
+            toggleFavorite={toggleFavorite} 
+          />
         )}
 
-        <h1 className={`page-title ${heroItem ? 'page-title-below' : ''}`}>{pageTitle}</h1>
+        <h1 className={`page-title ${heroFeatured ? 'page-title-below' : ''}`}>{pageTitle}</h1>
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
