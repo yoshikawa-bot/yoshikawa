@@ -358,7 +358,7 @@ export default function PlayerPage() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           /* Estilos herdados da Home */
-          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+     /*     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           
           html { scroll-behavior: smooth; }
           
@@ -496,7 +496,7 @@ export default function PlayerPage() {
           .nav-btn.active i { transform: scale(1.15); }
 
           /* Toast Styles */
-          .toast-wrap {
+   /*       .toast-wrap {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px);
             left: 50%;
@@ -604,7 +604,7 @@ export default function PlayerPage() {
           }
 
           /* Player Popup Styles */
-          .player-popup-overlay {
+      /*    .player-popup-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -685,7 +685,7 @@ export default function PlayerPage() {
           }
 
           /* Main Content */
-          .player-container {
+      /*    .player-container {
             max-width: 1280px;
             margin: 0 auto;
             padding: 6.5rem 2rem 7rem;
@@ -698,7 +698,7 @@ export default function PlayerPage() {
           }
 
           /* Episode Card */
-          .episode-card-wrapper {
+      /*    .episode-card-wrapper {
             width: 100%;
             margin-bottom: 2rem;
           }
@@ -777,7 +777,7 @@ export default function PlayerPage() {
           }
 
           /* Controls */
-          .controls-section {
+     /*     .controls-section {
             margin-bottom: 2rem;
           }
 
@@ -843,7 +843,7 @@ export default function PlayerPage() {
           }
 
           /* Info Section */
-          .info-section {
+      /*    .info-section {
             animation: fadeIn 0.6s ease forwards;
           }
 
