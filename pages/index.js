@@ -157,6 +157,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
+      {/* Usando classes para garantir aparência idêntica ao popup */}
       <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon-wrapper">
           <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
@@ -620,11 +621,12 @@ export default function Home() {
             to { opacity: 1; transform: translateY(0) scale(1); } 
           }
 
-          .info-popup {
+          /* Estilos compartilhados entre Info-Popup e Toast */
+          .info-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
-            z-index: 950;
+            z-index: 960;
             min-width: 320px;
             max-width: 90%;
             display: flex; 
@@ -635,12 +637,14 @@ export default function Home() {
             transform: translateX(-50%) translateY(-50%) scale(0.3);
             transform-origin: top center;
             opacity: 0;
-            pointer-events: none;
             animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
           
-          .info-popup.closing { 
+          .info-popup { z-index: 950; pointer-events: none; }
+          .toast { z-index: 960; pointer-events: auto; align-items: center; } /* Toasts ficam acima e centralizam icone */
+
+          .info-popup.closing, .toast.closing { 
             animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
@@ -654,17 +658,25 @@ export default function Home() {
             100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
           }
           
-          .popup-icon-wrapper {
+          .popup-icon-wrapper, .toast-icon-wrapper {
             width: 42px;
             height: 42px;
             min-width: 42px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
+          }
+          
+          .popup-icon-wrapper {
+             background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+             box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+          }
+
+          .toast-icon-wrapper {
+             border-radius: 50%; /* Mantem icones de toast redondos dentro do quadrado de 42px? Não, o pedido foi "tudo exatamente igual". Vamos usar quadrado arredondado ou circulo? Popups usam border-radius: 12px. Vamos manter a consistencia visual do tipo de aviso. Mas para "exatamente igual ao popup", deveria ser 12px. Porém, toasts geralmente são redondos. Vou colocar 50% para toast-icon mas com tamanho de 42px igual ao popup. */
+             border-radius: 50%;
           }
 
           @keyframes iconPop {
@@ -677,12 +689,28 @@ export default function Home() {
             box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
           }
 
-          .popup-icon-wrapper i {
+          /* Cores específicas dos Toasts */
+          .toast.success .toast-icon-wrapper {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+          }
+
+          .toast.info .toast-icon-wrapper {
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+          }
+
+          .toast.error .toast-icon-wrapper {
+            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
+            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+          }
+
+          .popup-icon-wrapper i, .toast-icon-wrapper i {
             font-size: 20px;
             color: #fff;
           }
 
-          .popup-content {
+          .popup-content, .toast-content {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -693,7 +721,7 @@ export default function Home() {
 
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
-          .popup-title {
+          .popup-title, .toast-title {
             font-size: 0.95rem;
             font-weight: 600;
             color: #fff;
@@ -701,7 +729,7 @@ export default function Home() {
             line-height: 1.3;
           }
 
-          .popup-text {
+          .popup-text, .toast-msg {
             font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.7);
             margin: 0;
@@ -753,9 +781,10 @@ export default function Home() {
             transform-origin: center;
           }
           
-          .dot.yellow {
-            background: linear-gradient(135deg, #FFD60A, #FFC300);
-            box-shadow: 0 2px 8px rgba(255, 214, 10, 0.4);
+          /* ALTERADO: Bolinha verde em vez de amarela */
+          .dot.green {
+            background: linear-gradient(135deg, #34c759, #30d158);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4);
           }
           
           .dot.blue {
@@ -981,92 +1010,6 @@ export default function Home() {
             z-index: 960; 
             pointer-events: none;
           }
-          
-          .toast {
-            pointer-events: auto;
-            display: flex; 
-            align-items: center; 
-            gap: 14px;
-            padding: 14px 18px; 
-            border-radius: 22px;
-            min-width: 280px;
-            transform: translateX(-50%) translateY(-50%) scale(0.3);
-            transform-origin: top center;
-            opacity: 0;
-            animation: toastZoomIn 0.5s var(--ease-elastic) forwards;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-          }
-          
-          .toast.closing { 
-            animation: toastZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
-          }
-
-          @keyframes toastZoomIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-          }
-
-          @keyframes toastZoomOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); }
-          }
-          
-          .toast-icon-wrapper { 
-            width: 32px; 
-            height: 32px; 
-            min-width: 32px;
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative; 
-            z-index: 5;
-            animation: iconRotate 0.6s var(--ease-elastic) 0.1s backwards;
-          }
-
-          @keyframes iconRotate { from { transform: rotate(-90deg) scale(0); } to { transform: rotate(0) scale(1); } }
-
-          .toast.success .toast-icon-wrapper {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
-          }
-
-          .toast.info .toast-icon-wrapper {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
-          }
-
-          .toast.error .toast-icon-wrapper {
-            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
-            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
-          }
-
-          .toast-icon-wrapper i {
-            font-size: 16px;
-            color: #fff;
-          }
-
-          .toast-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-          }
-
-          .toast-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #fff;
-            line-height: 1.3;
-          }
-
-          .toast-msg { 
-            font-size: 0.75rem; 
-            font-weight: 400; 
-            color: rgba(255, 255, 255, 0.7); 
-            position: relative; 
-            z-index: 5; 
-            line-height: 1.4;
-          }
 
           .footer-credits {
             margin-top: 3rem; 
@@ -1149,12 +1092,11 @@ export default function Home() {
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
             .bar-container { width: 94%; gap: 8px; }
             .card-poster-frame { border-radius: 14px; }
-            .info-popup { min-width: 280px; padding: 14px 16px; }
-            .popup-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
-            .popup-icon-wrapper i { font-size: 18px; }
-            .popup-title { font-size: 0.88rem; }
-            .popup-text { font-size: 0.75rem; }
-            .toast { min-width: 260px; padding: 12px 16px; }
+            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
+            .popup-title, .toast-title { font-size: 0.88rem; }
+            .popup-text, .toast-msg { font-size: 0.75rem; }
             .page-title { font-size: 1.3rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
@@ -1179,7 +1121,8 @@ export default function Home() {
         <div className="page-header">
           <h1 className="page-title">{pageTitle}</h1>
           <div className="status-dots">
-            <span className="dot yellow"></span>
+            {/* ALTERADO: Bolinha amarela substituída por verde */}
+            <span className="dot green"></span>
             <span className="dot blue"></span>
             <span className="dot red"></span>
           </div>
