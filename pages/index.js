@@ -571,7 +571,7 @@ export default function Home() {
             background: transparent !important;
             /* Adiciona blur incolor ao container principal */
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(5px);
           }
 
           /* Camada de Distorção SVG (fica atrás do blur principal) */
