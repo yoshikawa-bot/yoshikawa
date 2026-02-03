@@ -521,7 +521,7 @@ export default function Home() {
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
             {/* Scale aumentado para 25 para distorção +50% mais forte (era 12) */}
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="75" xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
