@@ -157,7 +157,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
-      {/* Usando classes para garantir aparência idêntica ao popup */}
       <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon-wrapper">
           <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
@@ -621,7 +620,6 @@ export default function Home() {
             to { opacity: 1; transform: translateY(0) scale(1); } 
           }
 
-          /* Estilos compartilhados entre Info-Popup e Toast */
           .info-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
@@ -642,7 +640,7 @@ export default function Home() {
           }
           
           .info-popup { z-index: 950; pointer-events: none; }
-          .toast { z-index: 960; pointer-events: auto; align-items: center; } /* Toasts ficam acima e centralizam icone */
+          .toast { z-index: 960; pointer-events: auto; align-items: center; } 
 
           .info-popup.closing, .toast.closing { 
             animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
@@ -675,7 +673,6 @@ export default function Home() {
           }
 
           .toast-icon-wrapper {
-             border-radius: 50%; /* Mantem icones de toast redondos dentro do quadrado de 42px? Não, o pedido foi "tudo exatamente igual". Vamos usar quadrado arredondado ou circulo? Popups usam border-radius: 12px. Vamos manter a consistencia visual do tipo de aviso. Mas para "exatamente igual ao popup", deveria ser 12px. Porém, toasts geralmente são redondos. Vou colocar 50% para toast-icon mas com tamanho de 42px igual ao popup. */
              border-radius: 50%;
           }
 
@@ -689,7 +686,6 @@ export default function Home() {
             box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
           }
 
-          /* Cores específicas dos Toasts */
           .toast.success .toast-icon-wrapper {
             background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
             box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
@@ -781,21 +777,21 @@ export default function Home() {
             transform-origin: center;
           }
           
-          /* ALTERADO: Bolinha verde em vez de amarela */
-          .dot.green {
-            background: linear-gradient(135deg, #34c759, #30d158);
-            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4);
+          /* CORES ATUALIZADAS: Vermelho, Amarelo, Verde */
+          .dot.red {
+            background: linear-gradient(135deg, #ff453a, #ff3b30);
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
           }
           
-          .dot.blue {
-            background: linear-gradient(135deg, #0A84FF, #007AFF);
-            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+          .dot.yellow {
+            background: linear-gradient(135deg, #ffd60a, #ffcc00);
+            box-shadow: 0 2px 8px rgba(255, 204, 0, 0.4);
             animation-delay: 0.3s;
           }
           
-          .dot.red {
-            background: linear-gradient(135deg, #FF453A, #FF3B30);
-            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
+          .dot.green {
+            background: linear-gradient(135deg, #34c759, #30d158);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4);
             animation-delay: 0.6s;
           }
           
@@ -977,7 +973,7 @@ export default function Home() {
           .nav-btn.active { color: #fff; }
           .nav-btn.active i {
             transform: scale(1.15);
-            text-shadow: 0 0 15px rgba(255,255,255,0.5);
+            /* REMOVIDO: text-shadow para o efeito de luz, conforme solicitado */
           }
           
           .search-wrap { 
@@ -1121,10 +1117,10 @@ export default function Home() {
         <div className="page-header">
           <h1 className="page-title">{pageTitle}</h1>
           <div className="status-dots">
-            {/* ALTERADO: Bolinha amarela substituída por verde */}
-            <span className="dot green"></span>
-            <span className="dot blue"></span>
+            {/* ATUALIZADO: Vermelha, Amarela, Verde */}
             <span className="dot red"></span>
+            <span className="dot yellow"></span>
+            <span className="dot green"></span>
           </div>
         </div>
 
