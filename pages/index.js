@@ -22,8 +22,27 @@ const useDebounce = (callback, delay) => {
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
+// --- HEADER COMPONENT RESTRUCTURED ---
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
-  const handleBtnClick = (e) => {
+  
+  const handleShare = async (e) => {
+    e.stopPropagation();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Yoshikawa Player',
+          text: 'Assista aos melhores filmes e séries.',
+          url: window.location.href,
+        })
+      } catch (err) {
+        console.log('Share canceled')
+      }
+    } else {
+      toggleTech() // Fallback se não suportar share, abre info técnica
+    }
+  }
+
+  const handleRightClick = (e) => {
     e.stopPropagation()
     if (scrolled) {
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -34,34 +53,37 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
   return (
     <>
-      <header className="header-pill">
+      <header className="header-container">
+        {/* Botão Esquerdo Separado - Share Style */}
         <button 
-          className="header-btn-left" 
-          onClick={(e) => { e.stopPropagation(); toggleTech() }}
-          title="Info Técnica"
+          className="round-btn glass-panel" 
+          onClick={handleShare}
+          title="Compartilhar"
         >
-          <i className="fas fa-pen" style={{ fontSize: '14px' }}></i>
+          <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
         </button>
 
-        <div className="header-center">
+        {/* Pílula Central Menor */}
+        <div className="header-pill glass-panel">
           <span key={label} className="header-label">{label}</span>
         </div>
 
+        {/* Botão Direito Separado */}
         <button 
-          className="header-btn-right" 
+          className="round-btn glass-panel" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
-          onClick={handleBtnClick}
+          onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info"} style={{ fontSize: scrolled ? '14px' : '14px' }}></i>
         </button>
       </header>
 
       {showInfo && (
         <div 
-          className={`info-popup ${infoClosing ? 'closing' : ''}`} 
+          className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-shield-alt info-icon"></i>
+          <i className="fas fa-shield-halved info-icon"></i>
           <p className="info-text">
             Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.
           </p>
@@ -70,14 +92,14 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
       {showTech && (
         <div 
-          className={`info-popup ${techClosing ? 'closing' : ''}`} 
+          className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
-          <i className="fas fa-code info-icon" style={{ color: '#60a5fa' }}></i>
+          <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
           <div className="info-text">
             <strong>Dados Técnicos</strong>
             <ul style={{ listStyle: 'none', marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 }}>
-              <li>Build: v2.4.1 (Stable)</li>
+              <li>Build: v2.5.0 (Liquid)</li>
               <li>Engine: Next.js / React 18</li>
               <li>Source: TMDB API Public</li>
               <li>Latency: 24ms</li>
@@ -93,9 +115,9 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
-      <div className={`toast ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
+      <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon">
-          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info'}`}></i>
+          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
         </div>
         <div className="toast-msg">{toast.message}</div>
       </div>
@@ -132,20 +154,20 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
-              <span className="hero-tag">Top do Dia</span>
+              <span className="hero-tag glass-panel">Destaque</span>
               <h2 className="hero-title">{item.title || item.name}</h2>
-              <p className="hero-overview">{item.overview ? item.overview.slice(0, 90) + '...' : ''}</p>
+              <p className="hero-overview">{item.overview ? item.overview.slice(0, 100) + '...' : ''}</p>
             </div>
           </div>
         </Link>
         <button 
-          className="fav-btn" 
+          className="fav-btn glass-panel" 
           onClick={handleFav} 
           style={{ top: '14px', right: '14px' }}
         >
           <i
             className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: favActive ? '#ff6b6b' : '#ffffff' }}
+            style={{ color: favActive ? '#ff3b30' : '#ffffff' }}
           ></i>
         </button>
       </div>
@@ -173,10 +195,10 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           className="content-poster"
           loading="lazy"
         />
-        <button className="fav-btn" onClick={handleFavClick}>
+        <button className="fav-btn glass-panel" onClick={handleFavClick}>
           <i
             className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: isFavorite ? '#ff6b6b' : '#ffffff' }}
+            style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
           ></i>
         </button>
       </div>
@@ -192,13 +214,13 @@ export const BottomNav = ({
   onSearchSubmit, inputRef
 }) => (
   <div className="bottom-nav">
-    <div className={`nav-pill ${searchActive ? 'search-mode' : ''}`}>
+    <div className={`nav-pill glass-panel ${searchActive ? 'search-mode' : ''}`}>
       {searchActive ? (
         <div className="search-wrap">
           <input
             ref={inputRef}
             type="text"
-            placeholder="Pesquisar..."
+            placeholder="Buscar..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
@@ -210,7 +232,7 @@ export const BottomNav = ({
             <i className="fas fa-film"></i>
           </button>
           <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-            <i className="fas fa-fire"></i>
+            <i className="fas fa-fire-flame-curved"></i>
           </button>
           <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
             <i className="fas fa-heart"></i>
@@ -218,16 +240,16 @@ export const BottomNav = ({
         </>
       )}
     </div>
-    <button className="search-circle" onClick={() => setSearchActive(s => !s)}>
-      <i className={searchActive ? 'fas fa-times' : 'fas fa-search'}></i>
+    <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
+      <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '18px' : '16px' }}></i>
     </button>
   </div>
 )
 
 export const Footer = () => (
   <footer className="footer-credits">
-    <p>Desenvolvido por Kawa para os sistemas Yoshikawa</p>
-    <p className="footer-sub">Todos os direitos reservados &copy; {new Date().getFullYear()}</p>
+    <p>Desenvolvido por Kawa</p>
+    <p className="footer-sub">Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
   </footer>
 )
 
@@ -316,7 +338,7 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     
     const onClick = (e) => { 
-      if (!e.target.closest('.info-popup') && !e.target.closest('.header-btn-right') && !e.target.closest('.header-btn-left')) {
+      if (!e.target.closest('.info-popup') && !e.target.closest('.round-btn') && !e.target.closest('.header-pill')) {
         closePopups() 
       }
     }
@@ -481,9 +503,12 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const showHero = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations') && activeList.length > 0
-  const heroItem = showHero ? (activeSection === 'releases' ? (releases.length > 0 ? releases[0] : null) : (recommendations.length > 0 ? recommendations[0] : null)) : null
-  const displayItems = showHero ? (activeSection === 'releases' ? releases.slice(1) : recommendations.slice(1)) : activeList
+  
+  // Hero Logic Update: Always show the top Release regardless of active section to match consistency request
+  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
+  
+  // Display logic: Remove the hero item from the list if it's the releases tab, otherwise show full list
+  const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
   const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
@@ -492,16 +517,16 @@ export default function Home() {
     <>
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
           body {
-            font-family: 'Inter', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #000;
-            color: #f1f5f9;
+            color: #f5f5f7;
             line-height: 1.6;
             font-size: 16px;
             min-height: 100vh;
@@ -510,20 +535,33 @@ export default function Home() {
           }
           
           a { color: inherit; text-decoration: none; }
-          button { font-family: inherit; }
-          img { max-width: 100%; height: auto; }
+          button { font-family: inherit; border: none; outline: none; }
+          img { max-width: 100%; height: auto; display: block; }
 
           :root {
-            --pill-height: 62px;
-            --pill-radius: 44px;
-            --pill-bg: rgba(35, 35, 35, 0.65);
-            --pill-border: 1px solid rgba(255, 255, 255, 0.15);
-            --pill-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            --pill-blur: blur(20px);
+            --pill-height: 48px; /* Reduced vertical height */
+            --pill-radius: 50px;
+            --liquid-bg: rgba(22, 22, 22, 0.5); /* Apple dark liquid base */
+            --liquid-border: rgba(255, 255, 255, 0.12);
+            --liquid-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+            --liquid-blur: blur(25px) saturate(180%);
             --pill-max-width: 680px;
+            --ios-blue: #007AFF;
+            --ios-red: #FF3B30;
           }
 
-          .header-pill {
+          /* --- SHARED GLASS STYLE --- */
+          .glass-panel {
+            background: var(--liquid-bg);
+            backdrop-filter: var(--liquid-blur);
+            -webkit-backdrop-filter: var(--liquid-blur);
+            border: 1px solid var(--liquid-border);
+            box-shadow: var(--liquid-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+
+          /* --- HEADER LAYOUT --- */
+          .header-container {
             position: fixed; 
             top: 20px; 
             left: 50%;
@@ -531,212 +569,167 @@ export default function Home() {
             z-index: 1000;
             display: flex; 
             align-items: center; 
-            justify-content: space-between;
-            height: var(--pill-height);
+            justify-content: center;
+            gap: 16px; /* Increased separation */
             width: 90%; 
             max-width: var(--pill-max-width);
-            padding: 0 0.8rem;
-            border-radius: var(--pill-radius);
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            transition: background 0.3s ease, border-color 0.3s ease;
           }
-          
-          .header-btn-left, .header-btn-right {
-            background: none; 
-            border: none;
-            color: rgba(255,255,255,0.5); 
-            font-size: 1.2rem;
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            width: 44px; 
-            height: 44px; 
+
+          /* Separate Circle Buttons */
+          .round-btn {
+            width: var(--pill-height);
+            height: var(--pill-height);
             border-radius: 50%;
-            transition: color 0.2s ease, transform 0.15s ease;
-            flex-shrink: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.85);
+            flex-shrink: 0;
             z-index: 2;
           }
           
-          .header-btn-left:hover, .header-btn-right:hover { 
-            color: #fff; 
+          .round-btn:hover {
+            background: rgba(60, 60, 60, 0.6);
+            color: #fff;
             transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.25);
           }
           
-          .header-btn-left:active, .header-btn-right:active {
+          .round-btn:active {
             transform: scale(0.95);
           }
-          
-          .header-btn-left, .header-btn-right {
-            transform: scale(1);
+
+          /* Center Pill */
+          .header-pill {
+            height: var(--pill-height);
+            flex: 1; /* Takes available space */
+            max-width: 300px; /* Limits width */
+            border-radius: var(--pill-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
           }
 
-          .header-center {
-            position: absolute; 
-            left: 50%; 
-            top: 50%;
-            transform: translate(-50%, -50%);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            overflow: hidden; 
-            width: 60%;
-            pointer-events: none;
-          }
-          
           .header-label {
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             font-weight: 600; 
-            color: #f0f6fc;
+            color: #fff;
             white-space: nowrap;
+            letter-spacing: -0.01em;
             animation: fadeInText 0.4s ease forwards;
+            opacity: 0.9;
           }
           
           @keyframes fadeInText {
             from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+            to { opacity: 0.9; transform: translateY(0); }
           }
 
+          /* --- POPUPS --- */
           .info-popup {
             position: fixed;
-            top: 20px; 
+            top: calc(20px + var(--pill-height) + 12px); 
             left: 50%;
-            transform: translate(-50%, 0) scale(0.9);
+            transform: translateX(-50%) scale(0.95);
             z-index: 900;
             width: 90%; 
-            max-width: 420px;
+            max-width: 380px;
             opacity: 0;
-            animation: popup-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: popup-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
-            will-change: transform, opacity;
             display: flex; 
             align-items: flex-start; 
-            gap: 12px;
-            padding: 1.1rem 1.3rem; 
-            border-radius: 22px;
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur);
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
+            gap: 14px;
+            padding: 1.25rem; 
+            border-radius: 24px;
           }
           
           .info-popup.closing { 
-            animation: popup-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards; 
+            animation: popup-out 0.25s ease-in forwards; 
           }
           
-          @keyframes popup-slide-in {
-            0%   { opacity: 0; transform: translate(-50%, 0) scale(0.9); }
-            100% { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); pointer-events: auto; }
+          @keyframes popup-in {
+            to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; }
           }
           
-          @keyframes popup-slide-out {
-            0%   { opacity: 1; transform: translate(-50%, calc(var(--pill-height) + 10px)) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, 0) scale(0.9); pointer-events: none; }
+          @keyframes popup-out {
+            from { opacity: 1; transform: translateX(-50%) scale(1); }
+            to { opacity: 0; transform: translateX(-50%) scale(0.95); }
           }
           
           .info-icon { 
-            color: #f59e0b; 
-            font-size: 1.15rem; 
+            font-size: 1.25rem; 
             margin-top: 2px; 
             flex-shrink: 0; 
+            color: var(--ios-blue);
           }
           
           .info-text { 
-            font-size: 0.88rem; 
-            color: #cbd5e1; 
-            line-height: 1.55; 
+            font-size: 0.9rem; 
+            color: rgba(255, 255, 255, 0.8); 
+            line-height: 1.5; 
           }
           
-          .info-text strong { 
-            color: #fff; 
-            font-weight: 600; 
-          }
+          .info-text strong { color: #fff; }
 
+          /* --- LAYOUT --- */
           .container {
             max-width: 1280px; 
             margin: 0 auto;
-            padding-top: calc(var(--pill-height) + 20px + 1.8rem);
+            padding-top: 7rem;
             padding-bottom: 8rem;
-            padding-left: 2.5rem; 
-            padding-right: 2.5rem;
+            padding-left: 2rem; 
+            padding-right: 2rem;
           }
           
           .page-title {
-            font-size: 1.6rem; 
+            font-size: 1.75rem; 
             font-weight: 700; 
-            margin-bottom: 1.2rem;
-            background: linear-gradient(to right, #f1f5f9 0%, #f1f5f9 40%, #64748b 50%, #f1f5f9 60%, #f1f5f9 100%);
-            background-size: 200% auto;
-            background-clip: text; 
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent; 
-            color: #f1f5f9;
-            animation: textShimmer 3.5s linear infinite;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            letter-spacing: -0.02em;
           }
           
-          @keyframes textShimmer { 
-            to { background-position: 200% center; } 
-          }
-          
-          .page-title-below { 
-            margin-top: 0; 
-            margin-bottom: 1.2rem; 
-          }
+          .page-title-below { margin-top: 0; }
 
+          /* --- HERO --- */
           .hero-static-container {
             width: 100%;
             position: relative;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
           }
 
           .hero-wrapper {
             display: block; 
             width: 100%; 
-            aspect-ratio: 16 / 9;
-            max-height: 500px;
-            text-decoration: none; 
+            aspect-ratio: 2.35 / 1;
+            max-height: 550px;
             position: relative;
-            border-radius: 24px; 
+            border-radius: 28px; 
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            transform: translateY(0);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
           }
           
-          .hero-wrapper:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-          }
+          .hero-wrapper:active { transform: scale(0.98); }
 
-          .hero-backdrop {
-            width: 100%; 
-            height: 100%;
-            position: relative;
-          }
-          
           .hero-backdrop img {
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            display: block;
-            transition: transform 0.3s ease;
-            transform: scale(1);
+            transition: transform 0.7s ease;
           }
           
-          .hero-wrapper:hover .hero-backdrop img {
-            transform: scale(1.02);
-          }
+          .hero-wrapper:hover .hero-backdrop img { transform: scale(1.03); }
           
           .hero-overlay {
             position: absolute; 
             inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 50%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
           }
           
           .hero-content {
@@ -744,47 +737,47 @@ export default function Home() {
             bottom: 0; 
             left: 0;
             width: 100%; 
-            padding: 2rem; 
+            padding: 2.5rem; 
             z-index: 2;
           }
           
           .hero-tag {
             display: inline-block; 
-            background: #ff6b6b; 
-            color: #fff;
-            padding: 4px 10px; 
-            border-radius: 8px; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
             font-size: 0.75rem;
-            font-weight: 700; 
+            font-weight: 600; 
             text-transform: uppercase; 
-            margin-bottom: 8px;
-            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+            margin-bottom: 12px;
+            color: #fff;
           }
           
           .hero-title {
-            font-size: 2rem; 
+            font-size: 2.5rem; 
             font-weight: 800; 
             color: #fff;
-            margin-bottom: 0.5rem; 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            line-height: 1.2;
+            margin-bottom: 0.8rem; 
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.5);
           }
           
           .hero-overview {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
             max-width: 600px;
+            line-height: 1.5;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.45;
           }
 
+          /* --- CARDS --- */
           .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 24px 14px; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 32px 16px; 
             width: 100%;
           }
           
@@ -792,110 +785,84 @@ export default function Home() {
             display: flex; 
             flex-direction: column; 
             width: 100%; 
-            cursor: pointer; 
-            text-decoration: none; 
+            position: relative;
           }
           
           .card-poster-frame {
             position: relative; 
-            border-radius: 20px; 
+            border-radius: 18px; 
             overflow: hidden;
             aspect-ratio: 2/3; 
-            border: 1px solid rgba(255,255,255,0.13);
-            background: #1e1e1e;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            transform: translateY(0);
+            background: #222;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
           
           .card-wrapper:hover .card-poster-frame { 
-            transform: translateY(-4px); 
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45); 
+            transform: translateY(-6px); 
           }
           
           .content-poster { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            display: block; 
-            transition: transform 0.3s ease;
-            transform: scale(1);
-          }
-          
-          .card-wrapper:hover .content-poster {
-            transform: scale(1.03);
           }
           
           .card-title {
-            margin-top: 10px; 
-            font-size: 13px; 
+            margin-top: 12px; 
+            font-size: 0.85rem; 
             font-weight: 500;
-            color: #fff; 
-            text-align: left; 
-            line-height: 1.4;
-            height: calc(1.4em * 2);
+            color: rgba(255, 255, 255, 0.9); 
+            line-height: 1.35;
             display: -webkit-box; 
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;
             -webkit-box-orient: vertical; 
             overflow: hidden;
             text-overflow: ellipsis; 
-            max-width: 100%;
           }
           
           .fav-btn {
             position: absolute; 
-            top: 8px; 
-            right: 8px; 
-            z-index: 2;
-            width: 32px; 
-            height: 32px; 
+            top: 10px; 
+            right: 10px; 
+            width: 36px; 
+            height: 36px; 
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px); 
-            -webkit-backdrop-filter: blur(8px);
             display: flex; 
             align-items: center; 
             justify-content: center;
             cursor: pointer; 
-            transition: border-color 0.2s ease, transform 0.15s ease, background 0.2s ease; 
-            outline: none;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.2s ease;
+          }
+          
+          /* Show fav btn always on touch or hover */
+          .card-poster-frame:hover .fav-btn, .fav-btn:active {
+            opacity: 1;
             transform: scale(1);
           }
           
-          .fav-btn:hover { 
-            border-color: rgba(255,255,255,0.6); 
-            background: rgba(0,0,0,0.6);
-            transform: scale(1.05);
+          @media (hover: none) {
+             .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.3); border: none; }
           }
           
-          .fav-btn:active { 
-            transform: scale(0.92); 
-          }
+          .fav-btn:hover { background: rgba(255,255,255,0.2); }
+          .fav-btn:active { transform: scale(0.9); }
+          .fav-btn i { font-size: 16px; }
           
-          .fav-btn i { 
-            font-size: 14px; 
-            transition: color 0.2s ease; 
-          }
-          
-          @keyframes heart-zoom { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.5); } 
-            100% { transform: scale(1); } 
-          }
-          
-          .heart-pulse { 
-            animation: heart-zoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform: scale(1);
-          }
+          .heart-pulse { animation: heart-zoom 0.4s ease; }
+          @keyframes heart-zoom { 50% { transform: scale(1.3); } }
 
+          /* --- BOTTOM NAV --- */
           .bottom-nav {
             position: fixed; 
-            bottom: 20px; 
+            bottom: 24px; 
             left: 50%; 
             transform: translateX(-50%);
             display: flex; 
             align-items: center; 
-            gap: 12px; 
+            gap: 16px; 
             z-index: 1000;
             width: 90%; 
             max-width: var(--pill-max-width);
@@ -904,334 +871,107 @@ export default function Home() {
           .nav-pill {
             display: flex; 
             align-items: center; 
-            justify-content: space-between;
+            justify-content: space-evenly;
             height: var(--pill-height); 
-            padding: 0 1.5rem;
+            padding: 0 1rem;
             border-radius: var(--pill-radius); 
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur); 
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
             flex: 1; 
-            transition: background 0.3s ease, border-color 0.3s ease; 
             overflow: hidden;
           }
           
           .nav-btn {
-            flex: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
             background: none; 
-            border: none; 
             cursor: pointer; 
             height: 100%;
-            color: rgba(255,255,255,0.5); 
-            transition: color 0.2s ease;
+            width: 60px;
+            color: rgba(255,255,255,0.4); 
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           
-          .nav-btn i { 
-            font-size: 20px; 
-            transition: transform 0.2s ease;
-            transform: scale(1);
-          }
-          
-          .nav-btn:hover { 
-            color: #fff; 
-          }
-          
-          .nav-btn:hover i { 
-            transform: scale(1.15); 
-          }
-          
-          .nav-btn.active { 
-            color: #fff; 
-          }
-          
-          .nav-btn.active i { 
-            transform: scale(1.08); 
-          }
+          .nav-btn i { font-size: 20px; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+          .nav-btn.active { color: #fff; }
+          .nav-btn.active i { transform: translateY(-2px); }
 
-          .search-wrap { 
-            width: 100%; 
-            display: flex; 
-            align-items: center; 
-            height: 100%; 
-          }
-          
+          .search-wrap { width: 100%; padding: 0 8px; }
           .search-wrap input {
             width: 100%; 
             background: transparent; 
             border: none; 
             outline: none;
-            color: #f1f5f9; 
-            font-size: 15px; 
-            font-family: inherit; 
-            padding: 0 4px;
+            color: #fff; 
+            font-size: 16px; 
+            font-family: inherit;
           }
-          
-          .search-wrap input::placeholder { 
-            color: #cbd5e1; 
-            opacity: 0.6; 
-          }
+          .search-wrap input::placeholder { color: rgba(255,255,255,0.4); }
 
-          .search-circle {
-            width: var(--pill-height); 
-            height: var(--pill-height);
-            border-radius: 50%; 
-            border: var(--pill-border);
-            background: var(--pill-bg);
-            backdrop-filter: var(--pill-blur); 
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: var(--pill-shadow);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            flex-shrink: 0; 
-            cursor: pointer;
-            color: rgba(255,255,255,0.7); 
-            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-            transform: scale(1);
-          }
-          
-          .search-circle:hover { 
-            background: rgba(50,50,50,0.8); 
-            color: #fff;
-            transform: scale(1.05);
-          }
-          
-          .search-circle:active {
-            transform: scale(0.95);
-          }
-          
-          .search-circle i { 
-            font-size: 22px; 
-          }
-
+          /* --- TOAST --- */
           .toast-wrap {
             position: fixed; 
-            bottom: calc(20px + var(--pill-height) + 12px);
+            bottom: calc(24px + var(--pill-height) + 16px);
             left: 50%; 
             transform: translateX(-50%); 
             z-index: 990;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            pointer-events: none; 
-            width: 90%; 
-            max-width: var(--pill-max-width);
+            width: auto;
+            display: flex; justify-content: center;
           }
           
           .toast {
-            pointer-events: auto; 
             display: flex; 
             align-items: center; 
             gap: 12px;
-            padding: 0 1.5rem; 
-            height: 48px; 
+            padding: 12px 20px; 
             border-radius: 30px; 
-            border: var(--pill-border);
-            background: var(--pill-bg); 
-            backdrop-filter: var(--pill-blur); 
-            -webkit-backdrop-filter: var(--pill-blur);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
-            white-space: nowrap;
             animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transform-origin: center bottom;
-            cursor: pointer;
           }
           
-          .toast.closing { 
-            animation: toast-out 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; 
-          }
-          
-          @keyframes toast-in { 
-            from { opacity:0; transform:translateY(60px) scale(0.6); } 
-            to { opacity:1; transform:translateY(0) scale(1); } 
-          }
-          
-          @keyframes toast-out { 
-            from { opacity:1; transform:translateY(0) scale(1); } 
-            to { opacity:0; transform:translateY(60px) scale(0.6); } 
-          }
+          .toast.closing { animation: toast-out 0.3s forwards; }
+          @keyframes toast-in { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes toast-out { to { opacity:0; transform:translateY(10px); } }
           
           .toast-icon { 
-            width:22px; 
-            height:22px; 
-            border-radius:50%; 
-            display:flex; 
-            align-items:center; 
-            justify-content:center; 
-            font-size:11px; 
-            flex-shrink:0; 
+            width:20px; height:20px; border-radius:50%; display:flex; 
+            align-items:center; justify-content:center; font-size:10px; 
           }
-          
-          .toast.success .toast-icon { 
-            background:#10b981; 
-            color:#fff; 
-          }
-          
-          .toast.info .toast-icon { 
-            background:#4dabf7; 
-            color:#fff; 
-          }
-          
-          .toast.error .toast-icon { 
-            background:#ef4444; 
-            color:#fff; 
-          }
-          
-          .toast-msg { 
-            font-size:13px; 
-            color:#fff; 
-            font-weight:500; 
-          }
+          .toast.success .toast-icon { background: #34c759; color: #fff; }
+          .toast.info .toast-icon { background: #007aff; color: #fff; }
+          .toast.error .toast-icon { background: #ff3b30; color: #fff; }
+          .toast-msg { font-size: 14px; font-weight: 500; color: #fff; }
 
+          /* --- FOOTER & EMPTY --- */
           .footer-credits {
-            margin-top: 4rem; 
-            padding: 2rem 1rem; 
+            margin-top: 2rem; 
+            padding: 2rem; 
             text-align: center;
-            color: rgba(255,255,255,0.3); 
-            font-size: 0.85rem;
+            color: rgba(255,255,255,0.25); 
+            font-size: 0.8rem;
             border-top: 1px solid rgba(255,255,255,0.05); 
-            width: 100%;
-          }
-          
-          .footer-sub { 
-            font-size: 0.75rem; 
-            margin-top: 4px; 
-            opacity: 0.7; 
           }
           
           .empty-state {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            min-height: 50vh; 
-            color: #94a3b8; 
-            text-align: center; 
-            width: 100%;
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 40vh; color: #64748b; margin-top: 2rem;
           }
-          
-          .empty-state i { 
-            font-size: 2rem; 
-            margin-bottom: 12px; 
-          }
-          
           .spinner {
-            width: 36px; 
-            height: 36px;
+            width: 32px; height: 32px;
             border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #ff6b6b; 
+            border-top-color: #fff; 
             border-radius: 50%;
-            animation: spin 0.7s linear infinite; 
-            margin-bottom: 12px;
+            animation: spin 0.8s linear infinite;
           }
-          
-          @keyframes spin { 
-            to { transform: rotate(360deg); } 
-          }
+          @keyframes spin { to { transform: rotate(360deg); } }
 
+          /* --- MOBILE RESPONSIVE --- */
           @media (max-width: 768px) {
-            :root { 
-              --pill-height: 56px; 
-              --pill-max-width: 90vw; 
-            }
-            
-            .content-grid { 
-              grid-template-columns: repeat(2, 1fr) !important; 
-              gap: 20px 10px; 
-            }
-            
-            .container { 
-              padding-left: 1.5rem; 
-              padding-right: 1.5rem; 
-            }
-            
-            .header-pill { 
-              top: 14px; 
-              width: 92%; 
-              padding: 0 1rem; 
-            }
-            
-            .bottom-nav { 
-              width: 92%; 
-              bottom: 14px; 
-            }
-            
-            .nav-pill { 
-              padding: 0 1rem; 
-            }
-            
-            .toast-wrap { 
-              width: 92%; 
-              bottom: calc(14px + var(--pill-height) + 12px); 
-            }
-            
-            .toast { 
-              padding: 0 1rem; 
-              height: 44px; 
-            }
-
-            .hero-title { 
-              font-size: 1.5rem; 
-            }
-            
-            .hero-wrapper { 
-              border-radius: 16px; 
-              aspect-ratio: 4/3; 
-            }
-          }
-
-          @media (max-width: 480px) {
-            :root { 
-              --pill-height: 54px; 
-              --pill-max-width: 95vw; 
-            }
-            
-            .container { 
-              padding-left: 1rem; 
-              padding-right: 1rem; 
-            }
-            
-            .header-pill { 
-              width: 94%; 
-            }
-            
-            .bottom-nav { 
-              width: 94%; 
-              gap: 8px; 
-            }
-            
-            .toast-wrap { 
-              width: 94%; 
-            }
-            
-            .nav-pill { 
-              padding: 0 1.25rem; 
-            }
-            
-            .nav-btn i { 
-              font-size: 19px; 
-            }
-            
-            .search-circle i { 
-              font-size: 20px; 
-            }
-            
-            .hero-wrapper { 
-              aspect-ratio: 4 / 3; 
-            }
-            
-            .hero-title { 
-              font-size: 1.3rem; 
-            }
-            
-            .hero-content { 
-              padding: 1.2rem; 
-            }
+            .container { padding-left: 1.25rem; padding-right: 1.25rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 12px; }
+            .hero-wrapper { aspect-ratio: 1.5/1; max-height: 60vh; border-radius: 20px; }
+            .hero-title { font-size: 1.75rem; }
+            .hero-content { padding: 1.5rem; }
+            .header-container, .bottom-nav { width: 94%; gap: 10px; }
+            .nav-pill { padding: 0 0.5rem; }
           }
         `}</style>
       </Head>
@@ -1250,23 +990,22 @@ export default function Home() {
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
       <main className="container">
-        {!loading && showHero && heroItem && (
+        {!loading && heroItem && (
           <HeroFixed item={heroItem} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
         )}
 
-        <h1 className={`page-title ${showHero ? 'page-title-below' : ''}`}>{pageTitle}</h1>
+        <h1 className={`page-title ${heroItem ? 'page-title-below' : ''}`}>{pageTitle}</h1>
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
             <div className="spinner"></div>
-            <span>{searchActive ? 'Buscando...' : 'Carregando...'}</span>
           </div>
         )}
 
         {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
           <div className="empty-state">
-            <i className="fas fa-ghost"></i>
-            <p>Nenhum resultado para "{searchQuery}"</p>
+            <i className="fas fa-ghost" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
+            <p>Nada encontrado</p>
           </div>
         )}
 
@@ -1285,8 +1024,8 @@ export default function Home() {
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state">
-            <i className="fas fa-heart"></i>
-            <p>Nenhum favorito adicionado ainda.</p>
+            <i className="far fa-heart" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
+            <p>Sua lista está vazia</p>
           </div>
         )}
 
