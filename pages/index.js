@@ -34,7 +34,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
   return (
     <>
-      <header className="bar-container top-bar">
+      <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
@@ -169,8 +169,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
     </div>
   )
 }
-
-
 
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
@@ -513,6 +511,10 @@ export default function Home() {
         <style>{`
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+          html {
+            scroll-behavior: smooth;
+          }
+
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #050505;
@@ -527,7 +529,7 @@ export default function Home() {
           }
           
           a { color: inherit; text-decoration: none; }
-          button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; }
+          button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
 
           :root {
@@ -535,18 +537,20 @@ export default function Home() {
             --pill-radius: 50px;
             --pill-max-width: 520px;
             --ios-blue: #0A84FF;
+            --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
 
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
           .bar-container {
@@ -560,10 +564,15 @@ export default function Home() {
             gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
+            transition: all 0.4s var(--ease-smooth);
           }
 
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
+          
+          .top-bar.scrolled-state {
+            transform: translateX(-50%) translateY(-5px);
+          }
 
           .round-btn {
             width: var(--pill-height);
@@ -574,10 +583,14 @@ export default function Home() {
             justify-content: center;
             color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.3s var(--ease-elastic);
           }
           
-          .round-btn:hover { transform: scale(1.08); }
+          .round-btn:hover { 
+            transform: scale(1.08); 
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+          }
           .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
@@ -588,6 +601,7 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
+            transition: all 0.4s var(--ease-elastic);
           }
 
           .bar-label {
@@ -596,13 +610,13 @@ export default function Home() {
             color: #fff;
             white-space: nowrap;
             letter-spacing: -0.01em;
-            animation: labelFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: labelFadeIn 0.4s var(--ease-elastic) forwards;
             position: relative; 
             z-index: 5;
           }
           
           @keyframes labelFadeIn { 
-            from { opacity: 0; transform: translateY(8px) scale(0.95); } 
+            from { opacity: 0; transform: translateY(12px) scale(0.9); } 
             to { opacity: 1; transform: translateY(0) scale(1); } 
           }
 
@@ -622,7 +636,8 @@ export default function Home() {
             transform-origin: top center;
             opacity: 0;
             pointer-events: none;
-            animation: popupZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
           
           .info-popup.closing { 
@@ -630,27 +645,13 @@ export default function Home() {
           }
 
           @keyframes popupZoomIn {
-            0% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(-50%) scale(0.3);
-            }
-            100% {
-              opacity: 1;
-              transform: translateX(-50%) translateY(0) scale(1);
-              pointer-events: auto;
-            }
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
           }
 
           @keyframes popupZoomOut {
-            0% {
-              opacity: 1;
-              transform: translateX(-50%) translateY(0) scale(1);
-            }
-            100% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(-30%) scale(0.5);
-              pointer-events: none;
-            }
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
           }
           
           .popup-icon-wrapper {
@@ -663,6 +664,12 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
+          }
+
+          @keyframes iconPop {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
           }
 
           .popup-icon-wrapper.tech {
@@ -680,7 +687,11 @@ export default function Home() {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            opacity: 0;
+            animation: contentFade 0.4s ease 0.2s forwards;
           }
+
+          @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
           .popup-title {
             font-size: 0.95rem;
@@ -711,11 +722,11 @@ export default function Home() {
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            animation: headerFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: headerFadeIn 0.8s var(--ease-elastic) forwards;
           }
           
           @keyframes headerFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
           }
           
@@ -725,6 +736,7 @@ export default function Home() {
             margin: 0;
             color: #fff;
             letter-spacing: -0.03em;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
           }
           
           .status-dots {
@@ -738,6 +750,7 @@ export default function Home() {
             height: 10px;
             border-radius: 50%;
             animation: dotPulse 2s ease-in-out infinite;
+            transform-origin: center;
           }
           
           .dot.yellow {
@@ -759,7 +772,7 @@ export default function Home() {
           
           @keyframes dotPulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.7; }
+            50% { transform: scale(1.4); opacity: 0.6; }
           }
 
           .content-grid {
@@ -774,20 +787,39 @@ export default function Home() {
             flex-direction: column; 
             width: 100%; 
             position: relative;
-            animation: cardFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            animation: cardEntrance 0.7s var(--ease-elastic) backwards;
+            transition: transform 0.2s ease;
+          }
+
+          .card-wrapper:active {
+            transform: scale(0.95);
           }
           
-          @keyframes cardFadeIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.9); }
+          @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(40px) scale(0.9); }
             to { opacity: 1; transform: translateY(0) scale(1); }
           }
           
-          .card-wrapper:nth-child(1) { animation-delay: 0.05s; }
-          .card-wrapper:nth-child(2) { animation-delay: 0.08s; }
-          .card-wrapper:nth-child(3) { animation-delay: 0.11s; }
-          .card-wrapper:nth-child(4) { animation-delay: 0.14s; }
-          .card-wrapper:nth-child(5) { animation-delay: 0.17s; }
-          .card-wrapper:nth-child(6) { animation-delay: 0.20s; }
+          .card-wrapper:nth-child(1) { animation-delay: 30ms; }
+          .card-wrapper:nth-child(2) { animation-delay: 60ms; }
+          .card-wrapper:nth-child(3) { animation-delay: 90ms; }
+          .card-wrapper:nth-child(4) { animation-delay: 120ms; }
+          .card-wrapper:nth-child(5) { animation-delay: 150ms; }
+          .card-wrapper:nth-child(6) { animation-delay: 180ms; }
+          .card-wrapper:nth-child(7) { animation-delay: 210ms; }
+          .card-wrapper:nth-child(8) { animation-delay: 240ms; }
+          .card-wrapper:nth-child(9) { animation-delay: 270ms; }
+          .card-wrapper:nth-child(10) { animation-delay: 300ms; }
+          .card-wrapper:nth-child(11) { animation-delay: 330ms; }
+          .card-wrapper:nth-child(12) { animation-delay: 360ms; }
+          .card-wrapper:nth-child(13) { animation-delay: 390ms; }
+          .card-wrapper:nth-child(14) { animation-delay: 420ms; }
+          .card-wrapper:nth-child(15) { animation-delay: 450ms; }
+          .card-wrapper:nth-child(16) { animation-delay: 480ms; }
+          .card-wrapper:nth-child(17) { animation-delay: 510ms; }
+          .card-wrapper:nth-child(18) { animation-delay: 540ms; }
+          .card-wrapper:nth-child(19) { animation-delay: 570ms; }
+          .card-wrapper:nth-child(20) { animation-delay: 600ms; }
           
           .card-poster-frame {
             position: relative; 
@@ -796,23 +828,24 @@ export default function Home() {
             aspect-ratio: 2/3; 
             background: #1a1a1a;
             border: 1px solid rgba(255,255,255,0.18);
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.5s var(--ease-elastic);
           }
           
           .card-wrapper:hover .card-poster-frame {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.4);
           }
           
           .content-poster { 
             width: 100%; 
             height: 100%; 
             object-fit: cover;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.8s var(--ease-elastic);
           }
           
           .card-wrapper:hover .content-poster {
-            transform: scale(1.1);
+            transform: scale(1.12);
           }
           
           .card-title {
@@ -826,11 +859,13 @@ export default function Home() {
             -webkit-box-orient: vertical; 
             overflow: hidden; 
             text-overflow: ellipsis;
-            transition: color 0.3s ease;
+            transition: color 0.3s ease, transform 0.3s ease;
+            transform-origin: left center;
           }
           
           .card-wrapper:hover .card-title {
             color: #fff;
+            transform: translateX(2px);
           }
           
           .fav-btn {
@@ -845,9 +880,11 @@ export default function Home() {
             justify-content: center;
             opacity: 0; 
             transform: scale(0.8); 
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.4s var(--ease-elastic);
             border: none;
             z-index: 20;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
           }
           
           .card-poster-frame:hover .fav-btn, .fav-btn:active { 
@@ -855,20 +892,30 @@ export default function Home() {
             transform: scale(1); 
           }
           
+          .fav-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+          }
+
+          .fav-btn:active {
+            transform: scale(0.9);
+          }
+          
           @media (hover: none) { 
             .fav-btn { 
               opacity: 1; 
               transform: scale(1); 
-              background: rgba(0,0,0,0.4); 
             } 
           }
           
           .heart-pulse { 
-            animation: heartZoom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            animation: heartZoom 0.5s var(--ease-elastic); 
           }
           
           @keyframes heartZoom { 
-            50% { transform: scale(1.5); } 
+            0% { transform: scale(1); }
+            50% { transform: scale(1.6); } 
+            100% { transform: scale(1); }
           }
 
           .nav-btn {
@@ -878,30 +925,43 @@ export default function Home() {
             justify-content: center;
             height: 100%; 
             color: rgba(255,255,255,0.4); 
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.3s ease;
             position: relative; 
             z-index: 5;
           }
           
           .nav-btn i { 
             font-size: 18px;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.4s var(--ease-elastic);
+            transform-origin: center;
           }
           
           .nav-btn:hover i {
-            transform: scale(1.15);
+            transform: scale(1.2);
+            color: rgba(255,255,255,0.8);
+          }
+
+          .nav-btn:active i {
+            transform: scale(0.9);
           }
           
           .nav-btn.active { color: #fff; }
           .nav-btn.active i {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            text-shadow: 0 0 15px rgba(255,255,255,0.5);
           }
           
           .search-wrap { 
             width: 100%; 
-            padding: 0 12px; 
+            padding: 0 16px; 
             position: relative; 
             z-index: 5; 
+            animation: searchExpand 0.4s var(--ease-elastic);
+          }
+
+          @keyframes searchExpand {
+            from { opacity: 0; transform: scaleX(0.9); }
+            to { opacity: 1; transform: scaleX(1); }
           }
           
           .search-wrap input {
@@ -933,7 +993,8 @@ export default function Home() {
             transform: translateX(-50%) translateY(50%) scale(0.3);
             transform-origin: bottom center;
             opacity: 0;
-            animation: toastZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: toastZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
           }
           
           .toast.closing { 
@@ -941,25 +1002,13 @@ export default function Home() {
           }
 
           @keyframes toastZoomIn {
-            0% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(50%) scale(0.3);
-            }
-            100% {
-              opacity: 1;
-              transform: translateX(-50%) translateY(0) scale(1);
-            }
+            0% { opacity: 0; transform: translateX(-50%) translateY(50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
           }
 
           @keyframes toastZoomOut {
-            0% {
-              opacity: 1;
-              transform: translateX(-50%) translateY(0) scale(1);
-            }
-            100% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(30%) scale(0.5);
-            }
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(30%) scale(0.5); }
           }
           
           .toast-icon-wrapper { 
@@ -972,7 +1021,10 @@ export default function Home() {
             justify-content: center; 
             position: relative; 
             z-index: 5;
+            animation: iconRotate 0.6s var(--ease-elastic) 0.1s backwards;
           }
+
+          @keyframes iconRotate { from { transform: rotate(-90deg) scale(0); } to { transform: rotate(0) scale(1); } }
 
           .toast.success .toast-icon-wrapper {
             background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
@@ -1071,12 +1123,24 @@ export default function Home() {
             align-items: center; 
             color: #555; 
             margin-top: 3rem; 
-            gap: 8px;
-            animation: emptyStateFadeIn 0.6s ease forwards;
+            gap: 12px;
+            animation: emptyStateFadeIn 0.6s var(--ease-elastic) forwards;
+          }
+          
+          .empty-state i {
+            font-size: 2rem;
+            opacity: 0.5;
+            margin-bottom: 8px;
+            animation: floatIcon 3s ease-in-out infinite;
+          }
+
+          @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
           }
           
           @keyframes emptyStateFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
           }
 
@@ -1135,7 +1199,7 @@ export default function Home() {
         )}
 
         {displayItems.length > 0 && !loading && (
-          <div className="content-grid">
+          <div className="content-grid" key={activeSection + (searchActive ? '-search' : '')}>
             {displayItems.map(item => (
               <MovieCard 
                 key={getItemKey(item)} 
@@ -1149,6 +1213,7 @@ export default function Home() {
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state">
+            <i className="far fa-folder-open"></i>
             <p>Lista vazia</p>
           </div>
         )}
