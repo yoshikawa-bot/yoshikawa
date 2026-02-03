@@ -170,53 +170,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
-  if (!item) return null
 
-  const getBackdropUrl = (i) =>
-    i.backdrop_path
-      ? `https://image.tmdb.org/t/p/original${i.backdrop_path}`
-      : i.poster_path
-        ? `https://image.tmdb.org/t/p/w1280${i.poster_path}`
-        : DEFAULT_BACKDROP
-
-  const favActive = isFavorite(item)
-  const [animating, setAnimating] = useState(false)
-
-  const handleFav = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setAnimating(true)
-    toggleFavorite(item)
-    setTimeout(() => setAnimating(false), 400)
-  }
-
-  return (
-    <div className="hero-static-container">
-      <div className="hero-wrapper">
-        <Link href={`/${item.media_type}/${item.id}`} style={{ display: 'block', width: '100%', height: '100%' }}>
-          <div className="hero-backdrop">
-            <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
-            <div className="hero-overlay"></div>
-            <div className="hero-content">
-              <h2 className="hero-title">{item.title || item.name}</h2>
-            </div>
-          </div>
-        </Link>
-        <button 
-          className="fav-btn glass-panel" 
-          onClick={handleFav} 
-          style={{ top: '16px', right: '16px' }}
-        >
-          <i
-            className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: favActive ? '#ff3b30' : '#ffffff' }}
-          ></i>
-        </button>
-      </div>
-    </div>
-  )
-}
 
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
@@ -252,7 +206,9 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
 
 export const Footer = () => (
   <footer className="footer-credits">
-    <p>Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
+    <p className="footer-main">Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
+    <p className="footer-author">Criado por Kawa</p>
+    <p className="footer-tech">React 18 • TMDB API • v2.6.0</p>
   </footer>
 )
 
@@ -542,7 +498,6 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const heroItem = !searchActive && recommendations.length > 0 ? recommendations[0] : null
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -578,7 +533,7 @@ export default function Home() {
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
-            --pill-max-width: 680px;
+            --pill-max-width: 520px;
             --ios-blue: #0A84FF;
           }
 
@@ -751,85 +706,60 @@ export default function Home() {
             padding-right: 2rem;
           }
           
-          .page-title {
-            font-size: 1.5rem; 
-            font-weight: 700; 
-            margin-bottom: 1rem;
-            color: #fff;
-            letter-spacing: -0.03em;
-            animation: titleSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            animation: headerFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           }
           
-          @keyframes titleSlideIn {
+          @keyframes headerFadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
           }
           
-          .page-title-below { margin-top: 0; }
-
-          .hero-static-container { 
-            width: 100%; 
-            position: relative; 
-            margin-bottom: 2rem;
-            animation: heroFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-          }
-          
-          @keyframes heroFadeIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-          
-          .hero-wrapper {
-            display: block; 
-            width: 100%; 
-            aspect-ratio: 2.35 / 1;
-            position: relative;
-            border-radius: 24px; 
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            transform: translateZ(0);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          
-          .hero-wrapper:hover {
-            transform: scale(1.02);
-          }
-          
-          .hero-backdrop img {
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            object-position: center center;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          
-          .hero-wrapper:hover .hero-backdrop img {
-            transform: scale(1.05);
-          }
-          
-          .hero-overlay {
-            position: absolute; 
-            inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
-          }
-          
-          .hero-content {
-            position: absolute; 
-            bottom: 0; 
-            left: 0; 
-            width: 100%; 
-            padding: 2rem; 
-            z-index: 2;
-          }
-          
-          .hero-title {
-            font-size: 2.2rem; 
-            font-weight: 800; 
+          .page-title {
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            margin: 0;
             color: #fff;
-            letter-spacing: -0.03em; 
-            margin: 0; 
-            line-height: 1;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            letter-spacing: -0.03em;
+          }
+          
+          .status-dots {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          
+          .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: dotPulse 2s ease-in-out infinite;
+          }
+          
+          .dot.yellow {
+            background: linear-gradient(135deg, #FFD60A, #FFC300);
+            box-shadow: 0 2px 8px rgba(255, 214, 10, 0.4);
+          }
+          
+          .dot.blue {
+            background: linear-gradient(135deg, #0A84FF, #007AFF);
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+            animation-delay: 0.3s;
+          }
+          
+          .dot.red {
+            background: linear-gradient(135deg, #FF453A, #FF3B30);
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
+            animation-delay: 0.6s;
+          }
+          
+          @keyframes dotPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
           }
 
           .content-grid {
@@ -1090,10 +1020,31 @@ export default function Home() {
             margin-top: 3rem; 
             padding: 2rem; 
             text-align: center;
-            color: rgba(255,255,255,0.2); 
+            color: rgba(255,255,255,0.3); 
             font-size: 0.75rem;
             border-top: 1px solid rgba(255,255,255,0.05);
             animation: footerFadeIn 0.8s ease forwards;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          
+          .footer-main {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.4);
+          }
+          
+          .footer-author {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+            font-style: italic;
+          }
+          
+          .footer-tech {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.2);
+            font-family: 'Courier New', monospace;
           }
           
           @keyframes footerFadeIn {
@@ -1132,9 +1083,6 @@ export default function Home() {
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
-            .hero-wrapper { aspect-ratio: 1.7/1; border-radius: 20px; }
-            .hero-title { font-size: 1.6rem; }
-            .hero-content { padding: 1.5rem; }
             .bar-container { width: 94%; gap: 8px; }
             .card-poster-frame { border-radius: 14px; }
             .info-popup { min-width: 280px; padding: 14px 16px; }
@@ -1143,6 +1091,9 @@ export default function Home() {
             .popup-title { font-size: 0.88rem; }
             .popup-text { font-size: 0.75rem; }
             .toast { min-width: 260px; padding: 12px 16px; }
+            .page-title { font-size: 1.3rem; }
+            .dot { width: 8px; height: 8px; }
+            .status-dots { gap: 6px; }
           }
         `}</style>
       </Head>
@@ -1161,11 +1112,14 @@ export default function Home() {
       <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
       <main className="container">
-        {!loading && heroItem && (
-          <HeroFixed item={heroItem} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
-        )}
-
-        <h1 className={`page-title ${heroItem ? 'page-title-below' : ''}`}>{pageTitle}</h1>
+        <div className="page-header">
+          <h1 className="page-title">{pageTitle}</h1>
+          <div className="status-dots">
+            <span className="dot yellow"></span>
+            <span className="dot blue"></span>
+            <span className="dot red"></span>
+          </div>
+        </div>
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
