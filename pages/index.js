@@ -976,9 +976,9 @@ export default function Home() {
 
           .toast-wrap {
             position: fixed; 
-            bottom: calc(20px + var(--pill-height) + 16px);
+            top: calc(20px + var(--pill-height) + 16px);
             left: 50%; 
-            z-index: 950; 
+            z-index: 960; 
             pointer-events: none;
           }
           
@@ -990,8 +990,8 @@ export default function Home() {
             padding: 14px 18px; 
             border-radius: 22px;
             min-width: 280px;
-            transform: translateX(-50%) translateY(50%) scale(0.3);
-            transform-origin: bottom center;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
             opacity: 0;
             animation: toastZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 15px 40px rgba(0,0,0,0.5);
@@ -1002,13 +1002,13 @@ export default function Home() {
           }
 
           @keyframes toastZoomIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(50%) scale(0.3); }
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
             100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
           }
 
           @keyframes toastZoomOut {
             0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(30%) scale(0.5); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); }
           }
           
           .toast-icon-wrapper { 
