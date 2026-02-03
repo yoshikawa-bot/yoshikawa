@@ -52,24 +52,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i 
-            className="fas fa-info-circle"
-            style={{
-              fontSize: '14px',
-              opacity: scrolled ? 0 : 1,
-              transform: `translate(-50%, -50%) scale(${scrolled ? 0.8 : 1})`,
-              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            }}
-          ></i>
-          <i 
-            className="fas fa-chevron-up"
-            style={{
-              fontSize: '14px',
-              opacity: scrolled ? 1 : 0,
-              transform: `translate(-50%, -50%) scale(${scrolled ? 1 : 0.8})`,
-              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            }}
-          ></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
@@ -137,36 +120,8 @@ export const BottomNav = ({
       </button>
 
       <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
-        <div className="pill-content">
-          <div 
-            className="nav-buttons"
-            style={{
-              opacity: searchActive ? 0 : 1,
-              transform: `scale(${searchActive ? 0.92 : 1})`,
-              pointerEvents: searchActive ? 'none' : 'auto',
-              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            }}
-          >
-            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-              <i className="fas fa-film"></i>
-            </button>
-            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-              <i className="fas fa-fire-flame-curved"></i>
-            </button>
-            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-              <i className="fas fa-heart"></i>
-            </button>
-          </div>
-
-          <div 
-            className="search-wrap-abs"
-            style={{
-              opacity: searchActive ? 1 : 0,
-              transform: `scale(${searchActive ? 1 : 0.92})`,
-              pointerEvents: searchActive ? 'auto' : 'none',
-              transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            }}
-          >
+        {searchActive ? (
+          <div className="search-wrap">
             <input
               ref={inputRef}
               type="text"
@@ -176,28 +131,23 @@ export const BottomNav = ({
               onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
             />
           </div>
-        </div>
+        ) : (
+          <>
+            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
+              <i className="fas fa-film"></i>
+            </button>
+            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
+              <i className="fas fa-fire-flame-curved"></i>
+            </button>
+            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+              <i className="fas fa-heart"></i>
+            </button>
+          </>
+        )}
       </div>
 
       <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
-        <i 
-          className="fas fa-magnifying-glass"
-          style={{
-            fontSize: '15px',
-            opacity: searchActive ? 0 : 1,
-            transform: `translate(-50%, -50%) scale(${searchActive ? 0.8 : 1}) rotate(${searchActive ? 90 : 0}deg)`,
-            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}
-        ></i>
-        <i 
-          className="fas fa-xmark"
-          style={{
-            fontSize: '17px',
-            opacity: searchActive ? 1 : 0,
-            transform: `translate(-50%, -50%) scale(${searchActive ? 1 : 0.8}) rotate(${searchActive ? 0 : -90}deg)`,
-            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}
-        ></i>
+        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
     </div>
   )
@@ -220,6 +170,8 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+
+
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
 
@@ -228,7 +180,7 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
     e.stopPropagation()
     setAnimating(true)
     toggleFavorite(item)
-    setTimeout(() => setAnimating(false), 500)
+    setTimeout(() => setAnimating(false), 400)
   }
 
   return (
@@ -614,7 +566,6 @@ export default function Home() {
           .bottom-bar { bottom: 20px; }
 
           .round-btn {
-            position: relative;
             width: var(--pill-height);
             height: var(--pill-height);
             border-radius: 50%;
@@ -629,12 +580,6 @@ export default function Home() {
           .round-btn:hover { transform: scale(1.08); }
           .round-btn:active { transform: scale(0.92); }
 
-          .round-btn i {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-          }
-
           .pill-container {
             height: var(--pill-height);
             flex: 1;
@@ -643,43 +588,6 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
-          }
-
-          .pill-content {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            border-radius: inherit;
-          }
-
-          .nav-buttons {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-          }
-
-          .search-wrap-abs {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-          }
-
-          .search-wrap-abs input {
-            width: 100%; 
-            background: transparent; 
-            border: none; 
-            outline: none;
-            color: #fff; 
-            font-size: 15px; 
-            font-family: inherit;
           }
 
           .bar-label {
@@ -722,13 +630,27 @@ export default function Home() {
           }
 
           @keyframes popupZoomIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+            0% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(-50%) scale(0.3);
+            }
+            100% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+              pointer-events: auto;
+            }
           }
 
           @keyframes popupZoomOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
+            0% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(-30%) scale(0.5);
+              pointer-events: none;
+            }
           }
           
           .popup-icon-wrapper {
@@ -837,7 +759,7 @@ export default function Home() {
           
           @keyframes dotPulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 0.7; }
           }
 
           .content-grid {
@@ -852,24 +774,21 @@ export default function Home() {
             flex-direction: column; 
             width: 100%; 
             position: relative;
-            animation: cardFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            animation: cardFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
           }
           
           @keyframes cardFadeIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.92); }
+            from { opacity: 0; transform: translateY(20px) scale(0.9); }
             to { opacity: 1; transform: translateY(0) scale(1); }
           }
           
           .card-wrapper:nth-child(1) { animation-delay: 0.05s; }
-          .card-wrapper:nth-child(2) { animation-delay: 0.10s; }
-          .card-wrapper:nth-child(3) { animation-delay: 0.15s; }
-          .card-wrapper:nth-child(4) { animation-delay: 0.20s; }
-          .card-wrapper:nth-child(5) { animation-delay: 0.25s; }
-          .card-wrapper:nth-child(6) { animation-delay: 0.30s; }
-          .card-wrapper:nth-child(7) { animation-delay: 0.35s; }
-          .card-wrapper:nth-child(8) { animation-delay: 0.40s; }
-          .card-wrapper:nth-child(9) { animation-delay: 0.45s; }
-
+          .card-wrapper:nth-child(2) { animation-delay: 0.08s; }
+          .card-wrapper:nth-child(3) { animation-delay: 0.11s; }
+          .card-wrapper:nth-child(4) { animation-delay: 0.14s; }
+          .card-wrapper:nth-child(5) { animation-delay: 0.17s; }
+          .card-wrapper:nth-child(6) { animation-delay: 0.20s; }
+          
           .card-poster-frame {
             position: relative; 
             border-radius: 16px; 
@@ -877,23 +796,23 @@ export default function Home() {
             aspect-ratio: 2/3; 
             background: #1a1a1a;
             border: 1px solid rgba(255,255,255,0.18);
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
           .card-wrapper:hover .card-poster-frame {
-            transform: translateY(-10px);
-            box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
           }
           
           .content-poster { 
             width: 100%; 
             height: 100%; 
             object-fit: cover;
-            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
           .card-wrapper:hover .content-poster {
-            transform: scale(1.12);
+            transform: scale(1.1);
           }
           
           .card-title {
@@ -907,7 +826,7 @@ export default function Home() {
             -webkit-box-orient: vertical; 
             overflow: hidden; 
             text-overflow: ellipsis;
-            transition: color 0.4s ease;
+            transition: color 0.3s ease;
           }
           
           .card-wrapper:hover .card-title {
@@ -925,8 +844,8 @@ export default function Home() {
             align-items: center; 
             justify-content: center;
             opacity: 0; 
-            transform: scale(0.7); 
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: scale(0.8); 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             border: none;
             z-index: 20;
           }
@@ -945,13 +864,11 @@ export default function Home() {
           }
           
           .heart-pulse { 
-            animation: heartZoom 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            animation: heartZoom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); 
           }
           
           @keyframes heartZoom { 
-            0% { transform: scale(1); }
-            50% { transform: scale(1.6); }
-            100% { transform: scale(1); }
+            50% { transform: scale(1.5); } 
           }
 
           .nav-btn {
@@ -968,14 +885,34 @@ export default function Home() {
           
           .nav-btn i { 
             font-size: 18px;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
-          .nav-btn:hover i, .nav-btn.active i {
-            transform: scale(1.2);
+          .nav-btn:hover i {
+            transform: scale(1.15);
           }
           
           .nav-btn.active { color: #fff; }
+          .nav-btn.active i {
+            transform: scale(1.1);
+          }
+          
+          .search-wrap { 
+            width: 100%; 
+            padding: 0 12px; 
+            position: relative; 
+            z-index: 5; 
+          }
+          
+          .search-wrap input {
+            width: 100%; 
+            background: transparent; 
+            border: none; 
+            outline: none;
+            color: #fff; 
+            font-size: 15px; 
+            font-family: inherit;
+          }
 
           .toast-wrap {
             position: fixed; 
@@ -1004,13 +941,25 @@ export default function Home() {
           }
 
           @keyframes toastZoomIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(50%) scale(0.3); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            0% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(50%) scale(0.3);
+            }
+            100% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
           }
 
           @keyframes toastZoomOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(30%) scale(0.5); }
+            0% {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(-50%) translateY(30%) scale(0.5);
+            }
           }
           
           .toast-icon-wrapper { 
@@ -1219,4 +1168,4 @@ export default function Home() {
       />
     </>
   )
-    }
+}
