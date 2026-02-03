@@ -5,7 +5,10 @@ import Head from 'next/head'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// Componente Header (igual à home)
+// Consumet API - retorna links diretos de vídeo
+const CONSUMET_API = 'https://consumet-api-clone.vercel.app'
+
+// Componente Header
 export const PlayerHeader = ({ title, scrolled, onBack, onInfo }) => {
   return (
     <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
@@ -32,7 +35,7 @@ export const PlayerHeader = ({ title, scrolled, onBack, onInfo }) => {
   )
 }
 
-// Componente Bottom Nav (igual à home)
+// Componente Bottom Nav
 export const PlayerBottomNav = ({ 
   activeTab, 
   setActiveTab, 
@@ -86,7 +89,7 @@ export const PlayerBottomNav = ({
   )
 }
 
-// Toast Component (igual à home)
+// Toast Component
 export const Toast = ({ message, type, onClose, closing }) => {
   if (!message) return null
   
@@ -105,9 +108,9 @@ export const Toast = ({ message, type, onClose, closing }) => {
   )
 }
 
-// Player Popup Component - REDESENHADO
+// Player Popup Component com Player HTML5 Nativo
 export const PlayerPopup = ({ 
-  embedUrl, 
+  videoSources,
   onClose, 
   isVisible, 
   type, 
@@ -117,10 +120,18 @@ export const PlayerPopup = ({
   onNextEpisode,
   canGoPrev,
   canGoNext,
-  onServerChange,
-  currentServer,
-  servers
+  loading,
+  title
 }) => {
+  const [currentQuality, setCurrentQuality] = useState(0)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    if (videoRef.current && videoSources.length > 0) {
+      videoRef.current.load()
+    }
+  }, [currentQuality, videoSources])
+
   if (!isVisible) return null
   
   return (
@@ -131,31 +142,50 @@ export const PlayerPopup = ({
         </button>
         
         <div className="player-frame glass-panel">
-          <iframe
-            key={embedUrl}
-            src={embedUrl}
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          ></iframe>
+          {loading ? (
+            <div className="player-loading">
+              <div className="spinner"></div>
+              <p>Carregando vídeo...</p>
+            </div>
+          ) : videoSources.length > 0 ? (
+            <video 
+              ref={videoRef}
+              controls 
+              autoPlay
+              className="native-player"
+              poster={DEFAULT_BACKDROP}
+            >
+              <source src={videoSources[currentQuality]?.url} type="video/mp4" />
+              Seu navegador não suporta o player de vídeo.
+            </video>
+          ) : (
+            <div className="player-error">
+              <i className="fas fa-exclamation-triangle"></i>
+              <p>Nenhuma fonte de vídeo disponível</p>
+              <small>Tente outro servidor ou episódio</small>
+            </div>
+          )}
         </div>
 
         {/* Controles externos ao player */}
         <div className="player-controls">
-          {/* Seletor de servidor */}
-          <div className="server-selector-external">
-            <span className="server-label">Servidor:</span>
-            <div className="server-buttons">
-              {servers.map((server, index) => (
-                <button
-                  key={index}
-                  className={`server-btn glass-panel ${currentServer === index ? 'active' : ''}`}
-                  onClick={() => onServerChange(index)}
-                >
-                  {server.name}
-                </button>
-              ))}
+          {/* Seletor de qualidade */}
+          {!loading && videoSources.length > 0 && (
+            <div className="server-selector-external">
+              <span className="server-label">Qualidade:</span>
+              <div className="server-buttons">
+                {videoSources.map((source, index) => (
+                  <button
+                    key={index}
+                    className={`server-btn glass-panel ${currentQuality === index ? 'active' : ''}`}
+                    onClick={() => setCurrentQuality(index)}
+                  >
+                    {source.quality}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Navegação de episódios (apenas para séries) */}
           {type === 'tv' && (
@@ -231,20 +261,15 @@ export default function PlayerPage() {
   const [showPlayer, setShowPlayer] = useState(false)
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [currentServer, setCurrentServer] = useState(0)
+  const [videoSources, setVideoSources] = useState([])
+  const [loadingVideo, setLoadingVideo] = useState(false)
+  const [imdbId, setImdbId] = useState(null)
   
   const [toast, setToast] = useState(null)
   const [toastClosing, setToastClosing] = useState(false)
   const toastTimerRef = useRef(null)
 
   const [watchProgress, setWatchProgress] = useState({})
-
-  // Servidores disponíveis
-  const servers = [
-    { name: 'Servidor 1', getUrl: (type, id, s, e) => type === 'movie' ? `https://vidsrc.xyz/embed/movie/${id}` : `https://vidsrc.xyz/embed/tv/${id}/${s}/${e}` },
-    { name: 'Servidor 2', getUrl: (type, id, s, e) => type === 'movie' ? `https://embed.su/embed/movie/${id}` : `https://embed.su/embed/tv/${id}/${s}/${e}` },
-    { name: 'Servidor 3', getUrl: (type, id, s, e) => type === 'movie' ? `https://www.2embed.cc/embed/${id}` : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}` }
-  ]
 
   // Toast handler
   const showToast = (message, type = 'info') => {
@@ -279,17 +304,25 @@ export default function PlayerPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Load TMDB data
+  // Load TMDB data e buscar IMDB ID
   useEffect(() => {
     if (!id || !type) return
     
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=videos,external_ids`
+          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`
         )
         const data = await res.json()
         setItem(data)
+        
+        // Pegar IMDB ID
+        if (data.external_ids?.imdb_id) {
+          setImdbId(data.external_ids.imdb_id)
+        } else if (data.imdb_id) {
+          setImdbId(data.imdb_id)
+        }
+        
         setLoading(false)
       } catch (err) {
         console.error(err)
@@ -299,6 +332,75 @@ export default function PlayerPage() {
     
     fetchData()
   }, [id, type])
+
+  // Buscar fontes de vídeo do Consumet API
+  const fetchVideoSources = async () => {
+    if (!imdbId) {
+      showToast('IMDB ID não encontrado', 'error')
+      return
+    }
+
+    setLoadingVideo(true)
+    setVideoSources([])
+
+    try {
+      let url
+      if (type === 'movie') {
+        // Para filmes
+        url = `${CONSUMET_API}/movies/flixhq/watch?episodeId=${imdbId}&mediaId=${imdbId}`
+      } else {
+        // Para séries - tentar diferentes provedores
+        url = `${CONSUMET_API}/meta/tmdb/watch/${id}?id=${id}&season=${season}&episode=${episode}`
+      }
+
+      const res = await fetch(url)
+      const data = await res.json()
+
+      console.log('Video data:', data)
+
+      // Processar diferentes formatos de resposta
+      let sources = []
+      
+      if (data.sources && Array.isArray(data.sources)) {
+        sources = data.sources.map(s => ({
+          url: s.url,
+          quality: s.quality || 'auto',
+          isM3U8: s.isM3U8 || false
+        }))
+      } else if (data.results && Array.isArray(data.results)) {
+        sources = data.results.map(s => ({
+          url: s.url,
+          quality: s.quality || 'auto',
+          isM3U8: s.isM3U8 || false
+        }))
+      }
+
+      if (sources.length > 0) {
+        setVideoSources(sources)
+        showToast('Vídeo carregado!', 'success')
+      } else {
+        // Fallback para embeds se não houver links diretos
+        showToast('Usando servidor alternativo', 'info')
+        setVideoSources([{
+          url: `https://vidsrc.xyz/embed/${type}/${imdbId}${type === 'tv' ? `/${season}/${episode}` : ''}`,
+          quality: 'auto',
+          isEmbed: true
+        }])
+      }
+    } catch (err) {
+      console.error('Error fetching video:', err)
+      showToast('Erro ao carregar vídeo, usando fallback', 'error')
+      
+      // Fallback para embed
+      setVideoSources([{
+        url: `https://vidsrc.xyz/embed/${type}/${imdbId || id}${type === 'tv' ? `/${season}/${episode}` : ''}`,
+        quality: 'auto',
+        isEmbed: true
+      }])
+    } finally {
+      setLoadingVideo(false)
+    }
+  }
 
   // Load favorites and watch progress
   useEffect(() => {
@@ -389,14 +491,10 @@ export default function PlayerPage() {
   // Play handler
   const handlePlay = () => {
     setShowPlayer(true)
+    fetchVideoSources()
     if (type === 'tv') {
       saveProgress(season, episode)
     }
-  }
-
-  // Get embed URL
-  const getEmbedUrl = () => {
-    return servers[currentServer].getUrl(type, id, season, episode)
   }
 
   // Episode navigation
@@ -405,6 +503,7 @@ export default function PlayerPage() {
       const newEp = episode - 1
       setEpisode(newEp)
       saveProgress(season, newEp)
+      fetchVideoSources()
       showToast(`T${season} E${newEp}`, 'info')
     }
   }
@@ -413,6 +512,7 @@ export default function PlayerPage() {
     const newEp = episode + 1
     setEpisode(newEp)
     saveProgress(season, newEp)
+    fetchVideoSources()
     showToast(`T${season} E${newEp}`, 'info')
   }
 
@@ -424,6 +524,7 @@ export default function PlayerPage() {
       showToast(`Continuando T${watchProgress.season} E${watchProgress.episode}`, 'info')
     }
     setShowPlayer(true)
+    fetchVideoSources()
   }
 
   if (loading || !item) {
@@ -689,7 +790,7 @@ export default function PlayerPage() {
             line-height: 1.4;
           }
 
-          /* Player Popup - REDESENHADO */
+          /* Player Popup */
           .player-overlay {
             position: fixed;
             inset: 0;
@@ -753,12 +854,36 @@ export default function PlayerPage() {
             border-radius: 20px;
             overflow: hidden;
             margin-bottom: 20px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
-          .player-frame iframe {
+          .native-player {
             width: 100%;
             height: 100%;
-            border: none;
+            background: #000;
+          }
+
+          .player-loading, .player-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            height: 100%;
+          }
+
+          .player-error i {
+            font-size: 3rem;
+            color: rgba(255, 69, 58, 0.8);
+          }
+
+          .player-error small {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
           }
 
           /* Controles Externos */
@@ -1220,7 +1345,7 @@ export default function PlayerPage() {
       )}
 
       <PlayerPopup
-        embedUrl={getEmbedUrl()}
+        videoSources={videoSources}
         onClose={() => setShowPlayer(false)}
         isVisible={showPlayer}
         type={type}
@@ -1230,9 +1355,8 @@ export default function PlayerPage() {
         onNextEpisode={handleNextEpisode}
         canGoPrev={episode > 1}
         canGoNext={true}
-        onServerChange={setCurrentServer}
-        currentServer={currentServer}
-        servers={servers}
+        loading={loadingVideo}
+        title={item.title || item.name}
       />
 
       <main className="player-container">
