@@ -454,7 +454,7 @@ export default function Home() {
         ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
       ]
         .filter(i => i.poster_path)
-        .sort(() => 0.5 - Math.random())
+        .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 36)
       
       setReleases(releasesData)
@@ -504,7 +504,7 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
+  const heroItem = !searchActive && recommendations.length > 0 ? recommendations[0] : null
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -512,14 +512,6 @@ export default function Home() {
 
   return (
     <>
-      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
-      <svg style={{ display: 'none' }}>
-        <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
-
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -537,7 +529,6 @@ export default function Home() {
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
-            /* Fundo suave para o efeito de vidro brilhar */
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
@@ -549,49 +540,21 @@ export default function Home() {
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
-            --liquid-tint: rgba(20, 20, 20, 0.45);
-            --liquid-highlight: rgba(255, 255, 255, 0.12);
             --pill-max-width: 680px;
             --ios-blue: #0A84FF;
           }
 
-          /* --- LIQUID GLASS STYLES --- */
-          /* Substituição completa da lógica antiga de blur */
+          /* --- SIMPLE GLASS (blur comum, sem SVG pesado) --- */
           .glass-panel {
             position: relative;
-            background: transparent;
-            z-index: 10;
-            overflow: hidden; /* Mantém o líquido dentro da borda */
-            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-          }
-
-          /* Camada de Distorção (Fundo) */
-          .glass-panel::before {
-            content: '';
-            position: absolute;
-            inset: -5px; /* Extende para evitar bordas duras na distorção */
-            background: var(--liquid-tint);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            /* O Filtro Mágico */
-            filter: url(#liquid-glass) saturate(140%) brightness(1.1);
-            z-index: -2;
-            pointer-events: none;
-          }
-
-          /* Camada Especular (Bordas e Brilho) */
-          .glass-panel::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: -1;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
-            box-shadow: 
-                inset 1px 1px 0px var(--liquid-highlight),
-                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
-                0 4px 24px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            pointer-events: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
           .bar-container {
@@ -633,8 +596,6 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
-            /* Importante para o pseudo-elemento respeitar o shape */
-            isolation: isolate; 
           }
 
           .bar-label {
@@ -648,28 +609,42 @@ export default function Home() {
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS --- */
+          /* --- POPUPS (animações similares às notificações, mais fluidas) --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
-            transform: translateX(-50%) scale(0.95);
-            z-index: 900;
-            width: auto; 
-            min-width: 280px;
+            transform: translateX(-50%) translateY(-30px);
             opacity: 0;
-            animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
+            z-index: 900;
+            min-width: 280px;
             display: flex; 
             align-items: center; 
             gap: 12px;
             padding: 0.8rem 1.2rem; 
             border-radius: 20px;
+            animation: popupSlideIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
           }
           
-          .info-popup.closing { animation: popupOut 0.2s ease forwards; }
-          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
-          @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
+          .info-popup.closing { 
+            animation: popupSlideOut 0.3s ease forwards; 
+          }
+
+          @keyframes popupSlideIn {
+            to {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0);
+              pointer-events: auto;
+            }
+          }
+
+          @keyframes popupSlideOut {
+            to {
+              opacity: 0;
+              transform: translateX(-50%) translateY(-20px);
+            }
+          }
           
           .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
           .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
@@ -693,7 +668,7 @@ export default function Home() {
           }
           .page-title-below { margin-top: 0; }
 
-          /* --- HERO CLEAN --- */
+          /* --- HERO (centralizado e sempre o mais popular) --- */
           .hero-static-container { width: 100%; position: relative; margin-bottom: 2rem; }
           .hero-wrapper {
             display: block; 
@@ -707,8 +682,9 @@ export default function Home() {
           }
           
           .hero-backdrop img {
-            width: 100%; height: 100%; object-fit: cover; 
-            transition: transform 1s ease;
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+            object-position: center center;
           }
           
           .hero-overlay {
@@ -727,7 +703,7 @@ export default function Home() {
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
           }
 
-          /* --- CARDS --- */
+          /* --- CARDS (sem animação de hover) --- */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -744,10 +720,8 @@ export default function Home() {
             aspect-ratio: 2/3; 
             background: #1a1a1a;
             border: 1px solid rgba(255,255,255,0.18); 
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
           
-          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
           .content-poster { width: 100%; height: 100%; object-fit: cover; }
           
           .card-title {
@@ -763,7 +737,6 @@ export default function Home() {
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
             border: none;
-            /* Override glass z-index inside cards */
             z-index: 20;
           }
           .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
@@ -787,7 +760,7 @@ export default function Home() {
             color: #fff; font-size: 15px; font-family: inherit;
           }
 
-          /* --- FLUID THIN TOAST --- */
+          /* --- TOAST (mantido, já fluido) --- */
           .toast-wrap {
             position: fixed; 
             bottom: calc(20px + var(--pill-height) + 12px);
@@ -908,4 +881,4 @@ export default function Home() {
       />
     </>
   )
-                }
+            }
