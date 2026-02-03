@@ -22,26 +22,10 @@ const useDebounce = (callback, delay) => {
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
-// --- HEADER COMPONENT RESTRUCTURED ---
+// --- HEADER (Topo) ---
+// Botão Esquerdo: Caneta (Tech)
+// Botão Direito: Info/Scroll
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
-  
-  const handleShare = async (e) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Yoshikawa Player',
-          text: 'Assista aos melhores filmes e séries.',
-          url: window.location.href,
-        })
-      } catch (err) {
-        console.log('Share canceled')
-      }
-    } else {
-      toggleTech() // Fallback se não suportar share, abre info técnica
-    }
-  }
-
   const handleRightClick = (e) => {
     e.stopPropagation()
     if (scrolled) {
@@ -53,31 +37,29 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
   return (
     <>
-      <header className="header-container">
-        {/* Botão Esquerdo Separado - Share Style */}
+      <header className="bar-container top-bar">
         <button 
           className="round-btn glass-panel" 
-          onClick={handleShare}
-          title="Compartilhar"
+          onClick={(e) => { e.stopPropagation(); toggleTech() }}
+          title="Info Técnica"
         >
-          <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
+          <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
         </button>
 
-        {/* Pílula Central Menor */}
-        <div className="header-pill glass-panel">
-          <span key={label} className="header-label">{label}</span>
+        <div className="pill-container glass-panel">
+          <span key={label} className="bar-label">{label}</span>
         </div>
 
-        {/* Botão Direito Separado */}
         <button 
           className="round-btn glass-panel" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info"} style={{ fontSize: scrolled ? '14px' : '14px' }}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
+      {/* Popups (Mantidos a lógica, ajustado visual) */}
       {showInfo && (
         <div 
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
@@ -85,7 +67,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         >
           <i className="fas fa-shield-halved info-icon"></i>
           <p className="info-text">
-            Para uma melhor experiência, utilize o navegador <strong>Brave</strong> ou instale um <strong>AdBlock</strong>.
+            Use <strong>Brave</strong> ou <strong>AdBlock</strong>.
           </p>
         </div>
       )}
@@ -97,17 +79,85 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         >
           <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
           <div className="info-text">
-            <strong>Dados Técnicos</strong>
-            <ul style={{ listStyle: 'none', marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 }}>
-              <li>Build: v2.5.0 (Liquid)</li>
-              <li>Engine: Next.js / React 18</li>
-              <li>Source: TMDB API Public</li>
-              <li>Latency: 24ms</li>
+            <strong>Tech Data</strong>
+            <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
+              <li>v2.6.0 Slim</li>
+              <li>React 18 / TMDB</li>
             </ul>
           </div>
         </div>
       )}
     </>
+  )
+}
+
+// --- NAVBAR (Inferior) ---
+// Botão Esquerdo: Compartilhar (iOS)
+// Botão Direito: Busca
+export const BottomNav = ({
+  activeSection, setActiveSection,
+  searchActive, setSearchActive,
+  searchQuery, setSearchQuery,
+  onSearchSubmit, inputRef
+}) => {
+  
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Yoshikawa Player',
+          url: window.location.href,
+        })
+      } catch (err) { console.log('Share canceled') }
+    } else {
+      alert('Compartilhar não suportado neste navegador')
+    }
+  }
+
+  return (
+    <div className="bar-container bottom-bar">
+      {/* Botão Share Separado na Esquerda */}
+      <button 
+        className="round-btn glass-panel" 
+        onClick={handleShare}
+        title="Compartilhar"
+      >
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
+      </button>
+
+      {/* Pílula Central */}
+      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
+        {searchActive ? (
+          <div className="search-wrap">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
+            />
+          </div>
+        ) : (
+          <>
+            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
+              <i className="fas fa-film"></i>
+            </button>
+            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
+              <i className="fas fa-fire-flame-curved"></i>
+            </button>
+            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+              <i className="fas fa-heart"></i>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Botão Busca Separado na Direita */}
+      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
+        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
+      </button>
+    </div>
   )
 }
 
@@ -154,16 +204,15 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
-              <span className="hero-tag glass-panel">Destaque</span>
+              {/* Removido Sinopse e Tags extras, mantendo clean */}
               <h2 className="hero-title">{item.title || item.name}</h2>
-              <p className="hero-overview">{item.overview ? item.overview.slice(0, 100) + '...' : ''}</p>
             </div>
           </div>
         </Link>
         <button 
           className="fav-btn glass-panel" 
           onClick={handleFav} 
-          style={{ top: '14px', right: '14px' }}
+          style={{ top: '16px', right: '16px' }}
         >
           <i
             className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
@@ -207,49 +256,9 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   )
 }
 
-export const BottomNav = ({
-  activeSection, setActiveSection,
-  searchActive, setSearchActive,
-  searchQuery, setSearchQuery,
-  onSearchSubmit, inputRef
-}) => (
-  <div className="bottom-nav">
-    <div className={`nav-pill glass-panel ${searchActive ? 'search-mode' : ''}`}>
-      {searchActive ? (
-        <div className="search-wrap">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Buscar..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
-          />
-        </div>
-      ) : (
-        <>
-          <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-            <i className="fas fa-film"></i>
-          </button>
-          <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-            <i className="fas fa-fire-flame-curved"></i>
-          </button>
-          <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-            <i className="fas fa-heart"></i>
-          </button>
-        </>
-      )}
-    </div>
-    <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
-      <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '18px' : '16px' }}></i>
-    </button>
-  </div>
-)
-
 export const Footer = () => (
   <footer className="footer-credits">
-    <p>Desenvolvido por Kawa</p>
-    <p className="footer-sub">Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
+    <p>Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
   </footer>
 )
 
@@ -293,7 +302,7 @@ export default function Home() {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => {
           setCurrentToast(t => (t && t.id === next.id ? { ...t, closing: true } : t))
-        }, 3000)
+        }, 2500)
       }
     }
   }, [toastQueue, currentToast])
@@ -338,7 +347,7 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     
     const onClick = (e) => { 
-      if (!e.target.closest('.info-popup') && !e.target.closest('.round-btn') && !e.target.closest('.header-pill')) {
+      if (!e.target.closest('.info-popup') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container')) {
         closePopups() 
       }
     }
@@ -481,7 +490,7 @@ export default function Home() {
       
       if (exists) { 
         updated = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
-        showToast('Removido dos favoritos', 'info') 
+        showToast('Removido', 'info') 
       } else { 
         updated = [...prev, { 
           id: item.id, 
@@ -489,7 +498,7 @@ export default function Home() {
           title: item.title || item.name, 
           poster_path: item.poster_path 
         }]
-        showToast('Adicionado aos favoritos!', 'success') 
+        showToast('Adicionado', 'success') 
       }
       
       try { 
@@ -503,11 +512,7 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  
-  // Hero Logic Update: Always show the top Release regardless of active section to match consistency request
   const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
-  
-  // Display logic: Remove the hero item from the list if it's the releases tab, otherwise show full list
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -525,7 +530,7 @@ export default function Home() {
 
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #000;
+            background: #050505;
             color: #f5f5f7;
             line-height: 1.6;
             font-size: 16px;
@@ -535,47 +540,46 @@ export default function Home() {
           }
           
           a { color: inherit; text-decoration: none; }
-          button { font-family: inherit; border: none; outline: none; }
+          button { font-family: inherit; border: none; outline: none; background: none; }
           img { max-width: 100%; height: auto; display: block; }
 
           :root {
-            --pill-height: 48px; /* Reduced vertical height */
+            --pill-height: 44px; /* Mais fino verticalmente */
             --pill-radius: 50px;
-            --liquid-bg: rgba(22, 22, 22, 0.5); /* Apple dark liquid base */
-            --liquid-border: rgba(255, 255, 255, 0.12);
+            --liquid-bg: rgba(30, 30, 30, 0.6);
+            --liquid-border: rgba(255, 255, 255, 0.15);
             --liquid-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-            --liquid-blur: blur(25px) saturate(180%);
+            --liquid-blur: blur(20px) saturate(180%);
             --pill-max-width: 680px;
-            --ios-blue: #007AFF;
-            --ios-red: #FF3B30;
+            --ios-blue: #0A84FF;
           }
 
-          /* --- SHARED GLASS STYLE --- */
+          /* --- SHARED STYLES --- */
           .glass-panel {
             background: var(--liquid-bg);
             backdrop-filter: var(--liquid-blur);
             -webkit-backdrop-filter: var(--liquid-blur);
             border: 1px solid var(--liquid-border);
-            box-shadow: var(--liquid-shadow);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
-          /* --- HEADER LAYOUT --- */
-          .header-container {
+          .bar-container {
             position: fixed; 
-            top: 20px; 
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
             display: flex; 
             align-items: center; 
             justify-content: center;
-            gap: 16px; /* Increased separation */
+            gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
           }
 
-          /* Separate Circle Buttons */
+          .top-bar { top: 20px; }
+          .bottom-bar { bottom: 20px; }
+
           .round-btn {
             width: var(--pill-height);
             height: var(--pill-height);
@@ -584,27 +588,20 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
             z-index: 2;
           }
           
           .round-btn:hover {
-            background: rgba(60, 60, 60, 0.6);
-            color: #fff;
+            background: rgba(80, 80, 80, 0.6);
             transform: scale(1.05);
-            border-color: rgba(255, 255, 255, 0.25);
           }
-          
-          .round-btn:active {
-            transform: scale(0.95);
-          }
+          .round-btn:active { transform: scale(0.95); }
 
-          /* Center Pill */
-          .header-pill {
+          .pill-container {
             height: var(--pill-height);
-            flex: 1; /* Takes available space */
-            max-width: 300px; /* Limits width */
+            flex: 1;
             border-radius: var(--pill-radius);
             display: flex;
             align-items: center;
@@ -613,365 +610,200 @@ export default function Home() {
             overflow: hidden;
           }
 
-          .header-label {
-            font-size: 0.95rem; 
+          .bar-label {
+            font-size: 0.9rem; 
             font-weight: 600; 
             color: #fff;
             white-space: nowrap;
             letter-spacing: -0.01em;
-            animation: fadeInText 0.4s ease forwards;
-            opacity: 0.9;
+            animation: fadeIn 0.4s ease forwards;
           }
-          
-          @keyframes fadeInText {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 0.9; transform: translateY(0); }
-          }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
           /* --- POPUPS --- */
           .info-popup {
             position: fixed;
-            top: calc(20px + var(--pill-height) + 12px); 
+            top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
             transform: translateX(-50%) scale(0.95);
             z-index: 900;
-            width: 90%; 
-            max-width: 380px;
+            width: auto; 
+            min-width: 280px;
             opacity: 0;
-            animation: popup-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
             display: flex; 
-            align-items: flex-start; 
-            gap: 14px;
-            padding: 1.25rem; 
-            border-radius: 24px;
+            align-items: center; 
+            gap: 12px;
+            padding: 0.8rem 1.2rem; 
+            border-radius: 20px;
           }
           
-          .info-popup.closing { 
-            animation: popup-out 0.25s ease-in forwards; 
-          }
+          .info-popup.closing { animation: popupOut 0.2s ease forwards; }
+          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
+          @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
           
-          @keyframes popup-in {
-            to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; }
-          }
-          
-          @keyframes popup-out {
-            from { opacity: 1; transform: translateX(-50%) scale(1); }
-            to { opacity: 0; transform: translateX(-50%) scale(0.95); }
-          }
-          
-          .info-icon { 
-            font-size: 1.25rem; 
-            margin-top: 2px; 
-            flex-shrink: 0; 
-            color: var(--ios-blue);
-          }
-          
-          .info-text { 
-            font-size: 0.9rem; 
-            color: rgba(255, 255, 255, 0.8); 
-            line-height: 1.5; 
-          }
-          
-          .info-text strong { color: #fff; }
+          .info-icon { font-size: 1.1rem; color: var(--ios-blue); }
+          .info-text { font-size: 0.85rem; color: #eee; margin: 0; }
 
-          /* --- LAYOUT --- */
+          /* --- CONTAINER & LAYOUT --- */
           .container {
             max-width: 1280px; 
             margin: 0 auto;
-            padding-top: 7rem;
-            padding-bottom: 8rem;
+            padding-top: 6.5rem;
+            padding-bottom: 7rem;
             padding-left: 2rem; 
             padding-right: 2rem;
           }
           
           .page-title {
-            font-size: 1.75rem; 
+            font-size: 1.5rem; 
             font-weight: 700; 
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             color: #fff;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
           }
-          
           .page-title-below { margin-top: 0; }
 
-          /* --- HERO --- */
-          .hero-static-container {
-            width: 100%;
-            position: relative;
-            margin-bottom: 2.5rem;
-          }
-
+          /* --- HERO CLEAN --- */
+          .hero-static-container { width: 100%; position: relative; margin-bottom: 2rem; }
           .hero-wrapper {
             display: block; 
             width: 100%; 
             aspect-ratio: 2.35 / 1;
-            max-height: 550px;
             position: relative;
-            border-radius: 28px; 
+            border-radius: 24px; 
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Sem sombra como pedido */
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            transform: translateZ(0); /* Hardware accel */
           }
           
-          .hero-wrapper:active { transform: scale(0.98); }
-
           .hero-backdrop img {
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transition: transform 0.7s ease;
+            width: 100%; height: 100%; object-fit: cover; 
+            transition: transform 1s ease;
           }
-          
-          .hero-wrapper:hover .hero-backdrop img { transform: scale(1.03); }
           
           .hero-overlay {
-            position: absolute; 
-            inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
           }
           
           .hero-content {
-            position: absolute; 
-            bottom: 0; 
-            left: 0;
-            width: 100%; 
-            padding: 2.5rem; 
-            z-index: 2;
-          }
-          
-          .hero-tag {
-            display: inline-block; 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 0.75rem;
-            font-weight: 600; 
-            text-transform: uppercase; 
-            margin-bottom: 12px;
-            color: #fff;
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            padding: 2rem; z-index: 2;
           }
           
           .hero-title {
-            font-size: 2.5rem; 
-            font-weight: 800; 
-            color: #fff;
-            margin-bottom: 0.8rem; 
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-            text-shadow: 0 2px 20px rgba(0,0,0,0.5);
-          }
-          
-          .hero-overview {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.95rem;
-            max-width: 600px;
-            line-height: 1.5;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            font-size: 2.2rem; font-weight: 800; color: #fff;
+            letter-spacing: -0.03em; margin: 0; line-height: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
           }
 
           /* --- CARDS --- */
           .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 32px 16px; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 24px 12px; 
             width: 100%;
           }
           
-          .card-wrapper { 
-            display: flex; 
-            flex-direction: column; 
-            width: 100%; 
-            position: relative;
-          }
+          .card-wrapper { display: flex; flex-direction: column; width: 100%; position: relative; }
           
           .card-poster-frame {
             position: relative; 
-            border-radius: 18px; 
+            border-radius: 16px; 
             overflow: hidden;
             aspect-ratio: 2/3; 
-            background: #222;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: #1a1a1a;
+            /* Borda fina para destaque */
+            border: 1px solid rgba(255,255,255,0.18); 
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
           
-          .card-wrapper:hover .card-poster-frame { 
-            transform: translateY(-6px); 
-          }
-          
-          .content-poster { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-          }
+          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
+          .content-poster { width: 100%; height: 100%; object-fit: cover; }
           
           .card-title {
-            margin-top: 12px; 
-            font-size: 0.85rem; 
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9); 
-            line-height: 1.35;
-            display: -webkit-box; 
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical; 
-            overflow: hidden;
-            text-overflow: ellipsis; 
+            margin-top: 10px; font-size: 0.8rem; font-weight: 500;
+            color: rgba(255, 255, 255, 0.85); line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; 
+            overflow: hidden; text-overflow: ellipsis;
           }
           
           .fav-btn {
-            position: absolute; 
-            top: 10px; 
-            right: 10px; 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            cursor: pointer; 
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 0.2s ease;
+            position: absolute; top: 8px; right: 8px; 
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
+            border: none;
           }
+          .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
+          @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.4); } }
           
-          /* Show fav btn always on touch or hover */
-          .card-poster-frame:hover .fav-btn, .fav-btn:active {
-            opacity: 1;
-            transform: scale(1);
-          }
-          
-          @media (hover: none) {
-             .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.3); border: none; }
-          }
-          
-          .fav-btn:hover { background: rgba(255,255,255,0.2); }
-          .fav-btn:active { transform: scale(0.9); }
-          .fav-btn i { font-size: 16px; }
-          
-          .heart-pulse { animation: heart-zoom 0.4s ease; }
-          @keyframes heart-zoom { 50% { transform: scale(1.3); } }
+          .heart-pulse { animation: heartZoom 0.4s ease; }
+          @keyframes heartZoom { 50% { transform: scale(1.4); } }
 
-          /* --- BOTTOM NAV --- */
-          .bottom-nav {
-            position: fixed; 
-            bottom: 24px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            display: flex; 
-            align-items: center; 
-            gap: 16px; 
-            z-index: 1000;
-            width: 90%; 
-            max-width: var(--pill-max-width);
-          }
-          
-          .nav-pill {
-            display: flex; 
-            align-items: center; 
-            justify-content: space-evenly;
-            height: var(--pill-height); 
-            padding: 0 1rem;
-            border-radius: var(--pill-radius); 
-            flex: 1; 
-            overflow: hidden;
-          }
-          
+          /* --- NAVBAR PILL --- */
           .nav-btn {
-            background: none; 
-            cursor: pointer; 
-            height: 100%;
-            width: 60px;
-            color: rgba(255,255,255,0.4); 
-            transition: color 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
           }
-          
-          .nav-btn i { font-size: 20px; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+          .nav-btn i { font-size: 18px; }
           .nav-btn.active { color: #fff; }
-          .nav-btn.active i { transform: translateY(-2px); }
-
-          .search-wrap { width: 100%; padding: 0 8px; }
+          
+          .search-wrap { width: 100%; padding: 0 12px; }
           .search-wrap input {
-            width: 100%; 
-            background: transparent; 
-            border: none; 
-            outline: none;
-            color: #fff; 
-            font-size: 16px; 
-            font-family: inherit;
+            width: 100%; background: transparent; border: none; outline: none;
+            color: #fff; font-size: 15px; font-family: inherit;
           }
-          .search-wrap input::placeholder { color: rgba(255,255,255,0.4); }
 
-          /* --- TOAST --- */
+          /* --- FLUID THIN TOAST --- */
           .toast-wrap {
             position: fixed; 
-            bottom: calc(24px + var(--pill-height) + 16px);
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 990;
-            width: auto;
-            display: flex; justify-content: center;
+            bottom: calc(20px + var(--pill-height) + 12px);
+            left: 50%; transform: translateX(-50%); 
+            z-index: 990; pointer-events: none;
           }
           
           .toast {
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            padding: 12px 20px; 
-            border-radius: 30px; 
-            animation: toast-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; /* Mais fino */
+            border-radius: 24px;
+            animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
           }
           
-          .toast.closing { animation: toast-out 0.3s forwards; }
-          @keyframes toast-in { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-          @keyframes toast-out { to { opacity:0; transform:translateY(10px); } }
+          .toast.closing { animation: floatDown 0.3s forwards; }
+          @keyframes floatUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes floatDown { to { opacity:0; transform:translateY(10px); } }
           
-          .toast-icon { 
-            width:20px; height:20px; border-radius:50%; display:flex; 
-            align-items:center; justify-content:center; font-size:10px; 
-          }
-          .toast.success .toast-icon { background: #34c759; color: #fff; }
+          .toast-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+          .toast.success .toast-icon { background: #34c759; color: #000; }
           .toast.info .toast-icon { background: #007aff; color: #fff; }
-          .toast.error .toast-icon { background: #ff3b30; color: #fff; }
-          .toast-msg { font-size: 14px; font-weight: 500; color: #fff; }
+          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; }
 
-          /* --- FOOTER & EMPTY --- */
+          /* --- FOOTER & MISC --- */
           .footer-credits {
-            margin-top: 2rem; 
-            padding: 2rem; 
-            text-align: center;
-            color: rgba(255,255,255,0.25); 
-            font-size: 0.8rem;
+            margin-top: 3rem; padding: 2rem; text-align: center;
+            color: rgba(255,255,255,0.2); font-size: 0.75rem;
             border-top: 1px solid rgba(255,255,255,0.05); 
           }
-          
-          .empty-state {
-            display: flex; flex-direction: column; align-items: center; 
-            min-height: 40vh; color: #64748b; margin-top: 2rem;
-          }
           .spinner {
-            width: 32px; height: 32px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #fff; 
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
           }
           @keyframes spin { to { transform: rotate(360deg); } }
+          .empty-state { display: flex; flex-direction: column; align-items: center; color: #555; margin-top: 3rem; gap: 8px; }
 
-          /* --- MOBILE RESPONSIVE --- */
           @media (max-width: 768px) {
-            .container { padding-left: 1.25rem; padding-right: 1.25rem; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 12px; }
-            .hero-wrapper { aspect-ratio: 1.5/1; max-height: 60vh; border-radius: 20px; }
-            .hero-title { font-size: 1.75rem; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
+            .hero-wrapper { aspect-ratio: 1.7/1; border-radius: 20px; }
+            .hero-title { font-size: 1.6rem; }
             .hero-content { padding: 1.5rem; }
-            .header-container, .bottom-nav { width: 94%; gap: 10px; }
-            .nav-pill { padding: 0 0.5rem; }
+            .bar-container { width: 94%; gap: 8px; }
+            .card-poster-frame { border-radius: 14px; }
           }
         `}</style>
       </Head>
@@ -1004,7 +836,7 @@ export default function Home() {
 
         {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
           <div className="empty-state">
-            <i className="fas fa-ghost" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
+            <i className="fas fa-ghost"></i>
             <p>Nada encontrado</p>
           </div>
         )}
@@ -1024,8 +856,7 @@ export default function Home() {
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state">
-            <i className="far fa-heart" style={{ fontSize: '24px', marginBottom: '10px' }}></i>
-            <p>Sua lista está vazia</p>
+            <p>Lista vazia</p>
           </div>
         )}
 
