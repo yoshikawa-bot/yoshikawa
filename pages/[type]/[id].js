@@ -5,39 +5,8 @@ import Head from 'next/head'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// APIs de embed disponíveis (com suporte a português/legendas PT-BR)
-const EMBED_PROVIDERS = [
-  {
-    id: 'vidsrc',
-    name: 'VidSrc',
-    getUrl: (type, tmdbId, season, episode) => {
-      if (type === 'movie') {
-        return `https://vidsrc.xyz/embed/movie/${tmdbId}`
-      }
-      return `https://vidsrc.xyz/embed/tv/${tmdbId}/${season}/${episode}`
-    }
-  },
-  {
-    id: 'embedsu',
-    name: 'EmbedSu',
-    getUrl: (type, tmdbId, season, episode) => {
-      if (type === 'movie') {
-        return `https://embed.su/embed/movie/${tmdbId}`
-      }
-      return `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`
-    }
-  },
-  {
-    id: '2embed',
-    name: '2Embed',
-    getUrl: (type, tmdbId, season, episode) => {
-      if (type === 'movie') {
-        return `https://www.2embed.cc/embed/${tmdbId}`
-      }
-      return `https://www.2embed.cc/embedtv/${tmdbId}&s=${season}&e=${episode}`
-    }
-  }
-]
+// Consumet API - retorna links diretos de vídeo
+const CONSUMET_API = 'https://consumet-api-clone.vercel.app'
 
 // Componente Header
 export const PlayerHeader = ({ title, scrolled, onBack, onInfo }) => {
@@ -139,45 +108,114 @@ export const Toast = ({ message, type, onClose, closing }) => {
   )
 }
 
-// Player Popup Component com seletor de servidor
-export const PlayerPopup = ({ type, tmdbId, season, episode, onClose, isVisible }) => {
-  const [currentProvider, setCurrentProvider] = useState(0)
-  
+// Player Popup Component com Player HTML5 Nativo
+export const PlayerPopup = ({ 
+  videoSources,
+  onClose, 
+  isVisible, 
+  type, 
+  season, 
+  episode,
+  onPrevEpisode,
+  onNextEpisode,
+  canGoPrev,
+  canGoNext,
+  loading,
+  title
+}) => {
+  const [currentQuality, setCurrentQuality] = useState(0)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    if (videoRef.current && videoSources.length > 0) {
+      videoRef.current.load()
+    }
+  }, [currentQuality, videoSources])
+
   if (!isVisible) return null
   
-  const embedUrl = EMBED_PROVIDERS[currentProvider].getUrl(type, tmdbId, season, episode)
-  
   return (
-    <div className="player-popup-overlay" onClick={onClose}>
-      <div className="player-popup-card glass-panel" onClick={(e) => e.stopPropagation()}>
-        <button className="popup-close-btn glass-panel" onClick={onClose}>
+    <div className="player-overlay" onClick={onClose}>
+      <div className="player-popup" onClick={(e) => e.stopPropagation()}>
+        <button className="player-close-btn glass-panel" onClick={onClose}>
           <i className="fas fa-xmark"></i>
         </button>
         
-        {/* Seletor de Servidor */}
-        <div className="server-selector glass-panel">
-          <span className="server-label">Servidor:</span>
-          <div className="server-buttons">
-            {EMBED_PROVIDERS.map((provider, index) => (
-              <button
-                key={provider.id}
-                className={`server-btn ${currentProvider === index ? 'active' : ''}`}
-                onClick={() => setCurrentProvider(index)}
-              >
-                {provider.name}
-              </button>
-            ))}
-          </div>
+        <div className="player-frame glass-panel">
+          {loading ? (
+            <div className="player-loading">
+              <div className="spinner"></div>
+              <p>Carregando vídeo...</p>
+            </div>
+          ) : videoSources.length > 0 ? (
+            <video 
+              ref={videoRef}
+              controls 
+              autoPlay
+              className="native-player"
+              poster={DEFAULT_BACKDROP}
+            >
+              <source src={videoSources[currentQuality]?.url} type="video/mp4" />
+              Seu navegador não suporta o player de vídeo.
+            </video>
+          ) : (
+            <div className="player-error">
+              <i className="fas fa-exclamation-triangle"></i>
+              <p>Nenhuma fonte de vídeo disponível</p>
+              <small>Tente outro servidor ou episódio</small>
+            </div>
+          )}
         </div>
 
-        <div className="popup-player-wrapper">
-          <iframe
-            key={embedUrl}
-            src={embedUrl}
-            allowFullScreen
-            scrolling="no"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          ></iframe>
+        {/* Controles externos ao player */}
+        <div className="player-controls">
+          {/* Seletor de qualidade */}
+          {!loading && videoSources.length > 0 && (
+            <div className="server-selector-external">
+              <span className="server-label">Qualidade:</span>
+              <div className="server-buttons">
+                {videoSources.map((source, index) => (
+                  <button
+                    key={index}
+                    className={`server-btn glass-panel ${currentQuality === index ? 'active' : ''}`}
+                    onClick={() => setCurrentQuality(index)}
+                  >
+                    {source.quality}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Navegação de episódios (apenas para séries) */}
+          {type === 'tv' && (
+            <div className="episode-nav">
+              <button 
+                className="ep-nav-btn glass-panel" 
+                onClick={onPrevEpisode}
+                disabled={!canGoPrev}
+                title="Episódio anterior"
+              >
+                <i className="fas fa-chevron-left"></i>
+                <span>Anterior</span>
+              </button>
+              
+              <div className="current-episode glass-panel">
+                <i className="fas fa-tv"></i>
+                <span>T{season} E{episode}</span>
+              </div>
+
+              <button 
+                className="ep-nav-btn glass-panel" 
+                onClick={onNextEpisode}
+                disabled={!canGoNext}
+                title="Próximo episódio"
+              >
+                <span>Próximo</span>
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -185,25 +223,19 @@ export const PlayerPopup = ({ type, tmdbId, season, episode, onClose, isVisible 
 }
 
 // Episode Card Component
-export const EpisodeCard = ({ backdrop, onPlay, season, episode, type, title }) => {
+export const EpisodeCard = ({ backdrop, onPlay, season, episode, type }) => {
   return (
     <div className="episode-card-wrapper">
       <div className="episode-card glass-panel" onClick={onPlay}>
-        <div className="backdrop-container">
-          <img 
-            src={backdrop || DEFAULT_BACKDROP} 
-            alt="Episode backdrop"
-            className="episode-backdrop"
-          />
-          <div className="backdrop-gradient"></div>
-        </div>
+        <img 
+          src={backdrop || DEFAULT_BACKDROP} 
+          alt="Episode backdrop"
+          className="episode-backdrop"
+        />
         <div className="play-overlay">
           <button className="play-btn-large glass-panel">
-            <div className="play-icon-wrapper">
-              <i className="fas fa-play"></i>
-            </div>
+            <i className="fas fa-play"></i>
           </button>
-          <div className="play-label">Assistir Agora</div>
         </div>
         {type === 'tv' && (
           <div className="episode-info-badge glass-panel">
@@ -229,6 +261,9 @@ export default function PlayerPage() {
   const [showPlayer, setShowPlayer] = useState(false)
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [videoSources, setVideoSources] = useState([])
+  const [loadingVideo, setLoadingVideo] = useState(false)
+  const [imdbId, setImdbId] = useState(null)
   
   const [toast, setToast] = useState(null)
   const [toastClosing, setToastClosing] = useState(false)
@@ -269,17 +304,25 @@ export default function PlayerPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Load TMDB data
+  // Load TMDB data e buscar IMDB ID
   useEffect(() => {
     if (!id || !type) return
     
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=videos,external_ids`
+          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`
         )
         const data = await res.json()
         setItem(data)
+        
+        // Pegar IMDB ID
+        if (data.external_ids?.imdb_id) {
+          setImdbId(data.external_ids.imdb_id)
+        } else if (data.imdb_id) {
+          setImdbId(data.imdb_id)
+        }
+        
         setLoading(false)
       } catch (err) {
         console.error(err)
@@ -289,6 +332,75 @@ export default function PlayerPage() {
     
     fetchData()
   }, [id, type])
+
+  // Buscar fontes de vídeo do Consumet API
+  const fetchVideoSources = async () => {
+    if (!imdbId) {
+      showToast('IMDB ID não encontrado', 'error')
+      return
+    }
+
+    setLoadingVideo(true)
+    setVideoSources([])
+
+    try {
+      let url
+      if (type === 'movie') {
+        // Para filmes
+        url = `${CONSUMET_API}/movies/flixhq/watch?episodeId=${imdbId}&mediaId=${imdbId}`
+      } else {
+        // Para séries - tentar diferentes provedores
+        url = `${CONSUMET_API}/meta/tmdb/watch/${id}?id=${id}&season=${season}&episode=${episode}`
+      }
+
+      const res = await fetch(url)
+      const data = await res.json()
+
+      console.log('Video data:', data)
+
+      // Processar diferentes formatos de resposta
+      let sources = []
+      
+      if (data.sources && Array.isArray(data.sources)) {
+        sources = data.sources.map(s => ({
+          url: s.url,
+          quality: s.quality || 'auto',
+          isM3U8: s.isM3U8 || false
+        }))
+      } else if (data.results && Array.isArray(data.results)) {
+        sources = data.results.map(s => ({
+          url: s.url,
+          quality: s.quality || 'auto',
+          isM3U8: s.isM3U8 || false
+        }))
+      }
+
+      if (sources.length > 0) {
+        setVideoSources(sources)
+        showToast('Vídeo carregado!', 'success')
+      } else {
+        // Fallback para embeds se não houver links diretos
+        showToast('Usando servidor alternativo', 'info')
+        setVideoSources([{
+          url: `https://vidsrc.xyz/embed/${type}/${imdbId}${type === 'tv' ? `/${season}/${episode}` : ''}`,
+          quality: 'auto',
+          isEmbed: true
+        }])
+      }
+    } catch (err) {
+      console.error('Error fetching video:', err)
+      showToast('Erro ao carregar vídeo, usando fallback', 'error')
+      
+      // Fallback para embed
+      setVideoSources([{
+        url: `https://vidsrc.xyz/embed/${type}/${imdbId || id}${type === 'tv' ? `/${season}/${episode}` : ''}`,
+        quality: 'auto',
+        isEmbed: true
+      }])
+    } finally {
+      setLoadingVideo(false)
+    }
+  }
 
   // Load favorites and watch progress
   useEffect(() => {
@@ -379,9 +491,29 @@ export default function PlayerPage() {
   // Play handler
   const handlePlay = () => {
     setShowPlayer(true)
+    fetchVideoSources()
     if (type === 'tv') {
       saveProgress(season, episode)
     }
+  }
+
+  // Episode navigation
+  const handlePrevEpisode = () => {
+    if (episode > 1) {
+      const newEp = episode - 1
+      setEpisode(newEp)
+      saveProgress(season, newEp)
+      fetchVideoSources()
+      showToast(`T${season} E${newEp}`, 'info')
+    }
+  }
+
+  const handleNextEpisode = () => {
+    const newEp = episode + 1
+    setEpisode(newEp)
+    saveProgress(season, newEp)
+    fetchVideoSources()
+    showToast(`T${season} E${newEp}`, 'info')
   }
 
   // Continue watching
@@ -392,6 +524,7 @@ export default function PlayerPage() {
       showToast(`Continuando T${watchProgress.season} E${watchProgress.episode}`, 'info')
     }
     setShowPlayer(true)
+    fetchVideoSources()
   }
 
   if (loading || !item) {
@@ -409,45 +542,24 @@ export default function PlayerPage() {
       <Head>
         <title>{item.title || item.name} | Yoshikawa</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-          }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           
-          html { 
-            scroll-behavior: smooth;
-            overflow-x: hidden;
-          }
+          html { scroll-behavior: smooth; }
           
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #000;
+            background: #050505;
             color: #f5f5f7;
             line-height: 1.6;
             font-size: 16px;
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
-            background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
-            position: relative;
-          }
-
-          body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 20%, rgba(10, 132, 255, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(147, 51, 234, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
+            background-attachment: fixed;
           }
           
           :root {
@@ -455,22 +567,20 @@ export default function PlayerPage() {
             --pill-radius: 50px;
             --pill-max-width: 520px;
             --ios-blue: #0A84FF;
-            --purple: #9333EA;
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
           }
 
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            transition: all 0.4s var(--ease-out);
+            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
           .bar-container {
@@ -515,9 +625,7 @@ export default function PlayerPage() {
             border-color: rgba(255, 255, 255, 0.2);
           }
           
-          .round-btn:active { 
-            transform: scale(0.92); 
-          }
+          .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
             height: var(--pill-height);
@@ -682,16 +790,13 @@ export default function PlayerPage() {
             line-height: 1.4;
           }
 
-          /* Player Popup Styles */
-          .player-popup-overlay {
+          /* Player Popup */
+          .player-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -705,27 +810,24 @@ export default function PlayerPage() {
             to { opacity: 1; }
           }
 
-          .player-popup-card {
+          .player-popup {
             width: 100%;
-            max-width: 1200px;
-            aspect-ratio: 16/9;
-            border-radius: 28px;
+            max-width: 900px;
             position: relative;
-            animation: cardZoomIn 0.5s var(--ease-elastic) forwards;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9);
+            animation: popupSlideUp 0.5s var(--ease-elastic) forwards;
           }
 
-          @keyframes cardZoomIn {
-            from { opacity: 0; transform: scale(0.85); }
-            to { opacity: 1; transform: scale(1); }
+          @keyframes popupSlideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
           }
 
-          .popup-close-btn {
+          .player-close-btn {
             position: absolute;
-            top: -15px;
-            right: -15px;
-            width: 48px;
-            height: 48px;
+            top: -50px;
+            right: 0;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -737,34 +839,69 @@ export default function PlayerPage() {
             transition: all 0.3s var(--ease-elastic);
           }
 
-          .popup-close-btn:hover {
+          .player-close-btn:hover {
             transform: scale(1.1) rotate(90deg);
             background: rgba(255, 255, 255, 0.15);
           }
 
-          .popup-close-btn:active {
-            transform: scale(0.9) rotate(90deg);
+          .player-close-btn i {
+            font-size: 18px;
           }
 
-          .popup-close-btn i {
-            font-size: 20px;
-          }
-
-          /* Server Selector */
-          .server-selector {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            right: 60px;
-            z-index: 10;
-            padding: 12px 16px;
+          .player-frame {
+            width: 100%;
+            aspect-ratio: 16/9;
             border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .native-player {
+            width: 100%;
+            height: 100%;
+            background: #000;
+          }
+
+          .player-loading, .player-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            height: 100%;
+          }
+
+          .player-error i {
+            font-size: 3rem;
+            color: rgba(255, 69, 58, 0.8);
+          }
+
+          .player-error small {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+          }
+
+          /* Controles Externos */
+          .player-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .server-selector-external {
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
 
           .server-label {
@@ -777,254 +914,214 @@ export default function PlayerPage() {
           .server-buttons {
             display: flex;
             gap: 8px;
+            flex: 1;
             flex-wrap: wrap;
           }
 
           .server-btn {
-            padding: 6px 14px;
-            border-radius: 14px;
-            font-size: 0.8rem;
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.7);
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
             cursor: pointer;
-            transition: all 0.3s var(--ease-out);
+            transition: all 0.3s var(--ease-elastic);
           }
 
           .server-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
             transform: translateY(-2px);
           }
 
           .server-btn.active {
             background: var(--ios-blue);
-            border-color: var(--ios-blue);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
           }
 
-          .popup-player-wrapper {
-            width: 100%;
-            height: 100%;
-            border-radius: 28px;
-            overflow: hidden;
+          .episode-nav {
+            display: flex;
+            gap: 12px;
+            align-items: center;
           }
 
-          .popup-player-wrapper iframe {
-            width: 100%;
-            height: 100%;
+          .ep-nav-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
             border: none;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .ep-nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+          }
+
+          .ep-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+          }
+
+          .ep-nav-btn i {
+            font-size: 12px;
+          }
+
+          .current-episode {
+            padding: 12px 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+            white-space: nowrap;
           }
 
           /* Main Content */
           .player-container {
             max-width: 1280px;
             margin: 0 auto;
-            padding: 7rem 2rem 8rem;
-            animation: fadeIn 0.8s var(--ease-out) forwards;
-            position: relative;
-            z-index: 1;
+            padding: 6.5rem 2rem 7rem;
+            animation: fadeIn 0.8s var(--ease-elastic) forwards;
           }
 
           @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(40px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
           }
 
           /* Episode Card */
           .episode-card-wrapper {
             width: 100%;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
           }
 
           .episode-card {
             width: 100%;
             aspect-ratio: 16/9;
-            border-radius: 28px;
+            border-radius: 16px;
             position: relative;
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.5s var(--ease-out);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s var(--ease-elastic);
+            border: 1px solid rgba(255,255,255,0.18);
           }
 
           .episode-card:hover {
-            transform: translateY(-12px) scale(1.02);
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7);
-          }
-
-          .backdrop-container {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.4);
           }
 
           .episode-backdrop {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 1s var(--ease-out);
+            transition: transform 0.8s var(--ease-elastic);
           }
 
           .episode-card:hover .episode-backdrop {
-            transform: scale(1.15);
-          }
-
-          .backdrop-gradient {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, 
-              rgba(0,0,0,0) 0%, 
-              rgba(0,0,0,0.3) 50%, 
-              rgba(0,0,0,0.8) 100%
-            );
-            transition: opacity 0.4s ease;
-          }
-
-          .episode-card:hover .backdrop-gradient {
-            opacity: 0.9;
+            transform: scale(1.1);
           }
 
           .play-overlay {
             position: absolute;
             inset: 0;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            background: rgba(0, 0, 0, 0.2);
-            transition: all 0.4s ease;
+            background: rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
           }
 
           .episode-card:hover .play-overlay {
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
           }
 
           .play-btn-large {
-            width: 90px;
-            height: 90px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             border: none;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            transition: all 0.5s var(--ease-out);
-            position: relative;
+            transition: all 0.4s var(--ease-elastic);
+            background: rgba(255, 255, 255, 0.1);
           }
 
-          .play-btn-large::before {
-            content: '';
-            position: absolute;
-            inset: -4px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--ios-blue), var(--purple));
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: -1;
-          }
-
-          .episode-card:hover .play-btn-large::before {
-            opacity: 1;
+          .play-btn-large i {
+            font-size: 28px;
+            color: #fff;
+            margin-left: 4px;
           }
 
           .episode-card:hover .play-btn-large {
             transform: scale(1.15);
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.3);
-          }
-
-          .play-icon-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .play-icon-wrapper i {
-            font-size: 36px;
-            color: #fff;
-            margin-left: 6px;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-          }
-
-          .play-label {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #fff;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.4s var(--ease-out);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            letter-spacing: 0.5px;
-          }
-
-          .episode-card:hover .play-label {
-            opacity: 1;
-            transform: translateY(0);
+            background: rgba(255, 255, 255, 0.15);
           }
 
           .episode-info-badge {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 10px 18px;
-            border-radius: 24px;
-            font-size: 0.875rem;
+            top: 16px;
+            left: 16px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #fff;
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-          }
-
-          .episode-info-badge i {
-            font-size: 0.875rem;
+            gap: 6px;
           }
 
           /* Controls */
           .controls-section {
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
           }
 
           .controls-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 12px;
           }
 
           .control-select {
-            height: 58px;
-            border-radius: 20px;
-            padding: 0 20px;
+            height: 52px;
+            border-radius: 16px;
+            padding: 0 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
             color: #fff;
             cursor: pointer;
             position: relative;
-            transition: all 0.3s var(--ease-out);
+            transition: all 0.3s var(--ease-elastic);
           }
 
           .control-select:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
           }
 
           .control-select select {
@@ -1035,55 +1132,26 @@ export default function PlayerPage() {
             cursor: pointer;
           }
 
-          .control-select i {
-            color: var(--ios-blue);
-            transition: transform 0.3s ease;
-          }
-
-          .control-select:hover i {
-            transform: translateX(4px);
-          }
-
           .continue-btn {
             width: 100%;
-            height: 58px;
-            border-radius: 20px;
+            height: 52px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            font-size: 1rem;
+            gap: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             color: #fff;
-            background: linear-gradient(135deg, var(--ios-blue) 0%, var(--purple) 100%);
+            background: var(--ios-blue);
             border: none;
             cursor: pointer;
-            transition: all 0.4s var(--ease-out);
-            box-shadow: 0 10px 30px rgba(10, 132, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-          }
-
-          .continue-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-
-          .continue-btn:hover::before {
-            opacity: 1;
+            transition: all 0.3s var(--ease-elastic);
           }
 
           .continue-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(10, 132, 255, 0.5);
-          }
-
-          .continue-btn:active {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            background: #007aff;
           }
 
           /* Info Section */
@@ -1092,88 +1160,66 @@ export default function PlayerPage() {
           }
 
           .info-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 800;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             color: #fff;
-            letter-spacing: -0.04em;
-            line-height: 1.2;
-            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            letter-spacing: -0.03em;
           }
 
           .info-meta {
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--ios-blue);
             flex-wrap: wrap;
           }
 
           .info-meta span {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s ease;
-          }
-
-          .info-meta span:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-          }
-
-          .info-meta span i {
-            color: var(--ios-blue);
+            gap: 4px;
           }
 
           .synopsis-section {
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
           }
 
           .synopsis-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
           }
 
           .synopsis-title {
-            font-size: 1.35rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: #fff;
-            letter-spacing: -0.02em;
           }
 
           .synopsis-toggle {
-            background: rgba(10, 132, 255, 0.1);
-            border: 1px solid rgba(10, 132, 255, 0.2);
+            background: none;
+            border: none;
             color: var(--ios-blue);
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
-            padding: 10px 18px;
+            padding: 8px 16px;
             border-radius: 20px;
-            transition: all 0.3s var(--ease-out);
+            transition: all 0.3s ease;
           }
 
           .synopsis-toggle:hover {
-            background: rgba(10, 132, 255, 0.2);
-            transform: translateY(-2px);
+            background: rgba(10, 132, 255, 0.1);
           }
 
           .synopsis-text {
-            font-size: 1rem;
-            line-height: 1.8;
-            color: rgba(255, 255, 255, 0.75);
-            font-weight: 400;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.7);
           }
 
           .synopsis-text.collapsed {
@@ -1185,42 +1231,40 @@ export default function PlayerPage() {
 
           .details-grid {
             display: grid;
-            gap: 16px;
+            gap: 1.5rem;
           }
 
           .detail-item {
-            padding: 20px;
-            border-radius: 24px;
+            padding: 1.5rem;
+            border-radius: 16px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s var(--ease-out);
+            transition: all 0.3s ease;
           }
 
           .detail-item:hover {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.12);
-            transform: translateY(-3px);
+            transform: translateY(-2px);
           }
 
           .detail-label {
             font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--ios-blue);
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
           }
 
           .detail-value {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            font-weight: 500;
+            font-size: 0.95rem;
+            color: #fff;
+            line-height: 1.5;
           }
 
           .spinner {
-            width: 36px;
-            height: 36px;
+            width: 30px;
+            height: 30px;
             border: 3px solid rgba(255,255,255,0.1);
             border-top-color: var(--ios-blue);
             border-radius: 50%;
@@ -1236,21 +1280,15 @@ export default function PlayerPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #000;
           }
 
           @media (max-width: 768px) {
             .player-container {
-              padding: 5.5rem 1.25rem 7rem;
+              padding: 5.5rem 1rem 7rem;
             }
             
             .info-title {
-              font-size: 1.75rem;
-            }
-            
-            .player-popup-card {
-              aspect-ratio: 16/9;
-              border-radius: 20px;
+              font-size: 1.5rem;
             }
             
             .controls-grid {
@@ -1262,42 +1300,29 @@ export default function PlayerPage() {
               gap: 8px;
             }
 
-            .play-btn-large {
-              width: 70px;
-              height: 70px;
+            .player-popup {
+              max-width: 100%;
             }
 
-            .play-icon-wrapper i {
-              font-size: 28px;
+            .server-selector-external {
+              flex-direction: column;
+              align-items: stretch;
             }
 
-            .play-label {
-              font-size: 0.875rem;
-            }
-
-            .episode-info-badge {
-              top: 12px;
-              left: 12px;
-              padding: 8px 14px;
-              font-size: 0.8rem;
-            }
-
-            .server-selector {
-              position: relative;
-              top: 0;
-              left: 0;
-              right: 0;
-              margin-bottom: 12px;
-              border-radius: 16px;
-            }
-
-            .server-label {
-              font-size: 0.75rem;
+            .server-buttons {
+              flex-direction: column;
             }
 
             .server-btn {
-              font-size: 0.75rem;
-              padding: 5px 12px;
+              min-width: 0;
+            }
+
+            .episode-nav {
+              flex-direction: column;
+            }
+
+            .ep-nav-btn {
+              width: 100%;
             }
           }
         `}</style>
@@ -1320,12 +1345,18 @@ export default function PlayerPage() {
       )}
 
       <PlayerPopup
-        type={type}
-        tmdbId={id}
-        season={season}
-        episode={episode}
+        videoSources={videoSources}
         onClose={() => setShowPlayer(false)}
         isVisible={showPlayer}
+        type={type}
+        season={season}
+        episode={episode}
+        onPrevEpisode={handlePrevEpisode}
+        onNextEpisode={handleNextEpisode}
+        canGoPrev={episode > 1}
+        canGoNext={true}
+        loading={loadingVideo}
+        title={item.title || item.name}
       />
 
       <main className="player-container">
@@ -1341,7 +1372,6 @@ export default function PlayerPage() {
               season={season}
               episode={episode}
               type={type}
-              title={item.title || item.name}
             />
 
             {type === 'tv' && (
@@ -1394,18 +1424,18 @@ export default function PlayerPage() {
               <h1 className="info-title">{item.title || item.name}</h1>
               <div className="info-meta">
                 <span>
-                  <i className="fas fa-calendar"></i>
                   {item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}
                 </span>
+                <span>•</span>
                 <span>
                   <i className="fas fa-star"></i>
                   {item.vote_average?.toFixed(1)}
                 </span>
                 {type === 'tv' && (
-                  <span>
-                    <i className="fas fa-film"></i>
-                    {item.number_of_episodes} Episódios
-                  </span>
+                  <>
+                    <span>•</span>
+                    <span>{item.number_of_episodes} Episódios</span>
+                  </>
                 )}
               </div>
 
@@ -1430,9 +1460,9 @@ export default function PlayerPage() {
             <h1 className="info-title">{item.title || item.name}</h1>
             <div className="info-meta">
               <span>
-                <i className="fas fa-calendar"></i>
                 {item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}
               </span>
+              <span>•</span>
               <span>
                 <i className="fas fa-star"></i>
                 {item.vote_average?.toFixed(1)}
