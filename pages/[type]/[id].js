@@ -1,126 +1,353 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
+// Componente Header reutilizado da Home
+export const PlayerHeader = ({ title, scrolled, onBack, onInfo }) => {
+  return (
+    <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
+      <button 
+        className="round-btn glass-panel" 
+        onClick={onBack}
+        title="Voltar"
+      >
+        <i className="fas fa-chevron-left" style={{ fontSize: '14px' }}></i>
+      </button>
+
+      <div className="pill-container glass-panel">
+        <span className="bar-label">{scrolled ? title : 'Yoshikawa'}</span>
+      </div>
+
+      <button 
+        className="round-btn glass-panel" 
+        title="Informações"
+        onClick={onInfo}
+      >
+        <i className="fas fa-circle-info" style={{ fontSize: '14px' }}></i>
+      </button>
+    </header>
+  )
+}
+
+// Componente Bottom Nav reutilizado
+export const PlayerBottomNav = ({ 
+  activeTab, 
+  setActiveTab, 
+  onTrailer, 
+  onShare,
+  isFavorite,
+  onToggleFavorite 
+}) => {
+  return (
+    <div className="bar-container bottom-bar">
+      <button 
+        className="round-btn glass-panel" 
+        onClick={onShare}
+        title="Compartilhar"
+      >
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px' }}></i>
+      </button>
+
+      <div className="pill-container glass-panel">
+        <button 
+          className={`nav-btn ${activeTab === 'player' ? 'active' : ''}`}
+          onClick={() => setActiveTab('player')}
+        >
+          <i className="fas fa-play"></i>
+        </button>
+        <button 
+          className={`nav-btn ${activeTab === 'info' ? 'active' : ''}`}
+          onClick={() => setActiveTab('info')}
+        >
+          <i className="fas fa-circle-info"></i>
+        </button>
+        <button 
+          className="nav-btn"
+          onClick={onTrailer}
+        >
+          <i className="fab fa-youtube"></i>
+        </button>
+      </div>
+
+      <button 
+        className="round-btn glass-panel" 
+        onClick={onToggleFavorite}
+        title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      >
+        <i 
+          className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} 
+          style={{ fontSize: '15px', color: isFavorite ? '#ff3b30' : '#fff' }}
+        ></i>
+      </button>
+    </div>
+  )
+}
+
+// Toast Component
+export const Toast = ({ message, type, onClose, closing }) => {
+  if (!message) return null
+  
+  return (
+    <div className="toast-wrap">
+      <div className={`toast glass-panel ${type} ${closing ? 'closing' : ''}`} onClick={onClose}>
+        <div className="toast-icon-wrapper">
+          <i className={`fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
+        </div>
+        <div className="toast-content">
+          <div className="toast-title">{type === 'success' ? 'Sucesso' : type === 'error' ? 'Erro' : 'Info'}</div>
+          <div className="toast-msg">{message}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Player Popup Component
+export const PlayerPopup = ({ embedUrl, onClose, isVisible }) => {
+  if (!isVisible) return null
+  
+  return (
+    <div className="player-popup-overlay" onClick={onClose}>
+      <div className="player-popup-card glass-panel" onClick={(e) => e.stopPropagation()}>
+        <button className="popup-close-btn glass-panel" onClick={onClose}>
+          <i className="fas fa-xmark"></i>
+        </button>
+        <div className="popup-player-wrapper">
+          <iframe
+            src={embedUrl}
+            allowFullScreen
+            scrolling="no"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Episode Card Component
+export const EpisodeCard = ({ backdrop, onPlay, season, episode, type }) => {
+  return (
+    <div className="episode-card-wrapper">
+      <div className="episode-card glass-panel" onClick={onPlay}>
+        <img 
+          src={backdrop || DEFAULT_BACKDROP} 
+          alt="Episode backdrop"
+          className="episode-backdrop"
+        />
+        <div className="play-overlay">
+          <button className="play-btn-large glass-panel">
+            <i className="fas fa-play"></i>
+          </button>
+        </div>
+        {type === 'tv' && (
+          <div className="episode-info-badge glass-panel">
+            <span>T{season} E{episode}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PlayerPage() {
   const router = useRouter()
   const { type, id } = router.query
 
-  // --- Estados de Dados ---
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
-  
-  // --- Estados de Controle do Player ---
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
-  const [showPlayer, setShowPlayer] = useState(false) // Controla o Pop-up do Embed
-  
-  // --- Estados de Interface ---
+  const [activeTab, setActiveTab] = useState('player')
   const [scrolled, setScrolled] = useState(false)
-  const [showFullSynopsis, setShowFullSynopsis] = useState(false)
+  const [showPlayer, setShowPlayer] = useState(false)
+  const [showSynopsis, setShowSynopsis] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [showInfoPopup, setShowInfoPopup] = useState(false)
   
-  // --- Toast System (Feedback visual igual Home) ---
   const [toast, setToast] = useState(null)
+  const [toastClosing, setToastClosing] = useState(false)
+  const toastTimerRef = useRef(null)
 
-  // Carregar dados
+  // Controle de continuidade
+  const [watchProgress, setWatchProgress] = useState({})
+
+  // Toast handler
+  const showToast = (message, type = 'info') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    
+    if (toast) {
+      setToastClosing(true)
+      setTimeout(() => {
+        setToast({ message, type })
+        setToastClosing(false)
+      }, 400)
+    } else {
+      setToast({ message, type })
+      setToastClosing(false)
+    }
+    
+    toastTimerRef.current = setTimeout(() => {
+      setToastClosing(true)
+      setTimeout(() => setToast(null), 400)
+    }, 2500)
+  }
+
+  const closeToast = () => {
+    setToastClosing(true)
+    setTimeout(() => setToast(null), 400)
+  }
+
+  // Scroll handler
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Load TMDB data
   useEffect(() => {
     if (!id || !type) return
     
     const fetchData = async () => {
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        const res = await fetch(
+          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=videos`
+        )
         const data = await res.json()
         setItem(data)
-        
-        // Recuperar progresso salvo
-        const savedProgress = localStorage.getItem(`yoshikawa_progress_${id}`)
-        if (savedProgress && type === 'tv') {
-          const { s, e } = JSON.parse(savedProgress)
-          setSeason(s)
-          setEpisode(e)
-          showToast(`Continuando da T${s}:E${e}`, 'info')
-        }
-        
-        // Verificar favoritos
-        const favs = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
-        setIsFavorite(favs.some(f => f.id === Number(id)))
-        
         setLoading(false)
       } catch (err) {
         console.error(err)
-        setLoading(false)
+        showToast('Erro ao carregar conteúdo', 'error')
       }
     }
+    
     fetchData()
   }, [id, type])
 
-  // Salvar progresso automaticamente ao mudar ep/temp
+  // Load favorites and watch progress
   useEffect(() => {
-    if (type === 'tv' && id) {
-      localStorage.setItem(`yoshikawa_progress_${id}`, JSON.stringify({ s: season, e: episode }))
+    if (!item) return
+    
+    try {
+      const favorites = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
+      setIsFavorite(favorites.some(f => f.id === item.id && f.media_type === type))
+      
+      const progress = JSON.parse(localStorage.getItem('yoshikawaProgress') || '{}')
+      const key = `${type}-${id}`
+      if (progress[key]) {
+        setWatchProgress(progress[key])
+        if (type === 'tv' && progress[key].season && progress[key].episode) {
+          setSeason(progress[key].season)
+          setEpisode(progress[key].episode)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading data:', err)
     }
-  }, [season, episode, id, type])
+  }, [item, type, id])
 
-  // Scroll listener para Header
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // Helpers
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type, closing: false })
-    setTimeout(() => setToast(prev => prev ? { ...prev, closing: true } : null), 2500)
-    setTimeout(() => setToast(null), 2900)
+  // Save watch progress
+  const saveProgress = (s, e) => {
+    try {
+      const progress = JSON.parse(localStorage.getItem('yoshikawaProgress') || '{}')
+      const key = `${type}-${id}`
+      progress[key] = { season: s, episode: e, timestamp: Date.now() }
+      localStorage.setItem('yoshikawaProgress', JSON.stringify(progress))
+      setWatchProgress(progress[key])
+    } catch (err) {
+      console.error('Error saving progress:', err)
+    }
   }
 
+  // Toggle favorite
   const toggleFavorite = () => {
-    const favs = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
-    let newFavs
-    if (isFavorite) {
-      newFavs = favs.filter(f => f.id !== Number(id))
-      showToast('Removido dos favoritos', 'info')
-    } else {
-      newFavs = [...favs, { 
-        id: Number(id), 
-        media_type: type, 
-        title: item.title || item.name, 
-        poster_path: item.poster_path 
-      }]
-      showToast('Adicionado aos favoritos', 'success')
+    try {
+      const favorites = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]')
+      const exists = favorites.some(f => f.id === item.id && f.media_type === type)
+      
+      let updated
+      if (exists) {
+        updated = favorites.filter(f => !(f.id === item.id && f.media_type === type))
+        showToast('Removido dos favoritos', 'info')
+        setIsFavorite(false)
+      } else {
+        updated = [...favorites, {
+          id: item.id,
+          media_type: type,
+          title: item.title || item.name,
+          poster_path: item.poster_path
+        }]
+        showToast('Adicionado aos favoritos', 'success')
+        setIsFavorite(true)
+      }
+      
+      localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated))
+    } catch (err) {
+      showToast('Erro ao salvar favorito', 'error')
     }
-    localStorage.setItem('yoshikawaFavorites', JSON.stringify(newFavs))
-    setIsFavorite(!isFavorite)
   }
 
+  // Share handler
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: item.title || item.name, url: window.location.href })
-      } catch (e) {}
+        await navigator.share({
+          title: item.title || item.name,
+          text: item.overview?.substring(0, 100) + '...',
+          url: window.location.href,
+        })
+      } catch (err) {
+        console.log('Share canceled')
+      }
     } else {
-      navigator.clipboard.writeText(window.location.href)
-      showToast('Link copiado!', 'success')
+      showToast('Compartilhar não suportado', 'info')
     }
   }
 
+  // Trailer handler
+  const openTrailer = () => {
+    const query = encodeURIComponent(`${item.title || item.name} trailer`)
+    window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank')
+  }
+
+  // Play handler
+  const handlePlay = () => {
+    setShowPlayer(true)
+    if (type === 'tv') {
+      saveProgress(season, episode)
+    }
+  }
+
+  // Get embed URL
   const getEmbedUrl = () => {
-    if (type === 'movie') return `https://superflixapi.cv/filme/${item.imdb_id || item.id}#color:#0A84FF`
+    if (type === 'movie') {
+      return `https://superflixapi.cv/filme/${item.imdb_id || id}#color:#0A84FF`
+    }
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}#color:#0A84FF`
   }
 
-  if (loading) return (
-    <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505'}}>
-      <div className="spinner"></div>
-      <style>{`.spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
+  // Continue watching
+  const continueWatching = () => {
+    if (watchProgress.season && watchProgress.episode) {
+      setSeason(watchProgress.season)
+      setEpisode(watchProgress.episode)
+      showToast(`Continuando T${watchProgress.season} E${watchProgress.episode}`, 'info')
+    }
+    setShowPlayer(true)
+  }
+
+  if (loading || !item) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+      </div>
+    )
+  }
+
+  const hasProgress = type === 'tv' && watchProgress.season && watchProgress.episode
 
   return (
     <>
@@ -130,27 +357,33 @@ export default function PlayerPage() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          /* --- GLOBAL STYLES (Mesmo da Home) --- */
+          /* Estilos herdados da Home */
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+          
+          html { scroll-behavior: smooth; }
+          
           body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #050505;
             color: #f5f5f7;
+            line-height: 1.6;
+            font-size: 16px;
+            min-height: 100vh;
+            overflow-y: auto;
             overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
-            min-height: 100vh;
+            background-attachment: fixed;
           }
-          button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
             --pill-max-width: 520px;
+            --ios-blue: #0A84FF;
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
 
-          /* --- COMPONENTS --- */
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
@@ -159,395 +392,791 @@ export default function PlayerPage() {
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease, background 0.3s ease;
+            overflow: hidden;
+            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
           .bar-container {
-            position: fixed; 
+            position: fixed;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            display: flex; 
-            align-items: center; 
+            display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 12px; 
-            width: 90%; 
+            gap: 12px;
+            width: 90%;
             max-width: var(--pill-max-width);
             transition: all 0.4s var(--ease-smooth);
           }
-          
+
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
-          .top-bar.scrolled { transform: translateX(-50%) translateY(-5px); }
+          
+          .top-bar.scrolled-state {
+            transform: translateX(-50%) translateY(-5px);
+          }
 
           .round-btn {
             width: var(--pill-height);
             height: var(--pill-height);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
             transition: all 0.3s var(--ease-elastic);
+            border: none;
+            background: none;
+            cursor: pointer;
           }
-          .round-btn:active { transform: scale(0.9); }
+          
+          .round-btn:hover {
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+          }
+          
+          .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
             height: var(--pill-height);
             flex: 1;
             border-radius: var(--pill-radius);
-            display: flex; align-items: center; justify-content: center;
-          }
-          
-          .bar-label { font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-
-          /* --- TOAST --- */
-          .toast-wrap { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 2100; pointer-events: none; }
-          .toast {
-            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(12px);
-            padding: 12px 20px; border-radius: 50px;
-            display: flex; align-items: center; gap: 10px;
-            border: 1px solid rgba(255,255,255,0.15);
-            animation: toastIn 0.5s var(--ease-elastic) forwards;
-          }
-          .toast.closing { animation: toastOut 0.4s ease forwards; }
-          .toast i { color: #34c759; }
-          .toast.info i { color: #0a84ff; }
-          .toast-msg { font-size: 0.85rem; font-weight: 500; }
-          
-          @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-          @keyframes toastOut { to { opacity: 0; transform: translateY(-20px); } }
-
-          /* --- PAGE SPECIFIC --- */
-          .hero-section {
-            position: relative;
-            width: 100%;
-            height: 65vh; /* Altura do card principal */
-            max-height: 600px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 20px;
-          }
-
-          .backdrop-blur {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            opacity: 0.3; mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-            z-index: 1;
-          }
-
-          .play-card-wrapper {
             position: relative;
-            z-index: 10;
-            width: 85%;
-            max-width: 340px;
-            aspect-ratio: 2/3;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-            border: 1px solid rgba(255,255,255,0.15);
-            animation: cardEntrance 0.8s var(--ease-elastic);
+            transition: all 0.4s var(--ease-elastic);
           }
 
-          .play-card-img { width: 100%; height: 100%; object-fit: cover; }
-          
-          .play-overlay {
-            position: absolute; inset: 0;
-            background: rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; align-items: center; justifyContent: center;
-            gap: 12px;
-            transition: background 0.3s;
+          .bar-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+            animation: labelFadeIn 0.4s var(--ease-elastic) forwards;
           }
           
-          .play-btn-hero {
-            width: 70px; height: 70px;
+          @keyframes labelFadeIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+
+          .nav-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: rgba(255,255,255,0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 5;
+            border: none;
+            background: none;
+            cursor: pointer;
+          }
+          
+          .nav-btn i {
+            font-size: 18px;
+            transition: all 0.4s var(--ease-elastic);
+            transform-origin: center;
+          }
+          
+          .nav-btn:hover i {
+            transform: scale(1.2);
+            color: rgba(255,255,255,0.8);
+          }
+
+          .nav-btn:active i { transform: scale(0.9); }
+          .nav-btn.active { color: #fff; }
+          .nav-btn.active i { transform: scale(1.15); }
+
+          /* Toast Styles */
+          .toast-wrap {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px);
+            left: 50%;
+            z-index: 960;
+            pointer-events: none;
+          }
+
+          .toast {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px);
+            left: 50%;
+            z-index: 960;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            pointer-events: auto;
+          }
+
+          .toast.closing {
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+          }
+
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          }
+
+          @keyframes popupZoomOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); }
+          }
+
+          .toast-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.4);
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 24px; padding-left: 4px;
-            animation: pulseBtn 2s infinite;
-            transition: transform 0.3s var(--ease-elastic);
-          }
-          
-          .play-btn-hero:hover { transform: scale(1.15); background: rgba(255,255,255,0.3); }
-          .play-card-wrapper:hover .play-btn-hero { transform: scale(1.1); }
-
-          @keyframes pulseBtn {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-          }
-          
-          @keyframes cardEntrance { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-          /* --- INFO SECTION --- */
-          .info-container {
-            position: relative; z-index: 10;
-            padding: 0 24px 100px 24px;
-            max-width: 800px; margin: 0 auto;
-            transform: translateY(-40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
           }
 
-          .meta-title {
-            font-size: 1.8rem; font-weight: 700; text-align: center;
-            margin-bottom: 12px; text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-          }
-          
-          .meta-tags {
-            display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
-            margin-bottom: 24px;
-          }
-          
-          .tag {
-            font-size: 0.75rem; color: rgba(255,255,255,0.7);
-            background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px;
+          .toast.success .toast-icon-wrapper {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
           }
 
-          .controls-row {
-            display: flex; gap: 12px; margin-bottom: 24px;
-          }
-          
-          .select-glass {
-            flex: 1; height: 48px; border-radius: 14px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; font-size: 0.9rem; color: #fff;
-            position: relative;
-          }
-          
-          .select-glass select {
-            position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer;
+          .toast.info .toast-icon-wrapper {
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
           }
 
-          .synopsis-box {
-            background: rgba(255,255,255,0.03); border-radius: 16px; padding: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-          }
-          
-          .synopsis-text {
-            font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6;
-            overflow: hidden; transition: max-height 0.5s ease;
-          }
-          
-          .toggle-text-btn {
-            margin-top: 10px; font-size: 0.8rem; color: #fff; font-weight: 600;
-            display: flex; align-items: center; gap: 6px;
+          .toast.error .toast-icon-wrapper {
+            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
+            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
           }
 
-          /* --- PLAYER POPUP MODAL --- */
-          .player-overlay {
-            position: fixed; inset: 0; z-index: 2000;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; align-items: center; justify-content: center;
-            animation: overlayFade 0.4s ease;
+          .toast-icon-wrapper i {
+            font-size: 20px;
+            color: #fff;
+          }
+
+          @keyframes iconPop {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+
+          .toast-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            opacity: 0;
+            animation: contentFade 0.4s ease 0.2s forwards;
+          }
+
+          @keyframes contentFade {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+
+          .toast-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+            line-height: 1.3;
+          }
+
+          .toast-msg {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            line-height: 1.4;
+          }
+
+          /* Player Popup Styles */
+          .player-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
+            animation: overlayFadeIn 0.4s ease forwards;
           }
-          
-          .player-modal {
-            width: 100%; max-width: 900px;
-            aspect-ratio: 16/9;
-            background: #000;
+
+          @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
+          .player-popup-card {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 1/1;
+            border-radius: 24px;
+            position: relative;
+            animation: cardZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+          }
+
+          @keyframes cardZoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+          }
+
+          .popup-close-btn {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            cursor: pointer;
+            border: none;
+            color: #fff;
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .popup-close-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.15);
+          }
+
+          .popup-close-btn:active {
+            transform: scale(0.9);
+          }
+
+          .popup-close-btn i {
+            font-size: 18px;
+          }
+
+          .popup-player-wrapper {
+            width: 100%;
+            height: 100%;
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 0 100px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+          }
+
+          .popup-player-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+          }
+
+          /* Main Content */
+          .player-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 6.5rem 2rem 7rem;
+            animation: fadeIn 0.8s var(--ease-elastic) forwards;
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+
+          /* Episode Card */
+          .episode-card-wrapper {
+            width: 100%;
+            margin-bottom: 2rem;
+          }
+
+          .episode-card {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 24px;
             position: relative;
-            animation: modalZoom 0.5s var(--ease-elastic);
-          }
-          
-          .close-modal-btn {
-            position: absolute; top: -50px; right: 0;
-            color: #fff; font-size: 14px; background: rgba(255,255,255,0.1);
-            padding: 8px 16px; border-radius: 30px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s var(--ease-elastic);
           }
 
-          iframe { width: 100%; height: 100%; border: none; }
+          .episode-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+          }
 
-          @keyframes overlayFade { from { opacity: 0; } to { opacity: 1; } }
-          @keyframes modalZoom { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+          .episode-backdrop {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s var(--ease-elastic);
+          }
 
-          /* --- MOBILE --- */
+          .episode-card:hover .episode-backdrop {
+            transform: scale(1.1);
+          }
+
+          .play-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+          }
+
+          .episode-card:hover .play-overlay {
+            background: rgba(0, 0, 0, 0.5);
+          }
+
+          .play-btn-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.4s var(--ease-elastic);
+          }
+
+          .play-btn-large i {
+            font-size: 32px;
+            color: #fff;
+            margin-left: 4px;
+          }
+
+          .episode-card:hover .play-btn-large {
+            transform: scale(1.15);
+          }
+
+          .episode-info-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+          }
+
+          /* Controls */
+          .controls-section {
+            margin-bottom: 2rem;
+          }
+
+          .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 1rem;
+          }
+
+          .control-select {
+            height: 52px;
+            border-radius: 16px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #fff;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .control-select:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+          }
+
+          .control-select select {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            left: 0;
+            cursor: pointer;
+          }
+
+          .continue-btn {
+            width: 100%;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, var(--ios-blue), #007aff);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(10, 132, 255, 0.4);
+          }
+
+          .continue-btn:active {
+            transform: translateY(0);
+          }
+
+          /* Info Section */
+          .info-section {
+            animation: fadeIn 0.6s ease forwards;
+          }
+
+          .info-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            letter-spacing: -0.03em;
+          }
+
+          .info-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--ios-blue);
+            flex-wrap: wrap;
+          }
+
+          .info-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
+
+          .synopsis-section {
+            margin-bottom: 2rem;
+          }
+
+          .synopsis-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+          }
+
+          .synopsis-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+          }
+
+          .synopsis-toggle {
+            background: none;
+            border: none;
+            color: var(--ios-blue);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+          }
+
+          .synopsis-toggle:hover {
+            background: rgba(10, 132, 255, 0.1);
+          }
+
+          .synopsis-text {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.7);
+          }
+
+          .synopsis-text.collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .details-grid {
+            display: grid;
+            gap: 1.5rem;
+          }
+
+          .detail-item {
+            padding: 1.5rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+          }
+
+          .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+          }
+
+          .detail-value {
+            font-size: 0.95rem;
+            color: #fff;
+            line-height: 1.5;
+          }
+
+          .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--ios-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+
+          .loading-screen {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
           @media (max-width: 768px) {
-            .hero-section { height: 55vh; }
-            .meta-title { font-size: 1.5rem; }
-            .play-card-wrapper { max-width: 260px; }
-            .player-modal { border-radius: 12px; }
+            .player-container {
+              padding: 5.5rem 1rem 7rem;
+            }
+            
+            .info-title {
+              font-size: 1.5rem;
+            }
+            
+            .player-popup-card {
+              aspect-ratio: 16/9;
+            }
+            
+            .controls-grid {
+              grid-template-columns: 1fr;
+            }
+            
+            .bar-container {
+              width: 94%;
+              gap: 8px;
+            }
           }
         `}</style>
       </Head>
 
-      {/* --- HEADER (IGUAL HOME) --- */}
-      <header className={`bar-container top-bar ${scrolled ? 'scrolled' : ''}`}>
-        <button 
-          className="round-btn glass-panel" 
-          onClick={() => router.back()}
-          title="Voltar"
-        >
-          <i className="fas fa-arrow-left" style={{ fontSize: '16px' }}></i>
-        </button>
+      <PlayerHeader
+        title={item.title || item.name}
+        scrolled={scrolled}
+        onBack={() => router.back()}
+        onInfo={() => setActiveTab('info')}
+      />
 
-        <div className="pill-container glass-panel">
-          <span className="bar-label">{item.title || item.name}</span>
-        </div>
-
-        <button 
-          className="round-btn glass-panel" 
-          onClick={() => setShowInfoPopup(!showInfoPopup)}
-        >
-          <i className="fas fa-info" style={{ fontSize: '14px' }}></i>
-        </button>
-      </header>
-      
-      {/* Toast Feedback */}
       {toast && (
-        <div className={`toast-wrap`}>
-          <div className={`toast ${toast.type} ${toast.closing ? 'closing' : ''}`}>
-            <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}`}></i>
-            <span className="toast-msg">{toast.msg}</span>
-          </div>
-        </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+          closing={toastClosing}
+        />
       )}
 
-      {/* Info Popup (Simples) */}
-      {showInfoPopup && (
-        <div className="glass-panel" style={{
-          position: 'fixed', top: '80px', right: '20px', width: '250px', 
-          padding: '20px', borderRadius: '20px', zIndex: 1100,
-          animation: 'cardEntrance 0.4s var(--ease-elastic)'
-        }}>
-          <h4 style={{marginBottom: '5px'}}>Sobre</h4>
-          <p style={{fontSize: '12px', opacity: 0.7}}>TMDB ID: {item.id}</p>
-          <p style={{fontSize: '12px', opacity: 0.7}}>Status: {item.status}</p>
-          <p style={{fontSize: '12px', opacity: 0.7}}>Nota: {item.vote_average?.toFixed(1)}</p>
-        </div>
-      )}
+      <PlayerPopup
+        embedUrl={getEmbedUrl()}
+        onClose={() => setShowPlayer(false)}
+        isVisible={showPlayer}
+      />
 
-      {/* --- MAIN CONTENT --- */ }
-      <main>
-        {/* Hero Backdrop */}
-        <div className="backdrop-blur" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/w1280${item.backdrop_path || item.poster_path})` }}></div>
-
-        {/* Central Play Card */}
-        <div className="hero-section">
-          <div className="play-card-wrapper glass-panel" onClick={() => setShowPlayer(true)}>
-            <img 
-              src={item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_BACKDROP} 
-              alt="Capa" 
-              className="play-card-img" 
+      <main className="player-container">
+        {activeTab === 'player' ? (
+          <>
+            <EpisodeCard
+              backdrop={
+                item.backdrop_path
+                  ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+                  : DEFAULT_BACKDROP
+              }
+              onPlay={handlePlay}
+              season={season}
+              episode={episode}
+              type={type}
             />
-            <div className="play-overlay">
-              <div className="play-btn-hero">
-                <i className="fas fa-play"></i>
+
+            {type === 'tv' && (
+              <div className="controls-section">
+                <div className="controls-grid">
+                  <div className="control-select glass-panel">
+                    <span>Temporada {season}</span>
+                    <select
+                      value={season}
+                      onChange={(e) => {
+                        setSeason(Number(e.target.value))
+                        setEpisode(1)
+                      }}
+                    >
+                      {[...Array(item.number_of_seasons || 1)].map((_, i) => (
+                        <option key={i} value={i + 1}>
+                          Temporada {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                    <i className="fas fa-chevron-down" style={{ fontSize: '12px' }}></i>
+                  </div>
+
+                  <div className="control-select glass-panel">
+                    <span>Episódio {episode}</span>
+                    <select
+                      value={episode}
+                      onChange={(e) => setEpisode(Number(e.target.value))}
+                    >
+                      {[...Array(50)].map((_, i) => (
+                        <option key={i} value={i + 1}>
+                          Episódio {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                    <i className="fas fa-play-circle" style={{ fontSize: '12px' }}></i>
+                  </div>
+                </div>
+
+                {hasProgress && (
+                  <button className="continue-btn" onClick={continueWatching}>
+                    <i className="fas fa-rotate-right"></i>
+                    Continuar T{watchProgress.season} E{watchProgress.episode}
+                  </button>
+                )}
               </div>
-              <span style={{fontSize: '0.8rem', fontWeight: 600, letterSpacing: '1px'}}>ASSISTIR</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Detalhes & Controles */}
-        <div className="info-container">
-          <h1 className="meta-title">{item.title || item.name}</h1>
-          
-          <div className="meta-tags">
-            <span className="tag">{item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}</span>
-            <span className="tag">{item.vote_average?.toFixed(1)} <i className="fas fa-star" style={{fontSize: '10px', color: '#ffd700'}}></i></span>
-            {item.genres?.slice(0, 3).map(g => (
-              <span key={g.id} className="tag">{g.name}</span>
-            ))}
-          </div>
-
-          {/* Seletores (Apenas para Séries) */}
-          {type === 'tv' && (
-            <div className="controls-row">
-              <div className="select-glass glass-panel">
-                <span>Temp. {season}</span>
-                <select value={season} onChange={e => { setSeason(Number(e.target.value)); setEpisode(1) }}>
-                  {[...Array(item.number_of_seasons)].map((_, i) => (
-                    <option key={i} value={i+1}>Temporada {i+1}</option>
-                  ))}
-                </select>
-                <i className="fas fa-chevron-down" style={{fontSize: '12px', opacity: 0.5}}></i>
-              </div>
-
-              <div className="select-glass glass-panel">
-                <span>Episódio {episode}</span>
-                <select value={episode} onChange={e => setEpisode(Number(e.target.value))}>
-                  {[...Array(40)].map((_, i) => (
-                    <option key={i} value={i+1}>Episódio {i+1}</option>
-                  ))}
-                </select>
-                <i className="fas fa-list-ol" style={{fontSize: '12px', opacity: 0.5}}></i>
-              </div>
-            </div>
-          )}
-
-          {/* Sinopse Box */}
-          <div className="synopsis-box glass-panel">
-            <div className="synopsis-text" style={{ maxHeight: showFullSynopsis ? '500px' : '60px' }}>
-              {item.overview || "Sem sinopse disponível."}
-            </div>
-            {item.overview && item.overview.length > 100 && (
-              <button className="toggle-text-btn" onClick={() => setShowFullSynopsis(!showFullSynopsis)}>
-                {showFullSynopsis ? 'Ler menos' : 'Ler mais'}
-                <i className={`fas fa-chevron-${showFullSynopsis ? 'up' : 'down'}`}></i>
-              </button>
             )}
+
+            <div className="info-section">
+              <h1 className="info-title">{item.title || item.name}</h1>
+              <div className="info-meta">
+                <span>
+                  {item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}
+                </span>
+                <span>•</span>
+                <span>
+                  <i className="fas fa-star"></i>
+                  {item.vote_average?.toFixed(1)}
+                </span>
+                {type === 'tv' && (
+                  <>
+                    <span>•</span>
+                    <span>{item.number_of_episodes} Episódios</span>
+                  </>
+                )}
+              </div>
+
+              <div className="synopsis-section">
+                <div className="synopsis-header">
+                  <h3 className="synopsis-title">Sinopse</h3>
+                  <button
+                    className="synopsis-toggle"
+                    onClick={() => setShowSynopsis(!showSynopsis)}
+                  >
+                    {showSynopsis ? 'Ver menos' : 'Ver mais'}
+                  </button>
+                </div>
+                <p className={`synopsis-text ${!showSynopsis ? 'collapsed' : ''}`}>
+                  {item.overview || 'Nenhuma sinopse disponível em português.'}
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="info-section">
+            <h1 className="info-title">{item.title || item.name}</h1>
+            <div className="info-meta">
+              <span>
+                {item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}
+              </span>
+              <span>•</span>
+              <span>
+                <i className="fas fa-star"></i>
+                {item.vote_average?.toFixed(1)}
+              </span>
+            </div>
+
+            <div className="details-grid">
+              {item.genres && item.genres.length > 0 && (
+                <div className="detail-item glass-panel">
+                  <div className="detail-label">Gêneros</div>
+                  <div className="detail-value">
+                    {item.genres.map((g) => g.name).join(', ')}
+                  </div>
+                </div>
+              )}
+
+              {item.original_language && (
+                <div className="detail-item glass-panel">
+                  <div className="detail-label">Idioma Original</div>
+                  <div className="detail-value">
+                    {item.original_language.toUpperCase()}
+                  </div>
+                </div>
+              )}
+
+              {item.production_companies && item.production_companies.length > 0 && (
+                <div className="detail-item glass-panel">
+                  <div className="detail-label">Produção</div>
+                  <div className="detail-value">
+                    {item.production_companies.map((c) => c.name).join(', ')}
+                  </div>
+                </div>
+              )}
+
+              {type === 'tv' && item.created_by && item.created_by.length > 0 && (
+                <div className="detail-item glass-panel">
+                  <div className="detail-label">Criado por</div>
+                  <div className="detail-value">
+                    {item.created_by.map((c) => c.name).join(', ')}
+                  </div>
+                </div>
+              )}
+
+              {item.status && (
+                <div className="detail-item glass-panel">
+                  <div className="detail-label">Status</div>
+                  <div className="detail-value">{item.status}</div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
-      {/* --- PLAYER OVERLAY POPUP (O Modal Pedido) --- */}
-      {showPlayer && (
-        <div className="player-overlay" onClick={(e) => { if(e.target === e.currentTarget) setShowPlayer(false) }}>
-          <div style={{position: 'relative', width: '100%', maxWidth: '900px'}}>
-            <button className="close-modal-btn glass-panel" onClick={() => setShowPlayer(false)}>
-              Fechar <i className="fas fa-times" style={{marginLeft: '6px'}}></i>
-            </button>
-            
-            <div className="player-modal glass-panel">
-              <iframe 
-                src={getEmbedUrl()} 
-                allowFullScreen 
-                scrolling="no"
-                title="Player"
-              ></iframe>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- BOTTOM NAV (Controles do Usuário) --- */}
-      <div className="bar-container bottom-bar">
-        <button 
-          className="round-btn glass-panel" 
-          onClick={handleShare}
-          title="Compartilhar"
-        >
-          <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px' }}></i>
-        </button>
-
-        <div className="pill-container glass-panel">
-           {/* Botão Central - Ação Principal (Trailer ou Play Rápido) */}
-           <button 
-             className="nav-btn" 
-             style={{width: '100%', height: '100%', color: '#fff', fontSize: '14px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
-             onClick={() => setShowPlayer(true)}
-           >
-             <i className="fas fa-play"></i> Assistir Agora
-           </button>
-        </div>
-
-        <button 
-          className="round-btn glass-panel" 
-          onClick={toggleFavorite}
-          style={{ color: isFavorite ? '#ff3b30' : '#fff' }}
-        >
-          <i className={`${isFavorite ? 'fas' : 'far'} fa-heart`} style={{ fontSize: '16px' }}></i>
-        </button>
-      </div>
+      <PlayerBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onTrailer={openTrailer}
+        onShare={handleShare}
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavorite}
+      />
     </>
   )
-            }
+}
