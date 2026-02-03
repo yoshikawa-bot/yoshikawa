@@ -512,7 +512,6 @@ export default function Home() {
 
   return (
     <>
-      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
       <svg style={{ display: 'none' }}>
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
@@ -537,7 +536,6 @@ export default function Home() {
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
-            /* Fundo suave para o efeito de vidro brilhar */
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
@@ -549,48 +547,50 @@ export default function Home() {
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
-            --liquid-tint: rgba(20, 20, 20, 0.45);
-            --liquid-highlight: rgba(255, 255, 255, 0.12);
+            --liquid-highlight: rgba(255, 255, 255, 0.2);
             --pill-max-width: 680px;
             --ios-blue: #0A84FF;
           }
 
-          /* --- LIQUID GLASS STYLES --- */
-          /* Substituição completa da lógica antiga de blur */
+          /* --- REFINED LIQUID GLASS (NO COLOR, NO BLUR, PURE DISTORTION) --- */
           .glass-panel {
             position: relative;
-            background: transparent;
+            background: transparent !important; /* Força transparência total */
             z-index: 10;
-            overflow: hidden; /* Mantém o líquido dentro da borda */
+            overflow: hidden;
             transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
-          /* Camada de Distorção (Fundo) */
+          /* Camada de Distorção Pura */
           .glass-panel::before {
             content: '';
             position: absolute;
-            inset: -5px; /* Extende para evitar bordas duras na distorção */
-            background: var(--liquid-tint);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            /* O Filtro Mágico */
-            filter: url(#liquid-glass) saturate(140%) brightness(1.1);
+            inset: -5px;
+            background: transparent; /* Sem cor */
+            /* Truque: Backdrop-filter com blur(0px) é necessário para o navegador 
+              criar a camada de cópia do fundo que o filtro SVG vai distorcer. 
+              Sem isso, o filtro não tem o que puxar.
+            */
+            backdrop-filter: blur(0px); 
+            -webkit-backdrop-filter: blur(0px);
+            filter: url(#liquid-glass);
             z-index: -2;
             pointer-events: none;
           }
 
-          /* Camada Especular (Bordas e Brilho) */
+          /* Camada de Borda e Brilho (Mecanismo para dar forma ao invisível) */
           .glass-panel::after {
             content: '';
             position: absolute;
             inset: 0;
             z-index: -1;
             border-radius: inherit;
+            /* Bordas mais definidas já que não há fundo */
             box-shadow: 
-                inset 1px 1px 0px var(--liquid-highlight),
-                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
-                0 4px 24px rgba(0,0,0,0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+                inset 0.5px 0.5px 0px var(--liquid-highlight),
+                inset -0.5px -0.5px 0px rgba(255, 255, 255, 0.05),
+                0 4px 24px rgba(0,0,0,0.5); /* Sombra externa para destacar do fundo */
+            border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: none;
           }
 
@@ -618,8 +618,9 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.95);
             flex-shrink: 0;
+            /* Fundo preto leve apenas no hover para contraste */
           }
           
           .round-btn:hover { transform: scale(1.05); }
@@ -633,7 +634,6 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
-            /* Importante para o pseudo-elemento respeitar o shape */
             isolation: isolate; 
           }
 
@@ -645,34 +645,42 @@ export default function Home() {
             letter-spacing: -0.01em;
             animation: fadeIn 0.4s ease forwards;
             position: relative; z-index: 5;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8); /* Sombra no texto para ler sem fundo */
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS --- */
+          /* --- POPUPS CORRIGIDOS --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
             transform: translateX(-50%) scale(0.95);
-            z-index: 900;
+            /* Z-index muito alto para garantir visibilidade */
+            z-index: 2000; 
             width: auto; 
             min-width: 280px;
             opacity: 0;
             animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: none;
+            pointer-events: auto; /* Garante clique */
             display: flex; 
             align-items: center; 
             gap: 12px;
             padding: 0.8rem 1.2rem; 
             border-radius: 20px;
+            /* Fundo preto semitransparente muito leve apenas para leitura */
+            background: rgba(0,0,0,0.4) !important; 
+          }
+          /* Sobrescreve a regra geral para popups precisarem de contraste mínimo */
+          .info-popup.glass-panel::before {
+             backdrop-filter: blur(0px); /* Mantém distorção */
           }
           
           .info-popup.closing { animation: popupOut 0.2s ease forwards; }
-          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
+          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); } }
           @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
           
           .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
-          .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
+          .info-text { font-size: 0.85rem; color: #fff; margin: 0; position: relative; z-index: 5; text-shadow: 0 1px 2px rgba(0,0,0,1); }
 
           /* --- CONTAINER & LAYOUT --- */
           .container {
@@ -763,7 +771,6 @@ export default function Home() {
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
             border: none;
-            /* Override glass z-index inside cards */
             z-index: 20;
           }
           .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
@@ -778,21 +785,22 @@ export default function Home() {
             height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
             position: relative; z-index: 5;
           }
-          .nav-btn i { font-size: 18px; }
+          .nav-btn i { font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
           .nav-btn.active { color: #fff; }
           
           .search-wrap { width: 100%; padding: 0 12px; position: relative; z-index: 5; }
           .search-wrap input {
             width: 100%; background: transparent; border: none; outline: none;
             color: #fff; font-size: 15px; font-family: inherit;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
           }
 
-          /* --- FLUID THIN TOAST --- */
+          /* --- TOAST FIX --- */
           .toast-wrap {
             position: fixed; 
             bottom: calc(20px + var(--pill-height) + 12px);
             left: 50%; transform: translateX(-50%); 
-            z-index: 990; pointer-events: none;
+            z-index: 2000; pointer-events: none;
           }
           
           .toast {
@@ -801,6 +809,7 @@ export default function Home() {
             padding: 8px 16px; 
             border-radius: 24px;
             animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            background: rgba(0,0,0,0.6) !important; /* Leve fundo para contraste do texto */
           }
           
           .toast.closing { animation: floatDown 0.3s forwards; }
