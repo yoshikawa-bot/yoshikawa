@@ -23,8 +23,6 @@ const useDebounce = (callback, delay) => {
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
 // --- HEADER (Topo) ---
-// Botão Esquerdo: Caneta (Tech)
-// Botão Direito: Info/Scroll
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
     e.stopPropagation()
@@ -59,7 +57,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </button>
       </header>
 
-      {/* Popups (Mantidos a lógica, ajustado visual) */}
+      {/* Popups */}
       {showInfo && (
         <div 
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
@@ -92,8 +90,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 }
 
 // --- NAVBAR (Inferior) ---
-// Botão Esquerdo: Compartilhar (iOS)
-// Botão Direito: Busca
 export const BottomNav = ({
   activeSection, setActiveSection,
   searchActive, setSearchActive,
@@ -116,7 +112,6 @@ export const BottomNav = ({
 
   return (
     <div className="bar-container bottom-bar">
-      {/* Botão Share Separado na Esquerda */}
       <button 
         className="round-btn glass-panel" 
         onClick={handleShare}
@@ -125,7 +120,6 @@ export const BottomNav = ({
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      {/* Pílula Central */}
       <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
         {searchActive ? (
           <div className="search-wrap">
@@ -153,7 +147,6 @@ export const BottomNav = ({
         )}
       </div>
 
-      {/* Botão Busca Separado na Direita */}
       <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
         <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
@@ -204,7 +197,6 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
-              {/* Removido Sinopse e Tags extras, mantendo clean */}
               <h2 className="hero-title">{item.title || item.name}</h2>
             </div>
           </div>
@@ -520,6 +512,14 @@ export default function Home() {
 
   return (
     <>
+      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
+      <svg style={{ display: 'none' }}>
+        <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -537,6 +537,9 @@ export default function Home() {
             min-height: 100vh;
             overflow-y: auto;
             overflow-x: hidden;
+            /* Fundo suave para o efeito de vidro brilhar */
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
+            background-attachment: fixed;
           }
           
           a { color: inherit; text-decoration: none; }
@@ -544,24 +547,51 @@ export default function Home() {
           img { max-width: 100%; height: auto; display: block; }
 
           :root {
-            --pill-height: 44px; /* Mais fino verticalmente */
+            --pill-height: 44px;
             --pill-radius: 50px;
-            --liquid-bg: rgba(30, 30, 30, 0.6);
-            --liquid-border: rgba(255, 255, 255, 0.15);
-            --liquid-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-            --liquid-blur: blur(20px) saturate(180%);
+            --liquid-tint: rgba(20, 20, 20, 0.45);
+            --liquid-highlight: rgba(255, 255, 255, 0.12);
             --pill-max-width: 680px;
             --ios-blue: #0A84FF;
           }
 
-          /* --- SHARED STYLES --- */
+          /* --- LIQUID GLASS STYLES --- */
+          /* Substituição completa da lógica antiga de blur */
           .glass-panel {
-            background: var(--liquid-bg);
-            backdrop-filter: var(--liquid-blur);
-            -webkit-backdrop-filter: var(--liquid-blur);
-            border: 1px solid var(--liquid-border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            background: transparent;
+            z-index: 10;
+            overflow: hidden; /* Mantém o líquido dentro da borda */
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+
+          /* Camada de Distorção (Fundo) */
+          .glass-panel::before {
+            content: '';
+            position: absolute;
+            inset: -5px; /* Extende para evitar bordas duras na distorção */
+            background: var(--liquid-tint);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            /* O Filtro Mágico */
+            filter: url(#liquid-glass) saturate(140%) brightness(1.1);
+            z-index: -2;
+            pointer-events: none;
+          }
+
+          /* Camada Especular (Bordas e Brilho) */
+          .glass-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: inherit;
+            box-shadow: 
+                inset 1px 1px 0px var(--liquid-highlight),
+                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
+                0 4px 24px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
           }
 
           .bar-container {
@@ -590,13 +620,9 @@ export default function Home() {
             cursor: pointer;
             color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
-            z-index: 2;
           }
           
-          .round-btn:hover {
-            background: rgba(80, 80, 80, 0.6);
-            transform: scale(1.05);
-          }
+          .round-btn:hover { transform: scale(1.05); }
           .round-btn:active { transform: scale(0.95); }
 
           .pill-container {
@@ -607,7 +633,8 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            /* Importante para o pseudo-elemento respeitar o shape */
+            isolation: isolate; 
           }
 
           .bar-label {
@@ -617,6 +644,7 @@ export default function Home() {
             white-space: nowrap;
             letter-spacing: -0.01em;
             animation: fadeIn 0.4s ease forwards;
+            position: relative; z-index: 5;
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -643,8 +671,8 @@ export default function Home() {
           @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
           @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
           
-          .info-icon { font-size: 1.1rem; color: var(--ios-blue); }
-          .info-text { font-size: 0.85rem; color: #eee; margin: 0; }
+          .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
+          .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
 
           /* --- CONTAINER & LAYOUT --- */
           .container {
@@ -674,9 +702,8 @@ export default function Home() {
             position: relative;
             border-radius: 24px; 
             overflow: hidden;
-            /* Sem sombra como pedido */
             border: 1px solid rgba(255, 255, 255, 0.1); 
-            transform: translateZ(0); /* Hardware accel */
+            transform: translateZ(0);
           }
           
           .hero-backdrop img {
@@ -716,7 +743,6 @@ export default function Home() {
             overflow: hidden;
             aspect-ratio: 2/3; 
             background: #1a1a1a;
-            /* Borda fina para destaque */
             border: 1px solid rgba(255,255,255,0.18); 
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
@@ -737,6 +763,8 @@ export default function Home() {
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
             border: none;
+            /* Override glass z-index inside cards */
+            z-index: 20;
           }
           .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
           @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.4); } }
@@ -748,11 +776,12 @@ export default function Home() {
           .nav-btn {
             flex: 1; display: flex; align-items: center; justify-content: center;
             height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
+            position: relative; z-index: 5;
           }
           .nav-btn i { font-size: 18px; }
           .nav-btn.active { color: #fff; }
           
-          .search-wrap { width: 100%; padding: 0 12px; }
+          .search-wrap { width: 100%; padding: 0 12px; position: relative; z-index: 5; }
           .search-wrap input {
             width: 100%; background: transparent; border: none; outline: none;
             color: #fff; font-size: 15px; font-family: inherit;
@@ -769,7 +798,7 @@ export default function Home() {
           .toast {
             pointer-events: auto;
             display: flex; align-items: center; gap: 10px;
-            padding: 8px 16px; /* Mais fino */
+            padding: 8px 16px; 
             border-radius: 24px;
             animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
           }
@@ -778,10 +807,14 @@ export default function Home() {
           @keyframes floatUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
           @keyframes floatDown { to { opacity:0; transform:translateY(10px); } }
           
-          .toast-icon { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; }
+          .toast-icon { 
+              width:16px; height:16px; border-radius:50%; display:flex; 
+              align-items:center; justify-content:center; font-size:9px; 
+              position: relative; z-index: 5;
+          }
           .toast.success .toast-icon { background: #34c759; color: #000; }
           .toast.info .toast-icon { background: #007aff; color: #fff; }
-          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; }
+          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
 
           /* --- FOOTER & MISC --- */
           .footer-credits {
