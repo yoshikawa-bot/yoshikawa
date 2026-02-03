@@ -57,7 +57,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </button>
       </header>
 
-      {/* Popups - Usam classe 'standard-glass' para blur normal */}
+      {/* Popups - Usam classe 'standard-glass' para blur normal incolor */}
       {showInfo && (
         <div 
           className={`info-popup standard-glass ${infoClosing ? 'closing' : ''}`} 
@@ -79,7 +79,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           <div className="info-text">
             <strong>Tech Data</strong>
             <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
-              <li>v2.7.0 Distortion</li>
+              <li>v2.8.0 Blur+Distort</li>
               <li>React 18 / TMDB</li>
             </ul>
           </div>
@@ -158,7 +158,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
-      {/* Toast usa standard-glass para blur normal */}
+      {/* Toast usa standard-glass para blur normal incolor */}
       <div className={`toast standard-glass ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon">
           <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
@@ -520,8 +520,8 @@ export default function Home() {
       <svg style={{ display: 'none' }}>
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
-            {/* Scale aumentado para 25 para distorção +50% mais forte (era 12) */}
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" />
+            {/* Scale mantido em 25 para distorção forte */}
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
@@ -566,24 +566,28 @@ export default function Home() {
             transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
-          /* --- TIPO 1: LIQUID DISTORTION (NAVBARS & BUTTONS) --- */
+          /* --- TIPO 1: LIQUID DISTORTION + BLUR INCOLOR (NAVBARS & BUTTONS) --- */
           .glass-panel.liquid-effect {
             background: transparent !important;
+            /* Adiciona blur incolor ao container principal */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
           }
 
+          /* Camada de Distorção SVG (fica atrás do blur principal) */
           .glass-panel.liquid-effect::before {
             content: '';
             position: absolute;
             inset: -5px;
             background: transparent;
-            backdrop-filter: blur(0px); 
+            backdrop-filter: blur(0px); /* Necessário para o filtro SVG funcionar */
             -webkit-backdrop-filter: blur(0px);
             filter: url(#liquid-glass);
             z-index: -2;
             pointer-events: none;
           }
 
-          /* Borda e Brilho Arco-Íris */
+          /* Borda e Brilho Arco-Íris - CORRIGIDO PARA BORDAS MAIS NÍTIDAS */
           .glass-panel.liquid-effect::after {
             content: '';
             position: absolute;
@@ -593,8 +597,10 @@ export default function Home() {
             box-shadow: 
                 inset 0.5px 0.5px 0px var(--liquid-highlight),
                 inset -0.5px -0.5px 0px rgba(255, 255, 255, 0.05),
-                0 4px 24px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+                0 2px 10px rgba(0,0,0,0.3); /* Sombra externa mais definida */
+            
+            /* Borda ligeiramente mais visível para definição */
+            border: 1px solid rgba(255, 255, 255, 0.15);
             
             /* Efeito de Luz Rainbow/Refração Sutil */
             background: linear-gradient(
@@ -604,18 +610,21 @@ export default function Home() {
               rgba(255,255,255,0) 80%, 
               rgba(200,200,255,0.05) 100%
             );
-            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Realce superior forte */
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
             pointer-events: none;
           }
 
-          /* --- TIPO 2: STANDARD BLUR (POPUPS & TOASTS) --- */
+          /* --- TIPO 2: STANDARD BLUR INCOLOR (POPUPS & TOASTS) --- */
           .standard-glass {
-            /* Fundo neutro e blur padrão nativo */
-            background: rgba(20, 20, 20, 0.75) !important;
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            /* Fundo praticamente transparente para não escurecer */
+            background: rgba(255, 255, 255, 0.01) !important;
+            /* Blur forte e sem saturação extra */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            /* Borda fina e nítida */
+            border: 1px solid rgba(255,255,255,0.15);
+            /* Sombra suave para destacar */
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
           }
 
           .bar-container {
@@ -668,11 +677,11 @@ export default function Home() {
             letter-spacing: -0.01em;
             animation: fadeIn 0.4s ease forwards;
             position: relative; z-index: 5;
-            text-shadow: none; /* Sombra removida conforme pedido */
+            text-shadow: none;
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS REVISADOS (STANDARD BLUR) --- */
+          /* --- POPUPS REVISADOS (STANDARD BLUR INCOLOR) --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
@@ -815,7 +824,7 @@ export default function Home() {
             text-shadow: none;
           }
 
-          /* --- TOAST REVISADO (STANDARD BLUR) --- */
+          /* --- TOAST REVISADO (STANDARD BLUR INCOLOR) --- */
           .toast-wrap {
             position: fixed; 
             bottom: calc(20px + var(--pill-height) + 12px);
