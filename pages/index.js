@@ -37,19 +37,19 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
     <>
       <header className="bar-container top-bar">
         <button 
-          className="round-btn glass-panel" 
+          className="round-btn glass-panel liquid-effect" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
           <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
         </button>
 
-        <div className="pill-container glass-panel">
+        <div className="pill-container glass-panel liquid-effect">
           <span key={label} className="bar-label">{label}</span>
         </div>
 
         <button 
-          className="round-btn glass-panel" 
+          className="round-btn glass-panel liquid-effect" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
@@ -57,10 +57,10 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </button>
       </header>
 
-      {/* Popups */}
+      {/* Popups - Usam classe 'standard-glass' para blur normal */}
       {showInfo && (
         <div 
-          className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
+          className={`info-popup standard-glass ${infoClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-shield-halved info-icon"></i>
@@ -72,14 +72,14 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
       {showTech && (
         <div 
-          className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
+          className={`info-popup standard-glass ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
           <div className="info-text">
             <strong>Tech Data</strong>
             <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
-              <li>v2.6.0 Slim</li>
+              <li>v2.7.0 Distortion</li>
               <li>React 18 / TMDB</li>
             </ul>
           </div>
@@ -113,14 +113,14 @@ export const BottomNav = ({
   return (
     <div className="bar-container bottom-bar">
       <button 
-        className="round-btn glass-panel" 
+        className="round-btn glass-panel liquid-effect" 
         onClick={handleShare}
         title="Compartilhar"
       >
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
+      <div className={`pill-container glass-panel liquid-effect ${searchActive ? 'search-mode' : ''}`}>
         {searchActive ? (
           <div className="search-wrap">
             <input
@@ -147,7 +147,7 @@ export const BottomNav = ({
         )}
       </div>
 
-      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
+      <button className="round-btn glass-panel liquid-effect" onClick={() => setSearchActive(s => !s)}>
         <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
     </div>
@@ -158,7 +158,8 @@ export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
     <div className="toast-wrap">
-      <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
+      {/* Toast usa standard-glass para blur normal */}
+      <div className={`toast standard-glass ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon">
           <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
         </div>
@@ -197,12 +198,13 @@ export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
             <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
             <div className="hero-overlay"></div>
             <div className="hero-content">
+              <span className="hero-tag">Destaque Popular</span>
               <h2 className="hero-title">{item.title || item.name}</h2>
             </div>
           </div>
         </Link>
         <button 
-          className="fav-btn glass-panel" 
+          className="fav-btn glass-panel liquid-effect" 
           onClick={handleFav} 
           style={{ top: '16px', right: '16px' }}
         >
@@ -236,7 +238,7 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           className="content-poster"
           loading="lazy"
         />
-        <button className="fav-btn glass-panel" onClick={handleFavClick}>
+        <button className="fav-btn glass-panel liquid-effect" onClick={handleFavClick}>
           <i
             className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
             style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
@@ -454,7 +456,7 @@ export default function Home() {
         ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
       ]
         .filter(i => i.poster_path)
-        .sort(() => 0.5 - Math.random())
+        .sort(() => 0.5 - Math.random()) // Shuffle aleatório simples
         .slice(0, 36)
       
       setReleases(releasesData)
@@ -504,7 +506,10 @@ export default function Home() {
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
+  
+  // HERO UPDATE: Agora pega o primeiro item dos Populares (recommendations) se disponível
+  const heroItem = !searchActive && recommendations.length > 0 ? recommendations[0] : null
+  
   const displayItems = activeList
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
@@ -515,7 +520,8 @@ export default function Home() {
       <svg style={{ display: 'none' }}>
         <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
+            {/* Scale aumentado para 25 para distorção +50% mais forte (era 12) */}
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="25" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
 
@@ -552,25 +558,24 @@ export default function Home() {
             --ios-blue: #0A84FF;
           }
 
-          /* --- REFINED LIQUID GLASS (NO COLOR, NO BLUR, PURE DISTORTION) --- */
+          /* CLASSE BASE PARA PAINÉIS */
           .glass-panel {
             position: relative;
-            background: transparent !important; /* Força transparência total */
             z-index: 10;
             overflow: hidden;
             transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
 
-          /* Camada de Distorção Pura */
-          .glass-panel::before {
+          /* --- TIPO 1: LIQUID DISTORTION (NAVBARS & BUTTONS) --- */
+          .glass-panel.liquid-effect {
+            background: transparent !important;
+          }
+
+          .glass-panel.liquid-effect::before {
             content: '';
             position: absolute;
             inset: -5px;
-            background: transparent; /* Sem cor */
-            /* Truque: Backdrop-filter com blur(0px) é necessário para o navegador 
-              criar a camada de cópia do fundo que o filtro SVG vai distorcer. 
-              Sem isso, o filtro não tem o que puxar.
-            */
+            background: transparent;
             backdrop-filter: blur(0px); 
             -webkit-backdrop-filter: blur(0px);
             filter: url(#liquid-glass);
@@ -578,20 +583,39 @@ export default function Home() {
             pointer-events: none;
           }
 
-          /* Camada de Borda e Brilho (Mecanismo para dar forma ao invisível) */
-          .glass-panel::after {
+          /* Borda e Brilho Arco-Íris */
+          .glass-panel.liquid-effect::after {
             content: '';
             position: absolute;
             inset: 0;
             z-index: -1;
             border-radius: inherit;
-            /* Bordas mais definidas já que não há fundo */
             box-shadow: 
                 inset 0.5px 0.5px 0px var(--liquid-highlight),
                 inset -0.5px -0.5px 0px rgba(255, 255, 255, 0.05),
-                0 4px 24px rgba(0,0,0,0.5); /* Sombra externa para destacar do fundo */
+                0 4px 24px rgba(0,0,0,0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            
+            /* Efeito de Luz Rainbow/Refração Sutil */
+            background: linear-gradient(
+              135deg, 
+              rgba(255,255,255,0.05) 0%, 
+              rgba(255,255,255,0) 20%, 
+              rgba(255,255,255,0) 80%, 
+              rgba(200,200,255,0.05) 100%
+            );
+            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Realce superior forte */
             pointer-events: none;
+          }
+
+          /* --- TIPO 2: STANDARD BLUR (POPUPS & TOASTS) --- */
+          .standard-glass {
+            /* Fundo neutro e blur padrão nativo */
+            background: rgba(20, 20, 20, 0.75) !important;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
           }
 
           .bar-container {
@@ -620,7 +644,6 @@ export default function Home() {
             cursor: pointer;
             color: rgba(255, 255, 255, 0.95);
             flex-shrink: 0;
-            /* Fundo preto leve apenas no hover para contraste */
           }
           
           .round-btn:hover { transform: scale(1.05); }
@@ -645,34 +668,27 @@ export default function Home() {
             letter-spacing: -0.01em;
             animation: fadeIn 0.4s ease forwards;
             position: relative; z-index: 5;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8); /* Sombra no texto para ler sem fundo */
+            text-shadow: none; /* Sombra removida conforme pedido */
           }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-          /* --- POPUPS CORRIGIDOS --- */
+          /* --- POPUPS REVISADOS (STANDARD BLUR) --- */
           .info-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 8px); 
             left: 50%;
             transform: translateX(-50%) scale(0.95);
-            /* Z-index muito alto para garantir visibilidade */
             z-index: 2000; 
             width: auto; 
             min-width: 280px;
             opacity: 0;
             animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: auto; /* Garante clique */
+            pointer-events: auto;
             display: flex; 
             align-items: center; 
             gap: 12px;
             padding: 0.8rem 1.2rem; 
-            border-radius: 20px;
-            /* Fundo preto semitransparente muito leve apenas para leitura */
-            background: rgba(0,0,0,0.4) !important; 
-          }
-          /* Sobrescreve a regra geral para popups precisarem de contraste mínimo */
-          .info-popup.glass-panel::before {
-             backdrop-filter: blur(0px); /* Mantém distorção */
+            border-radius: 16px;
           }
           
           .info-popup.closing { animation: popupOut 0.2s ease forwards; }
@@ -680,7 +696,7 @@ export default function Home() {
           @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
           
           .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
-          .info-text { font-size: 0.85rem; color: #fff; margin: 0; position: relative; z-index: 5; text-shadow: 0 1px 2px rgba(0,0,0,1); }
+          .info-text { font-size: 0.85rem; color: #fff; margin: 0; position: relative; z-index: 5; text-shadow: none; }
 
           /* --- CONTAINER & LAYOUT --- */
           .container {
@@ -698,6 +714,7 @@ export default function Home() {
             margin-bottom: 1rem;
             color: #fff;
             letter-spacing: -0.03em;
+            text-shadow: none;
           }
           .page-title-below { margin-top: 0; }
 
@@ -729,6 +746,16 @@ export default function Home() {
             padding: 2rem; z-index: 2;
           }
           
+          .hero-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+          }
+
           .hero-title {
             font-size: 2.2rem; font-weight: 800; color: #fff;
             letter-spacing: -0.03em; margin: 0; line-height: 1;
@@ -758,13 +785,6 @@ export default function Home() {
           .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
           .content-poster { width: 100%; height: 100%; object-fit: cover; }
           
-          .card-title {
-            margin-top: 10px; font-size: 0.8rem; font-weight: 500;
-            color: rgba(255, 255, 255, 0.85); line-height: 1.3;
-            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; 
-            overflow: hidden; text-overflow: ellipsis;
-          }
-          
           .fav-btn {
             position: absolute; top: 8px; right: 8px; 
             width: 32px; height: 32px; border-radius: 50%;
@@ -792,10 +812,10 @@ export default function Home() {
           .search-wrap input {
             width: 100%; background: transparent; border: none; outline: none;
             color: #fff; font-size: 15px; font-family: inherit;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            text-shadow: none;
           }
 
-          /* --- TOAST FIX --- */
+          /* --- TOAST REVISADO (STANDARD BLUR) --- */
           .toast-wrap {
             position: fixed; 
             bottom: calc(20px + var(--pill-height) + 12px);
@@ -809,7 +829,6 @@ export default function Home() {
             padding: 8px 16px; 
             border-radius: 24px;
             animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-            background: rgba(0,0,0,0.6) !important; /* Leve fundo para contraste do texto */
           }
           
           .toast.closing { animation: floatDown 0.3s forwards; }
@@ -823,7 +842,7 @@ export default function Home() {
           }
           .toast.success .toast-icon { background: #34c759; color: #000; }
           .toast.info .toast-icon { background: #007aff; color: #fff; }
-          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
+          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; text-shadow: none; }
 
           /* --- FOOTER & MISC --- */
           .footer-credits {
