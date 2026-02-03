@@ -170,8 +170,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-
-
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
 
@@ -508,13 +506,13 @@ export default function Home() {
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
           body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #050505;
             color: #f5f5f7;
             line-height: 1.6;
@@ -524,29 +522,47 @@ export default function Home() {
             overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
           }
           
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; }
           img { max-width: 100%; height: auto; display: block; }
 
+          ::selection {
+            background: rgba(10, 132, 255, 0.3);
+            color: #fff;
+          }
+
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
             --pill-max-width: 520px;
             --ios-blue: #0A84FF;
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --ios-yellow: #FFD60A;
           }
 
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: inherit;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
             overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .glass-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
           }
 
           .bar-container {
@@ -562,8 +578,25 @@ export default function Home() {
             max-width: var(--pill-max-width);
           }
 
-          .top-bar { top: 20px; }
-          .bottom-bar { bottom: 20px; }
+          .top-bar { 
+            top: 20px;
+            animation: slideDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          }
+          
+          .bottom-bar { 
+            bottom: 20px;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          }
+          
+          @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+          }
+          
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+          }
 
           .round-btn {
             width: var(--pill-height);
@@ -575,10 +608,26 @@ export default function Home() {
             color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
           }
           
-          .round-btn:hover { transform: scale(1.08); }
-          .round-btn:active { transform: scale(0.92); }
+          .round-btn:hover { 
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.08);
+          }
+          
+          .round-btn:active { 
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.12);
+          }
+          
+          .round-btn i {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .round-btn:hover i {
+            transform: rotate(5deg) scale(1.1);
+          }
 
           .pill-container {
             height: var(--pill-height);
@@ -599,6 +648,7 @@ export default function Home() {
             animation: labelFadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             position: relative; 
             z-index: 5;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
           }
           
           @keyframes labelFadeIn { 
@@ -658,21 +708,28 @@ export default function Home() {
             height: 42px;
             min-width: 42px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            background: linear-gradient(135deg, var(--ios-green) 0%, #30d158 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            animation: iconBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards;
+          }
+          
+          @keyframes iconBounce {
+            from { transform: scale(0.5) rotate(-10deg); }
+            to { transform: scale(1) rotate(0); }
           }
 
           .popup-icon-wrapper.tech {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+            background: linear-gradient(135deg, var(--ios-blue) 0%, #007aff 100%);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
           }
 
           .popup-icon-wrapper i {
             font-size: 20px;
             color: #fff;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
           }
 
           .popup-content {
@@ -725,6 +782,10 @@ export default function Home() {
             margin: 0;
             color: #fff;
             letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
           }
           
           .status-dots {
@@ -738,22 +799,28 @@ export default function Home() {
             height: 10px;
             border-radius: 50%;
             animation: dotPulse 2s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .dot:hover {
+            transform: scale(1.4);
           }
           
           .dot.yellow {
-            background: linear-gradient(135deg, #FFD60A, #FFC300);
-            box-shadow: 0 2px 8px rgba(255, 214, 10, 0.4);
+            background: linear-gradient(135deg, var(--ios-yellow), #FFC300);
+            box-shadow: 0 2px 8px rgba(255, 214, 10, 0.5), inset 0 1px 0 rgba(255,255,255,0.3);
           }
           
           .dot.blue {
-            background: linear-gradient(135deg, #0A84FF, #007AFF);
-            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+            background: linear-gradient(135deg, var(--ios-blue), #007AFF);
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.3);
             animation-delay: 0.3s;
           }
           
           .dot.red {
-            background: linear-gradient(135deg, #FF453A, #FF3B30);
-            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
+            background: linear-gradient(135deg, #FF453A, var(--ios-red));
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.5), inset 0 1px 0 rgba(255,255,255,0.3);
             animation-delay: 0.6s;
           }
           
@@ -788,6 +855,8 @@ export default function Home() {
           .card-wrapper:nth-child(4) { animation-delay: 0.14s; }
           .card-wrapper:nth-child(5) { animation-delay: 0.17s; }
           .card-wrapper:nth-child(6) { animation-delay: 0.20s; }
+          .card-wrapper:nth-child(7) { animation-delay: 0.23s; }
+          .card-wrapper:nth-child(8) { animation-delay: 0.26s; }
           
           .card-poster-frame {
             position: relative; 
@@ -799,9 +868,24 @@ export default function Home() {
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
           
+          .card-poster-frame::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(10,132,255,0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+          }
+          
           .card-wrapper:hover .card-poster-frame {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+          }
+          
+          .card-wrapper:hover .card-poster-frame::after {
+            opacity: 1;
           }
           
           .content-poster { 
@@ -819,18 +903,19 @@ export default function Home() {
             margin-top: 10px; 
             font-size: 0.8rem; 
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.85); 
+            color: rgba(255, 255, 255, 0.7); 
             line-height: 1.3;
             display: -webkit-box; 
             -webkit-line-clamp: 1; 
             -webkit-box-orient: vertical; 
             overflow: hidden; 
             text-overflow: ellipsis;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
           }
           
           .card-wrapper:hover .card-title {
             color: #fff;
+            transform: translateX(2px);
           }
           
           .fav-btn {
@@ -848,6 +933,11 @@ export default function Home() {
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             border: none;
             z-index: 20;
+          }
+          
+          .fav-btn:hover {
+            background: rgba(0,0,0,0.6) !important;
+            transform: scale(1.1) !important;
           }
           
           .card-poster-frame:hover .fav-btn, .fav-btn:active { 
@@ -868,7 +958,9 @@ export default function Home() {
           }
           
           @keyframes heartZoom { 
-            50% { transform: scale(1.5); } 
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5) rotate(5deg); } 
+            100% { transform: scale(1) rotate(0); }
           }
 
           .nav-btn {
@@ -881,6 +973,23 @@ export default function Home() {
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative; 
             z-index: 5;
+          }
+          
+          .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 20px;
+            height: 2px;
+            background: var(--ios-blue);
+            border-radius: 2px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .nav-btn.active::after {
+            transform: translateX(-50%) scaleX(1);
           }
           
           .nav-btn i { 
@@ -913,6 +1022,10 @@ export default function Home() {
             font-size: 15px; 
             font-family: inherit;
           }
+          
+          .search-wrap input::placeholder {
+            color: rgba(255,255,255,0.4);
+          }
 
           .toast-wrap {
             position: fixed; 
@@ -934,6 +1047,11 @@ export default function Home() {
             transform-origin: bottom center;
             opacity: 0;
             animation: toastZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            cursor: pointer;
+          }
+          
+          .toast:hover {
+            background: rgba(255, 255, 255, 0.08);
           }
           
           .toast.closing { 
@@ -972,26 +1090,33 @@ export default function Home() {
             justify-content: center; 
             position: relative; 
             z-index: 5;
+            animation: iconSpin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+          }
+          
+          @keyframes iconSpin {
+            from { transform: rotate(-180deg) scale(0.5); }
+            to { transform: rotate(0) scale(1); }
           }
 
           .toast.success .toast-icon-wrapper {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+            background: linear-gradient(135deg, var(--ios-green) 0%, #30d158 100%);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
           }
 
           .toast.info .toast-icon-wrapper {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+            background: linear-gradient(135deg, var(--ios-blue) 0%, #007aff 100%);
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
           }
 
           .toast.error .toast-icon-wrapper {
-            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
-            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
+            background: linear-gradient(135deg, #ff453a 0%, var(--ios-red) 100%);
+            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
           }
 
           .toast-icon-wrapper i {
             font-size: 16px;
             color: #fff;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
           }
 
           .toast-content {
@@ -1041,6 +1166,10 @@ export default function Home() {
             font-style: italic;
           }
           
+          .footer-author::before {
+            content: '✨ ';
+          }
+          
           .footer-tech {
             font-size: 0.65rem;
             color: rgba(255,255,255,0.2);
@@ -1056,7 +1185,7 @@ export default function Home() {
             width: 24px; 
             height: 24px; 
             border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: #fff; 
+            border-top-color: var(--ios-blue); 
             border-radius: 50%; 
             animation: spin 0.8s linear infinite;
           }
@@ -1069,10 +1198,21 @@ export default function Home() {
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            color: #555; 
+            color: rgba(255,255,255,0.3); 
             margin-top: 3rem; 
-            gap: 8px;
+            gap: 12px;
             animation: emptyStateFadeIn 0.6s ease forwards;
+          }
+          
+          .empty-state i {
+            font-size: 3rem;
+            opacity: 0.3;
+            animation: floatGhost 3s ease-in-out infinite;
+          }
+          
+          @keyframes floatGhost {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
           }
           
           @keyframes emptyStateFadeIn {
@@ -1094,6 +1234,14 @@ export default function Home() {
             .page-title { font-size: 1.3rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
           }
         `}</style>
       </Head>
