@@ -12,7 +12,6 @@ const SECTION_TITLES = {
   favorites: 'Favoritos'
 }
 
-// Hook de Debounce para busca
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -25,7 +24,6 @@ const getItemKey = (item) => `${item.media_type}-${item.id}`
 
 // --- HEADER (Topo) ---
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
-  
   const handleRightClick = (e) => {
     e.stopPropagation()
     if (scrolled) {
@@ -41,8 +39,9 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
+          title="Info Técnica"
         >
-          <i className="fas fa-sliders" style={{ fontSize: '14px' }}></i>
+          <i className="fas fa-pen" style={{ fontSize: '13px' }}></i>
         </button>
 
         <div className="pill-container glass-panel">
@@ -51,27 +50,38 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
         <button 
           className="round-btn glass-panel" 
+          title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-arrow-up" : "fas fa-circle-info"} style={{ fontSize: '15px' }}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-plus"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
-      {/* Popup de Info (Surge de trás do Header) */}
+      {/* Popups */}
       {showInfo && (
-        <div className={`popup-message top-origin glass-panel ${infoClosing ? 'closing' : ''}`}>
-          <i className="fas fa-shield-halved popup-icon"></i>
-          <p>Recomendado uso de <strong>AdBlock</strong>.</p>
+        <div 
+          className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <i className="fas fa-shield-halved info-icon"></i>
+          <p className="info-text">
+            Use <strong>Brave</strong> ou <strong>AdBlock</strong>.
+          </p>
         </div>
       )}
 
-      {/* Popup Técnico (Surge de trás do Header) */}
       {showTech && (
-        <div className={`popup-message top-origin glass-panel ${techClosing ? 'closing' : ''}`}>
-          <i className="fas fa-terminal popup-icon" style={{ color: '#0A84FF' }}></i>
-          <div>
-            <strong>System Status</strong>
-            <div style={{ fontSize: '11px', opacity: 0.7 }}>Core v3.1 • React 18</div>
+        <div 
+          className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <i className="fas fa-microchip info-icon" style={{ color: '#60a5fa' }}></i>
+          <div className="info-text">
+            <strong>Tech Data</strong>
+            <ul style={{ listStyle: 'none', marginTop: '2px', fontSize: '0.75rem', opacity: 0.7 }}>
+              <li>v2.6.0 Slim</li>
+              <li>React 18 / TMDB</li>
+            </ul>
           </div>
         </div>
       )}
@@ -89,23 +99,30 @@ export const BottomNav = ({
   
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } 
-      catch (err) {}
+      try {
+        await navigator.share({
+          title: 'Yoshikawa Player',
+          url: window.location.href,
+        })
+      } catch (err) { console.log('Share canceled') }
     } else {
-      alert('Link copiado!')
+      alert('Compartilhar não suportado neste navegador')
     }
   }
 
   return (
     <div className="bar-container bottom-bar">
-      <button className="round-btn glass-panel" onClick={handleShare}>
+      <button 
+        className="round-btn glass-panel" 
+        onClick={handleShare}
+        title="Compartilhar"
+      >
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
       <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
         {searchActive ? (
           <div className="search-wrap">
-            <i className="fas fa-magnifying-glass search-icon-input"></i>
             <input
               ref={inputRef}
               type="text"
@@ -118,70 +135,52 @@ export const BottomNav = ({
         ) : (
           <>
             <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-              <i className="fas fa-clapperboard"></i>
+              <i className="fas fa-film"></i>
             </button>
             <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-              <i className="fas fa-star"></i>
+              <i className="fas fa-fire-flame-curved"></i>
             </button>
             <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-              <i className="fas fa-bookmark"></i>
+              <i className="fas fa-heart"></i>
             </button>
           </>
         )}
       </div>
 
       <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
-        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'}></i>
+        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
     </div>
   )
 }
 
-// --- TOAST (Notificações Inferiores) ---
 export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
   return (
-    <div className={`popup-message bottom-origin glass-panel ${toast.closing ? 'closing' : ''} ${toast.type}`}>
-      <i className={`fas ${toast.type === 'success' ? 'fa-check' : 'fa-info-circle'}`}></i>
-      <span>{toast.message}</span>
+    <div className="toast-wrap">
+      <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
+        <div className="toast-icon">
+          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-info'}`}></i>
+        </div>
+        <div className="toast-msg">{toast.message}</div>
+      </div>
     </div>
   )
 }
 
-// --- HERO (Banner Principal) ---
 export const HeroFixed = ({ item, isFavorite, toggleFavorite }) => {
   if (!item) return null
 
   const getBackdropUrl = (i) =>
-    i.backdrop_path ? `https://image.tmdb.org/t/p/original${i.backdrop_path}` :
-    i.poster_path ? `https://image.tmdb.org/t/p/w1280${i.poster_path}` : DEFAULT_BACKDROP
+    i.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${i.backdrop_path}`
+      : i.poster_path
+        ? `https://image.tmdb.org/t/p/w1280${i.poster_path}`
+        : DEFAULT_BACKDROP
 
   const favActive = isFavorite(item)
-
-  return (
-    <div className="hero-container">
-      <Link href={`/${item.media_type}/${item.id}`} className="hero-link">
-        <div className="hero-bg">
-          <img src={getBackdropUrl(item)} alt={item.title} />
-          <div className="hero-gradient"></div>
-        </div>
-        <div className="hero-info">
-          <span className="hero-tag">Destaque</span>
-          <h1>{item.title || item.name}</h1>
-          <p className="hero-overview">{item.overview}</p>
-        </div>
-      </Link>
-      <button className="hero-fav glass-panel" onClick={(e) => { e.preventDefault(); toggleFavorite(item) }}>
-        <i className={favActive ? "fas fa-heart" : "far fa-heart"} style={{ color: favActive ? '#FF3B30' : '#FFF' }}></i>
-      </button>
-    </div>
-  )
-}
-
-// --- CARD (Filmes/Séries - CSS Revertido/Clássico) ---
-export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
-  
+
   const handleFav = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -191,140 +190,167 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   }
 
   return (
-    <div className="card-item">
-      <Link href={`/${item.media_type}/${item.id}`} className="card-link">
-        <div className="card-poster">
-          <img 
-            src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER} 
-            alt={item.title} 
-            loading="lazy"
-          />
-          <button className="card-fav" onClick={handleFav}>
-            <i 
-              className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'pulse' : ''}`}
-              style={{ color: isFavorite ? '#FF3B30' : '#FFF' }}
-            ></i>
-          </button>
-        </div>
-        <div className="card-title">{item.title || item.name}</div>
-      </Link>
+    <div className="hero-static-container">
+      <div className="hero-wrapper">
+        <Link href={`/${item.media_type}/${item.id}`} style={{ display: 'block', width: '100%', height: '100%' }}>
+          <div className="hero-backdrop">
+            <img src={getBackdropUrl(item)} alt={item.title || item.name} draggable="false" />
+            <div className="hero-overlay"></div>
+            <div className="hero-content">
+              <h2 className="hero-title">{item.title || item.name}</h2>
+            </div>
+          </div>
+        </Link>
+        <button 
+          className="fav-btn glass-panel" 
+          onClick={handleFav} 
+          style={{ top: '16px', right: '16px' }}
+        >
+          <i
+            className={`${favActive ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
+            style={{ color: favActive ? '#ff3b30' : '#ffffff' }}
+          ></i>
+        </button>
+      </div>
     </div>
   )
 }
 
-// --- LAYOUT PRINCIPAL ---
+export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
+  const [animating, setAnimating] = useState(false)
+
+  const handleFavClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setAnimating(true)
+    toggleFavorite(item)
+    setTimeout(() => setAnimating(false), 400)
+  }
+
+  return (
+    <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
+      <div className="card-poster-frame">
+        <img
+          src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : DEFAULT_POSTER}
+          alt={item.title || item.name}
+          className="content-poster"
+          loading="lazy"
+        />
+        <button className="fav-btn glass-panel" onClick={handleFavClick}>
+          <i
+            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
+            style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
+          ></i>
+        </button>
+      </div>
+      <span className="card-title">{item.title || item.name}</span>
+    </Link>
+  )
+}
+
+export const Footer = () => (
+  <footer className="footer-credits">
+    <p>Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
+  </footer>
+)
+
 export default function Home() {
   const [releases, setReleases] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [favorites, setFavorites] = useState([])
   const [searchResults, setSearchResults] = useState([])
-  const [heroFeatured, setHeroFeatured] = useState(null)
-  
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-
-  // Estados de Popups (Exclusivos)
-  const [showInfo, setShowInfo] = useState(false)
-  const [infoClosing, setInfoClosing] = useState(false)
-  
-  const [showTech, setShowTech] = useState(false)
-  const [techClosing, setTechClosing] = useState(false)
 
   const [currentToast, setCurrentToast] = useState(null)
-  const [toastClosing, setToastClosing] = useState(false)
+  const [toastQueue, setToastQueue] = useState([])
+
+  const [scrolled, setScrolled] = useState(false)
+  
+  const [showInfoPopup, setShowInfoPopup] = useState(false)
+  const [infoClosing, setInfoClosing] = useState(false)
+  
+  const [showTechPopup, setShowTechPopup] = useState(false)
+  const [techClosing, setTechClosing] = useState(false)
 
   const searchInputRef = useRef(null)
-  
-  // Timers Refs
-  const infoTimer = useRef(null)
-  const techTimer = useRef(null)
-  const toastTimer = useRef(null)
+  const toastTimerRef = useRef(null)
 
-  // --- CONTROLE DE POPUPS ---
-  const closeAllPopups = useCallback(() => {
-    if (showInfo) triggerCloseInfo()
-    if (showTech) triggerCloseTech()
-    if (currentToast) triggerCloseToast()
-  }, [showInfo, showTech, currentToast])
-
-  // Fecha Info
-  const triggerCloseInfo = () => {
-    setInfoClosing(true)
-    setTimeout(() => { setShowInfo(false); setInfoClosing(false) }, 400)
-    if (infoTimer.current) clearTimeout(infoTimer.current)
-  }
-
-  // Fecha Tech
-  const triggerCloseTech = () => {
-    setTechClosing(true)
-    setTimeout(() => { setShowTech(false); setTechClosing(false) }, 400)
-    if (techTimer.current) clearTimeout(techTimer.current)
-  }
-
-  // Fecha Toast
-  const triggerCloseToast = () => {
-    setToastClosing(true)
-    setTimeout(() => { setCurrentToast(null); setToastClosing(false) }, 400)
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-  }
-
-  // Abre Info (Fecha outros e inicia timer de 3s)
-  const toggleInfo = () => {
-    if (showInfo) {
-      triggerCloseInfo()
-    } else {
-      if (showTech) triggerCloseTech() // Fecha tech se aberto
-      setShowInfo(true)
-      infoTimer.current = setTimeout(triggerCloseInfo, 3000)
-    }
-  }
-
-  // Abre Tech (Fecha outros e inicia timer de 3s)
-  const toggleTech = () => {
-    if (showTech) {
-      triggerCloseTech()
-    } else {
-      if (showInfo) triggerCloseInfo() // Fecha info se aberto
-      setShowTech(true)
-      techTimer.current = setTimeout(triggerCloseTech, 3000)
-    }
-  }
-
-  // Mostra Toast (Fecha se tiver outro)
   const showToast = (message, type = 'info') => {
-    if (currentToast) {
-      // Se já tem um, fecha rápido e abre o próximo (simplificação para evitar fila complexa visual)
-      setToastClosing(true)
-      setTimeout(() => {
-        setCurrentToast({ message, type })
-        setToastClosing(false)
-        startToastTimer()
-      }, 200) // Pequeno delay
-    } else {
-      setCurrentToast({ message, type })
-      startToastTimer()
-    }
+    setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
   }
 
-  const startToastTimer = () => {
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    toastTimer.current = setTimeout(triggerCloseToast, 3000)
-  }
-
-  // Scroll Handler
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 50)
-      if (window.scrollY > 10) closeAllPopups()
+    if (toastQueue.length > 0) {
+      if (currentToast && !currentToast.closing) {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        setCurrentToast(prev => ({ ...prev, closing: true }))
+      } else if (!currentToast) {
+        const next = toastQueue[0]
+        setToastQueue(prev => prev.slice(1))
+        setCurrentToast({ ...next, closing: false })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => {
+          setCurrentToast(t => (t && t.id === next.id ? { ...t, closing: true } : t))
+        }, 2500)
+      }
+    }
+  }, [toastQueue, currentToast])
+
+  useEffect(() => {
+    if (currentToast?.closing) {
+      const t = setTimeout(() => setCurrentToast(null), 400)
+      return () => clearTimeout(t)
+    }
+  }, [currentToast])
+
+  const manualCloseToast = () => { 
+    if (currentToast) setCurrentToast({ ...currentToast, closing: true }) 
+  }
+
+  const closePopups = useCallback(() => {
+    if (showInfoPopup && !infoClosing) {
+      setInfoClosing(true)
+      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 300)
+    }
+    if (showTechPopup && !techClosing) {
+      setTechClosing(true)
+      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 300)
+    }
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing])
+
+  const toggleInfoPopup = () => { 
+    if (showTechPopup) closePopups()
+    showInfoPopup ? closePopups() : setShowInfoPopup(true) 
+  }
+
+  const toggleTechPopup = () => {
+    if (showInfoPopup) closePopups()
+    showTechPopup ? closePopups() : setShowTechPopup(true)
+  }
+
+  useEffect(() => {
+    const onScroll = () => { 
+      if (window.scrollY > 10) closePopups()
+      setScrolled(window.scrollY > 60) 
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [closeAllPopups])
+    
+    const onClick = (e) => { 
+      if (!e.target.closest('.info-popup') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container')) {
+        closePopups() 
+      }
+    }
+    window.addEventListener('click', onClick)
+    
+    return () => { 
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('click', onClick) 
+    }
+  }, [closePopups])
 
-  // --- DATA LOADING (Mantido igual) ---
   useEffect(() => { 
     loadHomeContent()
     loadFavorites() 
@@ -332,304 +358,554 @@ export default function Home() {
 
   useEffect(() => {
     if (searchActive && searchInputRef.current) searchInputRef.current.focus()
-    if (!searchActive) { setSearchResults([]); setSearchQuery('') }
+    if (!searchActive) { 
+      setSearchResults([])
+      setSearchQuery('') 
+    }
   }, [searchActive])
 
-  const fetchTMDBPages = async (url) => {
+  const fetchTMDB = async (url) => {
     try {
-      const r1 = await fetch(`${url}&page=1`).then(r => r.json())
-      const r2 = await fetch(`${url}&page=2`).then(r => r.json())
-      return [...(r1.results || []), ...(r2.results || [])]
-    } catch { return [] }
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Network error')
+      const data = await response.json()
+      return data.results || []
+    } catch (error) {
+      console.error('TMDB fetch error:', error)
+      return []
+    }
+  }
+
+  const fetchTMDBPages = async (endpoint) => {
+    try {
+      const [results1, results2] = await Promise.all([
+        fetchTMDB(`${endpoint}&page=1`),
+        fetchTMDB(`${endpoint}&page=2`)
+      ])
+      return [...results1, ...results2]
+    } catch {
+      return []
+    }
+  }
+
+  const fetchSearchResults = async (query) => {
+    if (!query.trim()) { 
+      setSearchResults([])
+      setLoading(false)
+      return 
+    }
+    
+    setLoading(true)
+    try {
+      const [movies, tv] = await Promise.all([
+        fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
+      ])
+      
+      const combined = [
+        ...movies.map(i => ({ ...i, media_type: 'movie' })),
+        ...tv.map(i => ({ ...i, media_type: 'tv' }))
+      ]
+        .filter(i => i.poster_path)
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 40)
+      
+      setSearchResults(combined)
+    } catch (error) {
+      showToast('Erro na busca', 'error')
+      setSearchResults([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const debouncedSearch = useDebounce(fetchSearchResults, 300)
+  
+  const handleSearchChange = (q) => {
+    setSearchQuery(q)
+    if (!q.trim()) { 
+      setSearchResults([])
+      setLoading(false)
+      return 
+    }
+    setLoading(true)
+    debouncedSearch(q)
   }
 
   const loadHomeContent = async () => {
     try {
-      const [moviesNow, tvNow, moviesPop] = await Promise.all([
+      const [moviesNow, tvNow, moviesPopular, tvPopular] = await Promise.all([
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
       
-      const rel = [...moviesNow.map(i=>({...i, media_type:'movie'})), ...tvNow.map(i=>({...i, media_type:'tv'}))]
+      const releasesData = [
+        ...moviesNow.map(i => ({ ...i, media_type: 'movie' })),
+        ...tvNow.map(i => ({ ...i, media_type: 'tv' }))
+      ]
         .filter(i => i.poster_path)
-        .sort((a,b) => new Date(b.release_date||b.first_air_date) - new Date(a.release_date||a.first_air_date))
-        .slice(0, 40)
+        .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
+        .slice(0, 36)
       
-      const rec = moviesPop.map(i=>({...i, media_type:'movie'})).filter(i=>i.poster_path)
-
-      if (rec.length > 0) setHeroFeatured(rec[0])
-      setReleases(rel)
-      setRecommendations(rec.slice(1))
-    } catch (e) { console.error(e) }
+      const recommendationsData = [
+        ...moviesPopular.map(i => ({ ...i, media_type: 'movie' })),
+        ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
+      ]
+        .filter(i => i.poster_path)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 36)
+      
+      setReleases(releasesData)
+      setRecommendations(recommendationsData)
+    } catch (error) {
+      console.error('Load error:', error)
+    }
   }
-
-  const fetchSearch = async (q) => {
-    if (!q.trim()) return
-    setLoading(true)
-    try {
-      const res = await fetchTMDBPages(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&language=pt-BR`)
-      setSearchResults(res.filter(i=>i.poster_path && (i.media_type==='movie'||i.media_type==='tv')).sort((a,b)=>b.popularity-a.popularity))
-    } catch { showToast('Erro na busca', 'error') }
-    finally { setLoading(false) }
-  }
-
-  const debouncedSearch = useDebounce(fetchSearch, 500)
-  const handleSearchChange = (q) => { setSearchQuery(q); if(q) debouncedSearch(q) }
 
   const loadFavorites = () => {
-    const s = localStorage.getItem('yoshikawaFavorites')
-    if (s) setFavorites(JSON.parse(s))
+    try { 
+      const stored = localStorage.getItem('yoshikawaFavorites')
+      setFavorites(stored ? JSON.parse(stored) : []) 
+    } catch { 
+      setFavorites([]) 
+    }
   }
 
-  const isFavorite = (item) => favorites.some(f => f.id === item.id)
+  const isFavorite = (item) => favorites.some(f => f.id === item.id && f.media_type === item.media_type)
 
   const toggleFavorite = (item) => {
     setFavorites(prev => {
-      const exists = prev.some(f => f.id === item.id)
-      let next
-      if (exists) {
-        next = prev.filter(f => f.id !== item.id)
-        showToast('Removido dos favoritos')
-      } else {
-        next = [...prev, item]
-        showToast('Adicionado aos favoritos', 'success')
+      const exists = prev.some(f => f.id === item.id && f.media_type === item.media_type)
+      let updated
+      
+      if (exists) { 
+        updated = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
+        showToast('Removido', 'info') 
+      } else { 
+        updated = [...prev, { 
+          id: item.id, 
+          media_type: item.media_type, 
+          title: item.title || item.name, 
+          poster_path: item.poster_path 
+        }]
+        showToast('Adicionado', 'success') 
       }
-      localStorage.setItem('yoshikawaFavorites', JSON.stringify(next))
-      return next
+      
+      try { 
+        localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) 
+      } catch { 
+        showToast('Erro ao salvar', 'error') 
+      }
+      
+      return updated
     })
   }
 
   const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const headerLabel = scrolled ? (searchActive ? 'Busca' : SECTION_TITLES[activeSection]) : 'Yoshikawa'
+  const heroItem = !searchActive && releases.length > 0 ? releases[0] : null
+  const displayItems = activeList
+
+  const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
+  const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
   return (
     <>
+      {/* --- LIQUID GLASS SVG FILTER DEFINITION --- */}
+      <svg style={{ display: 'none' }}>
+        <filter id="liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+
       <Head>
         <title>Yoshikawa Player</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          :root {
-            --glass-bg: rgba(22, 22, 24, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --ios-ease: cubic-bezier(0.32, 0.72, 0, 1);
-            --primary: #0A84FF;
-          }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-          body { background: #000; color: #fff; font-family: 'Inter', sans-serif; padding-bottom: 100px; }
+
+          body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #050505;
+            color: #f5f5f7;
+            line-height: 1.6;
+            font-size: 16px;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* Fundo suave para o efeito de vidro brilhar */
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
+            background-attachment: fixed;
+          }
           
-          /* GLASS STYLES */
-          .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+          a { color: inherit; text-decoration: none; }
+          button { font-family: inherit; border: none; outline: none; background: none; }
+          img { max-width: 100%; height: auto; display: block; }
+
+          :root {
+            --pill-height: 44px;
+            --pill-radius: 50px;
+            --liquid-tint: rgba(20, 20, 20, 0.45);
+            --liquid-highlight: rgba(255, 255, 255, 0.12);
+            --pill-max-width: 680px;
+            --ios-blue: #0A84FF;
           }
 
-          /* BARS */
-          .bar-container {
-            position: fixed; left: 50%; transform: translateX(-50%);
-            z-index: 1000; /* Z-Index Alto para ficar na frente de tudo */
-            display: flex; gap: 12px; width: 92%; max-width: 600px;
+          /* --- LIQUID GLASS STYLES --- */
+          /* Substituição completa da lógica antiga de blur */
+          .glass-panel {
+            position: relative;
+            background: transparent;
+            z-index: 10;
+            overflow: hidden; /* Mantém o líquido dentro da borda */
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
-          .top-bar { top: 16px; }
+
+          /* Camada de Distorção (Fundo) */
+          .glass-panel::before {
+            content: '';
+            position: absolute;
+            inset: -5px; /* Extende para evitar bordas duras na distorção */
+            background: var(--liquid-tint);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            /* O Filtro Mágico */
+            filter: url(#liquid-glass) saturate(140%) brightness(1.1);
+            z-index: -2;
+            pointer-events: none;
+          }
+
+          /* Camada Especular (Bordas e Brilho) */
+          .glass-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: inherit;
+            box-shadow: 
+                inset 1px 1px 0px var(--liquid-highlight),
+                inset -0.5px -0.5px 0px rgba(0,0,0,0.3),
+                0 4px 24px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+          }
+
+          .bar-container {
+            position: fixed; 
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 12px; 
+            width: 90%; 
+            max-width: var(--pill-max-width);
+          }
+
+          .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
 
           .round-btn {
-            width: 48px; height: 48px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; cursor: pointer; transition: 0.2s;
+            width: var(--pill-height);
+            height: var(--pill-height);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+            flex-shrink: 0;
           }
-          .round-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.15); }
+          
+          .round-btn:hover { transform: scale(1.05); }
+          .round-btn:active { transform: scale(0.95); }
 
           .pill-container {
-            flex: 1; height: 48px; border-radius: 50px;
-            display: flex; align-items: center; justify-content: center;
+            height: var(--pill-height);
+            flex: 1;
+            border-radius: var(--pill-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            /* Importante para o pseudo-elemento respeitar o shape */
+            isolation: isolate; 
           }
 
-          .bar-label { font-weight: 600; font-size: 15px; }
-
-          .nav-btn {
-            flex: 1; height: 100%; display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.4); font-size: 18px; transition: 0.3s; background: none; border: none;
+          .bar-label {
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            color: #fff;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+            animation: fadeIn 0.4s ease forwards;
+            position: relative; z-index: 5;
           }
-          .nav-btn.active { color: #fff; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+          /* --- POPUPS --- */
+          .info-popup {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 8px); 
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            z-index: 900;
+            width: auto; 
+            min-width: 280px;
+            opacity: 0;
+            animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: none;
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            padding: 0.8rem 1.2rem; 
+            border-radius: 20px;
+          }
           
-          /* SEARCH */
-          .search-wrap { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 16px; }
-          .search-wrap input { background: transparent; border: none; color: #fff; font-size: 16px; width: 100%; outline: none; }
-          .search-icon-input { color: rgba(255,255,255,0.5); }
+          .info-popup.closing { animation: popupOut 0.2s ease forwards; }
+          @keyframes popupIn { to { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; } }
+          @keyframes popupOut { to { opacity: 0; transform: translateX(-50%) scale(0.95); } }
+          
+          .info-icon { font-size: 1.1rem; color: var(--ios-blue); position: relative; z-index: 5; }
+          .info-text { font-size: 0.85rem; color: #eee; margin: 0; position: relative; z-index: 5; }
 
-          /* POPUPS & TOASTS (Animação de "Trás" da Navbar) */
-          .popup-message {
-            position: fixed; left: 50%; 
-            /* Z-Index menor que as barras (1000) para surgir de "baixo" delas visualmente */
-            z-index: 900; 
-            padding: 12px 24px; border-radius: 50px;
-            display: flex; align-items: center; gap: 10px;
-            font-size: 13px; color: #fff;
-            pointer-events: none; /* Para não bloquear clique enquanto anima, depois ativa se necessário */
+          /* --- CONTAINER & LAYOUT --- */
+          .container {
+            max-width: 1280px; 
+            margin: 0 auto;
+            padding-top: 6.5rem;
+            padding-bottom: 7rem;
+            padding-left: 2rem; 
+            padding-right: 2rem;
+          }
+          
+          .page-title {
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            margin-bottom: 1rem;
+            color: #fff;
+            letter-spacing: -0.03em;
+          }
+          .page-title-below { margin-top: 0; }
+
+          /* --- HERO CLEAN --- */
+          .hero-static-container { width: 100%; position: relative; margin-bottom: 2rem; }
+          .hero-wrapper {
+            display: block; 
+            width: 100%; 
+            aspect-ratio: 2.35 / 1;
+            position: relative;
+            border-radius: 24px; 
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            transform: translateZ(0);
+          }
+          
+          .hero-backdrop img {
+            width: 100%; height: 100%; object-fit: cover; 
+            transition: transform 1s ease;
+          }
+          
+          .hero-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+          }
+          
+          .hero-content {
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            padding: 2rem; z-index: 2;
+          }
+          
+          .hero-title {
+            font-size: 2.2rem; font-weight: 800; color: #fff;
+            letter-spacing: -0.03em; margin: 0; line-height: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
           }
 
-          /* Configuração para Popups do Topo (Info/Tech) */
-          .top-origin {
-            top: 70px; /* Logo abaixo da Top Bar (16px + 48px + margem) */
-            transform-origin: top center;
-            animation: slideOutTop 0.4s var(--ios-ease) forwards;
-          }
-          .top-origin.closing { animation: slideInTop 0.4s var(--ios-ease) forwards; }
-
-          /* Configuração para Popups do Fundo (Toasts) */
-          .bottom-origin {
-            bottom: 80px; /* Logo acima da Bottom Nav (20px + 48px + margem) */
-            transform-origin: bottom center;
-            animation: slideOutBottom 0.4s var(--ios-ease) forwards;
-          }
-          .bottom-origin.closing { animation: slideInBottom 0.4s var(--ios-ease) forwards; }
-
-          /* Animações Keyframes - "Surgir de trás" */
-          /* Do Topo: Começa "dentro" do header (negativo Y) e opaco */
-          @keyframes slideOutTop {
-            from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.85); }
-            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-          }
-          /* Retorno ao Topo */
-          @keyframes slideInTop {
-            from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            to   { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.85); }
-          }
-
-          /* Do Fundo: Começa "dentro" da navbar (positivo Y) e opaco */
-          @keyframes slideOutBottom {
-            from { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.85); }
-            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-          }
-          /* Retorno ao Fundo */
-          @keyframes slideInBottom {
-            from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            to   { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.85); }
-          }
-
-          /* HERO */
-          .hero-container { margin: 80px 1.5rem 2rem; position: relative; border-radius: 24px; overflow: hidden; height: 55vh; max-height: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
-          .hero-bg { width: 100%; height: 100%; position: relative; }
-          .hero-bg img { width: 100%; height: 100%; object-fit: cover; }
-          .hero-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
-          .hero-info { position: absolute; bottom: 0; padding: 2rem; width: 100%; }
-          .hero-tag { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
-          .hero-info h1 { font-size: 2rem; line-height: 1.1; margin-bottom: 8px; }
-          .hero-overview { font-size: 0.9rem; opacity: 0.8; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 600px; }
-          .hero-fav { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 50; }
-
-          /* CARDS GRID - CSS CLÁSSICO/SIMPLES REVERTIDO */
+          /* --- CARDS --- */
           .content-grid {
             display: grid;
-            /* Grid flexível simples */
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 24px 16px;
-            padding: 0 1.5rem;
-          }
-
-          .card-item {
+            gap: 24px 12px; 
             width: 100%;
-            /* Remove qualquer position relative complexo externo */
           }
-
-          .card-link { display: block; }
-
-          .card-poster {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 2/3; /* Proporção padrão de poster */
-            border-radius: 12px; /* Borda arredondada simples */
+          
+          .card-wrapper { display: flex; flex-direction: column; width: 100%; position: relative; }
+          
+          .card-poster-frame {
+            position: relative; 
+            border-radius: 16px; 
             overflow: hidden;
-            background: #222;
-          }
-
-          .card-poster img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.3s ease;
+            aspect-ratio: 2/3; 
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.18); 
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           }
           
-          /* Efeito Zoom na imagem ao passar mouse */
-          .card-poster:hover img { transform: scale(1.05); }
-
-          .card-fav {
-            position: absolute; top: 6px; right: 6px;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            border: none; cursor: pointer; color: #fff;
-          }
-
+          .card-wrapper:hover .card-poster-frame { transform: translateY(-4px); border-color: rgba(255,255,255,0.4); }
+          .content-poster { width: 100%; height: 100%; object-fit: cover; }
+          
           .card-title {
-            margin-top: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.8);
-            /* Texto cortado em 1 linha */
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-top: 10px; font-size: 0.8rem; font-weight: 500;
+            color: rgba(255, 255, 255, 0.85); line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; 
+            overflow: hidden; text-overflow: ellipsis;
+          }
+          
+          .fav-btn {
+            position: absolute; top: 8px; right: 8px; 
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; opacity: 0; transform: scale(0.9); transition: all 0.2s;
+            border: none;
+            /* Override glass z-index inside cards */
+            z-index: 20;
+          }
+          .card-poster-frame:hover .fav-btn, .fav-btn:active { opacity: 1; transform: scale(1); }
+          @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); background: rgba(0,0,0,0.4); } }
+          
+          .heart-pulse { animation: heartZoom 0.4s ease; }
+          @keyframes heartZoom { 50% { transform: scale(1.4); } }
+
+          /* --- NAVBAR PILL --- */
+          .nav-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            height: 100%; color: rgba(255,255,255,0.4); transition: color 0.3s;
+            position: relative; z-index: 5;
+          }
+          .nav-btn i { font-size: 18px; }
+          .nav-btn.active { color: #fff; }
+          
+          .search-wrap { width: 100%; padding: 0 12px; position: relative; z-index: 5; }
+          .search-wrap input {
+            width: 100%; background: transparent; border: none; outline: none;
+            color: #fff; font-size: 15px; font-family: inherit;
           }
 
-          .pulse { animation: pulse 0.3s ease; }
-          @keyframes pulse { 50% { transform: scale(1.3); } }
+          /* --- FLUID THIN TOAST --- */
+          .toast-wrap {
+            position: fixed; 
+            bottom: calc(20px + var(--pill-height) + 12px);
+            left: 50%; transform: translateX(-50%); 
+            z-index: 990; pointer-events: none;
+          }
+          
+          .toast {
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; 
+            border-radius: 24px;
+            animation: floatUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+          }
+          
+          .toast.closing { animation: floatDown 0.3s forwards; }
+          @keyframes floatUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes floatDown { to { opacity:0; transform:translateY(10px); } }
+          
+          .toast-icon { 
+              width:16px; height:16px; border-radius:50%; display:flex; 
+              align-items:center; justify-content:center; font-size:9px; 
+              position: relative; z-index: 5;
+          }
+          .toast.success .toast-icon { background: #34c759; color: #000; }
+          .toast.info .toast-icon { background: #007aff; color: #fff; }
+          .toast-msg { font-size: 13px; font-weight: 500; color: #fff; position: relative; z-index: 5; }
 
-          .page-title { padding: 0 1.5rem; margin-bottom: 1.5rem; font-size: 1.4rem; }
-          
-          .empty { text-align: center; margin-top: 3rem; opacity: 0.5; }
-          
-          @media (max-width: 600px) {
-            .content-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
-            .hero-container { height: 45vh; margin-top: 70px; }
-            .hero-info h1 { font-size: 1.5rem; }
+          /* --- FOOTER & MISC --- */
+          .footer-credits {
+            margin-top: 3rem; padding: 2rem; text-align: center;
+            color: rgba(255,255,255,0.2); font-size: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.05); 
+          }
+          .spinner {
+            width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .empty-state { display: flex; flex-direction: column; align-items: center; color: #555; margin-top: 3rem; gap: 8px; }
+
+          @media (max-width: 768px) {
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
+            .hero-wrapper { aspect-ratio: 1.7/1; border-radius: 20px; }
+            .hero-title { font-size: 1.6rem; }
+            .hero-content { padding: 1.5rem; }
+            .bar-container { width: 94%; gap: 8px; }
+            .card-poster-frame { border-radius: 14px; }
           }
         `}</style>
       </Head>
 
-      <Header 
-        label={headerLabel} 
+      <Header
+        label={headerLabel}
         scrolled={scrolled}
-        showInfo={showInfo} toggleInfo={toggleInfo} infoClosing={infoClosing}
-        showTech={showTech} toggleTech={toggleTech} techClosing={techClosing}
+        showInfo={showInfoPopup}
+        toggleInfo={toggleInfoPopup}
+        infoClosing={infoClosing}
+        showTech={showTechPopup}
+        toggleTech={toggleTechPopup}
+        techClosing={techClosing}
       />
 
-      <ToastContainer toast={currentToast} />
+      <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-      <main>
-        {!searchActive && !loading && (
-          <HeroFixed item={heroFeatured || releases[0]} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+      <main className="container">
+        {!loading && heroItem && (
+          <HeroFixed item={heroItem} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
         )}
 
-        <h2 className="page-title">{scrolled ? '' : (searchActive ? (searchQuery ? `Resultados para "${searchQuery}"` : 'Buscar') : SECTION_TITLES[activeSection])}</h2>
+        <h1 className={`page-title ${heroItem ? 'page-title-below' : ''}`}>{pageTitle}</h1>
 
-        {loading && <div className="empty"><div className="spinner"></div></div>}
+        {loading && (searchActive || releases.length === 0) && (
+          <div className="empty-state">
+            <div className="spinner"></div>
+          </div>
+        )}
 
-        <div className="content-grid">
-          {activeList.map(item => (
-            <MovieCard 
-              key={getItemKey(item)} 
-              item={item} 
-              isFavorite={isFavorite(item)} 
-              toggleFavorite={toggleFavorite} 
-            />
-          ))}
-        </div>
-        
-        {activeList.length === 0 && !loading && <div className="empty">Nada por aqui.</div>}
+        {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
+          <div className="empty-state">
+            <i className="fas fa-ghost"></i>
+            <p>Nada encontrado</p>
+          </div>
+        )}
+
+        {displayItems.length > 0 && !loading && (
+          <div className="content-grid">
+            {displayItems.map(item => (
+              <MovieCard 
+                key={getItemKey(item)} 
+                item={item} 
+                isFavorite={isFavorite(item)} 
+                toggleFavorite={toggleFavorite} 
+              />
+            ))}
+          </div>
+        )}
+
+        {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
+          <div className="empty-state">
+            <p>Lista vazia</p>
+          </div>
+        )}
+
+        <Footer />
       </main>
 
-      <BottomNav 
-        activeSection={activeSection} setActiveSection={setActiveSection}
-        searchActive={searchActive} setSearchActive={setSearchActive}
-        searchQuery={searchQuery} setSearchQuery={handleSearchChange}
-        onSearchSubmit={(q) => handleSearchChange(q)} inputRef={searchInputRef}
+      <BottomNav
+        activeSection={activeSection} 
+        setActiveSection={setActiveSection}
+        searchActive={searchActive} 
+        setSearchActive={setSearchActive}
+        searchQuery={searchQuery} 
+        setSearchQuery={handleSearchChange}
+        onSearchSubmit={debouncedSearch} 
+        inputRef={searchInputRef}
       />
     </>
   )
-}
+            }
