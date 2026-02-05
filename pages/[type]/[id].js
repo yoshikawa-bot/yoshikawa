@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// --- COMPONENTES AUXILIARES (EXATAMENTE COMO NA HOME) ---
+// --- COMPONENTES AUXILIARES ---
 
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
@@ -67,7 +67,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
+            <p className="popup-text">v2.7.0 Fix • React 18 • TMDB API</p>
           </div>
         </div>
       )}
@@ -165,7 +165,7 @@ export default function WatchPage() {
 
   const toastTimerRef = useRef(null)
 
-  // --- TOAST LOGIC (EXATAMENTE COMO NA HOME) ---
+  // --- TOAST LOGIC ---
   const showToast = (message, type = 'info') => {
     if (showInfoPopup || showTechPopup) {
       closeAllPopups()
@@ -224,7 +224,6 @@ export default function WatchPage() {
           await fetchSeason(id, 1)
         }
 
-        // Verificar favoritos
         checkFavoriteStatus(data)
       } catch (error) {
         console.error("Erro ao carregar", error)
@@ -376,7 +375,7 @@ export default function WatchPage() {
     }
   }, [closeAllPopups])
 
-  // Centralizar episódio atual no carrossel
+  // Centralizar episódio atual
   useEffect(() => {
     if (carouselRef.current && seasonData) {
       const activeCard = carouselRef.current.querySelector('.ep-card.active')
@@ -405,10 +404,8 @@ export default function WatchPage() {
   const getEmbedUrl = () => {
     if (!content) return ''
     if (type === 'movie') {
-      // Formato correto Superflix: https://superflixapi.cv/filme/ID
       return `https://superflixapi.cv/filme/${id}`
     }
-    // Formato correto Superflix TV: https://superflixapi.cv/serie/ID/TEMP/EPISODIO
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
@@ -527,12 +524,8 @@ export default function WatchPage() {
 
           .bar-label { 
             font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap;
-            letter-spacing: -0.01em; animation: labelFadeIn 0.4s var(--ease-elastic) forwards;
+            letter-spacing: -0.01em;
             position: relative; z-index: 5;
-          }
-          @keyframes labelFadeIn { 
-            from { opacity: 0; transform: translateY(12px) scale(0.9); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
           }
 
           .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
@@ -542,7 +535,7 @@ export default function WatchPage() {
             100% { transform: scale(1); }
           }
 
-          .info-popup, .toast {
+          .info-popup, .toast, .synopsis-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
@@ -561,10 +554,10 @@ export default function WatchPage() {
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
           
-          .info-popup { z-index: 950; pointer-events: none; }
+          .info-popup, .synopsis-popup { z-index: 950; pointer-events: none; }
           .toast { z-index: 960; pointer-events: auto; align-items: center; } 
 
-          .info-popup.closing, .toast.closing { 
+          .info-popup.closing, .toast.closing, .synopsis-popup.closing { 
             animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
@@ -577,10 +570,9 @@ export default function WatchPage() {
             100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
           }
           
-          .popup-icon-wrapper, .toast-icon-wrapper { 
+          .popup-icon-wrapper, .toast-icon-wrapper, .synopsis-icon-wrapper { 
             width: 42px; height: 42px; min-width: 42px; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; 
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
           }
           .popup-icon-wrapper { 
             background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
@@ -589,6 +581,10 @@ export default function WatchPage() {
           .popup-icon-wrapper.tech { 
             background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
             box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
+          }
+          .synopsis-icon-wrapper {
+            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
           }
 
           .toast-icon-wrapper { border-radius: 50%; }
@@ -605,54 +601,22 @@ export default function WatchPage() {
             box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
           }
 
-          .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
-          .popup-content, .toast-content { 
+          .popup-icon-wrapper i, .toast-icon-wrapper i, .synopsis-icon-wrapper i { font-size: 20px; color: #fff; }
+          
+          .popup-content, .toast-content, .synopsis-popup-content { 
             flex: 1; display: flex; flex-direction: column; gap: 4px; 
-            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
           }
-          @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
-          .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
-
-          @keyframes iconPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+          
+          .popup-title, .toast-title, .synopsis-popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .popup-text, .toast-msg, .synopsis-popup-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
+          
+          .synopsis-popup-content {
+             gap: 6px;
+             max-height: 60vh; overflow-y: auto;
+          }
+          .synopsis-popup-text { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); line-height: 1.5; }
 
           .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
-
-          .synopsis-popup {
-            position: fixed;
-            top: calc(20px + var(--pill-height) + 16px); 
-            left: 50%;
-            z-index: 950;
-            min-width: 320px;
-            max-width: 90%;
-            display: flex; 
-            align-items: flex-start; 
-            gap: 14px;
-            padding: 16px 18px; 
-            border-radius: 22px;
-            transform: translateX(-50%) translateY(-50%) scale(0.3);
-            transform-origin: top center;
-            opacity: 0;
-            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            pointer-events: none;
-          }
-          .synopsis-popup.closing { animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; }
-          .synopsis-icon-wrapper {
-            width: 42px; height: 42px; min-width: 42px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
-            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
-          }
-          .synopsis-icon-wrapper i { font-size: 20px; color: #fff; }
-          .synopsis-popup-content {
-            flex: 1; display: flex; flex-direction: column; gap: 6px;
-            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards;
-            max-height: 60vh; overflow-y: auto;
-          }
-          .synopsis-popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
-          .synopsis-popup-text { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
 
           .season-selector-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -726,18 +690,19 @@ export default function WatchPage() {
             border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
           }
 
-          .media-title { font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.2; }
+          .media-title { font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.2; }
 
           .season-controls {
             display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
           }
 
           .season-btn {
-            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 12px;
-            font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 8px;
-            transition: background 0.2s;
+            background: rgba(255,255,255,0.1); padding: 10px 18px; border-radius: 50px;
+            font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 10px;
+            transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
           }
-          .season-btn:hover { background: rgba(255,255,255,0.2); }
+          .season-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.2); }
+          .season-btn i { font-size: 0.75rem; opacity: 0.7; }
 
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px 0;
@@ -757,44 +722,46 @@ export default function WatchPage() {
           }
           
           .ep-card {
-            min-width: 110px; height: 65px; background-size: cover; background-position: center;
-            border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 6px 8px; border: 0.25px solid rgba(255,255,255,0.12); cursor: pointer; 
+            min-width: 120px; height: 70px; background-size: cover; background-position: center;
+            border-radius: 12px; display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 8px 10px; 
+            border: 0.5px solid rgba(255,255,255,0.15); 
+            cursor: pointer; 
             transition: all 0.2s ease; position: relative; overflow: hidden;
           }
           .ep-card::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+            content: ''; position: absolute; inset: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+            z-index: 0;
           }
-          .ep-card:hover { border-color: rgba(255,255,255,0.25); transform: scale(1.05); }
-          .ep-card.active { border-color: var(--ios-blue); border-width: 1.5px; box-shadow: 0 0 0 1px var(--ios-blue); }
+          .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
+          .ep-card.active { border-color: var(--ios-blue); border-width: 1px; box-shadow: 0 0 0 1px var(--ios-blue); }
           
           .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
-          .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
+          .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
 
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: transparent;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             z-index: 2000; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            animation: overlayFadeIn 0.3s ease;
           }
-          @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
           
           .player-popup-container {
             position: relative; background: #000; border-radius: 20px; overflow: hidden;
-            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
             transition: all 0.4s var(--ease-elastic); display: flex; align-items: center; justify-content: center;
             animation: playerPopIn 0.4s var(--ease-elastic);
           }
 
           @keyframes playerPopIn {
-            from { opacity: 0; transform: scale(0.8); }
+            from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
           }
           
-          .popup-size-square { width: min(80vw, 45vh); height: min(80vw, 45vh); aspect-ratio: 1/1; }
+          .popup-size-square { width: min(75vw, 40vh); height: min(75vw, 40vh); aspect-ratio: 1/1; }
           .popup-size-banner { width: 85vw; max-width: 900px; aspect-ratio: 16/9; }
           
           .player-embed { width: 100%; height: 100%; border: none; }
@@ -834,7 +801,6 @@ export default function WatchPage() {
             .bar-container { width: 94%; }
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 16px; }
-            .media-title { font-size: 1.1rem; }
             .popup-size-square { width: 90vw; height: 90vw; }
             .popup-size-banner { width: 90vw; }
             .info-popup, .toast, .synopsis-popup { min-width: 280px; padding: 14px 16px; }
@@ -925,7 +891,7 @@ export default function WatchPage() {
               <>
                 <div className="season-controls">
                   <button className="season-btn" onClick={handleSeasonChange}>
-                    Temporada {season} <i className="fas fa-chevron-down" style={{fontSize: '10px'}}></i>
+                    Temporada {season} <i className="fas fa-chevron-down"></i>
                   </button>
                 </div>
 
@@ -981,14 +947,14 @@ export default function WatchPage() {
             
             <div className="player-header-controls">
               <span className="ep-indicator">
-                 {type === 'tv' ? `S${season}:E${episode}` : 'Filme'}
+                 {type === 'movie' ? 'FILME' : `S${season}:E${episode}`}
               </span>
               <div className="right-controls">
-                <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
-                  <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
-                </button>
-                <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
+                 <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
                   <i className="fas fa-xmark"></i>
+                </button>
+                <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Formato">
+                  <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
                 </button>
               </div>
             </div>
