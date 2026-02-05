@@ -412,22 +412,21 @@ export default function WatchPage() {
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
+  const [showSeasonSelector, setShowSeasonSelector] = useState(false)
+  const [selectorClosing, setSelectorClosing] = useState(false)
+
   const handleSeasonChange = () => {
-    const totalSeasons = content?.number_of_seasons || 1
-    if (totalSeasons === 1) return
-    
-    const seasonList = Array.from({ length: totalSeasons }, (_, i) => i + 1).join(', ')
-    const input = prompt(`Escolha a temporada (1-${totalSeasons}):`, season)
-    
-    if (input) {
-      const newSeason = parseInt(input)
-      if (newSeason >= 1 && newSeason <= totalSeasons) {
-        fetchSeason(id, newSeason)
-        setEpisode(1)
-      } else {
-        showToast('Temporada inválida', 'error')
-      }
-    }
+    setShowSeasonSelector(true)
+  }
+
+  const selectSeason = (newSeason) => {
+    setSelectorClosing(true)
+    setTimeout(() => {
+      setShowSeasonSelector(false)
+      setSelectorClosing(false)
+      fetchSeason(id, newSeason)
+      setEpisode(1)
+    }, 300)
   }
 
   if (loading) {
@@ -655,6 +654,38 @@ export default function WatchPage() {
           .synopsis-popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
           .synopsis-popup-text { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
 
+          .season-selector-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 2100;
+            display: flex; align-items: center; justify-content: center;
+            animation: overlayFadeIn 0.3s ease;
+          }
+          .season-selector-overlay.closing { animation: fadeOut 0.3s ease forwards; }
+          @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+          .season-selector {
+            background: rgba(20,20,20,0.95); backdrop-filter: blur(20px);
+            border-radius: 20px; padding: 24px; max-width: 400px; width: 90%;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: popupZoomIn 0.4s var(--ease-elastic);
+          }
+          .season-selector.closing { animation: popupZoomOut 0.3s ease forwards; }
+
+          .season-selector-title {
+            font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 16px; text-align: center;
+          }
+          .season-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;
+          }
+          .season-option {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 14px; text-align: center;
+            color: #fff; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .season-option:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+          .season-option.active { background: var(--ios-blue); border-color: var(--ios-blue); }
+
           .container {
             max-width: 1280px; margin: 0 auto;
             padding-top: 6.5rem; padding-bottom: 7rem;
@@ -695,7 +726,7 @@ export default function WatchPage() {
             border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
           }
 
-          .media-title { font-size: 1.4rem; font-weight: 700; color: #fff; line-height: 1.2; }
+          .media-title { font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.2; }
 
           .season-controls {
             display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
@@ -728,14 +759,14 @@ export default function WatchPage() {
           .ep-card {
             min-width: 110px; height: 65px; background-size: cover; background-position: center;
             border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 8px; border: 0.5px solid rgba(255,255,255,0.08); cursor: pointer; 
+            padding: 6px 8px; border: 0.25px solid rgba(255,255,255,0.12); cursor: pointer; 
             transition: all 0.2s ease; position: relative; overflow: hidden;
           }
           .ep-card::before {
             content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
           }
-          .ep-card:hover { border-color: rgba(255,255,255,0.2); transform: scale(1.05); }
+          .ep-card:hover { border-color: rgba(255,255,255,0.25); transform: scale(1.05); }
           .ep-card.active { border-color: var(--ios-blue); border-width: 1.5px; box-shadow: 0 0 0 1px var(--ios-blue); }
           
           .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
@@ -743,7 +774,8 @@ export default function WatchPage() {
 
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 2000; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             animation: overlayFadeIn 0.3s ease;
@@ -762,34 +794,39 @@ export default function WatchPage() {
             to { opacity: 1; transform: scale(1); }
           }
           
-          .popup-size-square { width: min(90vw, 50vh); height: min(90vw, 50vh); aspect-ratio: 1/1; }
-          .popup-size-banner { width: 90vw; max-width: 1000px; aspect-ratio: 16/9; }
+          .popup-size-square { width: min(80vw, 45vh); height: min(80vw, 45vh); aspect-ratio: 1/1; }
+          .popup-size-banner { width: 85vw; max-width: 900px; aspect-ratio: 16/9; }
           
           .player-embed { width: 100%; height: 100%; border: none; }
 
           .player-header-controls {
-            position: absolute; top: -50px; left: 0; right: 0;
+            position: absolute; top: -55px; left: 0; right: 0;
             display: flex; justify-content: space-between; align-items: center; width: 100%;
           }
-          .ep-indicator { font-size: 1.2rem; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-          .right-controls { display: flex; gap: 12px; }
-          .control-btn {
-            width: 40px; height: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; 
-            transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2);
+          .ep-indicator { 
+            font-size: 1rem; font-weight: 700; color: #fff; 
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3); padding: 8px 16px; border-radius: 12px;
+            backdrop-filter: blur(10px);
           }
-          .control-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.1); }
+          .right-controls { display: flex; gap: 10px; }
+          .control-btn {
+            width: 42px; height: 42px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; 
+            transition: all 0.3s; border: 1px solid rgba(255,255,255,0.15);
+          }
+          .control-btn:hover { background: rgba(0,0,0,0.5); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
 
           .player-bottom-controls {
-            position: absolute; bottom: -60px; left: 0; right: 0;
-            display: flex; justify-content: center; gap: 24px;
+            position: absolute; bottom: -65px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 16px;
           }
           .nav-ep-btn {
-            background: rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 50px;
+            background: rgba(0,0,0,0.3); padding: 10px 24px; border-radius: 50px;
             color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px;
-            transition: all 0.3s; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
           }
-          .nav-ep-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+          .nav-ep-btn:hover { background: rgba(0,0,0,0.5); transform: scale(1.05); border-color: rgba(255,255,255,0.3); }
           .nav-ep-btn:active { transform: scale(0.95); }
 
           @media (max-width: 768px) {
@@ -797,16 +834,22 @@ export default function WatchPage() {
             .bar-container { width: 94%; }
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 16px; }
-            .media-title { font-size: 1.2rem; }
+            .media-title { font-size: 1.1rem; }
             .popup-size-square { width: 90vw; height: 90vw; }
-            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
-            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
-            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
-            .popup-title, .toast-title { font-size: 0.88rem; }
-            .popup-text, .toast-msg { font-size: 0.75rem; }
+            .popup-size-banner { width: 90vw; }
+            .info-popup, .toast, .synopsis-popup { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper, .toast-icon-wrapper, .synopsis-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i, .toast-icon-wrapper i, .synopsis-icon-wrapper i { font-size: 18px; }
+            .popup-title, .toast-title, .synopsis-popup-title { font-size: 0.88rem; }
+            .popup-text, .toast-msg, .synopsis-popup-text { font-size: 0.75rem; }
             .page-title { font-size: 1.3rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
+            .player-header-controls { top: -50px; }
+            .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
+            .control-btn { width: 38px; height: 38px; }
+            .player-bottom-controls { bottom: -58px; gap: 12px; }
+            .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
           }
         `}</style>
       </Head>
@@ -912,6 +955,25 @@ export default function WatchPage() {
 
         <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onToggleSynopsis={toggleSynopsisPopup} />
       </div>
+
+      {showSeasonSelector && (
+        <div className={`season-selector-overlay ${selectorClosing ? 'closing' : ''}`} onClick={() => { setSelectorClosing(true); setTimeout(() => { setShowSeasonSelector(false); setSelectorClosing(false) }, 300) }}>
+          <div className={`season-selector ${selectorClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <h3 className="season-selector-title">Escolher Temporada</h3>
+            <div className="season-grid">
+              {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                <button
+                  key={num}
+                  className={`season-option ${num === season ? 'active' : ''}`}
+                  onClick={() => selectSeason(num)}
+                >
+                  T{num}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isPlaying && (
         <div className="player-overlay">
