@@ -3,11 +3,10 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
-const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
+const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287' // Sua chave
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
-const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// --- COMPONENTES AUXILIARES ---
+// --- COMPONENTES AUXILIARES (EXATAMENTE COMO NA HOME) ---
 
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
@@ -76,20 +75,12 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
-export const BottomNav = ({ isFavorite, toggleFavorite }) => {
-  const [animating, setAnimating] = useState(false)
-
+export const BottomNav = ({ searchActive, setSearchActive }) => {
   const handleShare = async () => {
     if (navigator.share) {
       try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } 
       catch (err) { console.log('Share canceled') }
     } else { alert('Compartilhar não suportado') }
-  }
-
-  const handleFavClick = () => {
-    setAnimating(true)
-    toggleFavorite()
-    setTimeout(() => setAnimating(false), 400)
   }
 
   return (
@@ -98,17 +89,14 @@ export const BottomNav = ({ isFavorite, toggleFavorite }) => {
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      <div className={`pill-container glass-panel`}>
+      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
          <Link href="/" className={`nav-btn`}>
             <i className="fas fa-home"></i>
          </Link>
       </div>
 
-      <button className="round-btn glass-panel" onClick={handleFavClick} title="Favoritar">
-        <i 
-          className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-          style={{ fontSize: '16px', color: isFavorite ? '#ff3b30' : '#ffffff' }}
-        ></i>
+      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
+        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
       </button>
     </div>
   )
@@ -131,13 +119,13 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- PÁGINA DE REPRODUÇÃO ---
+// --- PÁGINA DINÂMICA DE REPRODUÇÃO ([type]/[id].js) ---
 
 export default function WatchPage() {
   const router = useRouter()
-  const { type, id } = router.query 
+  const { type, id } = router.query // Pega os parametros da URL
   
-  // UI State
+  // Estados de Interface
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
@@ -145,85 +133,37 @@ export default function WatchPage() {
   const [techClosing, setTechClosing] = useState(false)
   const [currentToast, setCurrentToast] = useState(null)
   
-  // Content State
+  // Estados do Player e Conteúdo
   const [content, setContent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
   const [showSynopsis, setShowSynopsis] = useState(false)
+  const [searchActive, setSearchActive] = useState(false)
   
-  // Favorites State
-  const [favorites, setFavorites] = useState([])
-
-  // Series Specific State
+  // Estados Específicos de Série
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
-  const [seasonData, setSeasonData] = useState(null)
-  const [showSeasonSelector, setShowSeasonSelector] = useState(false)
+  const [seasonData, setSeasonData] = useState(null) // Para listar os episodios
 
-  const carouselRef = useRef(null)
-
-  // --- LOGICA DE FAVORITOS (Igual Home) ---
-  useEffect(() => {
-    try { 
-      const stored = localStorage.getItem('yoshikawaFavorites')
-      setFavorites(stored ? JSON.parse(stored) : []) 
-    } catch { setFavorites([]) }
-  }, [])
-
-  const isFavorite = content ? favorites.some(f => f.id === content.id && f.media_type === (type === 'tv' ? 'tv' : 'movie')) : false
-
-  const toggleFavorite = () => {
-    if (!content) return
-    const mediaType = type === 'tv' ? 'tv' : 'movie'
-    
-    setFavorites(prev => {
-      const exists = prev.some(f => f.id === content.id && f.media_type === mediaType)
-      let updated
-      
-      if (exists) { 
-        updated = prev.filter(f => !(f.id === content.id && f.media_type === mediaType))
-        showToast('Removido dos favoritos', 'info') 
-      } else { 
-        updated = [...prev, { 
-          id: content.id, 
-          media_type: mediaType, 
-          title: content.title || content.name, 
-          poster_path: content.poster_path 
-        }]
-        showToast('Adicionado aos favoritos', 'success') 
-      }
-      
-      try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
-      return updated
-    })
-  }
-
-  const showToast = (message, type = 'info') => {
-    setCurrentToast({ message, type, closing: false })
-    setTimeout(() => {
-      setCurrentToast(prev => prev ? { ...prev, closing: true } : null)
-      setTimeout(() => setCurrentToast(null), 400) // Limpar após animação
-    }, 2500)
-  }
-
-  // --- FETCHING ---
+  // --- FETCHING DATA ---
   useEffect(() => {
     if (!id || !type) return
 
     const loadContent = async () => {
       setLoading(true)
       try {
+        // 1. Pega detalhes do Filme ou Série
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
         const data = await res.json()
         setContent(data)
 
+        // 2. Se for série, busca detalhes da temporada atual para montar o carrossel
         if (type === 'tv') {
             await fetchSeason(id, 1)
         }
       } catch (error) {
         console.error("Erro ao carregar", error)
-        showToast("Erro ao carregar detalhes", "error")
       } finally {
         setLoading(false)
       }
@@ -238,21 +178,10 @@ export default function WatchPage() {
         const data = await res.json()
         setSeasonData(data)
         setSeason(seasonNum)
-        setEpisode(1) // Reseta pro ep 1 ao mudar temporada
       } catch (err) { console.error(err) }
   }
 
-  // --- SCROLL AUTOMATICO DO EPISODIO ---
-  useEffect(() => {
-    if (carouselRef.current && seasonData) {
-      const activeCard = carouselRef.current.querySelector('.ep-card.active')
-      if (activeCard) {
-        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-      }
-    }
-  }, [episode, seasonData, isPlaying]) // Rola ao abrir, ao mudar ep ou dados
-
-  // --- POPUPS & SCROLL ---
+  // --- HANDLERS ---
   const closeAllPopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true); setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
@@ -260,7 +189,6 @@ export default function WatchPage() {
     if (showTechPopup && !techClosing) {
       setTechClosing(true); setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
     }
-    setShowSeasonSelector(false)
   }, [showInfoPopup, infoClosing, showTechPopup, techClosing])
 
   const toggleInfoPopup = () => { if (showInfoPopup) { setInfoClosing(true); setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400) } else { closeAllPopups(); setShowInfoPopup(true) } }
@@ -269,24 +197,18 @@ export default function WatchPage() {
   useEffect(() => {
     const onScroll = () => { if (window.scrollY > 10) closeAllPopups(); setScrolled(window.scrollY > 60) }
     window.addEventListener('scroll', onScroll, { passive: true })
-    const onClick = (e) => { 
-        if (!e.target.closest('.info-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.season-selector-wrapper')) {
-          closeAllPopups() 
-        }
-    }
-    window.addEventListener('click', onClick)
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('click', onClick) }
+    return () => window.removeEventListener('scroll', onScroll)
   }, [closeAllPopups])
 
-  // --- PLAYER LOGIC (SUPERFLIX API ATUALIZADA) ---
+  // Player Logic
   const handleNextEp = () => {
-      if (seasonData && seasonData.episodes) {
-          const next = episode + 1
-          if (seasonData.episodes.find(e => e.episode_number === next)) {
-            setEpisode(next)
-          } else {
-             showToast("Fim da temporada", "info")
-          }
+      const nextEp = episode + 1
+      // Verifica se o ep existe na temporada atual (simples verificação)
+      if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
+          setEpisode(nextEp)
+      } else {
+          // Lógica para mudar de temporada poderia vir aqui
+          alert("Fim da temporada ou sem dados.")
       }
   }
   
@@ -294,32 +216,30 @@ export default function WatchPage() {
   
   const getEmbedUrl = () => {
     if (!content) return ''
-    // SuperFlix .cv API Logic
     if (type === 'movie') {
-      // Endpoint: /filme/ID
-      return `https://superflixapi.cv/filme/${id}`
+      return `https://superflixapi.dev/embed/movie/${id}`
     }
-    // Endpoint: /serie/ID/SEASON/EPISODE
-    return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
+    // Superflix para TV: /tv/id/season/episode
+    return `https://superflixapi.dev/embed/tv/${id}/${season}/${episode}`
   }
 
-  const handleChangeSeason = (newSeason) => {
-      fetchSeason(id, newSeason)
-      setShowSeasonSelector(false)
+  // Se estiver carregando
+  if (loading) {
+      return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#050505', color:'#fff'}}>Carregando...</div>
   }
 
-  if (loading) return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#050505', color:'#fff'}}>Carregando...</div>
+  // Se não achou conteúdo
   if (!content) return null
 
   return (
     <>
       <Head>
-        <title>{content.title || content.name} - Yoshikawa</title>
+        <title>{content.title || content.name} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          /* --- CSS GERAL (IDÊNTICO À HOME) --- */
+          /* --- CSS BASE (COPIA IDÊNTICA DA HOME) --- */
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           html { scroll-behavior: smooth; }
           body {
@@ -347,6 +267,7 @@ export default function WatchPage() {
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
 
+          /* --- CLASSES DE UTILIDADE E GLASS --- */
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
@@ -359,53 +280,101 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          .site-wrapper { transition: filter 0.4s ease; width: 100%; min-height: 100vh; }
-          .site-wrapper.blurred { filter: blur(10px) brightness(0.6); pointer-events: none; }
+          /* --- BLUR GLOBAL DO SITE QUANDO PLAYER ABERTO --- */
+          .site-wrapper {
+             transition: filter 0.4s ease;
+             width: 100%;
+             min-height: 100vh;
+          }
+          .site-wrapper.blurred {
+             filter: blur(10px) brightness(0.6);
+             pointer-events: none; /* Impede clique no fundo quando player aberto */
+          }
 
-          /* Barras */
-          .bar-container { position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 12px; width: 90%; max-width: var(--pill-max-width); transition: all 0.4s var(--ease-smooth); }
+          /* --- BARRAS DE NAVEGAÇÃO --- */
+          .bar-container {
+            position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
+            display: flex; align-items: center; justify-content: center; gap: 12px; 
+            width: 90%; max-width: var(--pill-max-width); transition: all 0.4s var(--ease-smooth);
+          }
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
           .top-bar.scrolled-state { transform: translateX(-50%) translateY(-5px); }
-          .round-btn { width: var(--pill-height); height: var(--pill-height); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.9); flex-shrink: 0; transition: all 0.3s var(--ease-elastic); }
+
+          .round-btn {
+            width: var(--pill-height); height: var(--pill-height); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.9);
+            flex-shrink: 0; transition: all 0.3s var(--ease-elastic);
+          }
           .round-btn:hover { transform: scale(1.08); background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
           .round-btn:active { transform: scale(0.92); }
-          .pill-container { height: var(--pill-height); flex: 1; border-radius: var(--pill-radius); display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.4s var(--ease-elastic); }
+
+          .pill-container {
+            height: var(--pill-height); flex: 1; border-radius: var(--pill-radius);
+            display: flex; align-items: center; justify-content: center; position: relative;
+            transition: all 0.4s var(--ease-elastic);
+          }
           .nav-btn { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.4); }
           .nav-btn:hover i { transform: scale(1.2); color: #fff; }
+
           .bar-label { font-size: 0.9rem; font-weight: 600; color: #fff; animation: labelFadeIn 0.4s var(--ease-elastic) forwards; }
           @keyframes labelFadeIn { from { opacity: 0; transform: translateY(12px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-          /* Popups & Toast (CSS Copiado da Home) */
-          .info-popup, .toast { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; min-width: 320px; max-width: 90%; display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border-radius: 22px; transform: translateX(-50%) translateY(-50%) scale(0.3); transform-origin: top center; opacity: 0; animation: popupZoomIn 0.5s var(--ease-elastic) forwards; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+          /* --- POPUPS E TOASTS (CÓPIA EXATA) --- */
+          .info-popup, .toast {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px); 
+            left: 50%;
+            z-index: 960;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex; 
+            align-items: flex-start; 
+            gap: 14px;
+            padding: 16px 18px; 
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+          }
+          
           .info-popup { z-index: 950; pointer-events: none; }
           .toast { z-index: 960; pointer-events: auto; align-items: center; } 
-          .info-popup.closing, .toast.closing { animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; }
-          @keyframes popupZoomIn { 0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); } 100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; } }
-          @keyframes popupZoomOut { 0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; } }
+
+          .info-popup.closing, .toast.closing { 
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
+          }
+
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+          }
+          @keyframes popupZoomOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
+          }
+          
           .popup-icon-wrapper, .toast-icon-wrapper { width: 42px; height: 42px; min-width: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; }
           .popup-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
           .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
           .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
-          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
-          .toast.info .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
-          .toast.error .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
           .popup-content, .toast-content { flex: 1; display: flex; flex-direction: column; gap: 4px; opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; }
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
           .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
           .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
-          .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
-          
-          /* --- HEART PULSE --- */
-          .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
-          @keyframes heartZoom { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
 
           /* --- LAYOUT DO CONTEÚDO --- */
-          .container { max-width: 1280px; margin: 0 auto; padding-top: 6.5rem; padding-bottom: 7rem; padding-left: 2rem; padding-right: 2rem; }
+          .container {
+            max-width: 1280px; margin: 0 auto;
+            padding-top: 6.5rem; padding-bottom: 7rem;
+            padding-left: 2rem; padding-right: 2rem;
+          }
           .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; animation: headerFadeIn 0.8s var(--ease-elastic) forwards; }
           @keyframes headerFadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-          
-          .page-title { font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: -0.03em; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+
+          .page-title { font-size: 1.5rem; font-weight: 700; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
           
           .status-dots { display: flex; align-items: center; gap: 8px; }
           .dot { width: 10px; height: 10px; border-radius: 50%; animation: dotPulse 2s ease-in-out infinite; }
@@ -414,7 +383,7 @@ export default function WatchPage() {
           .dot.green { background: linear-gradient(135deg, #34c759, #30d158); box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4); animation-delay: 0.6s; }
           @keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
 
-          /* --- PLAYER BANNER --- */
+          /* --- PLAYER BANNER & DETAILS --- */
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
             background-color: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
@@ -422,82 +391,102 @@ export default function WatchPage() {
             animation: cardEntrance 0.7s var(--ease-elastic) backwards;
           }
           @keyframes cardEntrance { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
           .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
           .player-banner-container:hover .banner-image { transform: scale(1.05); }
-          .play-button-static { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); }
+
+          .play-button-static {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.3);
+          }
           .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
 
-          /* --- DETAILS & SEASONS --- */
-          .details-container { border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; animation: cardEntrance 0.7s var(--ease-elastic) 0.1s backwards; }
+          .details-container {
+            border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            animation: cardEntrance 0.7s var(--ease-elastic) 0.1s backwards;
+          }
+
           .media-title { font-size: 1.4rem; font-weight: 700; color: #fff; line-height: 1.2; }
           .episode-title { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.8); }
 
-          .season-selector-wrapper { position: relative; align-self: flex-start; }
-          .season-btn { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 12px; font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; }
-          .season-btn:hover { background: rgba(255,255,255,0.2); }
-          
-          .season-dropdown {
-            position: absolute; top: 110%; left: 0; width: 160px; max-height: 200px; overflow-y: auto;
-            background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-            z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: dropdownFade 0.2s ease;
+          .season-btn {
+            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 12px;
+            font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 8px;
+            transition: background 0.2s; align-self: flex-start;
           }
-          @keyframes dropdownFade { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-          
-          .season-option { width: 100%; padding: 10px 16px; text-align: left; color: rgba(255,255,255,0.8); font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
-          .season-option:hover { background: rgba(255,255,255,0.1); color: #fff; }
-          .season-option.active { color: var(--ios-blue); font-weight: 600; }
+          .season-btn:hover { background: rgba(255,255,255,0.2); }
 
-          .episodes-carousel { display: flex; gap: 14px; overflow-x: auto; padding: 4px 0 16px 0; scrollbar-width: none; mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%); }
+          .episodes-carousel { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px 0; scrollbar-width: none; }
           .episodes-carousel::-webkit-scrollbar { display: none; }
           
           .ep-card {
-            min-width: 160px; max-width: 160px;
-            background: rgba(255,255,255,0.05); border-radius: 14px; overflow: hidden;
-            display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s var(--ease-elastic);
-            border: 1px solid rgba(255,255,255,0.05);
+            min-width: 140px; height: 80px; background: rgba(255,255,255,0.05);
+            border-radius: 12px; display: flex; flex-direction: column; justify-content: center;
+            padding: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s ease;
           }
-          .ep-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.2); }
-          .ep-card.active { border-color: var(--ios-blue); box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3); }
+          .ep-card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+          .ep-card.active { border-color: var(--ios-blue); background: rgba(10, 132, 255, 0.1); }
           
-          .ep-thumb-frame { width: 100%; height: 90px; position: relative; background: #000; }
-          .ep-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: opacity 0.3s; }
-          .ep-card:hover .ep-thumb, .ep-card.active .ep-thumb { opacity: 1; }
-          .ep-info { padding: 10px; display: flex; flex-direction: column; gap: 2px; }
-          .ep-card-num { font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.9); }
+          .ep-card-num { font-size: 0.8rem; font-weight: 700; color: #fff; }
           .ep-card-title { font-size: 0.7rem; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-          .synopsis-btn { align-self: flex-start; color: var(--ios-blue); font-size: 0.9rem; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+          /* SINOPSE COM INDICADOR */
+          .synopsis-btn {
+            align-self: flex-start; color: var(--ios-blue); font-size: 0.9rem;
+            font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 8px;
+          }
           .synopsis-icon { transition: transform 0.3s var(--ease-elastic); font-size: 12px; }
           .synopsis-btn:hover { opacity: 0.8; }
-          .synopsis-text { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 8px; animation: fadeIn 0.3s ease; }
+          
+          .synopsis-text {
+            font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 8px;
+            animation: fadeIn 0.3s ease;
+          }
           @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
           /* --- PLAYER POPUP OVERLAY --- */
-          .player-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: overlayFadeIn 0.4s var(--ease-smooth); }
+          .player-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); /* Fundo semi-transparente sobre o blur */
+            z-index: 2000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            animation: overlayFadeIn 0.4s var(--ease-smooth);
+          }
           @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
           
           .player-popup-container {
             position: relative; background: #000; box-shadow: 0 0 50px rgba(0,0,0,0.8);
             transition: all 0.5s var(--ease-elastic); display: flex; align-items: center; justify-content: center;
-            border-radius: 40px; overflow: hidden; /* Bordas muito arredondadas */
           }
           
-          /* Tamanhos ajustados (levemente menores) */
-          .popup-size-square { width: min(85vw, 45vh); height: min(85vw, 45vh); aspect-ratio: 1/1; }
-          .popup-size-banner { width: 85vw; max-width: 900px; aspect-ratio: 16/9; }
+          .popup-size-square { width: min(90vw, 50vh); height: min(90vw, 50vh); aspect-ratio: 1/1; }
+          .popup-size-banner { width: 90vw; max-width: 1000px; aspect-ratio: 16/9; }
           
           .player-embed { width: 100%; height: 100%; border: none; }
 
-          .player-header-controls { position: absolute; top: -50px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; width: 100%; }
+          .player-header-controls {
+            position: absolute; top: -50px; left: 0; right: 0;
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+          }
           .ep-indicator { font-size: 1.2rem; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
           .right-controls { display: flex; gap: 12px; }
-          .control-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.3s; }
+          .control-btn {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.3s;
+          }
           .control-btn:hover { background: rgba(255,255,255,0.25); }
 
-          .player-bottom-controls { position: absolute; bottom: -60px; left: 0; right: 0; display: flex; justify-content: center; gap: 24px; }
-          .nav-ep-btn { background: rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 50px; color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: transform 0.2s; }
+          .player-bottom-controls {
+            position: absolute; bottom: -60px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 24px;
+          }
+          .nav-ep-btn {
+            background: rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 50px;
+            color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px;
+            transition: transform 0.2s;
+          }
           .nav-ep-btn:active { transform: scale(0.95); }
 
           @media (max-width: 768px) {
@@ -506,17 +495,15 @@ export default function WatchPage() {
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 16px; }
             .media-title { font-size: 1.2rem; }
-            .popup-size-square { width: 85vw; height: 85vw; }
+            .popup-size-square { width: 90vw; height: 90vw; }
             .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
             .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
             .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
-            .dot { width: 8px; height: 8px; }
-            .status-dots { gap: 6px; }
-            .page-title { font-size: 1.3rem; }
           }
         `}</style>
       </Head>
 
+      {/* ENVOLVENDO TODO O CONTEÚDO PARA APLICAR BLUR */}
       <div className={`site-wrapper ${isPlaying ? 'blurred' : ''}`}>
         
         <Header
@@ -542,6 +529,7 @@ export default function WatchPage() {
             </div>
           </div>
 
+          {/* Banner Horizontal (16:9) */}
           <div className="player-banner-container" onClick={() => setIsPlaying(true)}>
             <img 
               src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} 
@@ -553,6 +541,7 @@ export default function WatchPage() {
             </div>
           </div>
 
+          {/* Detalhes (Glass Blur) */}
           <div className="glass-panel details-container">
             <div className="text-left">
               <h2 className="media-title">{content.title || content.name}</h2>
@@ -565,50 +554,22 @@ export default function WatchPage() {
 
             {type === 'tv' && (
               <>
-                <div className="season-selector-wrapper">
-                    <button className="season-btn" onClick={() => setShowSeasonSelector(!showSeasonSelector)}>
-                      Temporada {season} <i className="fas fa-chevron-down" style={{fontSize: '10px', transform: showSeasonSelector ? 'rotate(180deg)' : ''}}></i>
-                    </button>
-                    {showSeasonSelector && (
-                        <div className="season-dropdown">
-                            {[...Array(content.number_of_seasons)].map((_, i) => {
-                                const sNum = i + 1;
-                                return (
-                                    <button 
-                                        key={sNum} 
-                                        className={`season-option ${season === sNum ? 'active' : ''}`}
-                                        onClick={() => handleChangeSeason(sNum)}
-                                    >
-                                        Temporada {sNum}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
+                <button className="season-btn">
+                  Temporada {season} <i className="fas fa-chevron-down" style={{fontSize: '10px'}}></i>
+                </button>
 
-                <div className="episodes-carousel" ref={carouselRef}>
+                <div className="episodes-carousel">
                   {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
                     <div 
                       key={ep.id} 
                       className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
                       onClick={() => setEpisode(ep.episode_number)}
                     >
-                      <div className="ep-thumb-frame">
-                        <img 
-                            src={ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : DEFAULT_POSTER} 
-                            alt={`Ep ${ep.episode_number}`}
-                            className="ep-thumb"
-                            loading="lazy"
-                        />
-                      </div>
-                      <div className="ep-info">
-                        <span className="ep-card-num">Ep {ep.episode_number}</span>
-                        <span className="ep-card-title">{ep.name}</span>
-                      </div>
+                      <span className="ep-card-num">Ep {ep.episode_number}</span>
+                      <span className="ep-card-title">{ep.name}</span>
                     </div>
                   )) : (
-                    <div style={{color:'#666', fontSize:'0.8rem', padding:'10px'}}>Carregando episódios...</div>
+                    <div style={{color:'#666', fontSize:'0.8rem'}}>Carregando episódios...</div>
                   )}
                 </div>
               </>
@@ -628,9 +589,10 @@ export default function WatchPage() {
           </div>
         </main>
 
-        <BottomNav isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+        <BottomNav searchActive={searchActive} setSearchActive={setSearchActive} />
       </div>
 
+      {/* PLAYER POPUP (FORA DO BLUR WRAPPER, MAS DENTRO DO OVERLAY) */}
       {isPlaying && (
         <div className="player-overlay">
           <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
@@ -673,4 +635,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
