@@ -3,23 +3,10 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
-// --- CONSTANTES E DADOS MOCKADOS PARA EXEMPLO VISUAL ---
-// Em produção, você substituiria 'mockData' pelos dados vindos da API do TMDB
-const MOCK_DATA = {
-  id: 12345,
-  title: "Arcane",
-  name: "Arcane", // Séries usam 'name'
-  backdrop_path: "/2FkRK4eE7507r86q856XpBwLhJ.jpg", // Exemplo
-  poster_path: "/fqldf2t8ztc9aiwn3k6mlXftfPa.jpg",
-  overview: "Em meio ao conflito entre as cidades-gêmeas de Piltover e Zaun, duas irmãs lutam em lados opostos de uma guerra entre tecnologias mágicas e convicções incompatíveis.",
-  media_type: "tv", // ou 'movie'
-  seasons: [1, 2],
-  current_season: 2,
-  current_episode: 4,
-  episode_name: "Luzes no Escuro"
-}
+const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287' // Sua chave
+const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// --- COMPONENTES AUXILIARES (CÓPIA EXATA DO SEU CÓDIGO) ---
+// --- COMPONENTES AUXILIARES (EXATAMENTE COMO NA HOME) ---
 
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
@@ -88,7 +75,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
-export const BottomNav = ({ activeSection, setActiveSection, searchActive, setSearchActive }) => {
+export const BottomNav = ({ searchActive, setSearchActive }) => {
   const handleShare = async () => {
     if (navigator.share) {
       try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } 
@@ -103,7 +90,6 @@ export const BottomNav = ({ activeSection, setActiveSection, searchActive, setSe
       </button>
 
       <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
-         {/* Navegação simplificada para a demo, já que estamos na página de player */}
          <Link href="/" className={`nav-btn`}>
             <i className="fas fa-home"></i>
          </Link>
@@ -133,10 +119,13 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- PÁGINA DE REPRODUÇÃO ---
+// --- PÁGINA DINÂMICA DE REPRODUÇÃO ([type]/[id].js) ---
 
-export default function PlayerPage() {
-  // Estados Globais (Copiados da Home para manter funcionamento)
+export default function WatchPage() {
+  const router = useRouter()
+  const { type, id } = router.query // Pega os parametros da URL
+  
+  // Estados de Interface
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
@@ -144,17 +133,55 @@ export default function PlayerPage() {
   const [techClosing, setTechClosing] = useState(false)
   const [currentToast, setCurrentToast] = useState(null)
   
-  // Estados do Player
-  const [isPlaying, setIsPlaying] = useState(false) // Controla se o popup está aberto
-  const [isWideMode, setIsWideMode] = useState(false) // Controla proporção 1x1 vs Banner (16:9)
+  // Estados do Player e Conteúdo
+  const [content, setContent] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isWideMode, setIsWideMode] = useState(false)
   const [showSynopsis, setShowSynopsis] = useState(false)
   const [searchActive, setSearchActive] = useState(false)
   
-  // Dados do Conteúdo
-  const [season, setSeason] = useState(MOCK_DATA.current_season)
-  const [episode, setEpisode] = useState(MOCK_DATA.current_episode)
-  
-  // Handlers de Popup (Iguais a Home)
+  // Estados Específicos de Série
+  const [season, setSeason] = useState(1)
+  const [episode, setEpisode] = useState(1)
+  const [seasonData, setSeasonData] = useState(null) // Para listar os episodios
+
+  // --- FETCHING DATA ---
+  useEffect(() => {
+    if (!id || !type) return
+
+    const loadContent = async () => {
+      setLoading(true)
+      try {
+        // 1. Pega detalhes do Filme ou Série
+        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        const data = await res.json()
+        setContent(data)
+
+        // 2. Se for série, busca detalhes da temporada atual para montar o carrossel
+        if (type === 'tv') {
+            await fetchSeason(id, 1)
+        }
+      } catch (error) {
+        console.error("Erro ao carregar", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [id, type])
+
+  const fetchSeason = async (tvId, seasonNum) => {
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        const data = await res.json()
+        setSeasonData(data)
+        setSeason(seasonNum)
+      } catch (err) { console.error(err) }
+  }
+
+  // --- HANDLERS ---
   const closeAllPopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true); setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
@@ -173,29 +200,46 @@ export default function PlayerPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [closeAllPopups])
 
-  // Lógica do Player
-  const handleNextEp = () => setEpisode(prev => prev + 1)
+  // Player Logic
+  const handleNextEp = () => {
+      const nextEp = episode + 1
+      // Verifica se o ep existe na temporada atual (simples verificação)
+      if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
+          setEpisode(nextEp)
+      } else {
+          // Lógica para mudar de temporada poderia vir aqui
+          alert("Fim da temporada ou sem dados.")
+      }
+  }
+  
   const handlePrevEp = () => setEpisode(prev => prev > 1 ? prev - 1 : 1)
   
-  // URL Superflix
-  // Se for filme: https://superflixapi.dev/movie/{tmdb_id}
-  // Se for série: https://superflixapi.dev/tv/{tmdb_id}/{season}/{episode}
   const getEmbedUrl = () => {
-    if (MOCK_DATA.media_type === 'movie') {
-      return `https://superflixapi.dev/embed/movie/${MOCK_DATA.id}`
+    if (!content) return ''
+    if (type === 'movie') {
+      return `https://superflixapi.dev/embed/movie/${id}`
     }
-    return `https://superflixapi.dev/embed/tv/${MOCK_DATA.id}/${season}/${episode}`
+    // Superflix para TV: /tv/id/season/episode
+    return `https://superflixapi.dev/embed/tv/${id}/${season}/${episode}`
   }
+
+  // Se estiver carregando
+  if (loading) {
+      return <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#050505', color:'#fff'}}>Carregando...</div>
+  }
+
+  // Se não achou conteúdo
+  if (!content) return null
 
   return (
     <>
       <Head>
-        <title>{MOCK_DATA.title || MOCK_DATA.name} - Yoshikawa Player</title>
+        <title>{content.title || content.name} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        {/* CSS COMPLETO COPIADO E ESTENDIDO */}
         <style>{`
+          /* --- CSS BASE (COPIA IDÊNTICA DA HOME) --- */
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           html { scroll-behavior: smooth; }
           body {
@@ -213,6 +257,7 @@ export default function PlayerPage() {
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
+
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
@@ -221,7 +266,8 @@ export default function PlayerPage() {
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
-          /* COMPONENTES GLOBAIS (Glass, Buttons, Bars, Popups) */
+
+          /* --- CLASSES DE UTILIDADE E GLASS --- */
           .glass-panel {
             position: relative;
             background: rgba(255, 255, 255, 0.06);
@@ -233,6 +279,19 @@ export default function PlayerPage() {
             overflow: hidden;
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
+
+          /* --- BLUR GLOBAL DO SITE QUANDO PLAYER ABERTO --- */
+          .site-wrapper {
+             transition: filter 0.4s ease;
+             width: 100%;
+             min-height: 100vh;
+          }
+          .site-wrapper.blurred {
+             filter: blur(10px) brightness(0.6);
+             pointer-events: none; /* Impede clique no fundo quando player aberto */
+          }
+
+          /* --- BARRAS DE NAVEGAÇÃO --- */
           .bar-container {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
             display: flex; align-items: center; justify-content: center; gap: 12px; 
@@ -241,6 +300,7 @@ export default function PlayerPage() {
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
           .top-bar.scrolled-state { transform: translateX(-50%) translateY(-5px); }
+
           .round-btn {
             width: var(--pill-height); height: var(--pill-height); border-radius: 50%;
             display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.9);
@@ -248,156 +308,123 @@ export default function PlayerPage() {
           }
           .round-btn:hover { transform: scale(1.08); background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
           .round-btn:active { transform: scale(0.92); }
+
           .pill-container {
             height: var(--pill-height); flex: 1; border-radius: var(--pill-radius);
             display: flex; align-items: center; justify-content: center; position: relative;
             transition: all 0.4s var(--ease-elastic);
           }
+          .nav-btn { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.4); }
+          .nav-btn:hover i { transform: scale(1.2); color: #fff; }
+
           .bar-label { font-size: 0.9rem; font-weight: 600; color: #fff; animation: labelFadeIn 0.4s var(--ease-elastic) forwards; }
           @keyframes labelFadeIn { from { opacity: 0; transform: translateY(12px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-          
+
+          /* --- POPUPS E TOASTS (CÓPIA EXATA) --- */
           .info-popup, .toast {
-            position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960;
-            min-width: 320px; max-width: 90%; display: flex; align-items: flex-start; gap: 14px;
-            padding: 16px 18px; border-radius: 22px; transform: translateX(-50%) translateY(-50%) scale(0.3);
-            transform-origin: top center; opacity: 0; animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px); 
+            left: 50%;
+            z-index: 960;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex; 
+            align-items: flex-start; 
+            gap: 14px;
+            padding: 16px 18px; 
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
+          
           .info-popup { z-index: 950; pointer-events: none; }
-          .toast { z-index: 960; pointer-events: auto; align-items: center; }
-          .info-popup.closing, .toast.closing { animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; }
-          @keyframes popupZoomIn { 0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); } 100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; } }
-          @keyframes popupZoomOut { 0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; } }
-          .popup-icon-wrapper { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
-          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
-          .popup-icon-wrapper i { font-size: 20px; color: #fff; }
-          .popup-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-          .popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; }
-          .popup-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; }
+          .toast { z-index: 960; pointer-events: auto; align-items: center; } 
 
-          /* LAYOUT DA PAGINA */
+          .info-popup.closing, .toast.closing { 
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
+          }
+
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+          }
+          @keyframes popupZoomOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
+          }
+          
+          .popup-icon-wrapper, .toast-icon-wrapper { width: 42px; height: 42px; min-width: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; }
+          .popup-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+          .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
+          .popup-content, .toast-content { flex: 1; display: flex; flex-direction: column; gap: 4px; opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; }
+          @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
+
+          /* --- LAYOUT DO CONTEÚDO --- */
           .container {
             max-width: 1280px; margin: 0 auto;
             padding-top: 6.5rem; padding-bottom: 7rem;
             padding-left: 2rem; padding-right: 2rem;
           }
-          .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+          .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; animation: headerFadeIn 0.8s var(--ease-elastic) forwards; }
+          @keyframes headerFadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
           .page-title { font-size: 1.5rem; font-weight: 700; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-          .status-dots { display: flex; gap: 8px; }
+          
+          .status-dots { display: flex; align-items: center; gap: 8px; }
           .dot { width: 10px; height: 10px; border-radius: 50%; animation: dotPulse 2s ease-in-out infinite; }
-          .dot.red { background: linear-gradient(135deg, #ff453a, #ff3b30); }
-          .dot.yellow { background: linear-gradient(135deg, #ffd60a, #ffcc00); animation-delay: 0.3s; }
-          .dot.green { background: linear-gradient(135deg, #34c759, #30d158); animation-delay: 0.6s; }
+          .dot.red { background: linear-gradient(135deg, #ff453a, #ff3b30); box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4); }
+          .dot.yellow { background: linear-gradient(135deg, #ffd60a, #ffcc00); box-shadow: 0 2px 8px rgba(255, 204, 0, 0.4); animation-delay: 0.3s; }
+          .dot.green { background: linear-gradient(135deg, #34c759, #30d158); box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4); animation-delay: 0.6s; }
           @keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
 
-          /* --- ESTILOS ESPECÍFICOS DO PLAYER (REPRODUZINDO) --- */
-          
-          /* Banner Container */
+          /* --- PLAYER BANNER & DETAILS --- */
           .player-banner-container {
-            width: 100%;
-            aspect-ratio: 16/9; /* Horizontal, não quadrado */
-            border-radius: 24px; /* Bordas arredondadas */
-            overflow: hidden;
-            position: relative;
-            background-color: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            margin-bottom: 24px;
-            cursor: pointer;
-            group: 'banner';
-          }
-          
-          .banner-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.8s var(--ease-elastic);
-          }
-          
-          .player-banner-container:hover .banner-image {
-            transform: scale(1.05);
-          }
-          
-          .play-button-static {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 64px;
-            height: 64px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255,255,255,0.3);
-            /* Sem animações conforme pedido */
-          }
-          
-          .play-button-static i {
-            color: #fff;
-            font-size: 24px;
-            margin-left: 4px; /* Ajuste visual pro icone de play */
-          }
-
-          /* Detalhes Container (Blur) */
-          .details-container {
-            border-radius: 24px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
+            background-color: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); margin-bottom: 24px; cursor: pointer;
             animation: cardEntrance 0.7s var(--ease-elastic) backwards;
           }
-          
           @keyframes cardEntrance { from { opacity: 0; transform: translateY(40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+          .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
+          .player-banner-container:hover .banner-image { transform: scale(1.05); }
+
+          .play-button-static {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.3);
+          }
+          .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
+
+          .details-container {
+            border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            animation: cardEntrance 0.7s var(--ease-elastic) 0.1s backwards;
+          }
 
           .media-title { font-size: 1.4rem; font-weight: 700; color: #fff; line-height: 1.2; }
           .episode-title { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.8); }
-          
-          .controls-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 4px;
-          }
-          
+
           .season-btn {
-            background: rgba(255,255,255,0.1);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
+            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 12px;
+            font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 8px;
+            transition: background 0.2s; align-self: flex-start;
           }
           .season-btn:hover { background: rgba(255,255,255,0.2); }
 
-          /* Carrossel de Episódios */
-          .episodes-carousel {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding: 4px 0 12px 0;
-            scrollbar-width: none; /* Firefox */
-          }
+          .episodes-carousel { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px 0; scrollbar-width: none; }
           .episodes-carousel::-webkit-scrollbar { display: none; }
           
           .ep-card {
-            min-width: 140px;
-            height: 80px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer;
-            transition: all 0.2s ease;
+            min-width: 140px; height: 80px; background: rgba(255,255,255,0.05);
+            border-radius: 12px; display: flex; flex-direction: column; justify-content: center;
+            padding: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s ease;
           }
           .ep-card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
           .ep-card.active { border-color: var(--ios-blue); background: rgba(10, 132, 255, 0.1); }
@@ -405,119 +432,59 @@ export default function PlayerPage() {
           .ep-card-num { font-size: 0.8rem; font-weight: 700; color: #fff; }
           .ep-card-title { font-size: 0.7rem; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-          /* Sinopse */
+          /* SINOPSE COM INDICADOR */
           .synopsis-btn {
-            align-self: flex-start;
-            color: var(--ios-blue);
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-top: 8px;
+            align-self: flex-start; color: var(--ios-blue); font-size: 0.9rem;
+            font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 8px;
           }
+          .synopsis-icon { transition: transform 0.3s var(--ease-elastic); font-size: 12px; }
+          .synopsis-btn:hover { opacity: 0.8; }
+          
           .synopsis-text {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
-            line-height: 1.6;
-            margin-top: 8px;
+            font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 8px;
             animation: fadeIn 0.3s ease;
           }
           @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
           /* --- PLAYER POPUP OVERLAY --- */
           .player-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(20px);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); /* Fundo semi-transparente sobre o blur */
+            z-index: 2000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             animation: overlayFadeIn 0.4s var(--ease-smooth);
           }
           @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
           
           .player-popup-container {
-            position: relative;
-            background: #000;
-            border-radius: 0; /* Embed geralmente é quadrado ou reto */
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            transition: all 0.5s var(--ease-elastic);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: relative; background: #000; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            transition: all 0.5s var(--ease-elastic); display: flex; align-items: center; justify-content: center;
           }
           
-          /* Configurações de Tamanho do Popup */
-          .popup-size-square {
-            width: min(90vw, 50vh);
-            height: min(90vw, 50vh);
-            aspect-ratio: 1/1; /* Quadrado 1x1 pedido */
-          }
+          .popup-size-square { width: min(90vw, 50vh); height: min(90vw, 50vh); aspect-ratio: 1/1; }
+          .popup-size-banner { width: 90vw; max-width: 1000px; aspect-ratio: 16/9; }
           
-          .popup-size-banner {
-            width: 90vw;
-            max-width: 1000px;
-            aspect-ratio: 16/9;
-          }
+          .player-embed { width: 100%; height: 100%; border: none; }
 
-          .player-embed {
-            width: 100%;
-            height: 100%;
-            border: none;
-          }
-
-          /* Controles fora do embed */
           .player-header-controls {
-            position: absolute;
-            top: -50px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            position: absolute; top: -50px; left: 0; right: 0;
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
           }
-          
-          .ep-indicator {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-          }
-          
+          .ep-indicator { font-size: 1.2rem; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
           .right-controls { display: flex; gap: 12px; }
-          
           .control-btn {
-            width: 40px; height: 40px;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff;
-            transition: background 0.3s;
+            width: 40px; height: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.3s;
           }
           .control-btn:hover { background: rgba(255,255,255,0.25); }
-          
+
           .player-bottom-controls {
-            position: absolute;
-            bottom: -60px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 24px;
+            position: absolute; bottom: -60px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 24px;
           }
-          
           .nav-ep-btn {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 24px;
-            border-radius: 50px;
-            color: #fff;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 50px;
+            color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px;
             transition: transform 0.2s;
           }
           .nav-ep-btn:active { transform: scale(0.95); }
@@ -529,116 +496,121 @@ export default function PlayerPage() {
             .details-container { padding: 16px; }
             .media-title { font-size: 1.2rem; }
             .popup-size-square { width: 90vw; height: 90vw; }
+            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
           }
         `}</style>
       </Head>
 
-      <Header
-        label={scrolled ? "Reproduzindo" : "Yoshikawa"}
-        scrolled={scrolled}
-        showInfo={showInfoPopup}
-        toggleInfo={toggleInfoPopup}
-        infoClosing={infoClosing}
-        showTech={showTechPopup}
-        toggleTech={toggleTechPopup}
-        techClosing={techClosing}
-      />
+      {/* ENVOLVENDO TODO O CONTEÚDO PARA APLICAR BLUR */}
+      <div className={`site-wrapper ${isPlaying ? 'blurred' : ''}`}>
+        
+        <Header
+          label={scrolled ? "Reproduzindo" : "Yoshikawa"}
+          scrolled={scrolled}
+          showInfo={showInfoPopup}
+          toggleInfo={toggleInfoPopup}
+          infoClosing={infoClosing}
+          showTech={showTechPopup}
+          toggleTech={toggleTechPopup}
+          techClosing={techClosing}
+        />
 
-      <ToastContainer toast={currentToast} closeToast={() => setCurrentToast(prev => ({...prev, closing: true}))} />
+        <ToastContainer toast={currentToast} closeToast={() => setCurrentToast(prev => ({...prev, closing: true}))} />
 
-      <main className="container">
-        {/* Header da Página */}
-        <div className="page-header">
-          <h1 className="page-title">Reproduzindo</h1>
-          <div className="status-dots">
-            <span className="dot red"></span>
-            <span className="dot yellow"></span>
-            <span className="dot green"></span>
+        <main className="container">
+          <div className="page-header">
+            <h1 className="page-title">Reproduzindo</h1>
+            <div className="status-dots">
+              <span className="dot red"></span>
+              <span className="dot yellow"></span>
+              <span className="dot green"></span>
+            </div>
           </div>
-        </div>
 
-        {/* 1. Container Banner com Botão Play */}
-        <div className="player-banner-container" onClick={() => setIsPlaying(true)}>
-          <img 
-            src={`https://image.tmdb.org/t/p/original${MOCK_DATA.backdrop_path}`} 
-            className="banner-image" 
-            alt="Capa" 
-          />
-          <div className="play-button-static">
-            <i className="fas fa-play"></i>
+          {/* Banner Horizontal (16:9) */}
+          <div className="player-banner-container" onClick={() => setIsPlaying(true)}>
+            <img 
+              src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} 
+              className="banner-image" 
+              alt="Capa" 
+            />
+            <div className="play-button-static">
+              <i className="fas fa-play"></i>
+            </div>
           </div>
-        </div>
 
-        {/* 2. Container Detalhes (Glassmorphism Blur) */}
-        <div className="glass-panel details-container">
-          {/* Títulos Alinhados a Esquerda */}
-          <div className="text-left">
-            <h2 className="media-title">{MOCK_DATA.title || MOCK_DATA.name}</h2>
-            {MOCK_DATA.media_type === 'tv' && (
-              <h3 className="episode-title">T{season}:E{episode} - {MOCK_DATA.episode_name}</h3>
+          {/* Detalhes (Glass Blur) */}
+          <div className="glass-panel details-container">
+            <div className="text-left">
+              <h2 className="media-title">{content.title || content.name}</h2>
+              {type === 'tv' && (
+                <h3 className="episode-title">
+                  T{season}:E{episode} {seasonData?.episodes ? `- ${seasonData.episodes.find(e => e.episode_number === episode)?.name || ''}` : ''}
+                </h3>
+              )}
+            </div>
+
+            {type === 'tv' && (
+              <>
+                <button className="season-btn">
+                  Temporada {season} <i className="fas fa-chevron-down" style={{fontSize: '10px'}}></i>
+                </button>
+
+                <div className="episodes-carousel">
+                  {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                    <div 
+                      key={ep.id} 
+                      className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                      onClick={() => setEpisode(ep.episode_number)}
+                    >
+                      <span className="ep-card-num">Ep {ep.episode_number}</span>
+                      <span className="ep-card-title">{ep.name}</span>
+                    </div>
+                  )) : (
+                    <div style={{color:'#666', fontSize:'0.8rem'}}>Carregando episódios...</div>
+                  )}
+                </div>
+              </>
+            )}
+
+            <button className="synopsis-btn" onClick={() => setShowSynopsis(!showSynopsis)}>
+              {showSynopsis ? 'Ocultar Sinopse' : 'Ler Sinopse'}
+              <i 
+                className="fas fa-chevron-down synopsis-icon" 
+                style={{ transform: showSynopsis ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              ></i>
+            </button>
+            
+            {showSynopsis && (
+              <p className="synopsis-text">{content.overview || "Sinopse indisponível."}</p>
             )}
           </div>
+        </main>
 
-          {/* Botão Temporada */}
-          {MOCK_DATA.media_type === 'tv' && (
-            <div className="controls-row">
-              <button className="season-btn">
-                Temporada {season} <i className="fas fa-chevron-down" style={{fontSize: '10px'}}></i>
-              </button>
-            </div>
-          )}
+        <BottomNav searchActive={searchActive} setSearchActive={setSearchActive} />
+      </div>
 
-          {/* Carrossel de Cards Pequenos Horizontais */}
-          {MOCK_DATA.media_type === 'tv' && (
-            <div className="episodes-carousel">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(ep => (
-                <div 
-                  key={ep} 
-                  className={`ep-card ${ep === episode ? 'active' : ''}`}
-                  onClick={() => setEpisode(ep)}
-                >
-                  <span className="ep-card-num">Ep {ep}</span>
-                  <span className="ep-card-title">Episódio {ep}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Botão Sinopse */}
-          <button className="synopsis-btn" onClick={() => setShowSynopsis(!showSynopsis)}>
-            {showSynopsis ? 'Ocultar Sinopse' : 'Ler Sinopse'}
-          </button>
-          
-          {showSynopsis && (
-            <p className="synopsis-text">{MOCK_DATA.overview}</p>
-          )}
-        </div>
-      </main>
-
-      {/* 3. PLAYER POPUP (Quadrado 1x1 ao centro) */}
+      {/* PLAYER POPUP (FORA DO BLUR WRAPPER, MAS DENTRO DO OVERLAY) */}
       {isPlaying && (
         <div className="player-overlay">
-          {/* Container Relativo para posicionar os botões "fora" */}
           <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
             
-            {/* Controles Acima (Fora) */}
             <div className="player-header-controls">
               <span className="ep-indicator">
-                 {MOCK_DATA.media_type === 'tv' ? `S${season}:E${episode}` : 'Filme'}
+                 {type === 'tv' ? `S${season}:E${episode}` : 'Filme'}
               </span>
               <div className="right-controls">
-                 {/* Botão Mudar Proporção */}
                 <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
                   <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
                 </button>
-                 {/* Botão Fechar */}
                 <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
             </div>
 
-            {/* O Embed Superflix */}
             <iframe 
               src={getEmbedUrl()} 
               className="player-embed" 
@@ -647,8 +619,7 @@ export default function PlayerPage() {
               title="Player"
             ></iframe>
 
-            {/* Controles Abaixo (Fora) - Se for série */}
-            {MOCK_DATA.media_type === 'tv' && (
+            {type === 'tv' && (
               <div className="player-bottom-controls">
                 <button className="nav-ep-btn glass-panel" onClick={handlePrevEp}>
                   <i className="fas fa-backward-step"></i> Ant
@@ -662,13 +633,6 @@ export default function PlayerPage() {
           </div>
         </div>
       )}
-
-      <BottomNav 
-        activeSection="releases" 
-        searchActive={searchActive}
-        setSearchActive={setSearchActive}
-        setActiveSection={() => {}}
-      />
     </>
   )
 }
