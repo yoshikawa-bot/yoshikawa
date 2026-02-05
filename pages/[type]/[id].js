@@ -75,7 +75,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
-export const BottomNav = ({ isFavorite, onToggleFavorite }) => {
+export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis }) => {
   const [animating, setAnimating] = useState(false)
 
   const handleShare = async () => {
@@ -101,6 +101,9 @@ export const BottomNav = ({ isFavorite, onToggleFavorite }) => {
          <Link href="/" className="nav-btn">
             <i className="fas fa-home"></i>
          </Link>
+         <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
+            <i className="fas fa-align-left"></i>
+         </button>
       </div>
 
       <button className="round-btn glass-panel" onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
@@ -143,6 +146,8 @@ export default function WatchPage() {
   const [infoClosing, setInfoClosing] = useState(false)
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
+  const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
+  const [synopsisClosing, setSynopsisClosing] = useState(false)
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
   
@@ -151,7 +156,6 @@ export default function WatchPage() {
   const [loading, setLoading] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
-  const [showSynopsis, setShowSynopsis] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
   // Estados Específicos de Série
@@ -295,10 +299,14 @@ export default function WatchPage() {
       setTechClosing(true)
       setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
     }
+    if (showSynopsisPopup && !synopsisClosing) {
+      setSynopsisClosing(true)
+      setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
+    }
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, currentToast])
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, currentToast])
 
   const toggleInfoPopup = () => {
     if (showTechPopup || currentToast) {
@@ -328,6 +336,22 @@ export default function WatchPage() {
         setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
       } else {
         setShowTechPopup(true)
+      }
+    }
+  }
+
+  const toggleSynopsisPopup = () => {
+    if (showInfoPopup || showTechPopup || currentToast) {
+      closeAllPopups()
+      setTimeout(() => {
+        if (!showSynopsisPopup) setShowSynopsisPopup(true)
+      }, 200)
+    } else {
+      if (showSynopsisPopup) {
+        setSynopsisClosing(true)
+        setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
+      } else {
+        setShowSynopsisPopup(true)
       }
     }
   }
@@ -381,40 +405,29 @@ export default function WatchPage() {
   const getEmbedUrl = () => {
     if (!content) return ''
     if (type === 'movie') {
-      // Formato correto Superflix: https://www.supflixapi.dev/movie/{id}
-      return `https://www.supflixapi.dev/movie/${id}`
+      // Formato correto Superflix: https://superflixapi.cv/filme/ID
+      return `https://superflixapi.cv/filme/${id}`
     }
-    // Formato correto Superflix TV: https://www.supflixapi.dev/tv/{id}/{season}/{episode}
-    return `https://www.supflixapi.dev/tv/${id}/${season}/${episode}`
+    // Formato correto Superflix TV: https://superflixapi.cv/serie/ID/TEMP/EPISODIO
+    return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
   const handleSeasonChange = () => {
     const totalSeasons = content?.number_of_seasons || 1
-    const options = Array.from({ length: totalSeasons }, (_, i) => ({
-      value: i + 1,
-      label: `Temporada ${i + 1}`
-    }))
-
-    const select = document.createElement('select')
-    select.style.cssText = 'font-size: 16px; padding: 8px; border-radius: 8px;'
-    options.forEach(opt => {
-      const option = document.createElement('option')
-      option.value = opt.value
-      option.textContent = opt.label
-      option.selected = opt.value === season
-      select.appendChild(option)
-    })
-
-    select.onchange = (e) => {
-      const newSeason = parseInt(e.target.value)
-      fetchSeason(id, newSeason)
-      setEpisode(1)
+    if (totalSeasons === 1) return
+    
+    const seasonList = Array.from({ length: totalSeasons }, (_, i) => i + 1).join(', ')
+    const input = prompt(`Escolha a temporada (1-${totalSeasons}):`, season)
+    
+    if (input) {
+      const newSeason = parseInt(input)
+      if (newSeason >= 1 && newSeason <= totalSeasons) {
+        fetchSeason(id, newSeason)
+        setEpisode(1)
+      } else {
+        showToast('Temporada inválida', 'error')
+      }
     }
-
-    select.click()
-    document.body.appendChild(select)
-    select.focus()
-    select.onblur = () => select.remove()
   }
 
   if (loading) {
@@ -606,6 +619,42 @@ export default function WatchPage() {
 
           .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
 
+          .synopsis-popup {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px); 
+            left: 50%;
+            z-index: 950;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex; 
+            align-items: flex-start; 
+            gap: 14px;
+            padding: 16px 18px; 
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform-origin: top center;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            pointer-events: none;
+          }
+          .synopsis-popup.closing { animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; }
+          .synopsis-icon-wrapper {
+            width: 42px; height: 42px; min-width: 42px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
+          }
+          .synopsis-icon-wrapper i { font-size: 20px; color: #fff; }
+          .synopsis-popup-content {
+            flex: 1; display: flex; flex-direction: column; gap: 6px;
+            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards;
+            max-height: 60vh; overflow-y: auto;
+          }
+          .synopsis-popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .synopsis-popup-text { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+
           .container {
             max-width: 1280px; margin: 0 auto;
             padding-top: 6.5rem; padding-bottom: 7rem;
@@ -647,7 +696,6 @@ export default function WatchPage() {
           }
 
           .media-title { font-size: 1.4rem; font-weight: 700; color: #fff; line-height: 1.2; }
-          .episode-title { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 4px; }
 
           .season-controls {
             display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
@@ -661,19 +709,26 @@ export default function WatchPage() {
           .season-btn:hover { background: rgba(255,255,255,0.2); }
 
           .episodes-carousel { 
-            display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px 0;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.3) rgba(255,255,255,0.05);
+            display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 12px 0;
+            scrollbar-width: none;
           }
-          .episodes-carousel::-webkit-scrollbar { height: 8px; }
-          .episodes-carousel::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-          .episodes-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
-          .episodes-carousel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+          .episodes-carousel::-webkit-scrollbar { display: none; }
+          
+          @media (min-width: 769px) {
+            .episodes-carousel {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.03);
+            }
+            .episodes-carousel::-webkit-scrollbar { display: block; height: 6px; }
+            .episodes-carousel::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+            .episodes-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+            .episodes-carousel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+          }
           
           .ep-card {
-            min-width: 140px; height: 80px; background-size: cover; background-position: center;
-            border-radius: 12px; display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; 
+            min-width: 110px; height: 65px; background-size: cover; background-position: center;
+            border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 8px; border: 0.5px solid rgba(255,255,255,0.08); cursor: pointer; 
             transition: all 0.2s ease; position: relative; overflow: hidden;
           }
           .ep-card::before {
@@ -681,25 +736,10 @@ export default function WatchPage() {
             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
           }
           .ep-card:hover { border-color: rgba(255,255,255,0.2); transform: scale(1.05); }
-          .ep-card.active { border-color: var(--ios-blue); box-shadow: 0 0 0 2px var(--ios-blue); }
+          .ep-card.active { border-color: var(--ios-blue); border-width: 1.5px; box-shadow: 0 0 0 1px var(--ios-blue); }
           
-          .ep-card-num { font-size: 0.8rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
-          .ep-card-title { font-size: 0.7rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
-
-          .synopsis-btn {
-            align-self: flex-start; background: rgba(255,255,255,0.08); padding: 10px 18px; 
-            border-radius: 12px; color: #fff; font-size: 0.9rem;
-            font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 8px;
-            transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1);
-          }
-          .synopsis-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); }
-          .synopsis-icon { transition: transform 0.3s var(--ease-elastic); font-size: 12px; }
-          
-          .synopsis-text {
-            font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 8px;
-            animation: fadeIn 0.3s ease;
-          }
-          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+          .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
 
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -786,6 +826,25 @@ export default function WatchPage() {
 
         <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
+        {showSynopsisPopup && (
+          <div 
+            className={`synopsis-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="synopsis-icon-wrapper">
+              <i className="fas fa-align-left"></i>
+            </div>
+            <div className="synopsis-popup-content">
+              <p className="synopsis-popup-title">Sinopse</p>
+              <p className="synopsis-popup-text">
+                {type === 'tv' && currentEpisodeData?.overview 
+                  ? currentEpisodeData.overview 
+                  : content?.overview || "Sinopse indisponível."}
+              </p>
+            </div>
+          </div>
+        )}
+
         <main className="container">
           <div className="page-header">
             <h1 className="page-title">Reproduzindo</h1>
@@ -817,11 +876,6 @@ export default function WatchPage() {
           <div className="glass-panel details-container">
             <div className="text-left">
               <h2 className="media-title">{content.title || content.name}</h2>
-              {type === 'tv' && (
-                <h3 className="episode-title">
-                  T{season}:E{episode} {currentEpisodeData ? `- ${currentEpisodeData.name}` : ''}
-                </h3>
-              )}
             </div>
 
             {type === 'tv' && (
@@ -853,26 +907,10 @@ export default function WatchPage() {
                 </div>
               </>
             )}
-
-            <button className="synopsis-btn" onClick={() => setShowSynopsis(!showSynopsis)}>
-              {showSynopsis ? 'Ocultar Sinopse' : 'Ler Sinopse'}
-              <i 
-                className="fas fa-chevron-down synopsis-icon" 
-                style={{ transform: showSynopsis ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              ></i>
-            </button>
-            
-            {showSynopsis && (
-              <p className="synopsis-text">
-                {type === 'tv' && currentEpisodeData?.overview 
-                  ? currentEpisodeData.overview 
-                  : content.overview || "Sinopse indisponível."}
-              </p>
-            )}
           </div>
         </main>
 
-        <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
+        <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onToggleSynopsis={toggleSynopsisPopup} />
       </div>
 
       {isPlaying && (
