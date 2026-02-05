@@ -71,7 +71,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.7.0 Player • React 18 • TMDB</p>
+            <p className="popup-text">v2.7.1 Player • React 18 • TMDB</p>
           </div>
         </div>
       )}
@@ -170,7 +170,6 @@ export const PlayerView = ({ item }) => {
   const [episode, setEpisode] = useState(1)
   const isSerie = item.media_type === 'tv'
 
-  // Embed Limpo: #noEpList e cor customizada
   const getEmbedUrl = () => {
     const baseUrl = 'https://superflixapi.cv'
     const type = isSerie ? 'serie' : 'filme'
@@ -270,7 +269,7 @@ export default function Home() {
 
   useEffect(() => {
     if (currentToast?.closing) {
-      const t = setTimeout(() => setCurrentToast(null), 400) // Sincronizado com popups
+      const t = setTimeout(() => setCurrentToast(null), 400)
       return () => clearTimeout(t)
     }
   }, [currentToast])
@@ -402,7 +401,9 @@ export default function Home() {
     })
   }
 
-  const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
+  // CORREÇÃO AQUI: Renomeado de activeList para displayItems para bater com o JSX
+  const displayItems = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
+  
   const pageTitle = selectedMedia ? 'Reproduzindo' : (searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo'))
   const headerLabel = scrolled ? pageTitle : 'Yoshikawa'
 
