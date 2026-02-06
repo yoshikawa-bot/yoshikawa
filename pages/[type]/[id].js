@@ -21,12 +21,13 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
+        {/* Item 6: Novo Botão Técnico na Navbar */}
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
-          title="Info App"
+          title="Info Técnica"
         >
-          <i className="fas fa-code" style={{ fontSize: '14px' }}></i>
+          <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
         </button>
 
         <div className="pill-container glass-panel">
@@ -38,10 +39,11 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-shield-halved"} style={{ fontSize: '14px' }}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
+      {/* Pop-up de Informações (Padrão) */}
       {showInfo && (
         <div 
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
@@ -51,23 +53,24 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
             <i className="fas fa-shield-halved"></i>
           </div>
           <div className="popup-content">
-            <p className="popup-title">Proteção</p>
-            <p className="popup-text">Recomendamos uso de <strong>AdBlock</strong>.</p>
+            <p className="popup-title">Proteção Recomendada</p>
+            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
           </div>
         </div>
       )}
 
+      {/* Item 6: Pop-up Técnico (Idêntico ao padrão) */}
       {showTech && (
         <div 
           className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="popup-icon-wrapper tech">
-            <i className="fas fa-code"></i>
+            <i className="fas fa-microchip"></i>
           </div>
           <div className="popup-content">
-            <p className="popup-title">Sistema</p>
-            <p className="popup-text">v3.0.0 Clean • React 18</p>
+            <p className="popup-title">Informações Técnicas</p>
+            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
           </div>
         </div>
       )}
@@ -75,7 +78,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
-export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onToggleContentInfo }) => {
+export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis }) => {
   const [animating, setAnimating] = useState(false)
 
   const handleShare = async () => {
@@ -94,7 +97,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
   return (
     <div className="bar-container bottom-bar">
       <button className="round-btn glass-panel" onClick={handleShare} title="Compartilhar">
-        <i className="fas fa-share-nodes" style={{ fontSize: '15px' }}></i>
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
       <div className="pill-container glass-panel">
@@ -104,12 +107,9 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
             <i className="fas fa-align-left"></i>
          </button>
-         <button className="nav-btn" onClick={onToggleContentInfo} title="Dados Técnicos">
-            <i className="fas fa-film"></i>
-         </button>
       </div>
 
-      <button className="round-btn glass-panel" onClick={handleFavClick} title="Favoritos">
+      <button className="round-btn glass-panel" onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
         <i 
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
@@ -125,7 +125,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
     <div className="toast-wrap">
       <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
         <div className="toast-icon-wrapper">
-          <i className={`fas ${toast.type === 'success' ? 'fa-check' : toast.type === 'error' ? 'fa-xmark' : 'fa-info'}`}></i>
+          <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
         </div>
         <div className="toast-content">
           <div className="toast-title">{toast.type === 'success' ? 'Sucesso' : toast.type === 'error' ? 'Erro' : 'Info'}</div>
@@ -136,7 +136,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- PÁGINA DINÂMICA ([type]/[id].js) ---
+// --- PÁGINA DINÂMICA DE REPRODUÇÃO ([type]/[id].js) ---
 
 export default function WatchPage() {
   const router = useRouter()
@@ -145,33 +145,23 @@ export default function WatchPage() {
   
   // Estados de Interface
   const [scrolled, setScrolled] = useState(false)
-  
-  // Popups States
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
-  
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
-  
   const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
   const [synopsisClosing, setSynopsisClosing] = useState(false)
-
-  const [showContentTech, setShowContentTech] = useState(false)
-  const [contentTechClosing, setContentTechClosing] = useState(false)
-
-  // Player Popup States (Igual aos outros agora)
-  const [showPlayer, setShowPlayer] = useState(false)
-  const [playerClosing, setPlayerClosing] = useState(false)
-
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
   
-  // Dados
+  // Estados do Player e Conteúdo
   const [content, setContent] = useState(null)
+  // Item 4: Removido estado de 'loading' visível para evitar tela de carregamento
+  const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
-  // Série
+  // Estados Específicos de Série
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
@@ -180,8 +170,9 @@ export default function WatchPage() {
 
   // --- TOAST LOGIC ---
   const showToast = (message, type = 'info') => {
-    // Fecha outros popups ao mostrar toast para limpar a tela
-    closeAllPopups()
+    if (showInfoPopup || showTechPopup) {
+      closeAllPopups()
+    }
     
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
@@ -221,11 +212,12 @@ export default function WatchPage() {
     if (currentToast) setCurrentToast({ ...currentToast, closing: true }) 
   }
 
-  // --- FETCHING ---
+  // --- FETCHING DATA ---
   useEffect(() => {
     if (!id || !type) return
 
     const loadContent = async () => {
+      // Sem setLoading(true) visual aqui
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
         const data = await res.json()
@@ -234,11 +226,14 @@ export default function WatchPage() {
         if (type === 'tv') {
           await fetchSeason(id, 1)
         }
+
         checkFavoriteStatus(data)
       } catch (error) {
-        showToast('Erro de conexão', 'error')
+        console.error("Erro ao carregar", error)
+        showToast('Erro ao carregar conteúdo', 'error')
       }
     }
+
     loadContent()
   }, [id, type])
 
@@ -249,6 +244,7 @@ export default function WatchPage() {
       setSeasonData(data)
       setSeason(seasonNum)
     } catch (err) { 
+      console.error(err)
       showToast('Erro ao carregar temporada', 'error')
     }
   }
@@ -259,11 +255,14 @@ export default function WatchPage() {
       const favorites = stored ? JSON.parse(stored) : []
       const exists = favorites.some(f => f.id === item.id && f.media_type === type)
       setIsFavorite(exists)
-    } catch { setIsFavorite(false) }
+    } catch {
+      setIsFavorite(false)
+    }
   }
 
   const toggleFavorite = () => {
     if (!content) return
+
     try {
       const stored = localStorage.getItem('yoshikawaFavorites')
       let favorites = stored ? JSON.parse(stored) : []
@@ -272,7 +271,7 @@ export default function WatchPage() {
       if (exists) {
         favorites = favorites.filter(f => !(f.id === content.id && f.media_type === type))
         setIsFavorite(false)
-        showToast('Removido', 'info')
+        showToast('Removido dos favoritos', 'info')
       } else {
         favorites = [...favorites, {
           id: content.id,
@@ -281,56 +280,79 @@ export default function WatchPage() {
           poster_path: content.poster_path
         }]
         setIsFavorite(true)
-        showToast('Salvo', 'success')
+        showToast('Adicionado aos favoritos', 'success')
       }
+
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favorites))
-    } catch { showToast('Erro local', 'error') }
+    } catch {
+      showToast('Erro ao salvar favorito', 'error')
+    }
   }
 
-  // --- HANDLERS E LOGICA DE POPUPS UNIFICADA ---
-  
+  // --- HANDLERS ---
   const closeAllPopups = useCallback(() => {
-    // Info
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
-      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 300)
+      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
     }
-    // Tech App
     if (showTechPopup && !techClosing) {
       setTechClosing(true)
-      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 300)
+      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
     }
-    // Sinopse
     if (showSynopsisPopup && !synopsisClosing) {
       setSynopsisClosing(true)
-      setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 300)
+      setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
     }
-    // Content Tech (Novo)
-    if (showContentTech && !contentTechClosing) {
-      setContentTechClosing(true)
-      setTimeout(() => { setShowContentTech(false); setContentTechClosing(false) }, 300)
-    }
-    // Player Embed
-    if (showPlayer && !playerClosing) {
-      setPlayerClosing(true)
-      setTimeout(() => { setShowPlayer(false); setPlayerClosing(false) }, 300)
-    }
-    // Toast
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showContentTech, contentTechClosing, showPlayer, playerClosing, currentToast])
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, currentToast])
 
-  // Helper para abrir um e fechar outros
-  const openPopup = (setter, closerSetter, stateVal) => {
-    if (stateVal) {
-      // Se já ta aberto, fecha
-      closerSetter(true)
-      setTimeout(() => { setter(false); closerSetter(false) }, 300)
-    } else {
+  const toggleInfoPopup = () => {
+    if (showTechPopup || currentToast || showSynopsisPopup) {
       closeAllPopups()
-      // Pequeno delay para a animação de saída dos outros não conflitar visualmente
-      setTimeout(() => setter(true), 100)
+      setTimeout(() => {
+        if (!showInfoPopup) setShowInfoPopup(true)
+      }, 200)
+    } else {
+      if (showInfoPopup) {
+        setInfoClosing(true)
+        setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
+      } else {
+        setShowInfoPopup(true)
+      }
+    }
+  }
+
+  const toggleTechPopup = () => {
+    if (showInfoPopup || currentToast || showSynopsisPopup) {
+      closeAllPopups()
+      setTimeout(() => {
+        if (!showTechPopup) setShowTechPopup(true)
+      }, 200)
+    } else {
+      if (showTechPopup) {
+        setTechClosing(true)
+        setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
+      } else {
+        setShowTechPopup(true)
+      }
+    }
+  }
+
+  const toggleSynopsisPopup = () => {
+    if (showInfoPopup || showTechPopup || currentToast) {
+      closeAllPopups()
+      setTimeout(() => {
+        if (!showSynopsisPopup) setShowSynopsisPopup(true)
+      }, 200)
+    } else {
+      if (showSynopsisPopup) {
+        setSynopsisClosing(true)
+        setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
+      } else {
+        setShowSynopsisPopup(true)
+      }
     }
   }
 
@@ -342,24 +364,18 @@ export default function WatchPage() {
     window.addEventListener('scroll', onScroll, { passive: true })
     
     const onClick = (e) => { 
-      // Se clicar fora de áreas interativas, fecha tudo
-      if (!e.target.closest('.info-popup') && 
-          !e.target.closest('.toast') && 
-          !e.target.closest('.round-btn') && 
-          !e.target.closest('.pill-container') &&
-          !e.target.closest('.player-popup-container') && // Não fechar se clicar no player
-          !e.target.closest('.season-selector-ui')) { // Não fechar se clicar no select
+      if (!e.target.closest('.info-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container')) {
         closeAllPopups() 
       }
     }
     window.addEventListener('click', onClick)
+    
     return () => { 
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('click', onClick) 
     }
   }, [closeAllPopups])
 
-  // Scroll active episode
   useEffect(() => {
     if (carouselRef.current && seasonData) {
       const activeCard = carouselRef.current.querySelector('.ep-card.active')
@@ -369,7 +385,7 @@ export default function WatchPage() {
     }
   }, [episode, seasonData])
 
-  // Player Navigation
+  // Player Logic
   const handleNextEp = () => {
     const nextEp = episode + 1
     if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
@@ -380,30 +396,28 @@ export default function WatchPage() {
   }
   
   const handlePrevEp = () => {
-    if (episode > 1) setEpisode(episode - 1)
+    if (episode > 1) {
+      setEpisode(episode - 1)
+    }
   }
   
   const getEmbedUrl = () => {
     if (!content) return ''
-    if (type === 'movie') return `https://superflixapi.cv/filme/${id}`
+    if (type === 'movie') {
+      return `https://superflixapi.cv/filme/${id}`
+    }
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
-  const handleNativeSeasonChange = (e) => {
-    const newSeason = parseInt(e.target.value)
-    fetchSeason(id, newSeason)
-    setEpisode(1)
-  }
-
-  // --- RENDER ---
-  if (!content) return null // Sem loading text, renderiza nada até ter dados
-
-  const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
+  // --- ITEM 4: Remoção de tela de carregamento "Carregando..." ---
+  // Se não houver conteúdo, retornamos apenas um shell vazio ou null
+  // para garantir a sensação de "instantly" sem texto de loading.
+  if (!content && !id) return null // Inicialização
 
   return (
     <>
       <Head>
-        <title>{content.title || content.name}</title>
+        <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -411,35 +425,51 @@ export default function WatchPage() {
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           html { scroll-behavior: smooth; }
           body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #050505;
             color: #f5f5f7;
+            line-height: 1.6;
+            font-size: 16px;
             min-height: 100vh;
+            overflow-y: auto;
             overflow-x: hidden;
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
+          a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
-          
-          /* --- ESTILOS GERAIS --- */
+          img { max-width: 100%; height: auto; display: block; }
+
           :root {
             --pill-height: 44px;
             --pill-radius: 50px;
+            --pill-max-width: 520px;
+            --ios-blue: #0A84FF;
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
 
           .glass-panel {
+            position: relative;
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
+          }
+
+          .site-wrapper {
+             width: 100%;
+             min-height: 100vh;
           }
 
           .bar-container {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
             display: flex; align-items: center; justify-content: center; gap: 12px; 
-            width: 90%; max-width: 520px; transition: all 0.4s ease;
+            width: 90%; max-width: var(--pill-max-width); transition: all 0.4s var(--ease-smooth);
           }
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
@@ -448,366 +478,454 @@ export default function WatchPage() {
           .round-btn {
             width: var(--pill-height); height: var(--pill-height); border-radius: 50%;
             display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.9);
-            flex-shrink: 0; transition: transform 0.2s ease;
+            flex-shrink: 0; transition: all 0.3s var(--ease-elastic);
           }
-          .round-btn:active { transform: scale(0.9); }
+          .round-btn:hover { transform: scale(1.08); background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
+          .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
             height: var(--pill-height); flex: 1; border-radius: var(--pill-radius);
-            display: flex; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center; position: relative;
+            transition: all 0.4s var(--ease-elastic);
           }
           .nav-btn { 
-            flex: 1; height: 100%; display: flex; align-items: center; justify-content: center; 
-            color: rgba(255,255,255,0.4); transition: color 0.3s ease;
+            flex: 1; display: flex; align-items: center; justify-content: center; 
+            height: 100%; color: rgba(255,255,255,0.4); transition: all 0.3s ease;
+            position: relative; z-index: 5;
           }
-          .nav-btn:hover { color: #fff; }
-          .bar-label { font-size: 0.9rem; font-weight: 600; color: #fff; }
+          .nav-btn i { font-size: 18px; transition: all 0.4s var(--ease-elastic); }
+          .nav-btn:hover i { transform: scale(1.2); color: rgba(255,255,255,0.8); }
+          .nav-btn:active i { transform: scale(0.9); }
 
-          /* --- POPUPS GENÉRICOS --- */
-          .info-popup, .toast, .synopsis-popup {
+          .bar-label { 
+            font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap;
+            letter-spacing: -0.01em;
+            position: relative; z-index: 5;
+          }
+
+          .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
+          @keyframes heartZoom { 
+            0% { transform: scale(1); }
+            50% { transform: scale(1.6); } 
+            100% { transform: scale(1); }
+          }
+
+          /* Item 1: info-popup é usado para todos os popups (Sinopse, Tech, Info) */
+          .info-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
             z-index: 960;
-            min-width: 320px; max-width: 90%;
-            display: flex; align-items: flex-start; gap: 14px;
-            padding: 16px 18px; border-radius: 22px;
+            min-width: 320px;
+            max-width: 90%;
+            display: flex; 
+            align-items: flex-start; /* Alinhamento ao topo para conteúdo longo */
+            gap: 14px;
+            padding: 16px 18px; 
+            border-radius: 22px;
+            transform: translateX(-50%) translateY(-50%) scale(0.3);
             transform-origin: top center;
-            animation: popupOpen 0.3s var(--ease-elastic) forwards;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
-          .info-popup.closing, .toast.closing, .synopsis-popup.closing { 
-            animation: popupClose 0.3s ease forwards; 
+          
+          .info-popup { z-index: 950; pointer-events: none; }
+          .toast { z-index: 960; pointer-events: auto; align-items: center; } 
+
+          .info-popup.closing, .toast.closing { 
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
-          @keyframes popupOpen { from { opacity: 0; transform: translateX(-50%) scale(0.8); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
-          @keyframes popupClose { from { opacity: 1; transform: translateX(-50%) scale(1); } to { opacity: 0; transform: translateX(-50%) scale(0.8); } }
-
-          .popup-icon-wrapper, .toast-icon-wrapper, .synopsis-icon-wrapper { 
+          @keyframes popupZoomIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+          }
+          @keyframes popupZoomOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
+          }
+          
+          .popup-icon-wrapper, .toast-icon-wrapper { 
             width: 42px; height: 42px; min-width: 42px; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; 
+            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
+            flex-shrink: 0;
           }
-          .popup-icon-wrapper { background: linear-gradient(135deg, #34c759, #30d158); }
-          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff, #007aff); }
-          .synopsis-icon-wrapper { background: linear-gradient(135deg, #ff9500, #ff8c00); }
-          .popup-icon-wrapper.content-tech { background: linear-gradient(135deg, #5856d6, #5e5ce6); }
-          
-          .popup-content, .toast-content, .synopsis-popup-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-          .popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; }
-          .popup-text { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
-          .synopsis-popup-content { max-height: 50vh; overflow-y: auto; }
+          .popup-icon-wrapper { 
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
+          }
+          .popup-icon-wrapper.tech { 
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
+          }
+          /* Estilo específico para Sinopse usando a estrutura padrão */
+          .popup-icon-wrapper.synopsis {
+            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+          }
 
-          /* --- Toast Colors --- */
-          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759, #30d158); border-radius: 50%; }
-          .toast.error .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a, #ff3b30); border-radius: 50%; }
-          .toast.info .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff, #007aff); border-radius: 50%; }
-          .toast-wrap { position: fixed; top: 90px; left: 50%; z-index: 2000; pointer-events: none; }
+          .toast-icon-wrapper { border-radius: 50%; }
+          .toast.success .toast-icon-wrapper {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+          }
+          .toast.info .toast-icon-wrapper {
+            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+          }
+          .toast.error .toast-icon-wrapper {
+            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
+            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+          }
+
+          .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
+          .popup-content, .toast-content { 
+            flex: 1; display: flex; flex-direction: column; gap: 4px; 
+            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
+          }
           
-          /* --- PAGE CONTENT --- */
+          @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; margin-top: 2px;}
+          .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
+          
+          .popup-text.scrollable { max-height: 50vh; overflow-y: auto; padding-right: 5px; }
+
+          @keyframes iconPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+          .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
+
+          /* Item 5: Estilo para o Seletor Nativo */
+          .native-season-select {
+            appearance: none;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 30px 8px 16px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+          }
+          .native-season-select option {
+            background-color: #1a1a1a;
+            color: #fff;
+          }
+
           .container {
             max-width: 1280px; margin: 0 auto;
-            padding: 6.5rem 2rem 7rem 2rem;
+            padding-top: 6.5rem; padding-bottom: 7rem;
+            padding-left: 2rem; padding-right: 2rem;
           }
-          .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-          .page-title { font-size: 1.5rem; font-weight: 700; color: #fff; }
-          .status-dots { display: flex; gap: 8px; }
-          .dot { width: 10px; height: 10px; border-radius: 50%; }
-          .dot.red { background: #ff453a; } .dot.yellow { background: #ffd60a; } .dot.green { background: #30d158; }
+          .page-header { 
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-bottom: 1.5rem; 
+          }
+
+          .page-title { font-size: 1.3rem; font-weight: 700; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+          
+          .status-dots { display: flex; align-items: center; gap: 8px; }
+          .dot { width: 10px; height: 10px; border-radius: 50%; animation: dotPulse 2s ease-in-out infinite; }
+          .dot.red { background: linear-gradient(135deg, #ff453a, #ff3b30); box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4); }
+          .dot.yellow { background: linear-gradient(135deg, #ffd60a, #ffcc00); box-shadow: 0 2px 8px rgba(255, 204, 0, 0.4); animation-delay: 0.3s; }
+          .dot.green { background: linear-gradient(135deg, #34c759, #30d158); box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4); animation-delay: 0.6s; }
+          @keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
 
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
-            background-color: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
+            background-color: #1a1a1a; border: 0.5px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset, 0 20px 40px rgba(0,0,0,0.4); 
             margin-bottom: 24px; cursor: pointer;
           }
+
+          .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
+          .player-banner-container:hover .banner-image { transform: scale(1.05); }
+
           .play-button-static {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             border: 1px solid rgba(255,255,255,0.3);
           }
-          
-          .details-container { border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-          .media-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+          .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
 
-          /* --- SELETOR DE TEMPORADA NATIVO --- */
-          .native-select-wrapper {
-            position: relative; display: inline-block;
-          }
-          .native-select-btn {
-            background: rgba(255,255,255,0.1); padding: 10px 18px; border-radius: 12px;
-            font-size: 0.9rem; color: #fff; display: inline-flex; align-items: center; gap: 10px;
-            border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
-          }
-          .hidden-select {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; cursor: pointer; appearance: none; z-index: 10;
+          .details-container {
+            border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 16px;
+            border: 0.5px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset;
           }
 
-          /* --- CARROSSEL --- */
+          .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
+
+          .season-controls {
+            display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
+          }
+
+          /* Item 3: Ajuste de padding para evitar corte no carrossel */
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 20px; /* Padding extra para zoom não cortar */
-            margin: 0 -20px; /* Negativo para alinhar visualmente com o container */
+            padding: 4px 20px 20px 20px; /* Aumentado padding lateral e inferior */
+            margin: 0 -18px; /* Offset negativo para alinhar visualmente com o container */
             scrollbar-width: none;
           }
           .episodes-carousel::-webkit-scrollbar { display: none; }
           
+          /* Item 2: Cards com bordas altas, finas e simples */
           .ep-card {
-            min-width: 110px; height: 65px; 
-            border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
+            min-width: 110px; height: 65px; background-size: cover; background-position: center;
+            border-radius: 4px; /* Mais quadrado/simples */
+            display: flex; flex-direction: column; justify-content: flex-end;
             padding: 6px 8px; 
-            border: 1px solid rgba(255,255,255,0.1); /* Borda simples e fina */
-            background-size: cover; background-position: center;
-            cursor: pointer; position: relative; overflow: hidden;
-            transition: transform 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.15); /* Borda fina e definida */
+            cursor: pointer; 
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+            /* Removido box-shadow pesado */
           }
-          .ep-card:hover { transform: scale(1.05); }
-          .ep-card.active { border-color: #0A84FF; box-shadow: 0 0 0 1px #0A84FF; }
           .ep-card::before {
-             content: ''; position: absolute; inset: 0;
-             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
           }
-          .ep-card-num, .ep-card-title { position: relative; z-index: 1; color: #fff; font-size: 0.7rem; }
-          .ep-card-title { font-size: 0.6rem; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+          .ep-card:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.05); }
+          .ep-card.active { border-color: var(--ios-blue); border-width: 1px; box-shadow: 0 0 0 1px var(--ios-blue); }
+          
+          .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+          .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
 
-          /* --- PLAYER EMBED OVERLAY --- */
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: transparent; /* Fundo transparente */
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
-            opacity: 0; animation: overlayIn 0.3s ease forwards;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 2000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
           }
-          .player-overlay.closing { animation: overlayOut 0.3s ease forwards; }
-
-          @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-          @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
-
-          /* Wrapper central que contém os botões E o vídeo */
-          .player-center-wrapper {
-             display: flex; flex-direction: column; align-items: center; gap: 20px;
-             position: relative; z-index: 2001;
-             width: 100%; pointer-events: none; /* Deixa clicar no blur se precisar */
+          
+          .player-popup-container {
+            position: relative; background: #000; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            transition: all 0.4s var(--ease-elastic); display: flex; align-items: center; justify-content: center;
           }
-          .player-center-wrapper > * { pointer-events: auto; }
-
-          .player-frame-container {
-             background: #000; border-radius: 20px; overflow: hidden;
-             box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-             transition: all 0.4s var(--ease-elastic);
-          }
-          .size-square { width: min(85vw, 45vh); height: min(85vw, 45vh); }
-          .size-banner { width: 90vw; max-width: 900px; aspect-ratio: 16/9; height: auto; }
+          
+          .popup-size-square { width: min(70vw, 40vh); height: min(70vw, 40vh); aspect-ratio: 1/1; }
+          .popup-size-banner { width: 80vw; max-width: 900px; aspect-ratio: 16/9; }
           
           .player-embed { width: 100%; height: 100%; border: none; }
 
-          /* Botões Fora do Player */
-          .player-top-row {
-             display: flex; justify-content: space-between; width: 90vw; max-width: 900px;
+          .player-header-controls {
+            position: absolute; top: -55px; left: 0; right: 0;
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
           }
-          .player-bottom-row {
-             display: flex; justify-content: center; gap: 16px;
+          .ep-indicator { 
+            font-size: 1rem; font-weight: 700; color: #fff; 
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3); padding: 8px 16px; border-radius: 12px;
+            backdrop-filter: blur(10px);
           }
+          .right-controls { display: flex; gap: 10px; }
+          .control-btn {
+            width: 42px; height: 42px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; 
+            transition: all 0.3s; border: 1px solid rgba(255,255,255,0.15);
+          }
+          .control-btn:hover { background: rgba(0,0,0,0.5); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
 
-          .player-pill {
-             background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-             padding: 8px 16px; border-radius: 30px; color: #fff; font-weight: 600; font-size: 0.9rem;
-             display: flex; align-items: center; gap: 8px;
-             border: 1px solid rgba(255,255,255,0.1);
+          .player-bottom-controls {
+            position: absolute; bottom: -65px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 16px;
           }
-          .player-round-btn {
-             width: 44px; height: 44px; border-radius: 50%;
-             background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-             display: flex; align-items: center; justify-content: center; color: #fff;
-             border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s;
+          .nav-ep-btn {
+            background: rgba(0,0,0,0.3); padding: 10px 24px; border-radius: 50px;
+            color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
           }
-          .player-round-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-          .right-group { display: flex; gap: 10px; }
+          .nav-ep-btn:hover { background: rgba(0,0,0,0.5); transform: scale(1.05); border-color: rgba(255,255,255,0.3); }
+          .nav-ep-btn:active { transform: scale(0.95); }
 
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
-            .episodes-carousel { margin: 0 -16px; padding: 10px 16px; }
-            .player-top-row { width: 94vw; }
-            .size-square { width: 92vw; height: 92vw; }
+            .player-banner-container { border-radius: 16px; }
+            .details-container { padding: 14px; }
+            .media-title { font-size: 1rem; }
+            .popup-size-square { width: 85vw; height: 85vw; }
+            .popup-size-banner { width: 90vw; }
+            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
+            .popup-title, .toast-title { font-size: 0.88rem; }
+            .popup-text, .toast-msg { font-size: 0.75rem; }
+            .page-title { font-size: 1.2rem; }
+            .dot { width: 8px; height: 8px; }
+            .status-dots { gap: 6px; }
+            .player-header-controls { top: -50px; }
+            .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
+            .control-btn { width: 38px; height: 38px; }
+            .player-bottom-controls { bottom: -58px; gap: 12px; }
+            .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
+            .episodes-carousel { margin: 0 -14px; }
           }
         `}</style>
       </Head>
 
+      {/* Renderização Condicional: Se não houver conteúdo, apenas o site-wrapper renderiza (sem loader) */}
       <div className="site-wrapper">
-        
-        <Header
-          label={scrolled ? "Reproduzindo" : "Yoshikawa"}
-          scrolled={scrolled}
-          showInfo={showInfoPopup}
-          toggleInfo={() => openPopup(setShowInfoPopup, setInfoClosing, showInfoPopup)}
-          infoClosing={infoClosing}
-          showTech={showTechPopup}
-          toggleTech={() => openPopup(setShowTechPopup, setTechClosing, showTechPopup)}
-          techClosing={techClosing}
-        />
+        {content && (
+          <>
+            <Header
+              label={scrolled ? "Reproduzindo" : "Yoshikawa"}
+              scrolled={scrolled}
+              showInfo={showInfoPopup}
+              toggleInfo={toggleInfoPopup}
+              infoClosing={infoClosing}
+              showTech={showTechPopup}
+              toggleTech={toggleTechPopup}
+              techClosing={techClosing}
+            />
 
-        <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
+            <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-        {/* POPUP DE SINOPSE */}
-        {showSynopsisPopup && (
-          <div className={`synopsis-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <div className="synopsis-icon-wrapper">
-              <i className="fas fa-align-left"></i>
-            </div>
-            <div className="synopsis-popup-content">
-              <p className="popup-title">Sinopse</p>
-              <p className="synopsis-popup-text">
-                {type === 'tv' && currentEpisodeData?.overview 
-                  ? currentEpisodeData.overview 
-                  : content?.overview || "Sem sinopse."}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* NOVO POPUP: INFOS TÉCNICAS DO CONTEÚDO */}
-        {showContentTech && (
-          <div className={`synopsis-popup glass-panel ${contentTechClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <div className="popup-icon-wrapper content-tech">
-              <i className="fas fa-film"></i>
-            </div>
-            <div className="synopsis-popup-content">
-              <p className="popup-title">Dados do Conteúdo</p>
-              <div className="popup-text" style={{display:'flex', flexDirection:'column', gap:'4px'}}>
-                 <span><strong>Título Original:</strong> {content.original_title || content.original_name}</span>
-                 <span><strong>Data:</strong> {content.release_date || content.first_air_date}</span>
-                 <span><strong>Nota TMDB:</strong> ⭐ {content.vote_average?.toFixed(1)}</span>
-                 <span><strong>ID:</strong> {id}</span>
+            {/* Item 1: Pop-up de Sinopse Padronizado (Mesma estrutura do Info/Tech) */}
+            {showSynopsisPopup && (
+              <div 
+                className={`info-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="popup-icon-wrapper synopsis">
+                  <i className="fas fa-align-left"></i>
+                </div>
+                <div className="popup-content">
+                  <p className="popup-title">Sinopse</p>
+                  <div className="popup-text scrollable">
+                    {type === 'tv' && currentEpisodeData?.overview 
+                      ? currentEpisodeData.overview 
+                      : content?.overview || "Sinopse indisponível."}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        <main className="container">
-          <div className="page-header">
-            <h1 className="page-title">Reproduzindo</h1>
-            <div className="status-dots">
-              <span className="dot red"></span>
-              <span className="dot yellow"></span>
-              <span className="dot green"></span>
-            </div>
-          </div>
-
-          <div 
-            className="player-banner-container" 
-            onClick={() => openPopup(setShowPlayer, setPlayerClosing, false)}
-            style={{
-              backgroundImage: currentEpisodeData?.still_path 
-                ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
-                : content.backdrop_path 
-                  ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
-                  : `url(${DEFAULT_BACKDROP})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="play-button-static">
-              <i className="fas fa-play" style={{color:'#fff', marginLeft:'4px'}}></i>
-            </div>
-          </div>
-
-          <div className="glass-panel details-container">
-            <h2 className="media-title">{content.title || content.name}</h2>
-
-            {type === 'tv' && (
-              <>
-                <div style={{display:'flex', alignItems:'center'}}>
-                   {/* SELETOR NATIVO DISFARÇADO */}
-                   <div className="native-select-wrapper season-selector-ui">
-                      <select 
-                        className="hidden-select" 
-                        value={season} 
-                        onChange={handleNativeSeasonChange}
-                      >
-                         {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                            <option key={num} value={num}>Temporada {num}</option>
-                         ))}
-                      </select>
-                      <div className="native-select-btn">
-                         Temporada {season} <i className="fas fa-chevron-down" style={{fontSize:'10px'}}></i>
-                      </div>
-                   </div>
-                </div>
-
-                <div className="episodes-carousel" ref={carouselRef}>
-                  {seasonData?.episodes?.map(ep => (
-                    <div 
-                      key={ep.id} 
-                      className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                      onClick={() => setEpisode(ep.episode_number)}
-                      style={{
-                        backgroundImage: ep.still_path 
-                          ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                          : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
-                      }}
-                    >
-                      <span className="ep-card-num">Ep {ep.episode_number}</span>
-                      <span className="ep-card-title">{ep.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
             )}
-          </div>
-        </main>
 
-        <BottomNav 
-          isFavorite={isFavorite} 
-          onToggleFavorite={toggleFavorite} 
-          onToggleSynopsis={() => openPopup(setShowSynopsisPopup, setSynopsisClosing, showSynopsisPopup)}
-          onToggleContentInfo={() => openPopup(setShowContentTech, setContentTechClosing, showContentTech)}
-        />
+            <main className="container">
+              <div className="page-header">
+                <h1 className="page-title">Reproduzindo</h1>
+                <div className="status-dots">
+                  <span className="dot red"></span>
+                  <span className="dot yellow"></span>
+                  <span className="dot green"></span>
+                </div>
+              </div>
+
+              <div 
+                className="player-banner-container" 
+                onClick={() => setIsPlaying(true)}
+                style={{
+                  backgroundImage: currentEpisodeData?.still_path 
+                    ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
+                    : content.backdrop_path 
+                      ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
+                      : `url(${DEFAULT_BACKDROP})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <div className="play-button-static">
+                  <i className="fas fa-play"></i>
+                </div>
+              </div>
+
+              <div className="glass-panel details-container">
+                <div className="text-left">
+                  <h2 className="media-title">{content.title || content.name}</h2>
+                </div>
+
+                {type === 'tv' && (
+                  <>
+                    <div className="season-controls">
+                      {/* Item 5: Seletor de Temporada Nativo (Browser Select) */}
+                      <select 
+                        className="native-season-select"
+                        value={season} 
+                        onChange={(e) => {
+                          const newSeason = Number(e.target.value);
+                          setSeason(newSeason);
+                          setEpisode(1);
+                          fetchSeason(id, newSeason);
+                        }}
+                      >
+                        {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>Temporada {num}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="episodes-carousel" ref={carouselRef}>
+                      {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                        <div 
+                          key={ep.id} 
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                          onClick={() => setEpisode(ep.episode_number)}
+                          style={{
+                            backgroundImage: ep.still_path 
+                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                              : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
+                          }}
+                        >
+                          <span className="ep-card-num">Ep {ep.episode_number}</span>
+                          <span className="ep-card-title">{ep.name}</span>
+                        </div>
+                      )) : null}
+                    </div>
+                  </>
+                )}
+              </div>
+            </main>
+
+            <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onToggleSynopsis={toggleSynopsisPopup} />
+          </>
+        )}
       </div>
 
-      {/* PLAYER POPUP OVERLAY */}
-      {showPlayer && (
-        <div className={`player-overlay ${playerClosing ? 'closing' : ''}`}>
-           <div className="player-center-wrapper">
-              
-              {/* Controles Superiores (Fora do vídeo) */}
-              <div className="player-top-row">
-                 <div className="player-pill">
-                    {type === 'movie' ? 'FILME' : `S${season}:E${episode}`}
-                 </div>
-                 <div className="right-group">
-                    <button className="player-round-btn" onClick={() => setIsWideMode(!isWideMode)}>
-                       <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
-                    </button>
-                    <button className="player-round-btn" onClick={() => openPopup(setShowPlayer, setPlayerClosing, true)}>
-                       <i className="fas fa-xmark"></i>
-                    </button>
-                 </div>
+      {isPlaying && (
+        <div className="player-overlay">
+          <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
+            
+            <div className="player-header-controls">
+              <span className="ep-indicator">
+                 {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+              </span>
+              <div className="right-controls">
+                <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
+                  <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
+                </button>
+                <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
+                  <i className="fas fa-xmark"></i>
+                </button>
               </div>
+            </div>
 
-              {/* Iframe Container */}
-              <div className={`player-frame-container ${isWideMode ? 'size-banner' : 'size-square'}`}>
-                 <iframe 
-                    src={getEmbedUrl()} 
-                    className="player-embed" 
-                    allowFullScreen 
-                    scrolling="no"
-                    title="Player"
-                 ></iframe>
+            <iframe 
+              src={getEmbedUrl()} 
+              className="player-embed" 
+              allowFullScreen 
+              scrolling="no"
+              title="Player"
+            ></iframe>
+
+            {type === 'tv' && (
+              <div className="player-bottom-controls">
+                <button className="nav-ep-btn glass-panel" onClick={handlePrevEp} disabled={episode === 1}>
+                  <i className="fas fa-backward-step"></i> Ant
+                </button>
+                <button className="nav-ep-btn glass-panel" onClick={handleNextEp}>
+                  Prox <i className="fas fa-forward-step"></i>
+                </button>
               </div>
+            )}
 
-              {/* Controles Inferiores (Apenas Séries) */}
-              {type === 'tv' && (
-                 <div className="player-bottom-row">
-                    <button className="player-pill" onClick={handlePrevEp} disabled={episode === 1} style={{opacity: episode===1 ? 0.5 : 1}}>
-                       <i className="fas fa-backward-step"></i> Ant
-                    </button>
-                    <button className="player-pill" onClick={handleNextEp}>
-                       Prox <i className="fas fa-forward-step"></i>
-                    </button>
-                 </div>
-              )}
-
-           </div>
+          </div>
         </div>
       )}
     </>
