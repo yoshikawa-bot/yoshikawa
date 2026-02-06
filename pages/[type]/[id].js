@@ -72,7 +72,7 @@ export const Header = ({
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.5 Final • React 18 • TMDB API</p>
+            <p className="popup-text">v3.0.0 • WebTorrent • Torrentio API</p>
           </div>
         </div>
       )}
@@ -143,7 +143,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- COMPONENTE DE LOADING ESTILO APPLE ---
 const LoadingScreen = ({ visible }) => {
   if (!visible) return null;
   return (
@@ -164,11 +163,11 @@ export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
   const carouselRef = useRef(null)
+  const webTorrentClientRef = useRef(null)
+  const currentTorrentRef = useRef(null)
   
-  // Estado de Carregamento Global
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
-
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
@@ -191,9 +190,16 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
 
+  // Novos estados para WebTorrent
+  const [availableStreams, setAvailableStreams] = useState([])
+  const [selectedStream, setSelectedStream] = useState(null)
+  const [showStreamSelector, setShowStreamSelector] = useState(false)
+  const [streamSelectorClosing, setStreamSelectorClosing] = useState(false)
+  const [torrentStatus, setTorrentStatus] = useState({ speed: 0, peers: 0, progress: 0 })
+  const [isLoadingStreams, setIsLoadingStreams] = useState(false)
+
   const toastTimerRef = useRef(null)
 
-  // --- CONTROLE DE LOADING ---
   useEffect(() => {
     if (content) {
       const timer = setTimeout(() => {
@@ -322,6 +328,205 @@ export default function WatchPage() {
     }
   }
 
+  // NOVA FUNÇÃO: Buscar streams disponíveis
+  const fetchAvailableStreams = async () => {
+    setIsLoadingStreams(true)
+    try {
+      const params = new URLSearchParams({
+        tmdbId: id,
+        type: type
+      })
+
+      if (type === 'tv') {
+        params.append('season', season)
+        params.append('episode', episode)
+      }
+
+      const response = await fetch(`/api/streams-from-tmdb?${params}`)
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      const allStreams = [...(data.portuguese || []), ...(data.all || [])]
+      setAvailableStreams(allStreams)
+      
+      if (allStreams.length === 0) {
+        showToast('Nenhum stream encontrado', 'error')
+      } else {
+        setShowStreamSelector(true)
+      }
+
+    } catch (error) {
+      console.error('Erro ao buscar streams:', error)
+      showToast('Erro ao buscar streams: ' + error.message, 'error')
+    } finally {
+      setIsLoadingStreams(false)
+    }
+  }
+
+  // NOVA FUNÇÃO: Iniciar WebTorrent
+  const startWebTorrentStream = (stream) => {
+    if (typeof window === 'undefined') return
+
+    // Carrega WebTorrent dinamicamente
+    if (!window.WebTorrent) {
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js'
+      script.onload = () => initializeWebTorrent(stream)
+      document.head.appendChild(script)
+    } else {
+      initializeWebTorrent(stream)
+    }
+  }
+
+  const initializeWebTorrent = (stream) => {
+    setSelectedStream(stream)
+    setShowStreamSelector(false)
+    setIsPlaying(true)
+
+    // Destroi torrent anterior se existir
+    if (currentTorrentRef.current) {
+      currentTorrentRef.current.destroy()
+      currentTorrentRef.current = null
+    }
+
+    // Cria cliente se não existir
+    if (!webTorrentClientRef.current) {
+      webTorrentClientRef.current = new window.WebTorrent({
+        maxConns: 55,
+        tracker: {
+          announce: [
+            'udp://tracker.opentrackr.org:1337/announce',
+            'udp://open.tracker.cl:1337/announce',
+            'udp://tracker.torrent.eu.org:451/announce',
+            'udp://exodus.desync.com:6969/announce'
+          ]
+        }
+      })
+    }
+
+    const magnetURI = `magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title)}`
+    
+    showToast('Conectando aos peers...', 'info')
+
+    const client = webTorrentClientRef.current
+    
+    client.add(magnetURI, {
+      destroyStoreOnDestroy: true,
+      storeCacheSlots: 20
+    }, (torrent) => {
+      currentTorrentRef.current = torrent
+
+      // Encontra arquivo de vídeo
+      const videoFile = torrent.files
+        .filter(f => {
+          const ext = f.name.split('.').pop().toLowerCase()
+          return ['mp4', 'mkv', 'avi', 'webm', 'mov', 'm4v'].includes(ext)
+        })
+        .sort((a, b) => b.size - a.size)[0]
+
+      if (!videoFile) {
+        showToast('Nenhum arquivo de vídeo encontrado', 'error')
+        setIsPlaying(false)
+        return
+      }
+
+      // Seleciona apenas o arquivo de vídeo
+      torrent.deselect(0, torrent.pieces.length - 1, false)
+      videoFile.select()
+
+      showToast(`Carregando: ${videoFile.name}`, 'success')
+
+      // Renderiza no player
+      setTimeout(() => {
+        const playerElement = document.getElementById('webtorrent-player')
+        if (playerElement) {
+          videoFile.appendTo(playerElement, { autoplay: true, controls: true }, (err) => {
+            if (err) {
+              console.error('Erro ao anexar vídeo:', err)
+              showToast('Erro ao carregar vídeo', 'error')
+              return
+            }
+
+            const video = playerElement.querySelector('video')
+            if (video) {
+              setupVideoMemoryManagement(video, torrent)
+              setupTorrentStatsMonitoring(torrent)
+            }
+          })
+        }
+      }, 100)
+    })
+  }
+
+  // NOVA FUNÇÃO: Gerenciamento de memória
+  const setupVideoMemoryManagement = (video, torrent) => {
+    let lastCleanupPiece = 0
+    const BUFFER_BEHIND = 10
+    const BUFFER_AHEAD = 50
+
+    video.addEventListener('timeupdate', () => {
+      const currentTime = video.currentTime
+      const duration = video.duration
+
+      if (!duration || currentTime < 30) return
+
+      const currentPiece = Math.floor((currentTime / duration) * torrent.pieces.length)
+
+      // Limpa peças antigas
+      const oldestToKeep = Math.max(0, currentPiece - BUFFER_BEHIND)
+      if (oldestToKeep > lastCleanupPiece) {
+        torrent.deselect(lastCleanupPiece, oldestToKeep - 1)
+        lastCleanupPiece = oldestToKeep
+      }
+
+      // Limita download futuro
+      const maxFuture = Math.min(currentPiece + BUFFER_AHEAD, torrent.pieces.length - 1)
+      if (maxFuture < torrent.pieces.length - 1) {
+        torrent.deselect(maxFuture + 1, torrent.pieces.length - 1)
+      }
+    })
+  }
+
+  // NOVA FUNÇÃO: Monitoramento de stats
+  const setupTorrentStatsMonitoring = (torrent) => {
+    const interval = setInterval(() => {
+      if (!torrent || torrent.destroyed) {
+        clearInterval(interval)
+        return
+      }
+
+      setTorrentStatus({
+        speed: torrent.downloadSpeed,
+        upload: torrent.uploadSpeed,
+        peers: torrent.numPeers,
+        progress: (torrent.progress * 100).toFixed(1)
+      })
+    }, 1000)
+  }
+
+  // Cleanup ao sair
+  useEffect(() => {
+    return () => {
+      if (currentTorrentRef.current) {
+        currentTorrentRef.current.destroy({ destroyStore: true })
+      }
+      if (webTorrentClientRef.current) {
+        webTorrentClientRef.current.destroy()
+      }
+    }
+  }, [])
+
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   const closeAllPopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
@@ -339,13 +544,17 @@ export default function WatchPage() {
       setDataClosing(true)
       setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
     }
+    if (showStreamSelector && !streamSelectorClosing) {
+      setStreamSelectorClosing(true)
+      setTimeout(() => { setShowStreamSelector(false); setStreamSelectorClosing(false) }, 400)
+    }
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, showStreamSelector, streamSelectorClosing, currentToast])
 
   const toggleInfoPopup = () => {
-    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
+    if (showTechPopup || showSynopsisPopup || showDataPopup || showStreamSelector || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
     } else {
@@ -357,7 +566,7 @@ export default function WatchPage() {
   }
 
   const toggleTechPopup = () => {
-    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
+    if (showInfoPopup || showSynopsisPopup || showDataPopup || showStreamSelector || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
     } else {
@@ -369,7 +578,7 @@ export default function WatchPage() {
   }
 
   const toggleDataPopup = () => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || showStreamSelector || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 200)
     } else {
@@ -381,7 +590,7 @@ export default function WatchPage() {
   }
 
   const toggleSynopsisPopup = () => {
-    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
+    if (showInfoPopup || showTechPopup || showDataPopup || showStreamSelector || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 200)
     } else {
@@ -404,7 +613,11 @@ export default function WatchPage() {
     window.addEventListener('scroll', onScroll, { passive: true })
     
     const onClick = (e) => { 
-      if (!e.target.closest('.standard-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container')) {
+      if (!e.target.closest('.standard-popup') && 
+          !e.target.closest('.stream-selector-popup') && 
+          !e.target.closest('.toast') && 
+          !e.target.closest('.round-btn') && 
+          !e.target.closest('.pill-container')) {
         closeAllPopups() 
       }
     }
@@ -429,6 +642,14 @@ export default function WatchPage() {
     const nextEp = episode + 1
     if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
       setEpisode(nextEp)
+      // Fecha player e limpa streams para buscar novo episódio
+      setIsPlaying(false)
+      setAvailableStreams([])
+      setSelectedStream(null)
+      if (currentTorrentRef.current) {
+        currentTorrentRef.current.destroy()
+        currentTorrentRef.current = null
+      }
     } else {
       showToast('Fim da temporada', 'info')
     }
@@ -437,21 +658,27 @@ export default function WatchPage() {
   const handlePrevEp = () => {
     if (episode > 1) {
       setEpisode(episode - 1)
+      setIsPlaying(false)
+      setAvailableStreams([])
+      setSelectedStream(null)
+      if (currentTorrentRef.current) {
+        currentTorrentRef.current.destroy()
+        currentTorrentRef.current = null
+      }
     }
-  }
-  
-  const getEmbedUrl = () => {
-    if (!content) return ''
-    if (type === 'movie') {
-      return `https://superflixapi.cv/filme/${id}`
-    }
-    return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
     fetchSeason(id, newSeason)
     setEpisode(1)
+    setIsPlaying(false)
+    setAvailableStreams([])
+    setSelectedStream(null)
+    if (currentTorrentRef.current) {
+      currentTorrentRef.current.destroy()
+      currentTorrentRef.current = null
+    }
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -480,7 +707,6 @@ export default function WatchPage() {
             overflow-x: hidden;
           }
 
-          /* --- BACKGROUND DINÂMICO COM BACKDROP (SEM GRADIENTE) --- */
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
@@ -508,7 +734,6 @@ export default function WatchPage() {
             z-index: 1;
           }
 
-          /* --- LOADING OVERLAY ESTILO APPLE --- */
           .loading-overlay {
             position: fixed; 
             top: 0; 
@@ -612,7 +837,6 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          /* --- BARRA DE NAVEGAÇÃO COLAPSÁVEL --- */
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -949,6 +1173,111 @@ export default function WatchPage() {
             left: 50%; 
             z-index: 960; 
             pointer-events: none; 
+          }
+
+          /* STREAM SELECTOR POPUP */
+          .stream-selector-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.3);
+            z-index: 980;
+            width: 90%;
+            max-width: 600px;
+            max-height: 70vh;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 24px;
+            overflow-y: auto;
+            opacity: 0;
+            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+          }
+
+          .stream-selector-popup.closing {
+            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+          }
+
+          .stream-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+          }
+
+          .stream-selector-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+          }
+
+          .close-selector-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          }
+
+          .close-selector-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+          }
+
+          .streams-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .stream-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+          }
+
+          .stream-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(4px);
+          }
+
+          .stream-item-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+          }
+
+          .stream-item-info {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+          }
+
+          .stream-badge {
+            background: rgba(10, 132, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #0a84ff;
+          }
+
+          .stream-badge.pt {
+            background: rgba(52, 199, 89, 0.2);
+            color: #34c759;
           }
 
           .container {
@@ -1428,6 +1757,27 @@ export default function WatchPage() {
             border-color: rgba(255, 255, 255, 0.15);
           }
 
+          .torrent-stats {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            white-space: nowrap;
+          }
+
+          #webtorrent-player video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+          }
+
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
@@ -1448,6 +1798,8 @@ export default function WatchPage() {
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
+            .stream-selector-popup { width: 95%; max-height: 80vh; padding: 20px; }
+            .torrent-stats { font-size: 0.7rem; padding: 6px 12px; bottom: 60px; }
           }
         `}</style>
       </Head>
@@ -1515,6 +1867,59 @@ export default function WatchPage() {
             </div>
           )}
 
+          {/* SELETOR DE STREAMS */}
+          {showStreamSelector && (
+            <div className={`stream-selector-popup ${streamSelectorClosing ? 'closing' : ''}`}>
+              <div className="stream-selector-header">
+                <h3 className="stream-selector-title">Escolha a Qualidade</h3>
+                <button className="close-selector-btn" onClick={() => {
+                  setStreamSelectorClosing(true)
+                  setTimeout(() => {
+                    setShowStreamSelector(false)
+                    setStreamSelectorClosing(false)
+                  }, 400)
+                }}>
+                  <i className="fas fa-xmark"></i>
+                </button>
+              </div>
+
+              <div className="streams-list">
+                {availableStreams.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.6)' }}>
+                    Nenhum stream disponível
+                  </div>
+                ) : (
+                  availableStreams.map((stream, idx) => {
+                    const quality = stream.name?.split('\n')[1] || 'SD'
+                    const size = stream.title?.match(/💾 ([\d.]+\s*[GM]B)/)?.[1] || ''
+                    const seeders = stream.title?.match(/👤 (\d+)/)?.[1] || '?'
+                    const isPT = stream.title?.toLowerCase().includes('dual') || 
+                                 stream.title?.toLowerCase().includes('dublado') ||
+                                 stream.title?.toLowerCase().includes('pt-br')
+
+                    return (
+                      <div 
+                        key={idx} 
+                        className="stream-item" 
+                        onClick={() => startWebTorrentStream(stream)}
+                      >
+                        <div className="stream-item-title">
+                          {isPT && <span className="stream-badge pt">PT-BR</span>}
+                          {' '}{stream.title.substring(0, 60)}
+                        </div>
+                        <div className="stream-item-info">
+                          <span>📺 {quality}</span>
+                          {size && <span>💾 {size}</span>}
+                          <span>👥 {seeders} seeders</span>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
           <main className="container">
             <div className="page-header">
               <h1 className="page-title">Reproduzindo</h1>
@@ -1527,7 +1932,7 @@ export default function WatchPage() {
 
             <div 
               className="player-banner-container" 
-              onClick={() => setIsPlaying(true)}
+              onClick={fetchAvailableStreams}
               style={{
                 backgroundImage: currentEpisodeData?.still_path 
                   ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
@@ -1539,7 +1944,7 @@ export default function WatchPage() {
               }}
             >
               <div className="play-button-static">
-                <i className="fas fa-play"></i>
+                <i className={isLoadingStreams ? "fas fa-spinner fa-spin" : "fas fa-play"}></i>
               </div>
             </div>
 
@@ -1599,7 +2004,8 @@ export default function WatchPage() {
         </div>
       )}
 
-      {isPlaying && (
+      {/* PLAYER WEBTORRENT */}
+      {isPlaying && selectedStream && (
         <div className="player-overlay">
           <div className="player-wrapper-vertical">
             
@@ -1611,23 +2017,27 @@ export default function WatchPage() {
                 <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
                   <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
                 </button>
-                <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
+                <button className="control-btn" onClick={() => {
+                  setIsPlaying(false)
+                  if (currentTorrentRef.current) {
+                    currentTorrentRef.current.destroy()
+                    currentTorrentRef.current = null
+                  }
+                }} title="Fechar">
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
             </div>
 
             <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
-              <iframe 
-                src={getEmbedUrl()} 
-                className="player-embed" 
-                frameBorder="0"
-                allowFullScreen 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                referrerPolicy="origin"
-                title="Player"
-              ></iframe>
+              <div id="webtorrent-player" className="player-embed"></div>
             </div>
+
+            {torrentStatus.peers > 0 && (
+              <div className="torrent-stats">
+                📥 {formatBytes(torrentStatus.speed)}/s | 👥 {torrentStatus.peers} peers | 📊 {torrentStatus.progress}%
+              </div>
+            )}
 
             {type === 'tv' && (
               <div className="player-bottom-controls">
