@@ -8,7 +8,13 @@ const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.
 
 // --- COMPONENTES AUXILIARES ---
 
-export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
+export const Header = ({ 
+  label, scrolled, 
+  showInfo, toggleInfo, infoClosing, 
+  showTech, toggleTech, techClosing,
+  showData, toggleData, dataClosing // Novos props para o popup de Dados
+}) => {
+  
   const handleRightClick = (e) => {
     e.stopPropagation()
     if (scrolled) {
@@ -21,13 +27,24 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
-        {/* Botão Técnico (Novo, Padronizado) */}
+        
+        {/* Botão Técnico */}
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
           <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
+        </button>
+
+        {/* Novo Botão de Dados */}
+        <button 
+          className="round-btn glass-panel" 
+          onClick={(e) => { e.stopPropagation(); toggleData() }}
+          title="Dados do Título"
+          style={{ marginLeft: '-4px' }} // Pequeno ajuste visual
+        >
+          <i className="fas fa-film" style={{ fontSize: '14px' }}></i>
         </button>
 
         <div className="pill-container glass-panel">
@@ -59,7 +76,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </div>
       )}
 
-      {/* Pop-up Técnico (Padronizado) */}
+      {/* Pop-up Técnico */}
       {showTech && (
         <div 
           className={`standard-popup glass-panel ${techClosing ? 'closing' : ''}`} 
@@ -70,7 +87,25 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
+            <p className="popup-text">v2.6.2 Slim • React 18 • TMDB API</p>
+          </div>
+        </div>
+      )}
+
+      {/* Novo Pop-up de Dados */}
+      {showData && (
+        <div 
+          className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="popup-icon-wrapper data">
+            <i className="fas fa-film"></i>
+          </div>
+          <div className="popup-content">
+            <p className="popup-title">Dados do Título</p>
+            <p className="popup-text">
+               Info da API TMDB (Metadados oficiais)
+            </p>
           </div>
         </div>
       )}
@@ -149,17 +184,22 @@ export default function WatchPage() {
   // Controle de Popups
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
+  
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
+  
   const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
   const [synopsisClosing, setSynopsisClosing] = useState(false)
+
+  // Novo estado para Pop-up de Dados
+  const [showDataPopup, setShowDataPopup] = useState(false)
+  const [dataClosing, setDataClosing] = useState(false)
   
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
   
   // Estados do Player e Conteúdo
   const [content, setContent] = useState(null)
-  // REMOVIDO: const [loading, setLoading] = useState(true) -> Para evitar tela de carregamento
   const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -173,7 +213,8 @@ export default function WatchPage() {
 
   // --- TOAST LOGIC ---
   const showToast = (message, type = 'info') => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup) {
+    // Fecha todos se abrir um toast (opcional, mas mantém limpo)
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
       closeAllPopups()
     }
     
@@ -220,7 +261,6 @@ export default function WatchPage() {
     if (!id || !type) return
 
     const loadContent = async () => {
-      // Sem setLoading(true) visual para evitar tela de loading
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
         const data = await res.json()
@@ -292,7 +332,7 @@ export default function WatchPage() {
     }
   }
 
-  // --- HANDLERS ---
+  // --- POPUP HANDLERS ---
   const closeAllPopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
@@ -306,56 +346,60 @@ export default function WatchPage() {
       setSynopsisClosing(true)
       setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
     }
+    if (showDataPopup && !dataClosing) {
+      setDataClosing(true)
+      setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
+    }
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, currentToast])
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
 
   const toggleInfoPopup = () => {
-    if (showTechPopup || showSynopsisPopup || currentToast) {
+    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => {
-        if (!showInfoPopup) setShowInfoPopup(true)
-      }, 200)
+      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
     } else {
       if (showInfoPopup) {
         setInfoClosing(true)
         setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
-      } else {
-        setShowInfoPopup(true)
-      }
+      } else { setShowInfoPopup(true) }
     }
   }
 
   const toggleTechPopup = () => {
-    if (showInfoPopup || showSynopsisPopup || currentToast) {
+    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => {
-        if (!showTechPopup) setShowTechPopup(true)
-      }, 200)
+      setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
     } else {
       if (showTechPopup) {
         setTechClosing(true)
         setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
-      } else {
-        setShowTechPopup(true)
-      }
+      } else { setShowTechPopup(true) }
+    }
+  }
+
+  const toggleDataPopup = () => {
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
+      closeAllPopups()
+      setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 200)
+    } else {
+      if (showDataPopup) {
+        setDataClosing(true)
+        setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
+      } else { setShowDataPopup(true) }
     }
   }
 
   const toggleSynopsisPopup = () => {
-    if (showInfoPopup || showTechPopup || currentToast) {
+    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => {
-        if (!showSynopsisPopup) setShowSynopsisPopup(true)
-      }, 200)
+      setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 200)
     } else {
       if (showSynopsisPopup) {
         setSynopsisClosing(true)
         setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
-      } else {
-        setShowSynopsisPopup(true)
-      }
+      } else { setShowSynopsisPopup(true) }
     }
   }
 
@@ -412,17 +456,20 @@ export default function WatchPage() {
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
-  // Lógica do Select Nativo
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
     fetchSeason(id, newSeason)
     setEpisode(1)
   }
 
-  // Renderização condicional imediata - Sem tela de "Carregando"
   if (!content) return null
 
   const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
+
+  // Dados para o novo Popup
+  const releaseDate = content.release_date || content.first_air_date || 'Desconhecido'
+  const rating = content.vote_average ? content.vote_average.toFixed(1) : 'N/A'
+  const genres = content.genres ? content.genres.map(g => g.name).join(', ') : 'Gênero desconhecido'
 
   return (
     <>
@@ -471,10 +518,7 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          .site-wrapper {
-             width: 100%;
-             min-height: 100vh;
-          }
+          .site-wrapper { width: 100%; min-height: 100vh; }
 
           .bar-container {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
@@ -514,13 +558,9 @@ export default function WatchPage() {
           }
 
           .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
-          @keyframes heartZoom { 
-            0% { transform: scale(1); }
-            50% { transform: scale(1.6); } 
-            100% { transform: scale(1); }
-          }
+          @keyframes heartZoom { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
 
-          /* --- POPUP PADRONIZADO (Info, Tech, Sinopse) --- */
+          /* POPUP PADRONIZADO */
           .standard-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
@@ -528,11 +568,8 @@ export default function WatchPage() {
             z-index: 960;
             min-width: 320px;
             max-width: 90%;
-            display: flex; 
-            align-items: center; 
-            gap: 14px;
-            padding: 16px 18px; 
-            border-radius: 22px;
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px 18px; border-radius: 22px;
             transform: translateX(-50%) translateY(-50%) scale(0.3);
             transform-origin: top center;
             opacity: 0;
@@ -562,62 +599,36 @@ export default function WatchPage() {
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
           }
           
-          /* Cores dos Ícones */
-          .popup-icon-wrapper.info { 
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
-          }
-          .popup-icon-wrapper.tech { 
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
-          }
-          .popup-icon-wrapper.synopsis {
-            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
-            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
-          }
+          .popup-icon-wrapper.info { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+          .popup-icon-wrapper.synopsis { background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3); }
+          .popup-icon-wrapper.data { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); }
 
           .toast-icon-wrapper { border-radius: 50%; }
-          .toast.success .toast-icon-wrapper {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-          }
-          .toast.info .toast-icon-wrapper {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
-          }
-          .toast.error .toast-icon-wrapper {
-            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
-            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
-          }
+          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .toast.info .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+          .toast.error .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
 
           .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
-          
           .popup-content, .toast-content { 
             flex: 1; display: flex; flex-direction: column; gap: 4px; 
             opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
             max-height: 60vh; overflow-y: auto;
           }
-          
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
           
           .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
           .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
-
           @keyframes iconPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
           .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
 
-          /* Layout Principal */
           .container {
             max-width: 1280px; margin: 0 auto;
             padding-top: 6.5rem; padding-bottom: 7rem;
             padding-left: 2rem; padding-right: 2rem;
           }
-          .page-header { 
-            display: flex; align-items: center; justify-content: space-between; 
-            margin-bottom: 1.5rem; 
-          }
-
+          .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
           .page-title { font-size: 1.3rem; font-weight: 700; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
           
           .status-dots { display: flex; align-items: center; gap: 8px; }
@@ -627,10 +638,12 @@ export default function WatchPage() {
           .dot.green { background: linear-gradient(135deg, #34c759, #30d158); box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4); animation-delay: 0.6s; }
           @keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
 
+          /* CORREÇÃO 1: REMOÇÃO DA BORDA E SOMBRA INTERNA ESCURA */
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
-            background-color: #1a1a1a; border: 0.5px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset, 0 20px 40px rgba(0,0,0,0.4); 
+            background-color: #1a1a1a; 
+            border: none; /* Removido borda */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); /* Removido inset shadow preto */
             margin-bottom: 24px; cursor: pointer;
           }
 
@@ -647,48 +660,29 @@ export default function WatchPage() {
 
           .details-container {
             border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 16px;
-            border: 0.5px solid rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset;
+            border: 0.5px solid rgba(255,255,255,0.08); box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset;
           }
 
           .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
+          .season-controls { display: flex; align-items: center; margin-top: 8px; }
 
-          .season-controls {
-            display: flex; align-items: center; margin-top: 8px;
-          }
-
-          /* SELETOR NATIVO */
           .native-season-select {
-            appearance: none;
-            -webkit-appearance: none;
+            appearance: none; -webkit-appearance: none;
             background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 10px center;
-            padding: 8px 36px 8px 16px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer;
-            font-family: inherit;
-            outline: none;
-            transition: background 0.2s;
+            padding: 8px 36px 8px 16px; border-radius: 12px;
+            font-size: 0.9rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; font-family: inherit; outline: none; transition: background 0.2s;
           }
           .native-season-select:hover { background-color: rgba(255,255,255,0.15); }
           .native-season-select option { background: #1a1a1a; color: #fff; }
 
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
-            /* CORREÇÃO PADDING: Mais espaço nas laterais para o zoom */
-            padding: 10px 14px 14px 14px;
-            scrollbar-width: none;
-            margin: 0 -14px; /* Compensar o padding extra no layout */
+            padding: 10px 14px 14px 14px; scrollbar-width: none; margin: 0 -14px; 
           }
           .episodes-carousel::-webkit-scrollbar { display: none; }
-          
           @media (min-width: 769px) {
-            .episodes-carousel {
-              scrollbar-width: thin;
-              scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.03);
-            }
+            .episodes-carousel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.03); }
             .episodes-carousel::-webkit-scrollbar { display: block; height: 6px; }
             .episodes-carousel::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
             .episodes-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -698,16 +692,15 @@ export default function WatchPage() {
           .ep-card {
             min-width: 110px; height: 65px; background-size: cover; background-position: center;
             border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 6px 8px; 
-            /* CORREÇÃO BORDAS: Finas e Simples */
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; 
-            transition: all 0.2s ease; position: relative; overflow: hidden;
-            box-shadow: none; /* Remove sombras pesadas */
+            padding: 6px 8px; border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
+            box-shadow: none;
           }
+          /* CORREÇÃO 2: SOMBRA (GRADIENTE) PREENCHENDO O CARD TODO */
           .ep-card::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+            content: ''; position: absolute; inset: 0; /* Garante que toque todas as bordas */
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
+            z-index: 0;
           }
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
           .ep-card.active { border-color: var(--ios-blue); border-width: 1px; box-shadow: 0 0 0 1px var(--ios-blue); }
@@ -715,26 +708,38 @@ export default function WatchPage() {
           .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
           .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
 
-          /* Player Overlay Styles (Mantido igual) */
+          /* CORREÇÃO 4: PLAYER OVERLAY - ESTRUTURA PARA IRMÃOS */
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 2000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 2000; display: flex; align-items: center; justify-content: center;
           }
+
+          /* Wrapper para alinhar controles e container de vídeo verticalmente */
+          .player-wrapper-vertical {
+            display: flex; flex-direction: column; align-items: center;
+            position: relative;
+            width: auto;
+          }
+
           .player-popup-container {
             position: relative; background: #000; border-radius: 20px; overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9);
-            transition: all 0.4s var(--ease-elastic); display: flex; align-items: center; justify-content: center;
+            transition: all 0.4s var(--ease-elastic); 
+            display: flex; align-items: center; justify-content: center;
+            /* Importante: controles agora estão FORA deste container */
           }
+          
           .popup-size-square { width: min(70vw, 40vh); height: min(70vw, 40vh); aspect-ratio: 1/1; }
           .popup-size-banner { width: 80vw; max-width: 900px; aspect-ratio: 16/9; }
           .player-embed { width: 100%; height: 100%; border: none; }
+          
+          /* Controles agora relativos ao Wrapper vertical, não ao container com overflow hidden */
           .player-header-controls {
-            position: absolute; top: -55px; left: 0; right: 0;
-            display: flex; justify-content: space-between; align-items: center; width: 100%;
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; /* Espaço entre controles e vídeo */
           }
+          
           .ep-indicator { 
             font-size: 1rem; font-weight: 700; color: #fff; 
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
@@ -748,9 +753,10 @@ export default function WatchPage() {
             transition: all 0.3s; border: 1px solid rgba(255,255,255,0.15);
           }
           .control-btn:hover { background: rgba(0,0,0,0.5); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
+          
           .player-bottom-controls {
-            position: absolute; bottom: -65px; left: 0; right: 0;
             display: flex; justify-content: center; gap: 16px;
+            margin-top: 15px; /* Espaço entre vídeo e controles inferiores */
           }
           .nav-ep-btn {
             background: rgba(0,0,0,0.3); padding: 10px 24px; border-radius: 50px;
@@ -776,10 +782,9 @@ export default function WatchPage() {
             .page-title { font-size: 1.2rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
-            .player-header-controls { top: -50px; }
+            
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
-            .player-bottom-controls { bottom: -58px; gap: 12px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
           }
         `}</style>
@@ -796,11 +801,14 @@ export default function WatchPage() {
           showTech={showTechPopup}
           toggleTech={toggleTechPopup}
           techClosing={techClosing}
+          showData={showDataPopup}
+          toggleData={toggleDataPopup}
+          dataClosing={dataClosing}
         />
 
         <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-        {/* Pop-up de Sinopse (Padronizado via classe .standard-popup) */}
+        {/* Pop-up de Sinopse */}
         {showSynopsisPopup && (
           <div 
             className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
@@ -816,6 +824,26 @@ export default function WatchPage() {
                   ? currentEpisodeData.overview 
                   : content?.overview || "Sinopse indisponível."}
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Pop-up de Dados (Novo) */}
+        {showDataPopup && (
+          <div 
+            className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="popup-icon-wrapper data">
+              <i className="fas fa-film"></i>
+            </div>
+            <div className="popup-content">
+              <p className="popup-title">Ficha Técnica</p>
+              <div className="popup-text">
+                <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
+                <strong>Avaliação:</strong> {rating} ⭐<br/>
+                <strong>Gêneros:</strong> {genres}
+              </div>
             </div>
           </div>
         )}
@@ -856,7 +884,6 @@ export default function WatchPage() {
             {type === 'tv' && (
               <>
                 <div className="season-controls">
-                  {/* Seletor Nativo de Temporada */}
                   <select 
                     className="native-season-select"
                     value={season}
@@ -897,7 +924,8 @@ export default function WatchPage() {
 
       {isPlaying && (
         <div className="player-overlay">
-          <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
+          {/* Wrapper Vertical para alinhar os elementos IRMÃOS (Controles e Vídeo) */}
+          <div className="player-wrapper-vertical">
             
             <div className="player-header-controls">
               <span className="ep-indicator">
@@ -913,13 +941,15 @@ export default function WatchPage() {
               </div>
             </div>
 
-            <iframe 
-              src={getEmbedUrl()} 
-              className="player-embed" 
-              allowFullScreen 
-              scrolling="no"
-              title="Player"
-            ></iframe>
+            <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
+              <iframe 
+                src={getEmbedUrl()} 
+                className="player-embed" 
+                allowFullScreen 
+                scrolling="no"
+                title="Player"
+              ></iframe>
+            </div>
 
             {type === 'tv' && (
               <div className="player-bottom-controls">
@@ -931,7 +961,6 @@ export default function WatchPage() {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       )}
