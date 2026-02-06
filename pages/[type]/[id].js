@@ -107,6 +107,10 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
             <i className="fas fa-film"></i>
          </button>
 
+         <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
+            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
+         </button>
+
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
             <i className="fas fa-align-left"></i>
          </button>
@@ -117,10 +121,6 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
         ></i>
-      </button>
-
-      <button className="round-btn glass-panel hide-toggle-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-        <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
       </button>
     </div>
   )
@@ -657,10 +657,27 @@ export default function WatchPage() {
           }
 
           .bottom-bar.nav-hidden .pill-container {
+            width: var(--pill-height);
+            height: var(--pill-height);
+            flex: 0;
+            border-radius: 50%;
+            gap: 0;
+            transition: all 0.6s var(--ease-smooth);
+            background: rgba(255, 255, 255, 0.06);
+          }
+
+          .bottom-bar.nav-hidden .nav-btn:not(.hide-toggle-pill-btn) {
             opacity: 0;
             width: 0;
             overflow: hidden;
             pointer-events: none;
+            transition: all 0.6s var(--ease-smooth);
+          }
+
+          .bottom-bar.nav-hidden .hide-toggle-pill-btn {
+            flex: 1;
+            opacity: 1;
+            pointer-events: auto;
             transition: all 0.6s var(--ease-smooth);
           }
 
@@ -729,22 +746,13 @@ export default function WatchPage() {
             z-index: 5;
           }
 
-          .hide-show-btn {
+          .hide-toggle-pill-btn {
             color: rgba(255, 255, 255, 0.6);
+            transition: all 0.6s var(--ease-smooth);
           }
 
-          .hide-toggle-btn {
-            transition: all 0.5s var(--ease-smooth);
-          }
-
-          .bottom-bar.nav-hidden .hide-toggle-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-          }
-
-          .bottom-bar.nav-hidden .hide-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+          .bottom-bar.nav-hidden .hide-toggle-pill-btn i {
+            font-size: 18px;
           }
 
           .nav-btn i { 
@@ -1157,7 +1165,6 @@ export default function WatchPage() {
             display: flex; 
             align-items: center; 
             justify-content: center;
-            background: rgba(0, 0, 0, 0.8);
             animation: overlayFadeIn 0.4s var(--ease-smooth);
           }
 
