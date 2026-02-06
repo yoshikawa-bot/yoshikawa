@@ -154,6 +154,9 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
+  // Estado para prevenir animação no carregamento (A CORREÇÃO PRINCIPAL)
+  const [isReady, setIsReady] = useState(false)
+
   // Estados de Interface
   const [scrolled, setScrolled] = useState(false)
   
@@ -185,6 +188,15 @@ export default function WatchPage() {
   const [seasonData, setSeasonData] = useState(null)
 
   const toastTimerRef = useRef(null)
+
+  // --- LÓGICA DE BLOQUEIO DE ANIMAÇÃO INICIAL ---
+  useEffect(() => {
+    // Dá um tempo para o navegador renderizar o layout estático antes de habilitar as transições
+    const timer = setTimeout(() => {
+      setIsReady(true)
+    }, 500) // 500ms de "congelamento" inicial das animações
+    return () => clearTimeout(timer)
+  }, [])
 
   // --- TOAST LOGIC ---
   const showToast = (message, type = 'info') => {
@@ -467,6 +479,14 @@ export default function WatchPage() {
             background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
             background-attachment: fixed;
           }
+
+          /* --- CLASSE MÁGICA PARA IMPEDIR SLIDE NO LOAD --- */
+          .no-animation, .no-animation * {
+             transition: none !important;
+             animation: none !important;
+          }
+          /* ----------------------------------------------- */
+
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
@@ -485,11 +505,10 @@ export default function WatchPage() {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.15); /* Borda fina */
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            /* CRUCIAL: Removemos 'all' para evitar animação na carga da página */
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
@@ -499,7 +518,6 @@ export default function WatchPage() {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
             display: flex; align-items: center; justify-content: center; gap: 12px; 
             width: 90%; max-width: var(--pill-max-width);
-            /* CRUCIAL: 'top', 'bottom', 'transform'. NÃO usar 'all' ou 'left' aqui */
             transition: top 0.4s var(--ease-smooth), bottom 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
           }
           .top-bar { top: 20px; }
@@ -537,7 +555,7 @@ export default function WatchPage() {
           .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
           @keyframes heartZoom { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
 
-          /* POPUP & TOAST - ANIMAÇÕES RESTAURADAS */
+          /* POPUP & TOAST */
           .standard-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
@@ -550,7 +568,6 @@ export default function WatchPage() {
             transform: translateX(-50%) translateY(-50%) scale(0.3);
             transform-origin: top center;
             opacity: 0;
-            /* Animação de entrada restaurada */
             animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
@@ -574,7 +591,6 @@ export default function WatchPage() {
           .popup-icon-wrapper, .toast-icon-wrapper { 
             width: 42px; height: 42px; min-width: 42px; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; 
-            /* Animação restaurada */
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
           }
           
@@ -592,7 +608,6 @@ export default function WatchPage() {
           .popup-content, .toast-content { 
             flex: 1; display: flex; flex-direction: column; gap: 4px; 
             max-height: 60vh; overflow-y: auto;
-            /* Animação restaurada */
             opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
           }
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
@@ -621,7 +636,6 @@ export default function WatchPage() {
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
             background-color: #1a1a1a; 
-            /* Borda fina mantida */
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             margin-bottom: 24px; cursor: pointer;
@@ -640,7 +654,6 @@ export default function WatchPage() {
 
           .details-container {
             border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 16px;
-            /* Borda fina mantida */
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: none;
             background: rgba(255, 255, 255, 0.03);
@@ -665,12 +678,10 @@ export default function WatchPage() {
           }
           .episodes-carousel::-webkit-scrollbar { display: none; }
           
-          /* -- CARD STYLE (Mantido Correção da Borda/Sombra) -- */
           .ep-card {
             min-width: 110px; height: 65px; background-size: cover; background-position: center;
             border-radius: 10px; 
             padding: 0; 
-            /* Borda fina */
             border: 1px solid rgba(255,255,255,0.15);
             cursor: pointer; transition: all 0.2s ease; position: relative; 
             overflow: hidden; 
@@ -711,7 +722,6 @@ export default function WatchPage() {
           .player-popup-container {
             position: relative; background: #000; border-radius: 20px; overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9);
-            /* Borda fina mantida */
             border: 1px solid rgba(255, 255, 255, 0.15);
             transition: width 0.4s var(--ease-elastic), height 0.4s var(--ease-elastic); 
             display: flex; align-items: center; justify-content: center;
@@ -776,7 +786,8 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      <div className="site-wrapper">
+      {/* APLICANDO A CLASSE DE BLOQUEIO CONDICIONALMENTE */}
+      <div className={`site-wrapper ${!isReady ? 'no-animation' : ''}`}>
         
         <Header
           label={scrolled ? "Reproduzindo" : "Yoshikawa"}
@@ -791,7 +802,6 @@ export default function WatchPage() {
 
         <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-        {/* Pop-up de Sinopse */}
         {showSynopsisPopup && (
           <div 
             className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
@@ -811,7 +821,6 @@ export default function WatchPage() {
           </div>
         )}
 
-        {/* Pop-up de Dados */}
         {showDataPopup && (
           <div 
             className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
