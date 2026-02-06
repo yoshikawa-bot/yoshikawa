@@ -21,7 +21,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
-        {/* Item 6: Novo Botão Técnico na Navbar */}
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
@@ -43,7 +42,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </button>
       </header>
 
-      {/* Pop-up de Informações (Padrão) */}
       {showInfo && (
         <div 
           className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
@@ -59,7 +57,6 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
         </div>
       )}
 
-      {/* Item 6: Pop-up Técnico (Idêntico ao padrão) */}
       {showTech && (
         <div 
           className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`} 
@@ -156,7 +153,7 @@ export default function WatchPage() {
   
   // Estados do Player e Conteúdo
   const [content, setContent] = useState(null)
-  // Item 4: Removido estado de 'loading' visível para evitar tela de carregamento
+  const [loading, setLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -217,7 +214,6 @@ export default function WatchPage() {
     if (!id || !type) return
 
     const loadContent = async () => {
-      // Sem setLoading(true) visual aqui
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
         const data = await res.json()
@@ -309,7 +305,7 @@ export default function WatchPage() {
   }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, currentToast])
 
   const toggleInfoPopup = () => {
-    if (showTechPopup || currentToast || showSynopsisPopup) {
+    if (showTechPopup || showSynopsisPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => {
         if (!showInfoPopup) setShowInfoPopup(true)
@@ -325,7 +321,7 @@ export default function WatchPage() {
   }
 
   const toggleTechPopup = () => {
-    if (showInfoPopup || currentToast || showSynopsisPopup) {
+    if (showInfoPopup || showSynopsisPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => {
         if (!showTechPopup) setShowTechPopup(true)
@@ -409,15 +405,20 @@ export default function WatchPage() {
     return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
   }
 
-  // --- ITEM 4: Remoção de tela de carregamento "Carregando..." ---
-  // Se não houver conteúdo, retornamos apenas um shell vazio ou null
-  // para garantir a sensação de "instantly" sem texto de loading.
-  if (!content && !id) return null // Inicialização
+  const handleSeasonChange = (e) => {
+    const newSeason = parseInt(e.target.value)
+    fetchSeason(id, newSeason)
+    setEpisode(1)
+  }
+
+  if (!content) return null
+
+  const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
 
   return (
     <>
       <Head>
-        <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
+        <title>{content.title || content.name} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -510,8 +511,7 @@ export default function WatchPage() {
             100% { transform: scale(1); }
           }
 
-          /* Item 1: info-popup é usado para todos os popups (Sinopse, Tech, Info) */
-          .info-popup, .toast {
+          .info-popup, .toast, .synopsis-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
@@ -519,7 +519,7 @@ export default function WatchPage() {
             min-width: 320px;
             max-width: 90%;
             display: flex; 
-            align-items: flex-start; /* Alinhamento ao topo para conteúdo longo */
+            align-items: center; 
             gap: 14px;
             padding: 16px 18px; 
             border-radius: 22px;
@@ -531,9 +531,10 @@ export default function WatchPage() {
           }
           
           .info-popup { z-index: 950; pointer-events: none; }
-          .toast { z-index: 960; pointer-events: auto; align-items: center; } 
+          .toast { z-index: 960; pointer-events: auto; } 
+          .synopsis-popup { z-index: 950; pointer-events: none; }
 
-          .info-popup.closing, .toast.closing { 
+          .info-popup.closing, .toast.closing, .synopsis-popup.closing { 
             animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
@@ -546,11 +547,10 @@ export default function WatchPage() {
             100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
           }
           
-          .popup-icon-wrapper, .toast-icon-wrapper { 
+          .popup-icon-wrapper, .toast-icon-wrapper, .synopsis-icon-wrapper { 
             width: 42px; height: 42px; min-width: 42px; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; 
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
-            flex-shrink: 0;
           }
           .popup-icon-wrapper { 
             background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
@@ -559,11 +559,6 @@ export default function WatchPage() {
           .popup-icon-wrapper.tech { 
             background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
             box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
-          }
-          /* Estilo específico para Sinopse usando a estrutura padrão */
-          .popup-icon-wrapper.synopsis {
-            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
-            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
           }
 
           .toast-icon-wrapper { border-radius: 50%; }
@@ -580,42 +575,40 @@ export default function WatchPage() {
             box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
           }
 
-          .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
-          .popup-content, .toast-content { 
+          .synopsis-icon-wrapper {
+            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+          }
+
+          .popup-icon-wrapper i, .toast-icon-wrapper i, .synopsis-icon-wrapper i { font-size: 20px; color: #fff; }
+          .popup-content, .toast-content, .synopsis-popup-content { 
             flex: 1; display: flex; flex-direction: column; gap: 4px; 
             opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
           }
-          
+          .synopsis-popup-content {
+            max-height: 60vh; overflow-y: auto;
+          }
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; margin-top: 2px;}
-          .popup-text, .toast-msg { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
-          
-          .popup-text.scrollable { max-height: 50vh; overflow-y: auto; padding-right: 5px; }
+          .popup-title, .toast-title, .synopsis-popup-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .popup-text, .toast-msg, .synopsis-popup-text { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
 
           @keyframes iconPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
           .toast-wrap { position: fixed; top: calc(20px + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
 
-          /* Item 5: Estilo para o Seletor Nativo */
-          .native-season-select {
-            appearance: none;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 30px 8px 16px;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            cursor: pointer;
-            outline: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
+          .season-controls {
+            display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
           }
-          .native-season-select option {
-            background-color: #1a1a1a;
-            color: #fff;
+
+          .season-select {
+            background: rgba(255,255,255,0.08); padding: 10px 16px; border-radius: 12px;
+            font-size: 0.9rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: all 0.2s ease;
+            font-family: inherit; font-weight: 500;
           }
+          .season-select:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+          .season-select:focus { outline: none; background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
+          .season-select option { background: #1a1a1a; color: #fff; padding: 8px; }
 
           .container {
             max-width: 1280px; margin: 0 auto;
@@ -638,7 +631,7 @@ export default function WatchPage() {
 
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
-            background-color: #1a1a1a; border: 0.5px solid rgba(255,255,255,0.08);
+            background-color: #1a1a1a; border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset, 0 20px 40px rgba(0,0,0,0.4); 
             margin-bottom: 24px; cursor: pointer;
           }
@@ -656,42 +649,43 @@ export default function WatchPage() {
 
           .details-container {
             border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 16px;
-            border: 0.5px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset;
           }
 
           .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
 
-          .season-controls {
-            display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
-          }
-
-          /* Item 3: Ajuste de padding para evitar corte no carrossel */
           .episodes-carousel { 
-            display: flex; gap: 10px; overflow-x: auto; 
-            padding: 4px 20px 20px 20px; /* Aumentado padding lateral e inferior */
-            margin: 0 -18px; /* Offset negativo para alinhar visualmente com o container */
+            display: flex; gap: 10px; overflow-x: auto; padding: 0;
             scrollbar-width: none;
           }
           .episodes-carousel::-webkit-scrollbar { display: none; }
           
-          /* Item 2: Cards com bordas altas, finas e simples */
+          @media (min-width: 769px) {
+            .episodes-carousel {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.03);
+            }
+            .episodes-carousel::-webkit-scrollbar { display: block; height: 6px; }
+            .episodes-carousel::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+            .episodes-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+            .episodes-carousel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+          }
+          
           .ep-card {
             min-width: 110px; height: 65px; background-size: cover; background-position: center;
-            border-radius: 4px; /* Mais quadrado/simples */
-            display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 6px 8px; 
-            border: 1px solid rgba(255,255,255,0.15); /* Borda fina e definida */
-            cursor: pointer; 
+            border-radius: 10px; display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; 
             transition: all 0.2s ease; position: relative; overflow: hidden;
-            /* Removido box-shadow pesado */
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.8) inset;
+            flex-shrink: 0;
           }
           .ep-card::before {
             content: ''; position: absolute; inset: 0;
             background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
           }
-          .ep-card:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.05); }
-          .ep-card.active { border-color: var(--ios-blue); border-width: 1px; box-shadow: 0 0 0 1px var(--ios-blue); }
+          .ep-card:hover { border-color: rgba(255,255,255,0.25); transform: scale(1.05); }
+          .ep-card.active { border-color: var(--ios-blue); border-width: 1.5px; box-shadow: 0 0 0 1.5px var(--ios-blue), 0 0 0 1px rgba(0,0,0,0.8) inset; }
           
           .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; position: relative; z-index: 1; }
           .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
@@ -753,11 +747,11 @@ export default function WatchPage() {
             .media-title { font-size: 1rem; }
             .popup-size-square { width: 85vw; height: 85vw; }
             .popup-size-banner { width: 90vw; }
-            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
-            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
-            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
-            .popup-title, .toast-title { font-size: 0.88rem; }
-            .popup-text, .toast-msg { font-size: 0.75rem; }
+            .info-popup, .toast, .synopsis-popup { min-width: 280px; padding: 14px 16px; }
+            .popup-icon-wrapper, .toast-icon-wrapper, .synopsis-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
+            .popup-icon-wrapper i, .toast-icon-wrapper i, .synopsis-icon-wrapper i { font-size: 18px; }
+            .popup-title, .toast-title, .synopsis-popup-title { font-size: 0.88rem; }
+            .popup-text, .toast-msg, .synopsis-popup-text { font-size: 0.75rem; }
             .page-title { font-size: 1.2rem; }
             .dot { width: 8px; height: 8px; }
             .status-dots { gap: 6px; }
@@ -766,126 +760,114 @@ export default function WatchPage() {
             .control-btn { width: 38px; height: 38px; }
             .player-bottom-controls { bottom: -58px; gap: 12px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
-            .episodes-carousel { margin: 0 -14px; }
           }
         `}</style>
       </Head>
 
-      {/* Renderização Condicional: Se não houver conteúdo, apenas o site-wrapper renderiza (sem loader) */}
       <div className="site-wrapper">
-        {content && (
-          <>
-            <Header
-              label={scrolled ? "Reproduzindo" : "Yoshikawa"}
-              scrolled={scrolled}
-              showInfo={showInfoPopup}
-              toggleInfo={toggleInfoPopup}
-              infoClosing={infoClosing}
-              showTech={showTechPopup}
-              toggleTech={toggleTechPopup}
-              techClosing={techClosing}
-            />
+        
+        <Header
+          label={scrolled ? "Reproduzindo" : "Yoshikawa"}
+          scrolled={scrolled}
+          showInfo={showInfoPopup}
+          toggleInfo={toggleInfoPopup}
+          infoClosing={infoClosing}
+          showTech={showTechPopup}
+          toggleTech={toggleTechPopup}
+          techClosing={techClosing}
+        />
 
-            <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
+        <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-            {/* Item 1: Pop-up de Sinopse Padronizado (Mesma estrutura do Info/Tech) */}
-            {showSynopsisPopup && (
-              <div 
-                className={`info-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="popup-icon-wrapper synopsis">
-                  <i className="fas fa-align-left"></i>
-                </div>
-                <div className="popup-content">
-                  <p className="popup-title">Sinopse</p>
-                  <div className="popup-text scrollable">
-                    {type === 'tv' && currentEpisodeData?.overview 
-                      ? currentEpisodeData.overview 
-                      : content?.overview || "Sinopse indisponível."}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <main className="container">
-              <div className="page-header">
-                <h1 className="page-title">Reproduzindo</h1>
-                <div className="status-dots">
-                  <span className="dot red"></span>
-                  <span className="dot yellow"></span>
-                  <span className="dot green"></span>
-                </div>
-              </div>
-
-              <div 
-                className="player-banner-container" 
-                onClick={() => setIsPlaying(true)}
-                style={{
-                  backgroundImage: currentEpisodeData?.still_path 
-                    ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
-                    : content.backdrop_path 
-                      ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
-                      : `url(${DEFAULT_BACKDROP})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              >
-                <div className="play-button-static">
-                  <i className="fas fa-play"></i>
-                </div>
-              </div>
-
-              <div className="glass-panel details-container">
-                <div className="text-left">
-                  <h2 className="media-title">{content.title || content.name}</h2>
-                </div>
-
-                {type === 'tv' && (
-                  <>
-                    <div className="season-controls">
-                      {/* Item 5: Seletor de Temporada Nativo (Browser Select) */}
-                      <select 
-                        className="native-season-select"
-                        value={season} 
-                        onChange={(e) => {
-                          const newSeason = Number(e.target.value);
-                          setSeason(newSeason);
-                          setEpisode(1);
-                          fetchSeason(id, newSeason);
-                        }}
-                      >
-                        {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                          <option key={num} value={num}>Temporada {num}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="episodes-carousel" ref={carouselRef}>
-                      {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
-                        <div 
-                          key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                          onClick={() => setEpisode(ep.episode_number)}
-                          style={{
-                            backgroundImage: ep.still_path 
-                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                              : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
-                          }}
-                        >
-                          <span className="ep-card-num">Ep {ep.episode_number}</span>
-                          <span className="ep-card-title">{ep.name}</span>
-                        </div>
-                      )) : null}
-                    </div>
-                  </>
-                )}
-              </div>
-            </main>
-
-            <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onToggleSynopsis={toggleSynopsisPopup} />
-          </>
+        {showSynopsisPopup && (
+          <div 
+            className={`synopsis-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="synopsis-icon-wrapper">
+              <i className="fas fa-align-left"></i>
+            </div>
+            <div className="synopsis-popup-content">
+              <p className="synopsis-popup-title">Sinopse</p>
+              <p className="synopsis-popup-text">
+                {type === 'tv' && currentEpisodeData?.overview 
+                  ? currentEpisodeData.overview 
+                  : content?.overview || "Sinopse indisponível."}
+              </p>
+            </div>
+          </div>
         )}
+
+        <main className="container">
+          <div className="page-header">
+            <h1 className="page-title">Reproduzindo</h1>
+            <div className="status-dots">
+              <span className="dot red"></span>
+              <span className="dot yellow"></span>
+              <span className="dot green"></span>
+            </div>
+          </div>
+
+          <div 
+            className="player-banner-container" 
+            onClick={() => setIsPlaying(true)}
+            style={{
+              backgroundImage: currentEpisodeData?.still_path 
+                ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
+                : content.backdrop_path 
+                  ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
+                  : `url(${DEFAULT_BACKDROP})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            <div className="play-button-static">
+              <i className="fas fa-play"></i>
+            </div>
+          </div>
+
+          <div className="glass-panel details-container">
+            <div className="text-left">
+              <h2 className="media-title">{content.title || content.name}</h2>
+            </div>
+
+            {type === 'tv' && (
+              <>
+                <div className="season-controls">
+                  <select className="season-select" value={season} onChange={handleSeasonChange}>
+                    {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                      <option key={num} value={num}>
+                        Temporada {num}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="episodes-carousel" ref={carouselRef}>
+                  {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                    <div 
+                      key={ep.id} 
+                      className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                      onClick={() => setEpisode(ep.episode_number)}
+                      style={{
+                        backgroundImage: ep.still_path 
+                          ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                          : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
+                      }}
+                    >
+                      <span className="ep-card-num">Ep {ep.episode_number}</span>
+                      <span className="ep-card-title">{ep.name}</span>
+                    </div>
+                  )) : (
+                    <div style={{color:'#666', fontSize:'0.8rem'}}>Carregando episódios...</div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </main>
+
+        <BottomNav isFavorite={isFavorite} onToggleFavorite={toggleFavorite} onToggleSynopsis={toggleSynopsisPopup} />
       </div>
 
       {isPlaying && (
