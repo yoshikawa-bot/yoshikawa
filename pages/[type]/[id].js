@@ -481,16 +481,27 @@ export default function WatchPage() {
   }
 
   const initializeWebTorrent = (stream) => {
+    console.log('🎬 Iniciando WebTorrent com stream:', stream)
+    
     setSelectedStream(stream)
     setShowStreamSelector(false)
     setIsPlaying(true)
 
+    // Limpa player anterior
+    const playerElement = document.getElementById('webtorrent-player')
+    if (playerElement) {
+      playerElement.innerHTML = ''
+      console.log('🧹 Player limpo')
+    }
+
     if (currentTorrentRef.current) {
+      console.log('🗑️ Destruindo torrent anterior')
       currentTorrentRef.current.destroy()
       currentTorrentRef.current = null
     }
 
     if (!webTorrentClientRef.current) {
+      console.log('🆕 Criando novo cliente WebTorrent')
       webTorrentClientRef.current = new window.WebTorrent({
         maxConns: 55,
         tracker: {
@@ -507,6 +518,7 @@ export default function WatchPage() {
     }
 
     const magnetURI = `magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title)}`
+    console.log('🧲 Magnet URI:', magnetURI)
     
     showToast('Conectando aos peers...', 'info')
 
@@ -516,7 +528,15 @@ export default function WatchPage() {
       destroyStoreOnDestroy: true,
       storeCacheSlots: 20
     }, (torrent) => {
+      console.log('✅ Torrent adicionado:', torrent.name)
+      console.log('📦 Total de arquivos:', torrent.files.length)
+      
       currentTorrentRef.current = torrent
+
+      // Lista todos os arquivos
+      torrent.files.forEach((file, i) => {
+        console.log(`  [${i}] ${file.name} (${(file.length / 1024 / 1024).toFixed(2)} MB)`)
+      })
 
       const videoFile = torrent.files
         .filter(f => {
@@ -526,34 +546,87 @@ export default function WatchPage() {
         .sort((a, b) => b.size - a.size)[0]
 
       if (!videoFile) {
+        console.error('❌ Nenhum arquivo de vídeo encontrado')
         showToast('Nenhum arquivo de vídeo encontrado', 'error')
         setIsPlaying(false)
         return
       }
 
+      console.log('🎥 Arquivo de vídeo selecionado:', videoFile.name, `(${(videoFile.length / 1024 / 1024).toFixed(2)} MB)`)
+
+      // Desseleciona tudo e seleciona só o vídeo
       torrent.deselect(0, torrent.pieces.length - 1, false)
       videoFile.select()
 
-      showToast(`Carregando: ${videoFile.name}`, 'success')
+      console.log('⚙️ Prioridade definida para:', videoFile.name)
+      
+      showToast(`Carregando: ${videoFile.name.substring(0, 30)}...`, 'success')
 
-      setTimeout(() => {
-        const playerElement = document.getElementById('webtorrent-player')
-        if (playerElement) {
-          videoFile.appendTo(playerElement, { autoplay: true, controls: true }, (err) => {
-            if (err) {
-              console.error('Erro ao anexar vídeo:', err)
-              showToast('Erro ao carregar vídeo', 'error')
-              return
-            }
-
-            const video = playerElement.querySelector('video')
-            if (video) {
-              setupVideoMemoryManagement(video, torrent)
-              setupTorrentStatsMonitoring(torrent)
-            }
-          })
+      // Espera o player estar pronto no DOM
+      const renderVideo = () => {
+        const playerEl = document.getElementById('webtorrent-player')
+        
+        if (!playerEl) {
+          console.error('❌ Elemento #webtorrent-player não encontrado no DOM!')
+          showToast('Erro: Player não encontrado no DOM', 'error')
+          return
         }
-      }, 100)
+
+        console.log('📺 Elemento player encontrado, anexando vídeo...')
+        
+        // Limpa qualquer conteúdo anterior
+        playerEl.innerHTML = ''
+
+        videoFile.appendTo(playerEl, { 
+          autoplay: true, 
+          controls: true,
+          muted: false
+        }, (err) => {
+          if (err) {
+            console.error('❌ Erro ao anexar vídeo:', err)
+            showToast('Erro ao carregar vídeo: ' + err.message, 'error')
+            return
+          }
+
+          console.log('✅ Vídeo anexado com sucesso!')
+
+          const video = playerEl.querySelector('video')
+          if (video) {
+            console.log('🎬 Elemento <video> encontrado')
+            console.log('📊 Dimensões:', video.videoWidth, 'x', video.videoHeight)
+            
+            // Eventos de debug
+            video.addEventListener('loadstart', () => console.log('📥 Video: loadstart'))
+            video.addEventListener('loadedmetadata', () => {
+              console.log('📊 Video: metadata carregada')
+              console.log('   Duração:', video.duration)
+              console.log('   Dimensões:', video.videoWidth, 'x', video.videoHeight)
+            })
+            video.addEventListener('loadeddata', () => console.log('📦 Video: data carregada'))
+            video.addEventListener('canplay', () => console.log('▶️ Video: pode reproduzir'))
+            video.addEventListener('playing', () => console.log('🎥 Video: reproduzindo'))
+            video.addEventListener('error', (e) => {
+              console.error('❌ Video error:', e)
+              console.error('   Error code:', video.error?.code)
+              console.error('   Error message:', video.error?.message)
+            })
+
+            setupVideoMemoryManagement(video, torrent)
+            setupTorrentStatsMonitoring(torrent)
+          } else {
+            console.error('❌ Elemento <video> não foi criado!')
+          }
+        })
+      }
+
+      // Aguarda um pouco para garantir que o DOM está pronto
+      setTimeout(renderVideo, 200)
+    })
+
+    // Eventos do cliente
+    client.on('error', (err) => {
+      console.error('❌ WebTorrent client error:', err)
+      showToast('Erro WebTorrent: ' + err.message, 'error')
     })
   }
 
@@ -1861,10 +1934,20 @@ export default function WatchPage() {
             white-space: nowrap;
           }
 
+          #webtorrent-player {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+          }
+
           #webtorrent-player video {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            background: #000;
           }
 
           @media (max-width: 768px) {
