@@ -659,31 +659,46 @@ export default function WatchPage() {
           .bottom-bar.nav-hidden .pill-container {
             width: var(--pill-height);
             height: var(--pill-height);
-            flex: 0;
+            min-width: var(--pill-height);
+            min-height: var(--pill-height);
+            flex: 0 0 auto;
             border-radius: 50%;
             gap: 0;
+            padding: 0;
             transition: all 0.6s var(--ease-smooth);
             background: rgba(255, 255, 255, 0.06);
           }
 
           .bottom-bar.nav-hidden .nav-btn:not(.hide-toggle-pill-btn) {
+            position: absolute;
             opacity: 0;
             width: 0;
+            height: 0;
             overflow: hidden;
             pointer-events: none;
             transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
+            position: relative;
+            width: 100%;
+            height: 100%;
             flex: 1;
             opacity: 1;
             pointer-events: auto;
             transition: all 0.6s var(--ease-smooth);
+            color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+          }
+
+          .bottom-bar.nav-hidden .hide-toggle-pill-btn:hover {
+            color: rgba(255, 255, 255, 0.9);
           }
 
           .bottom-bar.nav-hidden .hidden-fav {
             opacity: 0;
             width: 0;
+            height: 0;
             overflow: hidden;
             pointer-events: none;
             transition: all 0.6s var(--ease-smooth);
@@ -692,6 +707,7 @@ export default function WatchPage() {
           .bottom-bar.nav-hidden .round-btn:first-child {
             opacity: 0;
             width: 0;
+            height: 0;
             overflow: hidden;
             pointer-events: none;
             transition: all 0.6s var(--ease-smooth);
@@ -751,8 +767,14 @@ export default function WatchPage() {
             transition: all 0.6s var(--ease-smooth);
           }
 
-          .bottom-bar.nav-hidden .hide-toggle-pill-btn i {
+          .hide-toggle-pill-btn i {
             font-size: 18px;
+            transition: all 0.3s var(--ease-smooth);
+          }
+
+          .hide-toggle-pill-btn:hover i {
+            transform: scale(1.2);
+            color: rgba(255, 255, 255, 0.9);
           }
 
           .nav-btn i { 
