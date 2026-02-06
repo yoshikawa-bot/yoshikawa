@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
@@ -189,13 +190,13 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
 
+  // Novos estados para WebTorrent
   const [availableStreams, setAvailableStreams] = useState([])
   const [selectedStream, setSelectedStream] = useState(null)
   const [showStreamSelector, setShowStreamSelector] = useState(false)
   const [streamSelectorClosing, setStreamSelectorClosing] = useState(false)
   const [torrentStatus, setTorrentStatus] = useState({ speed: 0, peers: 0, progress: 0 })
   const [isLoadingStreams, setIsLoadingStreams] = useState(false)
-  const [autoTrying, setAutoTrying] = useState(false)
 
   const toastTimerRef = useRef(null)
 
@@ -327,35 +328,7 @@ export default function WatchPage() {
     }
   }
 
-  const prioritizeStreams = (streams) => {
-    return streams.sort((a, b) => {
-      const aTitle = (a.title || '').toLowerCase()
-      const bTitle = (b.title || '').toLowerCase()
-      
-      const aPT = aTitle.includes('dual') || aTitle.includes('dublado') || aTitle.includes('pt-br') || aTitle.includes('português')
-      const bPT = bTitle.includes('dual') || bTitle.includes('dublado') || bTitle.includes('pt-br') || bTitle.includes('português')
-      if (aPT && !bPT) return -1
-      if (!aPT && bPT) return 1
-      
-      const aWeb = aTitle.includes('webrip') || aTitle.includes('webdl') || aTitle.includes('web ')
-      const bWeb = bTitle.includes('webrip') || bTitle.includes('webdl') || bTitle.includes('web ')
-      if (aWeb && !bWeb) return -1
-      if (!aWeb && bWeb) return 1
-      
-      const aSeed = parseInt(aTitle.match(/👥 (\d+)/)?.[1] || '0')
-      const bSeed = parseInt(bTitle.match(/👥 (\d+)/)?.[1] || '0')
-      if (aSeed !== bSeed) return bSeed - aSeed
-      
-      const getSize = (title) => {
-        const match = title.match(/💾 ([\d.]+) ?([GM])B/)
-        if (!match) return 999
-        const size = parseFloat(match[1])
-        return match[2] === 'G' ? size * 1000 : size
-      }
-      return getSize(aTitle) - getSize(bTitle)
-    })
-  }
-
+  // NOVA FUNÇÃO: Buscar streams disponíveis
   const fetchAvailableStreams = async () => {
     setIsLoadingStreams(true)
     try {
@@ -377,10 +350,9 @@ export default function WatchPage() {
       }
 
       const allStreams = [...(data.portuguese || []), ...(data.all || [])]
-      const prioritized = prioritizeStreams(allStreams)
-      setAvailableStreams(prioritized)
+      setAvailableStreams(allStreams)
       
-      if (prioritized.length === 0) {
+      if (allStreams.length === 0) {
         showToast('Nenhum stream encontrado', 'error')
       } else {
         setShowStreamSelector(true)
@@ -394,66 +366,42 @@ export default function WatchPage() {
     }
   }
 
-  const autoTryStreams = async () => {
-    if (autoTrying || availableStreams.length === 0) return
-    setAutoTrying(true)
-    showToast('Buscando stream compatível automaticamente...', 'info')
-
-    for (const stream of availableStreams) {
-      try {
-        await new Promise((resolve, reject) => {
-          startWebTorrentStream(stream, true, resolve, reject)
-        })
-        setAutoTrying(false)
-        return
-      } catch (e) {
-        console.log('Stream incompatível, tentando próximo...')
-      }
-    }
-    
-    showToast('Nenhum stream compatível encontrado (MP4/WebM)', 'error')
-    setAutoTrying(false)
-    setIsPlaying(false)
-  }
-
-  const startWebTorrentStream = (stream, autoMode = false, onSuccess, onFail) => {
+  // NOVA FUNÇÃO: Iniciar WebTorrent
+  const startWebTorrentStream = (stream) => {
     if (typeof window === 'undefined') return
 
+    // Carrega WebTorrent dinamicamente
     if (!window.WebTorrent) {
       const script = document.createElement('script')
       script.src = 'https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js'
-      script.onload = () => initializeWebTorrent(stream, autoMode, onSuccess, onFail)
+      script.onload = () => initializeWebTorrent(stream)
       document.head.appendChild(script)
     } else {
-      initializeWebTorrent(stream, autoMode, onSuccess, onFail)
+      initializeWebTorrent(stream)
     }
   }
 
-  const initializeWebTorrent = (stream, autoMode = false, onSuccess, onFail) => {
+  const initializeWebTorrent = (stream) => {
     setSelectedStream(stream)
-    if (!autoMode) {
-      setShowStreamSelector(false)
-      setIsPlaying(true)
-    }
+    setShowStreamSelector(false)
+    setIsPlaying(true)
 
+    // Destroi torrent anterior se existir
     if (currentTorrentRef.current) {
       currentTorrentRef.current.destroy()
       currentTorrentRef.current = null
     }
 
+    // Cria cliente se não existir
     if (!webTorrentClientRef.current) {
       webTorrentClientRef.current = new window.WebTorrent({
-        maxConns: 80,
+        maxConns: 55,
         tracker: {
           announce: [
             'udp://tracker.opentrackr.org:1337/announce',
             'udp://open.tracker.cl:1337/announce',
             'udp://tracker.torrent.eu.org:451/announce',
-            'udp://exodus.desync.com:6969/announce',
-            'udp://tracker.openbittorrent.com:80/announce',
-            'udp://open.stealth.si:80/announce',
-            'udp://tracker.cyberia.is:6969/announce',
-            'udp://tracker.tamersunion.org:1337/announce'
+            'udp://exodus.desync.com:6969/announce'
           ]
         }
       })
@@ -461,76 +409,59 @@ export default function WatchPage() {
 
     const magnetURI = `magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title)}`
     
-    if (!autoMode) showToast('Conectando aos peers...', 'info')
+    showToast('Conectando aos peers...', 'info')
 
     const client = webTorrentClientRef.current
     
-    client.add(magnetURI, { storeCacheSlots: 40 }, (torrent) => {
+    client.add(magnetURI, {
+      destroyStoreOnDestroy: true,
+      storeCacheSlots: 20
+    }, (torrent) => {
       currentTorrentRef.current = torrent
 
+      // Encontra arquivo de vídeo
       const videoFile = torrent.files
         .filter(f => {
           const ext = f.name.split('.').pop().toLowerCase()
-          return ['mp4', 'webm'].includes(ext)
+          return ['mp4', 'mkv', 'avi', 'webm', 'mov', 'm4v'].includes(ext)
         })
-        .sort((a, b) => b.length - a.length)[0]
+        .sort((a, b) => b.size - a.size)[0]
 
       if (!videoFile) {
-        torrent.destroy()
-        if (autoMode) {
-          onFail && onFail('no compatible file')
-        } else {
-          showToast('Formato incompatível (precisa MP4/WebM). Tente outro stream.', 'error')
-          setIsPlaying(false)
-        }
+        showToast('Nenhum arquivo de vídeo encontrado', 'error')
+        setIsPlaying(false)
         return
       }
 
-      if (!autoMode) showToast(`Reproduzindo: ${videoFile.name}`, 'success')
+      // Seleciona apenas o arquivo de vídeo
+      torrent.deselect(0, torrent.pieces.length - 1, false)
+      videoFile.select()
 
+      showToast(`Carregando: ${videoFile.name}`, 'success')
+
+      // Renderiza no player
       setTimeout(() => {
         const playerElement = document.getElementById('webtorrent-player')
         if (playerElement) {
-          videoFile.appendTo(playerElement, { autoplay: true, muted: true, controls: true }, (err) => {
+          videoFile.appendTo(playerElement, { autoplay: true, controls: true }, (err) => {
             if (err) {
-              torrent.destroy()
-              if (autoMode) onFail && onFail(err)
-              else {
-                showToast('Erro ao carregar vídeo', 'error')
-                setIsPlaying(false)
-              }
+              console.error('Erro ao anexar vídeo:', err)
+              showToast('Erro ao carregar vídeo', 'error')
               return
             }
 
             const video = playerElement.querySelector('video')
             if (video) {
-              video.muted = true
-              video.play().catch(() => {})
-
-              video.addEventListener('error', () => {
-                if (autoMode) onFail && onFail('video error')
-                else showToast('Erro de decodificação. Tente outro stream.', 'error')
-              })
-
               setupVideoMemoryManagement(video, torrent)
               setupTorrentStatsMonitoring(torrent)
             }
-
-            if (autoMode) onSuccess && onSuccess()
           })
         }
       }, 100)
     })
-
-    client.on('error', (err) => {
-      if (autoMode) onFail && onFail(err)
-      else {
-        showToast('Erro no torrent: ' + err.message, 'error')
-        setIsPlaying(false)
-      }
-    })
   }
 
+  // NOVA FUNÇÃO: Gerenciamento de memória
   const setupVideoMemoryManagement = (video, torrent) => {
     let lastCleanupPiece = 0
     const BUFFER_BEHIND = 10
@@ -544,12 +475,14 @@ export default function WatchPage() {
 
       const currentPiece = Math.floor((currentTime / duration) * torrent.pieces.length)
 
+      // Limpa peças antigas
       const oldestToKeep = Math.max(0, currentPiece - BUFFER_BEHIND)
       if (oldestToKeep > lastCleanupPiece) {
         torrent.deselect(lastCleanupPiece, oldestToKeep - 1)
         lastCleanupPiece = oldestToKeep
       }
 
+      // Limita download futuro
       const maxFuture = Math.min(currentPiece + BUFFER_AHEAD, torrent.pieces.length - 1)
       if (maxFuture < torrent.pieces.length - 1) {
         torrent.deselect(maxFuture + 1, torrent.pieces.length - 1)
@@ -557,6 +490,7 @@ export default function WatchPage() {
     })
   }
 
+  // NOVA FUNÇÃO: Monitoramento de stats
   const setupTorrentStatsMonitoring = (torrent) => {
     const interval = setInterval(() => {
       if (!torrent || torrent.destroyed) {
@@ -573,6 +507,7 @@ export default function WatchPage() {
     }, 1000)
   }
 
+  // Cleanup ao sair
   useEffect(() => {
     return () => {
       if (currentTorrentRef.current) {
@@ -707,6 +642,7 @@ export default function WatchPage() {
     const nextEp = episode + 1
     if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
       setEpisode(nextEp)
+      // Fecha player e limpa streams para buscar novo episódio
       setIsPlaying(false)
       setAvailableStreams([])
       setSelectedStream(null)
@@ -1931,6 +1867,7 @@ export default function WatchPage() {
             </div>
           )}
 
+          {/* SELETOR DE STREAMS */}
           {showStreamSelector && (
             <div className={`stream-selector-popup ${streamSelectorClosing ? 'closing' : ''}`}>
               <div className="stream-selector-header">
@@ -1947,43 +1884,38 @@ export default function WatchPage() {
               </div>
 
               <div className="streams-list">
-                <div 
-                  className="stream-item" 
-                  onClick={autoTryStreams}
-                  style={{ 
-                    background: 'rgba(10,132,255,0.15)', 
-                    justifyContent: 'center',
-                    fontWeight: '600',
-                    cursor: autoTrying ? 'not-allowed' : 'pointer',
-                    opacity: autoTrying ? 0.7 : 1
-                  }}
-                >
-                  {autoTrying ? '🔄 Tentando automaticamente...' : '🔄 Tentar compatível automaticamente'}
-                </div>
+                {availableStreams.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.6)' }}>
+                    Nenhum stream disponível
+                  </div>
+                ) : (
+                  availableStreams.map((stream, idx) => {
+                    const quality = stream.name?.split('\n')[1] || 'SD'
+                    const size = stream.title?.match(/💾 ([\d.]+\s*[GM]B)/)?.[1] || ''
+                    const seeders = stream.title?.match(/👤 (\d+)/)?.[1] || '?'
+                    const isPT = stream.title?.toLowerCase().includes('dual') || 
+                                 stream.title?.toLowerCase().includes('dublado') ||
+                                 stream.title?.toLowerCase().includes('pt-br')
 
-                {availableStreams.map((stream, idx) => {
-                  const titleLower = (stream.title || '').toLowerCase()
-                  const isPT = titleLower.includes('dual') || titleLower.includes('dublado') || titleLower.includes('pt-br') || titleLower.includes('português')
-                  const isWeb = titleLower.includes('webrip') || titleLower.includes('webdl') || titleLower.includes('web ')
-                  const quality = stream.name?.split('\n')[1] || 'SD'
-                  const size = stream.title?.match(/💾 ([\d.]+\s*[GM]B)/)?.[1] || ''
-                  const seeders = stream.title?.match(/👤 (\d+)/)?.[1] || '?'
-
-                  return (
-                    <div key={idx} className="stream-item" onClick={() => startWebTorrentStream(stream)}>
-                      <div className="stream-item-title">
-                        {isPT && <span className="stream-badge pt">PT-BR</span>}
-                        {isWeb && <span className="stream-badge" style={{background:'rgba(52,199,89,0.2)',color:'#34c759'}}>WEB</span>}
-                        {' '}{stream.title.substring(0, 60)}
+                    return (
+                      <div 
+                        key={idx} 
+                        className="stream-item" 
+                        onClick={() => startWebTorrentStream(stream)}
+                      >
+                        <div className="stream-item-title">
+                          {isPT && <span className="stream-badge pt">PT-BR</span>}
+                          {' '}{stream.title.substring(0, 60)}
+                        </div>
+                        <div className="stream-item-info">
+                          <span>📺 {quality}</span>
+                          {size && <span>💾 {size}</span>}
+                          <span>👥 {seeders} seeders</span>
+                        </div>
                       </div>
-                      <div className="stream-item-info">
-                        <span>📺 {quality}</span>
-                        {size && <span>💾 {size}</span>}
-                        <span>👥 {seeders} seeders</span>
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                )}
               </div>
             </div>
           )}
@@ -2040,16 +1972,7 @@ export default function WatchPage() {
                       <div 
                         key={ep.id} 
                         className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                        onClick={() => {
-                          setEpisode(ep.episode_number)
-                          setIsPlaying(false)
-                          setAvailableStreams([])
-                          setSelectedStream(null)
-                          if (currentTorrentRef.current) {
-                            currentTorrentRef.current.destroy()
-                            currentTorrentRef.current = null
-                          }
-                        }}
+                        onClick={() => setEpisode(ep.episode_number)}
                         style={{
                           backgroundImage: ep.still_path 
                             ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
@@ -2081,9 +2004,11 @@ export default function WatchPage() {
         </div>
       )}
 
+      {/* PLAYER WEBTORRENT */}
       {isPlaying && selectedStream && (
         <div className="player-overlay">
           <div className="player-wrapper-vertical">
+            
             <div className="player-header-controls">
               <span className="ep-indicator">
                  {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
@@ -2129,4 +2054,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
