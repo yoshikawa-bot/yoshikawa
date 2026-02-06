@@ -107,10 +107,6 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
             <i className="fas fa-film"></i>
          </button>
 
-         <button className="nav-btn hide-show-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
-         </button>
-
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
             <i className="fas fa-align-left"></i>
          </button>
@@ -121,6 +117,10 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
         ></i>
+      </button>
+
+      <button className="round-btn glass-panel hide-toggle-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
+        <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
       </button>
     </div>
   )
@@ -564,24 +564,27 @@ export default function WatchPage() {
 
           .loading-bar {
             width: 180px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 1px;
+            height: 2.5px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
             overflow: hidden;
             position: relative;
           }
 
           .loading-progress {
             height: 100%;
-            background: linear-gradient(90deg, transparent, #0A84FF, transparent);
-            animation: loadingBar 2s ease-in-out infinite;
-            width: 40%;
+            background: #ffffff;
+            animation: loadingBar 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            width: 0%;
           }
 
           @keyframes loadingBar {
-            0% { transform: translateX(-100%); }
-            50% { transform: translateX(200%); }
-            100% { transform: translateX(-100%); }
+            0% { width: 0%; }
+            20% { width: 15%; }
+            40% { width: 35%; }
+            60% { width: 65%; }
+            80% { width: 85%; }
+            100% { width: 100%; }
           }
 
           a { color: inherit; text-decoration: none; }
@@ -647,9 +650,9 @@ export default function WatchPage() {
           }
 
           .bottom-bar.nav-hidden {
-            width: var(--pill-height);
-            max-width: var(--pill-height);
-            gap: 0;
+            width: auto;
+            max-width: auto;
+            gap: 12px;
             transition: all 0.6s var(--ease-smooth);
           }
 
@@ -728,6 +731,20 @@ export default function WatchPage() {
 
           .hide-show-btn {
             color: rgba(255, 255, 255, 0.6);
+          }
+
+          .hide-toggle-btn {
+            transition: all 0.5s var(--ease-smooth);
+          }
+
+          .bottom-bar.nav-hidden .hide-toggle-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+          }
+
+          .bottom-bar.nav-hidden .hide-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
           }
 
           .nav-btn i { 
@@ -1258,7 +1275,7 @@ export default function WatchPage() {
             border-radius: 12px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s var(--ease-elastic);
+            transition: all 0.3s var(--ease-smooth);
           }
 
           .ep-indicator:hover {
@@ -1275,38 +1292,24 @@ export default function WatchPage() {
           .control-btn {
             width: 48px; 
             height: 48px; 
-            background: rgba(10, 132, 255, 0.15); 
+            background: rgba(255, 255, 255, 0.08); 
             backdrop-filter: blur(10px);
             border-radius: 50%; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            color: #0A84FF; 
-            transition: all 0.3s var(--ease-elastic); 
-            border: 1.5px solid rgba(10, 132, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9); 
+            transition: all 0.3s var(--ease-smooth); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
             cursor: pointer;
             position: relative;
             overflow: hidden;
           }
 
-          .control-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 30% 30%, rgba(10, 132, 255, 0.2), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-
           .control-btn:hover { 
-            background: rgba(10, 132, 255, 0.25); 
-            transform: scale(1.12);
-            border-color: rgba(10, 132, 255, 0.5);
-            box-shadow: 0 0 20px rgba(10, 132, 255, 0.3);
-          }
-
-          .control-btn:hover::before {
-            opacity: 1;
+            background: rgba(255, 255, 255, 0.15); 
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.3);
           }
 
           .control-btn:active {
@@ -1315,12 +1318,11 @@ export default function WatchPage() {
 
           .control-btn i {
             font-size: 18px;
-            transition: all 0.3s var(--ease-elastic);
+            transition: all 0.3s var(--ease-smooth);
           }
 
           .control-btn:hover i {
             transform: scale(1.15);
-            filter: drop-shadow(0 0 8px rgba(10, 132, 255, 0.5));
           }
           
           .player-bottom-controls {
@@ -1332,43 +1334,27 @@ export default function WatchPage() {
           }
 
           .nav-ep-btn {
-            background: rgba(10, 132, 255, 0.15); 
+            background: rgba(255, 255, 255, 0.08); 
             padding: 12px 32px; 
             border-radius: 50px;
-            color: #0A84FF; 
+            color: rgba(255, 255, 255, 0.9); 
             font-weight: 600; 
             font-size: 0.95rem;
             display: flex; 
             align-items: center; 
             gap: 10px;
-            transition: all 0.3s var(--ease-elastic); 
+            transition: all 0.3s var(--ease-smooth); 
             backdrop-filter: blur(10px); 
-            border: 1.5px solid rgba(10, 132, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             cursor: pointer;
             position: relative;
             overflow: hidden;
           }
 
-          .nav-ep-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(10, 132, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-          }
-
-          .nav-ep-btn:hover::before {
-            left: 100%;
-          }
-
           .nav-ep-btn:hover { 
-            background: rgba(10, 132, 255, 0.25); 
+            background: rgba(255, 255, 255, 0.15); 
             transform: scale(1.08);
-            border-color: rgba(10, 132, 255, 0.5);
-            box-shadow: 0 0 20px rgba(10, 132, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
           }
 
           .nav-ep-btn:active { 
@@ -1376,12 +1362,11 @@ export default function WatchPage() {
           }
 
           .nav-ep-btn i {
-            transition: all 0.3s var(--ease-elastic);
+            transition: all 0.3s var(--ease-smooth);
           }
 
           .nav-ep-btn:hover i {
             transform: scale(1.2);
-            filter: drop-shadow(0 0 8px rgba(10, 132, 255, 0.5));
           }
 
           .nav-ep-btn:disabled {
@@ -1391,9 +1376,8 @@ export default function WatchPage() {
 
           .nav-ep-btn:disabled:hover {
             transform: scale(1);
-            background: rgba(10, 132, 255, 0.15);
-            border-color: rgba(10, 132, 255, 0.3);
-            box-shadow: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
           }
 
           @media (max-width: 768px) {
