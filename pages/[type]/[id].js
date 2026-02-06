@@ -27,19 +27,19 @@ export const Header = ({
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''} ${navHidden ? 'nav-hidden' : ''}`}>
         
         <button 
-          className={`round-btn glass-panel ${navHidden ? 'hidden-side-btn' : ''}`}
+          className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
           <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
         </button>
 
-        <div className={`pill-container glass-panel ${navHidden ? 'hidden-pill-header' : ''}`}>
+        <div className="pill-container glass-panel">
           <span key={label} className="bar-label">{label}</span>
         </div>
 
         <button 
-          className={`round-btn glass-panel ${navHidden ? 'hidden-side-btn' : ''}`}
+          className="round-btn glass-panel" 
           title={scrolled ? "Voltar ao topo" : "Informações"}
           onClick={handleRightClick}
         >
@@ -98,7 +98,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
 
   return (
     <div className={`bar-container bottom-bar ${navHidden ? 'nav-hidden' : ''}`}>
-      <button className={`round-btn glass-panel ${navHidden ? 'hidden-side-btn' : ''}`} onClick={handleShare} title="Compartilhar">
+      <button className="round-btn glass-panel" onClick={handleShare} title="Compartilhar">
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
@@ -116,7 +116,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
          </button>
       </div>
 
-      <button className={`round-btn glass-panel ${navHidden ? 'hidden-side-btn' : ''}`} onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+      <button className={`round-btn glass-panel ${navHidden ? 'hidden-fav' : ''}`} onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
         <i 
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
@@ -143,6 +143,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+// --- COMPONENTE DE LOADING ESTILO APPLE ---
 const LoadingScreen = ({ visible }) => {
   if (!visible) return null;
   return (
@@ -164,6 +165,7 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
+  // Estado de Carregamento Global
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
 
@@ -191,6 +193,7 @@ export default function WatchPage() {
 
   const toastTimerRef = useRef(null)
 
+  // --- CONTROLE DE LOADING ---
   useEffect(() => {
     if (content) {
       const timer = setTimeout(() => {
@@ -281,7 +284,9 @@ export default function WatchPage() {
 
   const checkFavoriteStatus = (item) => {
     try {
-      const stored d === item.id && f.media_type === type)
+      const stored = localStorage.getItem('yoshikawaFavorites')
+      const favorites = stored ? JSON.parse(stored) : []
+      const exists = favorites.some(f => f.id === item.id && f.media_type === type)
       setIsFavorite(exists)
     } catch {
       setIsFavorite(false)
@@ -475,6 +480,7 @@ export default function WatchPage() {
             overflow-x: hidden;
           }
 
+          /* --- BACKGROUND DINÂMICO COM BACKDROP (SEM GRADIENTE) --- */
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
@@ -502,6 +508,7 @@ export default function WatchPage() {
             z-index: 1;
           }
 
+          /* --- LOADING OVERLAY ESTILO APPLE --- */
           .loading-overlay {
             position: fixed; 
             top: 0; 
@@ -512,7 +519,7 @@ export default function WatchPage() {
             display: flex; 
             align-items: center; 
             justify-content: center;
-            background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
+            background: #050505;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.8s ease;
           }
           
@@ -526,13 +533,13 @@ export default function WatchPage() {
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            gap: 32px;
+            gap: 24px;
           }
 
           .spinner-apple {
             position: relative;
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -542,11 +549,12 @@ export default function WatchPage() {
             position: absolute;
             width: 100%;
             height: 100%;
-            border: 3px solid transparent;
+            border: 2.5px solid rgba(255, 255, 255, 0.15);
             border-radius: 50%;
-            border-top-color: rgba(255, 255, 255, 0.9);
+            border-top-color: #ffffff;
             border-right-color: rgba(255, 255, 255, 0.3);
-            animation: appleSpinner 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            border-bottom-color: rgba(255, 255, 255, 0.15);
+            animation: appleSpinner 1s linear infinite;
           }
 
           @keyframes appleSpinner {
@@ -555,26 +563,28 @@ export default function WatchPage() {
           }
 
           .loading-bar {
-            width: 200px;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            width: 180px;
+            height: 2.5px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
             overflow: hidden;
             position: relative;
           }
 
           .loading-progress {
             height: 100%;
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 1));
-            animation: loadingBar 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            background: #ffffff;
+            animation: loadingBar 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
             width: 0%;
-            border-radius: 3px;
           }
 
           @keyframes loadingBar {
-            0% { width: 0%; transform: translateX(0); }
-            50% { width: 70%; }
-            100% { width: 100%; transform: translateX(0); }
+            0% { width: 0%; }
+            20% { width: 15%; }
+            40% { width: 35%; }
+            60% { width: 65%; }
+            80% { width: 85%; }
+            100% { width: 100%; }
           }
 
           a { color: inherit; text-decoration: none; }
@@ -602,6 +612,7 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
+          /* --- BARRA DE NAVEGAÇÃO COLAPSÁVEL --- */
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -630,31 +641,12 @@ export default function WatchPage() {
             transition: all 0.6s var(--ease-smooth);
           }
 
-          .top-bar.nav-hidden .hidden-side-btn {
+          .top-bar.nav-hidden {
             opacity: 0;
-            transform: scale(0);
-            width: 0;
-            height: 0;
-            min-width: 0;
-            overflow: hidden;
+            visibility: hidden;
             pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.6, 0, 0.4, 1);
-          }
-
-          .top-bar.nav-hidden .hidden-pill-header {
-            width: var(--pill-height);
-            height: var(--pill-height);
-            min-width: var(--pill-height);
-            border-radius: 50%;
-            transition: all 0.6s cubic-bezier(0.6, 0, 0.4, 1);
-          }
-
-          .top-bar.nav-hidden .bar-label {
-            opacity: 0;
-            transform: scale(0);
-            width: 0;
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.6, 0, 0.4, 1);
+            transform: translateX(-50%) translateY(-100px);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden {
@@ -662,17 +654,6 @@ export default function WatchPage() {
             max-width: auto;
             gap: 12px;
             transition: all 0.6s var(--ease-smooth);
-          }
-
-          .bottom-bar.nav-hidden .hidden-side-btn {
-            opacity: 0;
-            transform: scale(0);
-            width: 0;
-            height: 0;
-            min-width: 0;
-            overflow: hidden;
-            pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.6, 0, 0.4, 1);
           }
 
           .bottom-bar.nav-hidden .pill-container {
@@ -689,13 +670,13 @@ export default function WatchPage() {
           }
 
           .bottom-bar.nav-hidden .nav-btn:not(.hide-toggle-pill-btn) {
+            position: absolute;
             opacity: 0;
-            transform: scale(0);
             width: 0;
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.6, 0, 0.4, 1);
+            transition: opacity 0.7s cubic-bezier(0.6, 0.0, 0.4, 1), width 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -712,6 +693,24 @@ export default function WatchPage() {
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn:hover {
             color: rgba(255, 255, 255, 0.9);
+          }
+
+          .bottom-bar.nav-hidden .hidden-fav {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transition: all 0.6s var(--ease-smooth);
+          }
+
+          .bottom-bar.nav-hidden .round-btn:first-child {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar.scrolled-state { 
@@ -1083,10 +1082,10 @@ export default function WatchPage() {
           .native-season-select {
             appearance: none; 
             -webkit-appearance: none;
-            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
-            padding: 6px 32px 6px 12px; 
-            border-radius: 10px;
-            font-size: 0.85rem; 
+            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 10px center;
+            padding: 8px 36px 8px 16px; 
+            border-radius: 12px;
+            font-size: 0.9rem; 
             color: #fff; 
             border: 1px solid rgba(255,255,255,0.1);
             cursor: pointer; 
@@ -1141,25 +1140,18 @@ export default function WatchPage() {
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
             z-index: 1;
             border-radius: 10px;
-            backdrop-filter: blur(0px);
-            transition: backdrop-filter 0.3s ease;
-          }
-
-          .ep-card:hover::before {
-            backdrop-filter: blur(4px);
           }
           
           .ep-card::after {
             content: '';
             position: absolute;
-            bottom: -14px;
+            bottom: -12px;
             left: 50%;
             transform: translateX(-50%) scale(0);
-            width: 6px;
-            height: 6px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            width: 8px;
+            height: 8px;
+            background: #ffffff;
             border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
             transition: transform 0.3s var(--ease-smooth);
             z-index: 3;
           }
@@ -1322,21 +1314,20 @@ export default function WatchPage() {
           }
           
           .ep-indicator { 
-            font-size: 0.95rem; 
-            font-weight: 600; 
+            font-size: 1rem; 
+            font-weight: 700; 
             color: #fff; 
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            background: rgba(255, 255, 255, 0.08); 
-            padding: 10px 18px; 
+            background: rgba(0,0,0,0.4); 
+            padding: 10px 20px; 
             border-radius: 12px;
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s var(--ease-smooth);
-            letter-spacing: 0.5px;
           }
 
           .ep-indicator:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.5);
             border-color: rgba(255, 255, 255, 0.25);
             transform: scale(1.05);
           }
