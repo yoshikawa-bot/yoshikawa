@@ -477,12 +477,23 @@ export default function WatchPage() {
   const startWebTorrentStream = (stream) => {
     if (typeof window === 'undefined') return
 
+    addDebugLog('🔍 Verificando WebTorrent...', 'info')
+
     if (!window.WebTorrent) {
+      addDebugLog('📥 Baixando WebTorrent lib...', 'info')
       const script = document.createElement('script')
       script.src = 'https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js'
-      script.onload = () => initializeWebTorrent(stream)
+      script.onload = () => {
+        addDebugLog('✅ WebTorrent carregado!', 'success')
+        initializeWebTorrent(stream)
+      }
+      script.onerror = () => {
+        addDebugLog('❌ Erro ao carregar WebTorrent', 'error')
+        showToast('Erro ao carregar biblioteca WebTorrent', 'error')
+      }
       document.head.appendChild(script)
     } else {
+      addDebugLog('✅ WebTorrent já disponível', 'success')
       initializeWebTorrent(stream)
     }
   }
@@ -509,51 +520,100 @@ export default function WatchPage() {
 
     if (!webTorrentClientRef.current) {
       addDebugLog('🆕 Criando cliente WebTorrent', 'info')
-      webTorrentClientRef.current = new window.WebTorrent({
-        maxConns: 55,
-        tracker: {
-          announce: [
-            'udp://tracker.opentrackr.org:1337/announce',
-            'udp://open.tracker.cl:1337/announce',
-            'udp://tracker.torrent.eu.org:451/announce',
-            'udp://exodus.desync.com:6969/announce',
-            'wss://tracker.btorrent.xyz',
-            'wss://tracker.openwebtorrent.com'
-          ]
-        }
-      })
+      
+      try {
+        webTorrentClientRef.current = new window.WebTorrent({
+          maxConns: 55,
+          tracker: {
+            announce: [
+              'wss://tracker.openwebtorrent.com',
+              'wss://tracker.btorrent.xyz',
+              'wss://tracker.fastcast.nz',
+              'udp://tracker.opentrackr.org:1337/announce',
+              'udp://open.tracker.cl:1337/announce',
+              'udp://tracker.torrent.eu.org:451/announce',
+              'udp://exodus.desync.com:6969/announce'
+            ]
+          }
+        })
+        addDebugLog('✅ Cliente criado', 'success')
+      } catch (err) {
+        addDebugLog(`❌ Erro criar cliente: ${err.message}`, 'error')
+        showToast('Erro ao criar cliente WebTorrent', 'error')
+        return
+      }
     }
 
-    const magnetURI = `magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title)}`
+    // Valida infoHash
+    if (!stream.infoHash || stream.infoHash.length !== 40) {
+      addDebugLog(`❌ InfoHash inválido: ${stream.infoHash}`, 'error')
+      showToast('Stream inválido (infoHash)', 'error')
+      return
+    }
+
+    const magnetURI = `magnet:?xt=urn:btih:${stream.infoHash}&dn=${encodeURIComponent(stream.title)}&tr=wss://tracker.openwebtorrent.com&tr=wss://tracker.btorrent.xyz&tr=udp://tracker.opentrackr.org:1337/announce`
     addDebugLog('🧲 Magnet criado', 'info')
+    console.log('Full magnet:', magnetURI)
     
     showToast('Conectando aos peers...', 'info')
 
     const client = webTorrentClientRef.current
     
+    // Timeout se não conectar em 30s
+    const timeoutId = setTimeout(() => {
+      if (!currentTorrentRef.current || currentTorrentRef.current.numPeers === 0) {
+        addDebugLog('⏱️ Timeout: Sem peers em 30s', 'error')
+        showToast('Nenhum peer encontrado. Tente outro stream.', 'error')
+      }
+    }, 30000)
+
+    let torrentAdded = false
+    
     client.add(magnetURI, {
       destroyStoreOnDestroy: true,
       storeCacheSlots: 20
     }, (torrent) => {
+      torrentAdded = true
+      clearTimeout(timeoutId)
+      
       addDebugLog(`✅ Torrent OK: ${torrent.files.length} arquivos`, 'success')
+      console.log('Torrent info:', {
+        name: torrent.name,
+        infoHash: torrent.infoHash,
+        files: torrent.files.map(f => ({ name: f.name, size: f.length }))
+      })
       
       currentTorrentRef.current = torrent
+
+      // Monitor de peers
+      const checkPeers = setInterval(() => {
+        if (torrent.numPeers === 0) {
+          addDebugLog(`🔍 Buscando peers... (${torrent.numPeers})`, 'info')
+        } else {
+          addDebugLog(`👥 ${torrent.numPeers} peers conectados`, 'success')
+          clearInterval(checkPeers)
+        }
+      }, 2000)
+
+      setTimeout(() => clearInterval(checkPeers), 20000)
 
       const videoFile = torrent.files
         .filter(f => {
           const ext = f.name.split('.').pop().toLowerCase()
           return ['mp4', 'mkv', 'avi', 'webm', 'mov', 'm4v'].includes(ext)
         })
-        .sort((a, b) => b.size - a.size)[0]
+        .sort((a, b) => b.length - a.length)[0]
 
       if (!videoFile) {
         addDebugLog('❌ Nenhum vídeo encontrado', 'error')
+        console.log('Arquivos disponíveis:', torrent.files.map(f => f.name))
         showToast('Nenhum arquivo de vídeo encontrado', 'error')
         setIsPlaying(false)
         return
       }
 
       addDebugLog(`🎥 Vídeo: ${videoFile.name.substring(0, 30)}...`, 'success')
+      console.log('Arquivo selecionado:', videoFile.name, `${(videoFile.length / 1024 / 1024).toFixed(2)} MB`)
 
       torrent.deselect(0, torrent.pieces.length - 1, false)
       videoFile.select()
@@ -579,6 +639,7 @@ export default function WatchPage() {
         }, (err) => {
           if (err) {
             addDebugLog(`❌ Erro: ${err.message}`, 'error')
+            console.error('Erro appendTo:', err)
             showToast('Erro ao carregar vídeo: ' + err.message, 'error')
             return
           }
@@ -591,6 +652,11 @@ export default function WatchPage() {
             
             video.addEventListener('loadedmetadata', () => {
               addDebugLog(`📊 ${video.videoWidth}x${video.videoHeight}`, 'info')
+              console.log('Metadata:', { 
+                duration: video.duration, 
+                width: video.videoWidth, 
+                height: video.videoHeight 
+              })
             })
             video.addEventListener('canplay', () => {
               addDebugLog('▶️ Pronto para reproduzir', 'success')
@@ -599,7 +665,10 @@ export default function WatchPage() {
               addDebugLog('🎥 Reproduzindo!', 'success')
             })
             video.addEventListener('error', (e) => {
-              addDebugLog(`❌ Erro vídeo: ${video.error?.code}`, 'error')
+              const errorCode = video.error?.code
+              const errorMsg = video.error?.message || 'Desconhecido'
+              addDebugLog(`❌ Erro vídeo: código ${errorCode}`, 'error')
+              console.error('Video error:', { code: errorCode, message: errorMsg })
             })
 
             setupVideoMemoryManagement(video, torrent)
@@ -610,11 +679,21 @@ export default function WatchPage() {
         })
       }
 
-      setTimeout(renderVideo, 200)
+      setTimeout(renderVideo, 300)
     })
 
+    // Verifica se o callback foi executado
+    setTimeout(() => {
+      if (!torrentAdded) {
+        addDebugLog('⏱️ Callback não executado em 10s', 'error')
+        console.error('WebTorrent add() callback nunca foi chamado')
+      }
+    }, 10000)
+
+    // Eventos do cliente
     client.on('error', (err) => {
       addDebugLog(`❌ Client error: ${err.message}`, 'error')
+      console.error('WebTorrent client error:', err)
       showToast('Erro WebTorrent: ' + err.message, 'error')
     })
   }
