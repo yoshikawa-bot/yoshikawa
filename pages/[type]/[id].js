@@ -142,24 +142,34 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+// --- COMPONENTE DE LOADING ---
+const LoadingScreen = ({ visible }) => {
+  if (!visible) return null;
+  return (
+    <div className={`loading-overlay ${!visible ? 'fade-out' : ''}`}>
+      <div className="loading-content">
+        <div className="spinner"></div>
+        <p className="loading-text">Carregando...</p>
+      </div>
+    </div>
+  )
+}
+
 export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
-  const [isReady, setIsReady] = useState(false)
+  // Estado de Carregamento Global
+  const [isLoading, setIsLoading] = useState(true)
 
   const [scrolled, setScrolled] = useState(false)
-  
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
-  
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
-  
   const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
   const [synopsisClosing, setSynopsisClosing] = useState(false)
-
   const [showDataPopup, setShowDataPopup] = useState(false)
   const [dataClosing, setDataClosing] = useState(false)
   
@@ -177,12 +187,17 @@ export default function WatchPage() {
 
   const toastTimerRef = useRef(null)
 
+  // --- CONTROLE DE LOADING ---
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsReady(true)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
+    // Só remove o loading quando temos ID e TYPE e se o conteúdo (content) já foi carregado
+    // Adiciona um delay artificial de 800ms para garantir que o CSS montou
+    if (content) {
+      const timer = setTimeout(() => {
+        setIsLoading(false)
+      }, 800) 
+      return () => clearTimeout(timer)
+    }
+  }, [content])
 
   const showToast = (message, type = 'info') => {
     if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
@@ -244,6 +259,8 @@ export default function WatchPage() {
       } catch (error) {
         console.error("Erro ao carregar", error)
         showToast('Erro ao carregar conteúdo', 'error')
+        // Em caso de erro, tira o loading pra mostrar o erro (ou poderia manter)
+        setIsLoading(false) 
       }
     }
 
@@ -430,18 +447,19 @@ export default function WatchPage() {
     setEpisode(1)
   }
 
-  if (!content) return null
-
+  // --- RENDERIZAÇÃO CONDICIONAL SEGURA ---
+  // Enquanto estiver carregando e não tiver conteúdo, mostra apenas o loading.
+  // Se tiver conteúdo, mas ainda estiver no delay de loading, mostra o conteúdo com o loading por cima.
+  
+  const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
+  const rating = content?.vote_average ? content.vote_average.toFixed(1) : 'N/A'
+  const genres = content?.genres ? content.genres.map(g => g.name).join(', ') : 'Gênero desconhecido'
   const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
-
-  const releaseDate = content.release_date || content.first_air_date || 'Desconhecido'
-  const rating = content.vote_average ? content.vote_average.toFixed(1) : 'N/A'
-  const genres = content.genres ? content.genres.map(g => g.name).join(', ') : 'Gênero desconhecido'
 
   return (
     <>
       <Head>
-        <title>{content.title || content.name} - Reproduzindo</title>
+        <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -461,9 +479,38 @@ export default function WatchPage() {
             background-attachment: fixed;
           }
 
-          .no-animation, .no-animation * {
-             transition: none !important;
-             animation: none !important;
+          /* --- LOADING OVERLAY --- */
+          .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; 
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
+            z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+          }
+          
+          .loading-overlay.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+          }
+
+          .loading-content {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+          }
+
+          .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--ios-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+          .loading-text {
+            font-size: 0.9rem; color: rgba(255,255,255,0.6); letter-spacing: 1px;
+            font-weight: 500;
           }
 
           a { color: inherit; text-decoration: none; }
@@ -494,12 +541,6 @@ export default function WatchPage() {
           .site-wrapper { 
             width: 100%; 
             min-height: 100vh; 
-            opacity: 0;
-            transition: opacity 0.5s ease;
-          }
-          
-          .site-wrapper.loaded {
-            opacity: 1;
           }
 
           .bar-container {
@@ -776,139 +817,143 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      <div className={`site-wrapper ${isReady ? 'loaded' : ''} ${!isReady ? 'no-animation' : ''}`}>
-        
-        <Header
-          label={scrolled ? "Reproduzindo" : "Yoshikawa"}
-          scrolled={scrolled}
-          showInfo={showInfoPopup}
-          toggleInfo={toggleInfoPopup}
-          infoClosing={infoClosing}
-          showTech={showTechPopup}
-          toggleTech={toggleTechPopup}
-          techClosing={techClosing}
-        />
+      <LoadingScreen visible={isLoading} />
 
-        <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
+      {/* Só renderiza o resto se tiver conteúdo, para evitar erros de leitura de propriedades null */}
+      {content && (
+        <div className="site-wrapper">
+          <Header
+            label={scrolled ? "Reproduzindo" : "Yoshikawa"}
+            scrolled={scrolled}
+            showInfo={showInfoPopup}
+            toggleInfo={toggleInfoPopup}
+            infoClosing={infoClosing}
+            showTech={showTechPopup}
+            toggleTech={toggleTechPopup}
+            techClosing={techClosing}
+          />
 
-        {showSynopsisPopup && (
-          <div 
-            className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="popup-icon-wrapper synopsis">
-              <i className="fas fa-align-left"></i>
-            </div>
-            <div className="popup-content">
-              <p className="popup-title">Sinopse</p>
-              <p className="popup-text">
-                {type === 'tv' && currentEpisodeData?.overview 
-                  ? currentEpisodeData.overview 
-                  : content?.overview || "Sinopse indisponível."}
-              </p>
-            </div>
-          </div>
-        )}
+          <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
-        {showDataPopup && (
-          <div 
-            className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="popup-icon-wrapper data">
-              <i className="fas fa-film"></i>
-            </div>
-            <div className="popup-content">
-              <p className="popup-title">Ficha Técnica</p>
-              <div className="popup-text">
-                <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
-                <strong>Avaliação:</strong> {rating} ⭐<br/>
-                <strong>Gêneros:</strong> {genres}
+          {showSynopsisPopup && (
+            <div 
+              className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="popup-icon-wrapper synopsis">
+                <i className="fas fa-align-left"></i>
+              </div>
+              <div className="popup-content">
+                <p className="popup-title">Sinopse</p>
+                <p className="popup-text">
+                  {type === 'tv' && currentEpisodeData?.overview 
+                    ? currentEpisodeData.overview 
+                    : content?.overview || "Sinopse indisponível."}
+                </p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <main className="container">
-          <div className="page-header">
-            <h1 className="page-title">Reproduzindo</h1>
-            <div className="status-dots">
-              <span className="dot red"></span>
-              <span className="dot yellow"></span>
-              <span className="dot green"></span>
-            </div>
-          </div>
-
-          <div 
-            className="player-banner-container" 
-            onClick={() => setIsPlaying(true)}
-            style={{
-              backgroundImage: currentEpisodeData?.still_path 
-                ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
-                : content.backdrop_path 
-                  ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
-                  : `url(${DEFAULT_BACKDROP})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="play-button-static">
-              <i className="fas fa-play"></i>
-            </div>
-          </div>
-
-          <div className="glass-panel details-container">
-            <div className="text-left">
-              <h2 className="media-title">{content.title || content.name}</h2>
-            </div>
-
-            {type === 'tv' && (
-              <>
-                <div className="season-controls">
-                  <select 
-                    className="native-season-select"
-                    value={season}
-                    onChange={handleNativeSeasonChange}
-                  >
-                     {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>Temporada {num}</option>
-                     ))}
-                  </select>
+          {showDataPopup && (
+            <div 
+              className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="popup-icon-wrapper data">
+                <i className="fas fa-film"></i>
+              </div>
+              <div className="popup-content">
+                <p className="popup-title">Ficha Técnica</p>
+                <div className="popup-text">
+                  <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
+                  <strong>Avaliação:</strong> {rating} ⭐<br/>
+                  <strong>Gêneros:</strong> {genres}
                 </div>
+              </div>
+            </div>
+          )}
 
-                <div className="episodes-carousel" ref={carouselRef}>
-                  {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
-                    <div 
-                      key={ep.id} 
-                      className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                      onClick={() => setEpisode(ep.episode_number)}
-                      style={{
-                        backgroundImage: ep.still_path 
-                          ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                          : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
-                      }}
+          <main className="container">
+            <div className="page-header">
+              <h1 className="page-title">Reproduzindo</h1>
+              <div className="status-dots">
+                <span className="dot red"></span>
+                <span className="dot yellow"></span>
+                <span className="dot green"></span>
+              </div>
+            </div>
+
+            <div 
+              className="player-banner-container" 
+              onClick={() => setIsPlaying(true)}
+              style={{
+                backgroundImage: currentEpisodeData?.still_path 
+                  ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
+                  : content.backdrop_path 
+                    ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
+                    : `url(${DEFAULT_BACKDROP})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="play-button-static">
+                <i className="fas fa-play"></i>
+              </div>
+            </div>
+
+            <div className="glass-panel details-container">
+              <div className="text-left">
+                <h2 className="media-title">{content.title || content.name}</h2>
+              </div>
+
+              {type === 'tv' && (
+                <>
+                  <div className="season-controls">
+                    <select 
+                      className="native-season-select"
+                      value={season}
+                      onChange={handleNativeSeasonChange}
                     >
-                      <div className="ep-card-info">
-                        <span className="ep-card-num">Ep {ep.episode_number}</span>
-                        <span className="ep-card-title">{ep.name}</span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </main>
+                       {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>Temporada {num}</option>
+                       ))}
+                    </select>
+                  </div>
 
-        <BottomNav 
-          isFavorite={isFavorite} 
-          onToggleFavorite={toggleFavorite} 
-          onToggleSynopsis={toggleSynopsisPopup} 
-          onToggleData={toggleDataPopup}
-        />
-      </div>
+                  <div className="episodes-carousel" ref={carouselRef}>
+                    {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                      <div 
+                        key={ep.id} 
+                        className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                        onClick={() => setEpisode(ep.episode_number)}
+                        style={{
+                          backgroundImage: ep.still_path 
+                            ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                            : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
+                        }}
+                      >
+                        <div className="ep-card-info">
+                          <span className="ep-card-num">Ep {ep.episode_number}</span>
+                          <span className="ep-card-title">{ep.name}</span>
+                        </div>
+                      </div>
+                    )) : (
+                      <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </main>
+
+          <BottomNav 
+            isFavorite={isFavorite} 
+            onToggleFavorite={toggleFavorite} 
+            onToggleSynopsis={toggleSynopsisPopup} 
+            onToggleData={toggleDataPopup}
+          />
+        </div>
+      )}
 
       {isPlaying && (
         <div className="player-overlay">
