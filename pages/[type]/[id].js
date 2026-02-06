@@ -12,7 +12,6 @@ export const Header = ({
   label, scrolled, 
   showInfo, toggleInfo, infoClosing, 
   showTech, toggleTech, techClosing
-  // Props de Data removidos daqui
 }) => {
   
   const handleRightClick = (e) => {
@@ -36,8 +35,6 @@ export const Header = ({
         >
           <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
         </button>
-
-        {/* Botão de Dados REMOVIDO daqui conforme pedido */}
 
         <div className="pill-container glass-panel">
           <span key={label} className="bar-label">{label}</span>
@@ -79,7 +76,7 @@ export const Header = ({
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.3 Slim • React 18 • TMDB API</p>
+            <p className="popup-text">v2.6.5 Final • React 18 • TMDB API</p>
           </div>
         </div>
       )}
@@ -87,7 +84,6 @@ export const Header = ({
   )
 }
 
-// BottomNav atualizada com o botão de Dados
 export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onToggleData }) => {
   const [animating, setAnimating] = useState(false)
 
@@ -115,7 +111,6 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
             <i className="fas fa-home"></i>
          </Link>
          
-         {/* Botão de Dados movido para cá */}
          <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
             <i className="fas fa-film"></i>
          </button>
@@ -490,10 +485,11 @@ export default function WatchPage() {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15); /* Borda fina */
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
+            /* CRUCIAL: Removemos 'all' para evitar animação na carga da página */
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
@@ -502,7 +498,9 @@ export default function WatchPage() {
           .bar-container {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
             display: flex; align-items: center; justify-content: center; gap: 12px; 
-            width: 90%; max-width: var(--pill-max-width); transition: all 0.4s var(--ease-smooth);
+            width: 90%; max-width: var(--pill-max-width);
+            /* CRUCIAL: 'top', 'bottom', 'transform'. NÃO usar 'all' ou 'left' aqui */
+            transition: top 0.4s var(--ease-smooth), bottom 0.4s var(--ease-smooth), transform 0.4s var(--ease-smooth);
           }
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
@@ -539,7 +537,7 @@ export default function WatchPage() {
           .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
           @keyframes heartZoom { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
 
-          /* POPUP & TOAST */
+          /* POPUP & TOAST - ANIMAÇÕES RESTAURADAS */
           .standard-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
@@ -552,6 +550,7 @@ export default function WatchPage() {
             transform: translateX(-50%) translateY(-50%) scale(0.3);
             transform-origin: top center;
             opacity: 0;
+            /* Animação de entrada restaurada */
             animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           }
@@ -575,6 +574,7 @@ export default function WatchPage() {
           .popup-icon-wrapper, .toast-icon-wrapper { 
             width: 42px; height: 42px; min-width: 42px; border-radius: 12px; 
             display: flex; align-items: center; justify-content: center; 
+            /* Animação restaurada */
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
           }
           
@@ -591,8 +591,9 @@ export default function WatchPage() {
           .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 20px; color: #fff; }
           .popup-content, .toast-content { 
             flex: 1; display: flex; flex-direction: column; gap: 4px; 
-            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
             max-height: 60vh; overflow-y: auto;
+            /* Animação restaurada */
+            opacity: 0; animation: contentFade 0.4s ease 0.2s forwards; 
           }
           @keyframes contentFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
           
@@ -620,7 +621,8 @@ export default function WatchPage() {
           .player-banner-container {
             width: 100%; aspect-ratio: 16/9; border-radius: 24px; overflow: hidden; position: relative;
             background-color: #1a1a1a; 
-            border: none;
+            /* Borda fina mantida */
+            border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             margin-bottom: 24px; cursor: pointer;
           }
@@ -636,12 +638,12 @@ export default function WatchPage() {
           }
           .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
 
-          /* CORREÇÃO 3: REMOVIDO BORDA E SOMBRA PRETA DO CONTAINER DE DETALHES */
           .details-container {
             border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 16px;
-            /* Border e Box-shadow removidos */
-            border: none; box-shadow: none;
-            background: rgba(255, 255, 255, 0.03); /* Leve fundo apenas para dar contexto */
+            /* Borda fina mantida */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.03);
           }
 
           .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
@@ -662,37 +664,29 @@ export default function WatchPage() {
             padding: 10px 14px 14px 14px; scrollbar-width: none; margin: 0 -14px; 
           }
           .episodes-carousel::-webkit-scrollbar { display: none; }
-          @media (min-width: 769px) {
-            .episodes-carousel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.03); }
-            .episodes-carousel::-webkit-scrollbar { display: block; height: 6px; }
-            .episodes-carousel::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
-            .episodes-carousel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-            .episodes-carousel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
-          }
           
-          /* CORREÇÃO 2: CARD COM SOMBRA TOTAL */
+          /* -- CARD STYLE (Mantido Correção da Borda/Sombra) -- */
           .ep-card {
             min-width: 110px; height: 65px; background-size: cover; background-position: center;
             border-radius: 10px; 
-            /* Padding removido do pai para que o gradiente encoste nas bordas */
             padding: 0; 
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
+            /* Borda fina */
+            border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer; transition: all 0.2s ease; position: relative; 
+            overflow: hidden; 
             box-shadow: none;
           }
           
-          /* O gradiente agora está no absolute e cobre tudo */
           .ep-card::before {
-            content: ''; position: absolute; inset: 0;
+            content: ''; position: absolute; inset: 0; width: 100%; height: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
-            z-index: 1; /* Acima do background image */
+            z-index: 1;
           }
           
-          /* Novo container interno para o texto respeitar o padding */
           .ep-card-info {
-             position: relative; z-index: 2; /* Acima da sombra */
+             position: relative; z-index: 2;
              width: 100%; height: 100%;
-             padding: 6px 8px; /* Padding movido para cá */
+             padding: 6px 8px;
              display: flex; flex-direction: column; justify-content: flex-end;
           }
 
@@ -717,7 +711,9 @@ export default function WatchPage() {
           .player-popup-container {
             position: relative; background: #000; border-radius: 20px; overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9);
-            transition: all 0.4s var(--ease-elastic); 
+            /* Borda fina mantida */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: width 0.4s var(--ease-elastic), height 0.4s var(--ease-elastic); 
             display: flex; align-items: center; justify-content: center;
           }
           
@@ -791,7 +787,6 @@ export default function WatchPage() {
           showTech={showTechPopup}
           toggleTech={toggleTechPopup}
           techClosing={techClosing}
-          // Data props removidos
         />
 
         <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
@@ -895,7 +890,6 @@ export default function WatchPage() {
                           : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
                       }}
                     >
-                      {/* Envolvi o conteúdo numa div com padding para a sombra (no pai) funcionar 100% */}
                       <div className="ep-card-info">
                         <span className="ep-card-num">Ep {ep.episode_number}</span>
                         <span className="ep-card-title">{ep.name}</span>
@@ -914,7 +908,7 @@ export default function WatchPage() {
           isFavorite={isFavorite} 
           onToggleFavorite={toggleFavorite} 
           onToggleSynopsis={toggleSynopsisPopup} 
-          onToggleData={toggleDataPopup} // Passando a função para o botão novo
+          onToggleData={toggleDataPopup}
         />
       </div>
 
@@ -937,7 +931,6 @@ export default function WatchPage() {
             </div>
 
             <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
-              {/* CORREÇÃO 4: IMPLEMENTAÇÃO DO IFRAME SUPERFLIX */}
               <iframe 
                 src={getEmbedUrl()} 
                 className="player-embed" 
