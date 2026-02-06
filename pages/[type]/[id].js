@@ -498,7 +498,7 @@ export default function WatchPage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(5, 5, 5, 0.4);
+            background: rgba(5, 5, 5, 0.55);
             pointer-events: none;
             z-index: 0;
           }
@@ -665,7 +665,7 @@ export default function WatchPage() {
             border-radius: 50%;
             gap: 0;
             padding: 0;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
             background: rgba(255, 255, 255, 0.06);
           }
 
@@ -676,7 +676,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s var(--ease-smooth);
+            transition: opacity 0.7s cubic-bezier(0.6, 0.0, 0.4, 1), width 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -747,7 +747,7 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             position: relative;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .nav-btn { 
@@ -1127,7 +1127,7 @@ export default function WatchPage() {
             cursor: pointer; 
             transition: all 0.2s ease; 
             position: relative; 
-            overflow: hidden; 
+            overflow: visible; 
             box-shadow: none;
           }
           
@@ -1139,6 +1139,21 @@ export default function WatchPage() {
             height: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
             z-index: 1;
+            border-radius: 10px;
+          }
+          
+          .ep-card::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 8px;
+            height: 8px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s var(--ease-smooth);
+            z-index: 3;
           }
           
           .ep-card-info {
@@ -1158,7 +1173,11 @@ export default function WatchPage() {
           }
           
           .ep-card.active { 
-            border: 1px solid var(--ios-blue);
+            border: 1px solid rgba(255,255,255,0.15);
+          }
+
+          .ep-card.active::after {
+            transform: translateX(-50%) scale(1);
           }
           
           .ep-card-num { 
