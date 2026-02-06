@@ -6,8 +6,6 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
-// --- COMPONENTES AUXILIARES ---
-
 export const Header = ({ 
   label, scrolled, 
   showInfo, toggleInfo, infoClosing, 
@@ -27,7 +25,6 @@ export const Header = ({
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
         
-        {/* Botão Técnico */}
         <button 
           className="round-btn glass-panel" 
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
@@ -49,7 +46,6 @@ export const Header = ({
         </button>
       </header>
 
-      {/* Pop-up Proteção */}
       {showInfo && (
         <div 
           className={`standard-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
@@ -65,7 +61,6 @@ export const Header = ({
         </div>
       )}
 
-      {/* Pop-up Técnico */}
       {showTech && (
         <div 
           className={`standard-popup glass-panel ${techClosing ? 'closing' : ''}`} 
@@ -147,20 +142,15 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- PÁGINA DINÂMICA DE REPRODUÇÃO ([type]/[id].js) ---
-
 export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
-  // Estado para prevenir animação no carregamento (A CORREÇÃO PRINCIPAL)
   const [isReady, setIsReady] = useState(false)
 
-  // Estados de Interface
   const [scrolled, setScrolled] = useState(false)
   
-  // Controle de Popups
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
   
@@ -176,29 +166,24 @@ export default function WatchPage() {
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
   
-  // Estados do Player e Conteúdo
   const [content, setContent] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isWideMode, setIsWideMode] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
-  // Estados Específicos de Série
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
 
   const toastTimerRef = useRef(null)
 
-  // --- LÓGICA DE BLOQUEIO DE ANIMAÇÃO INICIAL ---
   useEffect(() => {
-    // Dá um tempo para o navegador renderizar o layout estático antes de habilitar as transições
     const timer = setTimeout(() => {
       setIsReady(true)
-    }, 500) // 500ms de "congelamento" inicial das animações
+    }, 100)
     return () => clearTimeout(timer)
   }, [])
 
-  // --- TOAST LOGIC ---
   const showToast = (message, type = 'info') => {
     if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
       closeAllPopups()
@@ -242,7 +227,6 @@ export default function WatchPage() {
     if (currentToast) setCurrentToast({ ...currentToast, closing: true }) 
   }
 
-  // --- FETCHING DATA ---
   useEffect(() => {
     if (!id || !type) return
 
@@ -318,7 +302,6 @@ export default function WatchPage() {
     }
   }
 
-  // --- POPUP HANDLERS ---
   const closeAllPopups = useCallback(() => {
     if (showInfoPopup && !infoClosing) {
       setInfoClosing(true)
@@ -418,7 +401,6 @@ export default function WatchPage() {
     }
   }, [episode, seasonData])
 
-  // Player Logic
   const handleNextEp = () => {
     const nextEp = episode + 1
     if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
@@ -452,7 +434,6 @@ export default function WatchPage() {
 
   const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
 
-  // Dados para o Popup
   const releaseDate = content.release_date || content.first_air_date || 'Desconhecido'
   const rating = content.vote_average ? content.vote_average.toFixed(1) : 'N/A'
   const genres = content.genres ? content.genres.map(g => g.name).join(', ') : 'Gênero desconhecido'
@@ -480,12 +461,10 @@ export default function WatchPage() {
             background-attachment: fixed;
           }
 
-          /* --- CLASSE MÁGICA PARA IMPEDIR SLIDE NO LOAD --- */
           .no-animation, .no-animation * {
              transition: none !important;
              animation: none !important;
           }
-          /* ----------------------------------------------- */
 
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
@@ -512,7 +491,16 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          .site-wrapper { width: 100%; min-height: 100vh; }
+          .site-wrapper { 
+            width: 100%; 
+            min-height: 100vh; 
+            opacity: 0;
+            transition: opacity 0.5s ease;
+          }
+          
+          .site-wrapper.loaded {
+            opacity: 1;
+          }
 
           .bar-container {
             position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
@@ -555,7 +543,6 @@ export default function WatchPage() {
           .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
           @keyframes heartZoom { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
 
-          /* POPUP & TOAST */
           .standard-popup, .toast {
             position: fixed;
             top: calc(20px + var(--pill-height) + 16px); 
@@ -702,7 +689,10 @@ export default function WatchPage() {
           }
 
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
-          .ep-card.active { border-color: var(--ios-blue); border-width: 1px; box-shadow: 0 0 0 1px var(--ios-blue); }
+          
+          .ep-card.active { 
+            border: 1px solid var(--ios-blue);
+          }
           
           .ep-card-num { font-size: 0.75rem; font-weight: 700; color: #fff; }
           .ep-card-title { font-size: 0.65rem; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -786,8 +776,7 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      {/* APLICANDO A CLASSE DE BLOQUEIO CONDICIONALMENTE */}
-      <div className={`site-wrapper ${!isReady ? 'no-animation' : ''}`}>
+      <div className={`site-wrapper ${isReady ? 'loaded' : ''} ${!isReady ? 'no-animation' : ''}`}>
         
         <Header
           label={scrolled ? "Reproduzindo" : "Yoshikawa"}
