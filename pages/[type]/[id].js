@@ -98,13 +98,17 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
 
   return (
     <div className={`bar-container bottom-bar ${navHidden ? 'nav-hidden' : ''}`}>
-      <button className={`round-btn glass-panel ${navHidden ? 'hide-btn-active' : ''}`} onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-        <i className={navHidden ? "fas fa-arrow-down" : "fas fa-arrow-up"}></i>
+      <button className="round-btn glass-panel" onClick={handleShare} title="Compartilhar">
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
       <div className={`pill-container glass-panel ${navHidden ? 'hidden-pill' : ''}`}>
          <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
             <i className="fas fa-film"></i>
+         </button>
+
+         <button className="nav-btn hide-show-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
+            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
          </button>
 
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
@@ -117,10 +121,6 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
         ></i>
-      </button>
-
-      <button className="round-btn glass-panel" onClick={handleShare} title="Compartilhar">
-        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
     </div>
   )
@@ -151,6 +151,9 @@ const LoadingScreen = ({ visible }) => {
       <div className="loading-content">
         <div className="spinner-apple">
           <div className="spinner-ring"></div>
+        </div>
+        <div className="loading-bar">
+          <div className="loading-progress"></div>
         </div>
       </div>
     </div>
@@ -530,7 +533,7 @@ export default function WatchPage() {
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            gap: 0;
+            gap: 24px;
           }
 
           .spinner-apple {
@@ -557,6 +560,28 @@ export default function WatchPage() {
           @keyframes appleSpinner {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+
+          .loading-bar {
+            width: 180px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+            position: relative;
+          }
+
+          .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #0A84FF, transparent);
+            animation: loadingBar 2s ease-in-out infinite;
+            width: 40%;
+          }
+
+          @keyframes loadingBar {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(200%); }
+            100% { transform: translateX(-100%); }
           }
 
           a { color: inherit; text-decoration: none; }
@@ -596,32 +621,36 @@ export default function WatchPage() {
             gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
-            transition: all 0.5s var(--ease-smooth);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar { 
             top: 20px;
             opacity: 1;
             visibility: visible;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar { 
             bottom: 20px;
             opacity: 1;
             visibility: visible;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar.nav-hidden {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transform: translateX(-50%) translateY(-80px);
+            transform: translateX(-50%) translateY(-100px);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden {
             width: var(--pill-height);
             max-width: var(--pill-height);
             gap: 0;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .pill-container {
@@ -629,6 +658,7 @@ export default function WatchPage() {
             width: 0;
             overflow: hidden;
             pointer-events: none;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .hidden-fav {
@@ -636,19 +666,15 @@ export default function WatchPage() {
             width: 0;
             overflow: hidden;
             pointer-events: none;
+            transition: all 0.6s var(--ease-smooth);
           }
 
-          .bottom-bar.nav-hidden .round-btn:last-child {
+          .bottom-bar.nav-hidden .round-btn:first-child {
             opacity: 0;
             width: 0;
             overflow: hidden;
             pointer-events: none;
-          }
-
-          .bottom-bar.nav-hidden .hide-btn-active {
-            width: var(--pill-height);
-            height: var(--pill-height);
-            border-radius: 50%;
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar.scrolled-state { 
@@ -685,7 +711,7 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             position: relative;
-            transition: all 0.5s var(--ease-smooth);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .nav-btn { 
@@ -698,6 +724,10 @@ export default function WatchPage() {
             transition: all 0.3s ease;
             position: relative; 
             z-index: 5;
+          }
+
+          .hide-show-btn {
+            color: rgba(255, 255, 255, 0.6);
           }
 
           .nav-btn i { 
@@ -1110,6 +1140,19 @@ export default function WatchPage() {
             display: flex; 
             align-items: center; 
             justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            animation: overlayFadeIn 0.4s var(--ease-smooth);
+          }
+
+          @keyframes overlayFadeIn {
+            from {
+              opacity: 0;
+              backdrop-filter: blur(0px);
+            }
+            to {
+              opacity: 1;
+              backdrop-filter: blur(20px);
+            }
           }
 
           .player-wrapper-vertical {
@@ -1118,6 +1161,18 @@ export default function WatchPage() {
             align-items: center;
             position: relative;
             width: auto;
+            animation: playerSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+
+          @keyframes playerSlideUp {
+            from {
+              opacity: 0;
+              transform: translateY(60px) scale(0.9);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
           }
 
           .player-popup-container {
@@ -1125,12 +1180,24 @@ export default function WatchPage() {
             background: #000; 
             border-radius: 20px; 
             overflow: hidden;
-            box-shadow: 0 0 60px rgba(0,0,0,0.9);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: width 0.4s var(--ease-elastic), height 0.4s var(--ease-elastic); 
+            box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s var(--ease-elastic); 
             display: flex; 
             align-items: center; 
             justify-content: center;
+            animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
+          }
+
+          @keyframes playerContainerPop {
+            from {
+              opacity: 0;
+              transform: scale(0.8);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
           }
           
           .popup-size-square { 
@@ -1148,7 +1215,17 @@ export default function WatchPage() {
           .player-embed { 
             width: 100%; 
             height: 100%; 
-            border: none; 
+            border: none;
+            animation: embedFadeIn 0.5s ease 0.2s backwards;
+          }
+
+          @keyframes embedFadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
           }
           
           .player-header-controls {
@@ -1156,7 +1233,19 @@ export default function WatchPage() {
             display: flex; 
             justify-content: space-between; 
             align-items: center;
-            margin-bottom: 15px; 
+            margin-bottom: 20px; 
+            animation: controlsFadeIn 0.5s ease 0.15s backwards;
+          }
+
+          @keyframes controlsFadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
           
           .ep-indicator { 
@@ -1164,66 +1253,147 @@ export default function WatchPage() {
             font-weight: 700; 
             color: #fff; 
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.3); 
-            padding: 8px 16px; 
+            background: rgba(0,0,0,0.4); 
+            padding: 10px 20px; 
             border-radius: 12px;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .ep-indicator:hover {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
           }
 
           .right-controls { 
             display: flex; 
-            gap: 10px; 
+            gap: 12px; 
           }
 
           .control-btn {
-            width: 42px; 
-            height: 42px; 
-            background: rgba(0,0,0,0.3); 
+            width: 48px; 
+            height: 48px; 
+            background: rgba(10, 132, 255, 0.15); 
             backdrop-filter: blur(10px);
             border-radius: 50%; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            color: #fff; 
-            transition: all 0.3s; 
-            border: 1px solid rgba(255,255,255,0.15);
+            color: #0A84FF; 
+            transition: all 0.3s var(--ease-elastic); 
+            border: 1.5px solid rgba(10, 132, 255, 0.3);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .control-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(10, 132, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
           }
 
           .control-btn:hover { 
-            background: rgba(0,0,0,0.5); 
-            transform: scale(1.1); 
-            border-color: rgba(255,255,255,0.3); 
+            background: rgba(10, 132, 255, 0.25); 
+            transform: scale(1.12);
+            border-color: rgba(10, 132, 255, 0.5);
+            box-shadow: 0 0 20px rgba(10, 132, 255, 0.3);
+          }
+
+          .control-btn:hover::before {
+            opacity: 1;
+          }
+
+          .control-btn:active {
+            transform: scale(0.95);
+          }
+
+          .control-btn i {
+            font-size: 18px;
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .control-btn:hover i {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 8px rgba(10, 132, 255, 0.5));
           }
           
           .player-bottom-controls {
             display: flex; 
             justify-content: center; 
-            gap: 16px;
-            margin-top: 15px; 
+            gap: 20px;
+            margin-top: 20px;
+            animation: controlsFadeIn 0.5s ease 0.25s backwards;
           }
 
           .nav-ep-btn {
-            background: rgba(0,0,0,0.3); 
-            padding: 10px 24px; 
+            background: rgba(10, 132, 255, 0.15); 
+            padding: 12px 32px; 
             border-radius: 50px;
-            color: #fff; 
+            color: #0A84FF; 
             font-weight: 600; 
+            font-size: 0.95rem;
             display: flex; 
             align-items: center; 
-            gap: 8px;
-            transition: all 0.3s; 
+            gap: 10px;
+            transition: all 0.3s var(--ease-elastic); 
             backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(10, 132, 255, 0.3);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .nav-ep-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(10, 132, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+          }
+
+          .nav-ep-btn:hover::before {
+            left: 100%;
           }
 
           .nav-ep-btn:hover { 
-            background: rgba(0,0,0,0.5); 
-            transform: scale(1.05); 
-            border-color: rgba(255,255,255,0.3); 
+            background: rgba(10, 132, 255, 0.25); 
+            transform: scale(1.08);
+            border-color: rgba(10, 132, 255, 0.5);
+            box-shadow: 0 0 20px rgba(10, 132, 255, 0.3);
           }
 
           .nav-ep-btn:active { 
             transform: scale(0.95); 
+          }
+
+          .nav-ep-btn i {
+            transition: all 0.3s var(--ease-elastic);
+          }
+
+          .nav-ep-btn:hover i {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(10, 132, 255, 0.5));
+          }
+
+          .nav-ep-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+          }
+
+          .nav-ep-btn:disabled:hover {
+            transform: scale(1);
+            background: rgba(10, 132, 255, 0.15);
+            border-color: rgba(10, 132, 255, 0.3);
+            box-shadow: none;
           }
 
           @media (max-width: 768px) {
