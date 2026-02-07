@@ -1,15 +1,3 @@
-Precisamos refinar a animação de fechamento e abertura das pilulas ao usar o botao de ocultar, tambem altere o ícone dele, as pilulas devem fechar e abrir numa animação igual (inversa)
-
-vamos adicionar na parte de baixo da tela de carregamento "DESENVOLVIDO POR KAWA <3"
-
-vamos remover a sombra de dentro dos cards do carrossel
-
-vamos mostrar apenas o titulo da serie e filme no conteiner de detalhes, com um botao para expandir e mostrar o resto se aplicável
-
-vamos fazer o possível e impossível para fazer com que o embed pare de ter anúncios e redirecionamentos a todo clique, sem alterar a api
-
-atualize e retorne o code completo sem comentários 
-
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -120,7 +108,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
          </button>
 
          <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
+            <i className={navHidden ? "fas fa-eye" : "fas fa-eye-slash"}></i>
          </button>
 
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
@@ -155,7 +143,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- COMPONENTE DE LOADING ESTILO APPLE ---
 const LoadingScreen = ({ visible }) => {
   if (!visible) return null;
   return (
@@ -167,6 +154,7 @@ const LoadingScreen = ({ visible }) => {
         <div className="loading-bar">
           <div className="loading-progress"></div>
         </div>
+        <div className="loading-footer">DESENVOLVIDO POR KAWA &lt;3</div>
       </div>
     </div>
   )
@@ -177,7 +165,6 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
-  // Estado de Carregamento Global
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
 
@@ -190,6 +177,7 @@ export default function WatchPage() {
   const [synopsisClosing, setSynopsisClosing] = useState(false)
   const [showDataPopup, setShowDataPopup] = useState(false)
   const [dataClosing, setDataClosing] = useState(false)
+  const [dataExpanded, setDataExpanded] = useState(false)
   
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
@@ -205,7 +193,6 @@ export default function WatchPage() {
 
   const toastTimerRef = useRef(null)
 
-  // --- CONTROLE DE LOADING ---
   useEffect(() => {
     if (content) {
       const timer = setTimeout(() => {
@@ -349,7 +336,7 @@ export default function WatchPage() {
     }
     if (showDataPopup && !dataClosing) {
       setDataClosing(true)
-      setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
+      setTimeout(() => { setShowDataPopup(false); setDataClosing(false); setDataExpanded(false) }, 400)
     }
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
@@ -387,7 +374,7 @@ export default function WatchPage() {
     } else {
       if (showDataPopup) {
         setDataClosing(true)
-        setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
+        setTimeout(() => { setShowDataPopup(false); setDataClosing(false); setDataExpanded(false) }, 400)
       } else { setShowDataPopup(true) }
     }
   }
@@ -492,7 +479,6 @@ export default function WatchPage() {
             overflow-x: hidden;
           }
 
-          /* --- BACKGROUND DINÂMICO COM BACKDROP (SEM GRADIENTE) --- */
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
@@ -520,7 +506,6 @@ export default function WatchPage() {
             z-index: 1;
           }
 
-          /* --- LOADING OVERLAY ESTILO APPLE --- */
           .loading-overlay {
             position: fixed; 
             top: 0; 
@@ -599,6 +584,15 @@ export default function WatchPage() {
             100% { width: 100%; }
           }
 
+          .loading-footer {
+            margin-top: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+          }
+
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
@@ -619,12 +613,10 @@ export default function WatchPage() {
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: inherit;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          /* --- BARRA DE NAVEGAÇÃO COLAPSÁVEL --- */
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -677,7 +669,7 @@ export default function WatchPage() {
             border-radius: 50%;
             gap: 0;
             padding: 0;
-            transition: all 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
+            transition: all 0.6s var(--ease-smooth);
             background: rgba(255, 255, 255, 0.06);
           }
 
@@ -688,7 +680,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: opacity 0.7s cubic-bezier(0.6, 0.0, 0.4, 1), width 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -759,7 +751,7 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             position: relative;
-            transition: all 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .nav-btn { 
@@ -950,6 +942,31 @@ export default function WatchPage() {
             line-height: 1.4; 
           }
 
+          .expand-button {
+            margin-top: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            align-self: flex-start;
+          }
+
+          .expand-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            transform: scale(1.05);
+          }
+
+          .expand-button:active {
+            transform: scale(0.95);
+          }
+
           @keyframes iconPop { 
             from { transform: scale(0); opacity: 0; } 
             to { transform: scale(1); opacity: 1; } 
@@ -1074,7 +1091,6 @@ export default function WatchPage() {
             flex-direction: column; 
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: none;
             background: rgba(255, 255, 255, 0.03);
           }
 
@@ -1139,8 +1155,7 @@ export default function WatchPage() {
             cursor: pointer; 
             transition: all 0.2s ease; 
             position: relative; 
-            overflow: visible; 
-            box-shadow: none;
+            overflow: visible;
           }
           
           .ep-card::before {
@@ -1294,6 +1309,7 @@ export default function WatchPage() {
             height: 100%; 
             border: none;
             animation: embedFadeIn 0.5s ease 0.2s backwards;
+            pointer-events: auto;
           }
 
           @keyframes embedFadeIn {
@@ -1517,12 +1533,17 @@ export default function WatchPage() {
                 <i className="fas fa-film"></i>
               </div>
               <div className="popup-content">
-                <p className="popup-title">Ficha Técnica</p>
-                <div className="popup-text">
-                  <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
-                  <strong>Avaliação:</strong> {rating} ⭐<br/>
-                  <strong>Gêneros:</strong> {genres}
-                </div>
+                <p className="popup-title">{content.title || content.name}</p>
+                {dataExpanded && (
+                  <div className="popup-text">
+                    <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
+                    <strong>Avaliação:</strong> {rating} ⭐<br/>
+                    <strong>Gêneros:</strong> {genres}
+                  </div>
+                )}
+                <button className="expand-button" onClick={() => setDataExpanded(!dataExpanded)}>
+                  {dataExpanded ? 'Recolher' : 'Expandir Detalhes'}
+                </button>
               </div>
             </div>
           )}
@@ -1637,6 +1658,7 @@ export default function WatchPage() {
                 allowFullScreen 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 referrerPolicy="origin"
+                sandbox="allow-same-origin allow-scripts allow-forms"
                 title="Player"
               ></iframe>
             </div>
