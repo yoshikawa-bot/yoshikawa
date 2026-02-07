@@ -8,10 +8,20 @@ const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.
 
 export const Header = ({ 
   label, scrolled, 
+  showInfo, toggleInfo, infoClosing, 
   showTech, toggleTech, techClosing,
   navHidden
 }) => {
   
+  const handleRightClick = (e) => {
+    e.stopPropagation()
+    if (scrolled) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      toggleInfo()
+    }
+  }
+
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''} ${navHidden ? 'nav-hidden' : ''}`}>
@@ -30,15 +40,27 @@ export const Header = ({
 
         <button 
           className="round-btn glass-panel" 
-          title="Voltar ao topo"
-          onClick={(e) => { 
-            e.stopPropagation();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
+          title={scrolled ? "Voltar ao topo" : "Informações"}
+          onClick={handleRightClick}
         >
-          <i className="fas fa-chevron-up" style={{ fontSize: '14px' }}></i>
+          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
+
+      {showInfo && (
+        <div 
+          className={`standard-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="popup-icon-wrapper info">
+            <i className="fas fa-shield-halved"></i>
+          </div>
+          <div className="popup-content">
+            <p className="popup-title">Proteção Recomendada</p>
+            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
+          </div>
+        </div>
+      )}
 
       {showTech && (
         <div 
@@ -132,7 +154,7 @@ const LoadingScreen = ({ visible }) => {
         <div className="loading-bar">
           <div className="loading-progress"></div>
         </div>
-        <div className="loading-footer">DESENVOLVIDO POR KAWA &lt;3</div>
+        <div className="loading-credit">DESENVOLVIDO POR KAWA &lt;3</div>
       </div>
     </div>
   )
@@ -145,16 +167,16 @@ export default function WatchPage() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
-  const [detailsExpanded, setDetailsExpanded] = useState(true)
 
   const [scrolled, setScrolled] = useState(false)
+  const [showInfoPopup, setShowInfoPopup] = useState(false)
+  const [infoClosing, setInfoClosing] = useState(false)
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
   const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
   const [synopsisClosing, setSynopsisClosing] = useState(false)
   const [showDataPopup, setShowDataPopup] = useState(false)
   const [dataClosing, setDataClosing] = useState(false)
-  const [dataExpanded, setDataExpanded] = useState(false)
   
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
@@ -167,6 +189,7 @@ export default function WatchPage() {
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
 
   const toastTimerRef = useRef(null)
 
@@ -180,7 +203,7 @@ export default function WatchPage() {
   }, [content])
 
   const showToast = (message, type = 'info') => {
-    if (showTechPopup || showSynopsisPopup || showDataPopup) {
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
       closeAllPopups()
     }
     
@@ -299,6 +322,10 @@ export default function WatchPage() {
   }
 
   const closeAllPopups = useCallback(() => {
+    if (showInfoPopup && !infoClosing) {
+      setInfoClosing(true)
+      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
+    }
     if (showTechPopup && !techClosing) {
       setTechClosing(true)
       setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
@@ -309,15 +336,27 @@ export default function WatchPage() {
     }
     if (showDataPopup && !dataClosing) {
       setDataClosing(true)
-      setTimeout(() => { setShowDataPopup(false); setDataClosing(false); setDataExpanded(false) }, 400)
+      setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
     }
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
+  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
+
+  const toggleInfoPopup = () => {
+    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
+      closeAllPopups()
+      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
+    } else {
+      if (showInfoPopup) {
+        setInfoClosing(true)
+        setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
+      } else { setShowInfoPopup(true) }
+    }
+  }
 
   const toggleTechPopup = () => {
-    if (showSynopsisPopup || showDataPopup || currentToast) {
+    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
     } else {
@@ -329,19 +368,19 @@ export default function WatchPage() {
   }
 
   const toggleDataPopup = () => {
-    if (showTechPopup || showSynopsisPopup || currentToast) {
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 200)
     } else {
       if (showDataPopup) {
         setDataClosing(true)
-        setTimeout(() => { setShowDataPopup(false); setDataClosing(false); setDataExpanded(false) }, 400)
+        setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
       } else { setShowDataPopup(true) }
     }
   }
 
   const toggleSynopsisPopup = () => {
-    if (showTechPopup || showDataPopup || currentToast) {
+    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 200)
     } else {
@@ -353,7 +392,6 @@ export default function WatchPage() {
   }
 
   const toggleNavVisibility = () => {
-    closeAllPopups()
     setNavHidden(!navHidden)
   }
 
@@ -458,7 +496,7 @@ export default function WatchPage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(5, 5, 5, 0.55);
+            background: rgba(5, 5, 5, 0.75);
             pointer-events: none;
             z-index: 0;
           }
@@ -546,13 +584,13 @@ export default function WatchPage() {
             100% { width: 100%; }
           }
 
-          .loading-footer {
-            margin-top: 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
+          .loading-credit {
+            font-size: 0.7rem;
+            font-weight: 500;
             color: rgba(255, 255, 255, 0.4);
             letter-spacing: 0.5px;
-            text-transform: uppercase;
+            margin-top: 12px;
+            text-align: center;
           }
 
           a { color: inherit; text-decoration: none; }
@@ -575,6 +613,7 @@ export default function WatchPage() {
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: inherit;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
@@ -590,21 +629,21 @@ export default function WatchPage() {
             gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar { 
             top: 20px;
             opacity: 1;
             visibility: visible;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar { 
             bottom: 20px;
             opacity: 1;
             visibility: visible;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar.nav-hidden {
@@ -612,14 +651,14 @@ export default function WatchPage() {
             visibility: hidden;
             pointer-events: none;
             transform: translateX(-50%) translateY(-100px);
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden {
             width: auto;
             max-width: auto;
             gap: 12px;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .pill-container {
@@ -642,16 +681,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-          }
-
-          .bottom-bar .nav-btn:not(.hide-toggle-pill-btn) {
-            opacity: 1;
-            width: auto;
-            height: 100%;
-            overflow: visible;
-            pointer-events: auto;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: opacity 0.6s cubic-bezier(0.4, 0.0, 0.2, 1), width 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -661,7 +691,7 @@ export default function WatchPage() {
             flex: 1;
             opacity: 1;
             pointer-events: auto;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
             color: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
           }
@@ -676,16 +706,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-          }
-
-          .bottom-bar .round-btn {
-            opacity: 1;
-            width: var(--pill-height);
-            height: var(--pill-height);
-            overflow: visible;
-            pointer-events: auto;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden .round-btn:first-child {
@@ -694,7 +715,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .top-bar.scrolled-state { 
@@ -748,7 +769,7 @@ export default function WatchPage() {
 
           .hide-toggle-pill-btn {
             color: rgba(255, 255, 255, 0.6);
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.6s var(--ease-smooth);
           }
 
           .hide-toggle-pill-btn i {
@@ -846,6 +867,11 @@ export default function WatchPage() {
             justify-content: center; 
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
           }
+          
+          .popup-icon-wrapper.info { 
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
+          }
 
           .popup-icon-wrapper.tech { 
             background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
@@ -915,31 +941,6 @@ export default function WatchPage() {
             color: rgba(255, 255, 255, 0.7); 
             margin: 0; 
             line-height: 1.4; 
-          }
-
-          .expand-button {
-            margin-top: 8px;
-            padding: 6px 14px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s var(--ease-smooth);
-            align-self: flex-start;
-          }
-
-          .expand-button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-            color: #fff;
-            transform: scale(1.05);
-          }
-
-          .expand-button:active {
-            transform: scale(0.95);
           }
 
           @keyframes iconPop { 
@@ -1066,15 +1067,15 @@ export default function WatchPage() {
             flex-direction: column; 
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: none;
             background: rgba(255, 255, 255, 0.03);
-            overflow: hidden;
-            transition: all 0.4s var(--ease-smooth);
           }
 
           .details-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            gap: 12px;
           }
 
           .media-title { 
@@ -1082,42 +1083,69 @@ export default function WatchPage() {
             font-weight: 700; 
             color: #fff; 
             line-height: 1.2; 
+            flex: 1;
           }
 
-          .toggle-details-btn {
-            padding: 6px 14px;
+          .expand-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.75rem;
-            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
             transition: all 0.3s var(--ease-smooth);
             flex-shrink: 0;
           }
 
-          .toggle-details-btn:hover {
+          .expand-btn:hover {
             background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #fff;
-            transform: scale(1.05);
+            transform: scale(1.1);
           }
 
-          .toggle-details-btn:active {
-            transform: scale(0.95);
+          .expand-btn i {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s var(--ease-smooth);
           }
 
-          .details-content {
+          .expand-btn:hover i {
+            color: rgba(255, 255, 255, 0.9);
+          }
+
+          .details-extra {
+            display: grid;
+            gap: 8px;
+            overflow: hidden;
             max-height: 0;
             opacity: 0;
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.4s var(--ease-smooth);
           }
 
-          .details-content.expanded {
-            max-height: 1000px;
+          .details-extra.expanded {
+            max-height: 500px;
             opacity: 1;
+            padding-top: 8px;
+          }
+
+          .detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.85rem;
+          }
+
+          .detail-label {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            min-width: 90px;
+          }
+
+          .detail-value {
+            color: rgba(255, 255, 255, 0.9);
+            flex: 1;
           }
 
           .season-controls { 
@@ -1170,11 +1198,12 @@ export default function WatchPage() {
             background-position: center;
             border-radius: 10px; 
             padding: 0; 
-            border: 1.5px solid rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
             cursor: pointer; 
-            transition: all 0.3s var(--ease-smooth); 
+            transition: all 0.2s ease; 
             position: relative; 
-            overflow: visible;
+            overflow: visible; 
+            box-shadow: none;
           }
           
           .ep-card::before {
@@ -1184,9 +1213,10 @@ export default function WatchPage() {
             width: 100%; 
             height: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 1;
             border-radius: 10px;
-            transition: all 0.3s var(--ease-smooth);
           }
           
           .ep-card::after {
@@ -1197,10 +1227,9 @@ export default function WatchPage() {
             transform: translateX(-50%) scale(0);
             width: 8px;
             height: 8px;
-            background: linear-gradient(135deg, #0a84ff, #007aff);
+            background: #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 12px rgba(10, 132, 255, 0.6);
-            transition: all 0.4s var(--ease-elastic);
+            transition: transform 0.3s var(--ease-smooth);
             z-index: 3;
           }
           
@@ -1213,25 +1242,17 @@ export default function WatchPage() {
              display: flex; 
              flex-direction: column; 
              justify-content: flex-end;
-             transition: all 0.3s var(--ease-smooth);
+             backdrop-filter: blur(8px);
+             -webkit-backdrop-filter: blur(8px);
           }
 
           .ep-card:hover { 
-            border-color: rgba(255,255,255,0.3); 
-            transform: scale(1.05) translateY(-2px); 
-          }
-
-          .ep-card:hover::before {
-            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+            border-color: rgba(255,255,255,0.4); 
+            transform: scale(1.05); 
           }
           
           .ep-card.active { 
-            border: 1.5px solid rgba(10, 132, 255, 0.6);
-            box-shadow: 0 4px 20px rgba(10, 132, 255, 0.2);
-          }
-
-          .ep-card.active::before {
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(10, 50, 100, 0.4) 50%, transparent 100%);
+            border: 1px solid rgba(255,255,255,0.15);
           }
 
           .ep-card.active::after {
@@ -1242,12 +1263,6 @@ export default function WatchPage() {
             font-size: 0.75rem; 
             font-weight: 700; 
             color: #fff; 
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-          }
-
-          .ep-card.active .ep-card-num {
-            color: #0a84ff;
-            text-shadow: 0 0 8px rgba(10, 132, 255, 0.4);
           }
 
           .ep-card-title { 
@@ -1531,6 +1546,9 @@ export default function WatchPage() {
           <Header
             label={scrolled ? "Reproduzindo" : "Yoshikawa"}
             scrolled={scrolled}
+            showInfo={showInfoPopup}
+            toggleInfo={toggleInfoPopup}
+            infoClosing={infoClosing}
             showTech={showTechPopup}
             toggleTech={toggleTechPopup}
             techClosing={techClosing}
@@ -1567,17 +1585,12 @@ export default function WatchPage() {
                 <i className="fas fa-film"></i>
               </div>
               <div className="popup-content">
-                <p className="popup-title">{content.title || content.name}</p>
-                {dataExpanded && (
-                  <div className="popup-text">
-                    <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
-                    <strong>Avaliação:</strong> {rating} ⭐<br/>
-                    <strong>Gêneros:</strong> {genres}
-                  </div>
-                )}
-                <button className="expand-button" onClick={() => setDataExpanded(!dataExpanded)}>
-                  {dataExpanded ? 'Recolher' : 'Expandir Detalhes'}
-                </button>
+                <p className="popup-title">Ficha Técnica</p>
+                <div className="popup-text">
+                  <strong>Lançamento:</strong> {releaseDate.split('-').reverse().join('/')}<br/>
+                  <strong>Avaliação:</strong> {rating} ⭐<br/>
+                  <strong>Gêneros:</strong> {genres}
+                </div>
               </div>
             </div>
           )}
@@ -1613,50 +1626,69 @@ export default function WatchPage() {
             <div className="glass-panel details-container">
               <div className="details-header">
                 <h2 className="media-title">{content.title || content.name}</h2>
-                <button className="toggle-details-btn" onClick={() => setDetailsExpanded(!detailsExpanded)}>
-                  {detailsExpanded ? 'Ocultar' : 'Ver Mais'}
-                </button>
-              </div>
-
-              <div className={`details-content ${detailsExpanded ? 'expanded' : ''}`}>
-                {type === 'tv' && (
-                  <>
-                    <div className="season-controls">
-                      <select 
-                        className="native-season-select"
-                        value={season}
-                        onChange={handleNativeSeasonChange}
-                      >
-                         {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                            <option key={num} value={num}>Temporada {num}</option>
-                         ))}
-                      </select>
-                    </div>
-
-                    <div className="episodes-carousel" ref={carouselRef}>
-                      {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
-                        <div 
-                          key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                          onClick={() => setEpisode(ep.episode_number)}
-                          style={{
-                            backgroundImage: ep.still_path 
-                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                              : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
-                          }}
-                        >
-                          <div className="ep-card-info">
-                            <span className="ep-card-num">Ep {ep.episode_number}</span>
-                            <span className="ep-card-title">{ep.name}</span>
-                          </div>
-                        </div>
-                      )) : (
-                        <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
-                      )}
-                    </div>
-                  </>
+                {(releaseDate !== 'Desconhecido' || rating !== 'N/A' || genres !== 'Gênero desconhecido') && (
+                  <button 
+                    className="expand-btn" 
+                    onClick={() => setDetailsExpanded(!detailsExpanded)}
+                    title={detailsExpanded ? "Recolher" : "Expandir"}
+                  >
+                    <i className={`fas fa-chevron-${detailsExpanded ? 'up' : 'down'}`}></i>
+                  </button>
                 )}
               </div>
+
+              <div className={`details-extra ${detailsExpanded ? 'expanded' : ''}`}>
+                <div className="detail-row">
+                  <span className="detail-label">Lançamento:</span>
+                  <span className="detail-value">{releaseDate.split('-').reverse().join('/')}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Avaliação:</span>
+                  <span className="detail-value">{rating} ⭐</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Gêneros:</span>
+                  <span className="detail-value">{genres}</span>
+                </div>
+              </div>
+
+              {type === 'tv' && (
+                <>
+                  <div className="season-controls">
+                    <select 
+                      className="native-season-select"
+                      value={season}
+                      onChange={handleNativeSeasonChange}
+                    >
+                       {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>Temporada {num}</option>
+                       ))}
+                    </select>
+                  </div>
+
+                  <div className="episodes-carousel" ref={carouselRef}>
+                    {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                      <div 
+                        key={ep.id} 
+                        className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                        onClick={() => setEpisode(ep.episode_number)}
+                        style={{
+                          backgroundImage: ep.still_path 
+                            ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                            : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
+                        }}
+                      >
+                        <div className="ep-card-info">
+                          <span className="ep-card-num">Ep {ep.episode_number}</span>
+                          <span className="ep-card-title">{ep.name}</span>
+                        </div>
+                      </div>
+                    )) : (
+                      <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </main>
 
@@ -1697,7 +1729,6 @@ export default function WatchPage() {
                 allowFullScreen 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 referrerPolicy="origin"
-                sandbox="allow-same-origin allow-scripts allow-forms"
                 title="Player"
               ></iframe>
             </div>
@@ -1717,4 +1748,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                                                                   }
+  }
