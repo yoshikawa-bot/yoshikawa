@@ -26,13 +26,14 @@ export const Header = ({
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''} ${navHidden ? 'nav-hidden' : ''}`}>
         
-        <button 
-          className="round-btn glass-panel" 
-          onClick={(e) => { e.stopPropagation(); toggleTech() }}
-          title="Info Técnica"
-        >
-          <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
-        </button>
+        <Link href="/">
+          <button 
+            className="round-btn glass-panel" 
+            title="Voltar ao Início"
+          >
+            <i className="fas fa-arrow-left" style={{ fontSize: '14px' }}></i>
+          </button>
+        </Link>
 
         <div className="pill-container glass-panel">
           <span key={label} className="bar-label">{label}</span>
@@ -518,7 +519,9 @@ export default function WatchPage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(5, 5, 5, 0.85);
+            background: rgba(5, 5, 5, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             pointer-events: none;
             z-index: 0;
           }
@@ -636,7 +639,7 @@ export default function WatchPage() {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
@@ -680,66 +683,10 @@ export default function WatchPage() {
           }
 
           .bottom-bar.nav-hidden {
-            width: auto;
-            max-width: auto;
-            gap: 12px;
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .bottom-bar.nav-hidden .pill-container {
-            width: var(--pill-height);
-            height: var(--pill-height);
-            min-width: var(--pill-height);
-            min-height: var(--pill-height);
-            flex: 0 0 auto;
-            border-radius: 50%;
-            gap: 0;
-            padding: 0;
-            transition: all 0.6s var(--ease-fluid);
-            background: rgba(255, 255, 255, 0.06);
-          }
-
-          .bottom-bar.nav-hidden .nav-btn:not(.hide-toggle-pill-btn) {
-            position: absolute;
             opacity: 0;
-            width: 0;
-            height: 0;
-            overflow: hidden;
+            visibility: hidden;
             pointer-events: none;
-            transition: opacity 0.3s ease, width 0.3s ease;
-          }
-
-          .bottom-bar.nav-hidden .hide-toggle-pill-btn {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            flex: 1;
-            opacity: 1;
-            pointer-events: auto;
-            transition: all 0.6s var(--ease-smooth);
-            color: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-          }
-
-          .bottom-bar.nav-hidden .hide-toggle-pill-btn:hover {
-            color: rgba(255, 255, 255, 0.9);
-          }
-
-          .bottom-bar.nav-hidden .hidden-fav {
-            opacity: 0;
-            width: 0;
-            height: 0;
-            overflow: hidden;
-            pointer-events: none;
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .bottom-bar.nav-hidden .round-btn:first-child {
-            opacity: 0;
-            width: 0;
-            height: 0;
-            overflow: hidden;
-            pointer-events: none;
+            transform: translateX(-50%) translateY(100px);
             transition: all 0.6s var(--ease-smooth);
           }
 
@@ -762,7 +709,7 @@ export default function WatchPage() {
           .round-btn:hover { 
             transform: scale(1.08); 
             background: rgba(255, 255, 255, 0.12); 
-            border-color: rgba(255, 255, 255, 0.2); 
+            border-color: rgba(255, 255, 255, 1); 
           }
 
           .round-btn:active { 
@@ -997,10 +944,22 @@ export default function WatchPage() {
             overflow: hidden; 
             position: relative;
             background-color: #1a1a1a; 
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.6);
             margin-bottom: 24px; 
             cursor: pointer;
+          }
+
+          .player-banner-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
           }
 
           .banner-image { 
@@ -1027,7 +986,8 @@ export default function WatchPage() {
             display: flex; 
             align-items: center; 
             justify-content: center;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 0.5px solid rgba(255,255,255,0.8);
+            z-index: 2;
           }
 
           .play-button-static i { 
@@ -1042,7 +1002,7 @@ export default function WatchPage() {
             display: flex; 
             flex-direction: column; 
             gap: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             box-shadow: none;
             background: rgba(255, 255, 255, 0.03);
           }
@@ -1068,7 +1028,7 @@ export default function WatchPage() {
             border-radius: 12px;
             font-size: 0.8rem; 
             color: #fff; 
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 0.5px solid rgba(255,255,255,0.8);
             cursor: pointer; 
             font-family: inherit; 
             outline: none; 
@@ -1105,7 +1065,7 @@ export default function WatchPage() {
             background-position: center;
             border-radius: 10px; 
             padding: 0; 
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 0.5px solid rgba(255,255,255,0.8);
             cursor: pointer; 
             transition: all 0.2s ease; 
             position: relative; 
@@ -1126,12 +1086,12 @@ export default function WatchPage() {
           }
 
           .ep-card:hover { 
-            border-color: rgba(255,255,255,0.4); 
+            border-color: rgba(255,255,255,1); 
             transform: scale(1.05); 
           }
           
           .ep-card.active { 
-            border: 1px solid rgba(255,255,255,0.4);
+            border: 0.5px solid rgba(255,255,255,1);
           }
           
           .ep-card-num { 
@@ -1230,7 +1190,7 @@ export default function WatchPage() {
             border-radius: 20px; 
             overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             transition: all 0.4s var(--ease-elastic); 
             display: flex; 
             align-items: center; 
@@ -1306,13 +1266,13 @@ export default function WatchPage() {
             padding: 10px 20px; 
             border-radius: 12px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             transition: all 0.3s var(--ease-smooth);
           }
 
           .ep-indicator:hover {
             background: rgba(0, 0, 0, 0.5);
-            border-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 1);
             transform: scale(1.05);
           }
 
@@ -1332,7 +1292,7 @@ export default function WatchPage() {
             justify-content: center; 
             color: rgba(255, 255, 255, 0.9); 
             transition: all 0.3s var(--ease-smooth); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             cursor: pointer;
             position: relative;
             overflow: hidden;
@@ -1341,7 +1301,7 @@ export default function WatchPage() {
           .control-btn:hover { 
             background: rgba(255, 255, 255, 0.15); 
             transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 1);
           }
 
           .control-btn:active {
@@ -1377,7 +1337,7 @@ export default function WatchPage() {
             gap: 10px;
             transition: all 0.3s var(--ease-smooth); 
             backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.8);
             cursor: pointer;
             position: relative;
             overflow: hidden;
@@ -1386,7 +1346,7 @@ export default function WatchPage() {
           .nav-ep-btn:hover { 
             background: rgba(255, 255, 255, 0.15); 
             transform: scale(1.08);
-            border-color: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 1);
           }
 
           .nav-ep-btn:active { 
@@ -1409,7 +1369,7 @@ export default function WatchPage() {
           .nav-ep-btn:disabled:hover {
             transform: scale(1);
             background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.8);
           }
 
           @media (max-width: 768px) {
