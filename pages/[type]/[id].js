@@ -702,11 +702,14 @@ export default function WatchPage() {
             align-items: center;
             justify-content: center;
             color: rgba(255, 255, 255, 0.9);
+            transition: all 0.6s var(--ease-smooth);
+          }
+
+          .show-nav-btn:not(.visible) {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
             transform: translateX(-50%) translateY(100px);
-            transition: all 0.6s var(--ease-smooth);
           }
 
           .show-nav-btn.visible {
@@ -717,7 +720,6 @@ export default function WatchPage() {
           }
 
           .show-nav-btn:hover {
-            transform: translateX(-50%) scale(1.1);
             background: rgba(255, 255, 255, 0.12);
             border-color: rgba(255, 255, 255, 0.3);
           }
@@ -977,40 +979,21 @@ export default function WatchPage() {
             width: 100%; 
             aspect-ratio: 16/9; 
             border-radius: 24px; 
-            overflow: visible;
+            overflow: hidden;
             position: relative;
             background-color: #1a1a1a; 
             border: 1px solid rgba(255, 255, 255, 0.15);
-            margin-bottom: 48px;
+            margin-bottom: 24px; 
             cursor: pointer;
-          }
-
-          .player-banner-container::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 24px;
-            overflow: hidden;
-            z-index: 0;
-          }
-
-          .player-banner-container::after {
-            content: '';
-            position: absolute;
-            bottom: -24px;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
-            pointer-events: none;
-            z-index: -1;
+            box-shadow: 
+              0 4px 6px -1px rgba(0, 0, 0, 0.3),
+              0 2px 4px -2px rgba(0, 0, 0, 0.2);
           }
 
           .banner-image { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            border-radius: 24px;
             transition: transform 0.8s var(--ease-elastic); 
           }
 
@@ -1048,7 +1031,9 @@ export default function WatchPage() {
             flex-direction: column; 
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: none;
+            box-shadow: 
+              0 4px 6px -1px rgba(0, 0, 0, 0.3),
+              0 2px 4px -2px rgba(0, 0, 0, 0.2);
             background: rgba(255, 255, 255, 0.03);
           }
 
@@ -1420,8 +1405,7 @@ export default function WatchPage() {
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
-            .player-banner-container { border-radius: 16px; margin-bottom: 40px; }
-            .player-banner-container::after { bottom: -20px; height: 60px; }
+            .player-banner-container { border-radius: 16px; }
             .details-container { padding: 14px; }
             .media-title { font-size: 1rem; }
             .popup-size-square { width: 85vw; height: 85vw; }
@@ -1585,9 +1569,9 @@ export default function WatchPage() {
           <button 
             className={`show-nav-btn glass-panel ${navHidden ? 'visible' : ''}`}
             onClick={toggleNavVisibility}
-            title="Mostrar Navegação"
+            title={navHidden ? "Mostrar Navegação" : "Ocultar Navegação"}
           >
-            <i className="fas fa-bars"></i>
+            <i className={navHidden ? "fas fa-chevron-up" : "fas fa-chevron-down"}></i>
           </button>
         </div>
       )}
