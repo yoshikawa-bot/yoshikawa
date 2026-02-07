@@ -72,7 +72,7 @@ export const Header = ({
           </div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.5 Final • React 18 • TMDB API</p>
+            <p className="popup-text">v2.7.0 • React 18 • TMDB API • EmbedMovies API</p>
           </div>
         </div>
       )}
@@ -143,7 +143,6 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// --- COMPONENTE DE LOADING ESTILO APPLE ---
 const LoadingScreen = ({ visible }) => {
   if (!visible) return null;
   return (
@@ -165,7 +164,6 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
-  // Estado de Carregamento Global
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
 
@@ -193,7 +191,6 @@ export default function WatchPage() {
 
   const toastTimerRef = useRef(null)
 
-  // --- CONTROLE DE LOADING ---
   useEffect(() => {
     if (content) {
       const timer = setTimeout(() => {
@@ -251,7 +248,7 @@ export default function WatchPage() {
 
     const loadContent = async () => {
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
         const data = await res.json()
         setContent(data)
 
@@ -442,10 +439,17 @@ export default function WatchPage() {
   
   const getEmbedUrl = () => {
     if (!content) return ''
+    
     if (type === 'movie') {
-      return `https://superflixapi.cv/filme/${id}`
+      const imdbId = content.external_ids?.imdb_id || content.imdb_id
+      if (!imdbId) {
+        showToast('ID IMDB não encontrado', 'error')
+        return ''
+      }
+      return `https://playerflixapi.com/filme/${imdbId}`
     }
-    return `https://superflixapi.cv/serie/${id}/${season}/${episode}`
+    
+    return `https://playerflixapi.com/serie/${id}/${season}/${episode}`
   }
 
   const handleNativeSeasonChange = (e) => {
@@ -480,7 +484,6 @@ export default function WatchPage() {
             overflow-x: hidden;
           }
 
-          /* --- BACKGROUND DINÂMICO COM BACKDROP (SEM GRADIENTE) --- */
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
@@ -508,7 +511,6 @@ export default function WatchPage() {
             z-index: 1;
           }
 
-          /* --- LOADING OVERLAY ESTILO APPLE --- */
           .loading-overlay {
             position: fixed; 
             top: 0; 
@@ -612,7 +614,6 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          /* --- BARRA DE NAVEGAÇÃO COLAPSÁVEL --- */
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -1644,4 +1645,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+}
