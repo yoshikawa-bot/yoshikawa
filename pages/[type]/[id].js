@@ -108,7 +108,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
          </button>
 
          <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-            <i className={navHidden ? "fas fa-eye" : "fas fa-eye-slash"}></i>
+            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
          </button>
 
          <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
@@ -143,6 +143,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+// --- COMPONENTE DE LOADING ESTILO APPLE ---
 const LoadingScreen = ({ visible }) => {
   if (!visible) return null;
   return (
@@ -154,7 +155,6 @@ const LoadingScreen = ({ visible }) => {
         <div className="loading-bar">
           <div className="loading-progress"></div>
         </div>
-        <div className="loading-credit">DESENVOLVIDO POR KAWA &lt;3</div>
       </div>
     </div>
   )
@@ -165,6 +165,7 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   
+  // Estado de Carregamento Global
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
 
@@ -189,10 +190,10 @@ export default function WatchPage() {
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
-  const [detailsExpanded, setDetailsExpanded] = useState(false)
 
   const toastTimerRef = useRef(null)
 
+  // --- CONTROLE DE LOADING ---
   useEffect(() => {
     if (content) {
       const timer = setTimeout(() => {
@@ -479,6 +480,7 @@ export default function WatchPage() {
             overflow-x: hidden;
           }
 
+          /* --- BACKGROUND DINÂMICO COM BACKDROP (SEM GRADIENTE) --- */
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
@@ -496,7 +498,7 @@ export default function WatchPage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(5, 5, 5, 0.75);
+            background: rgba(5, 5, 5, 0.55);
             pointer-events: none;
             z-index: 0;
           }
@@ -506,6 +508,7 @@ export default function WatchPage() {
             z-index: 1;
           }
 
+          /* --- LOADING OVERLAY ESTILO APPLE --- */
           .loading-overlay {
             position: fixed; 
             top: 0; 
@@ -584,15 +587,6 @@ export default function WatchPage() {
             100% { width: 100%; }
           }
 
-          .loading-credit {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 0.5px;
-            margin-top: 12px;
-            text-align: center;
-          }
-
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
@@ -618,6 +612,7 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
+          /* --- BARRA DE NAVEGAÇÃO COLAPSÁVEL --- */
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -670,7 +665,7 @@ export default function WatchPage() {
             border-radius: 50%;
             gap: 0;
             padding: 0;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
             background: rgba(255, 255, 255, 0.06);
           }
 
@@ -681,7 +676,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: opacity 0.6s cubic-bezier(0.4, 0.0, 0.2, 1), width 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: opacity 0.7s cubic-bezier(0.6, 0.0, 0.4, 1), width 0.7s cubic-bezier(0.6, 0.0, 0.4, 1);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -752,7 +747,7 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             position: relative;
-            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: all 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .nav-btn { 
@@ -1071,81 +1066,11 @@ export default function WatchPage() {
             background: rgba(255, 255, 255, 0.03);
           }
 
-          .details-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-          }
-
           .media-title { 
             font-size: 1.15rem; 
             font-weight: 700; 
             color: #fff; 
             line-height: 1.2; 
-            flex: 1;
-          }
-
-          .expand-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            transition: all 0.3s var(--ease-smooth);
-            flex-shrink: 0;
-          }
-
-          .expand-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: scale(1.1);
-          }
-
-          .expand-btn i {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            transition: all 0.3s var(--ease-smooth);
-          }
-
-          .expand-btn:hover i {
-            color: rgba(255, 255, 255, 0.9);
-          }
-
-          .details-extra {
-            display: grid;
-            gap: 8px;
-            overflow: hidden;
-            max-height: 0;
-            opacity: 0;
-            transition: all 0.4s var(--ease-smooth);
-          }
-
-          .details-extra.expanded {
-            max-height: 500px;
-            opacity: 1;
-            padding-top: 8px;
-          }
-
-          .detail-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-size: 0.85rem;
-          }
-
-          .detail-label {
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            min-width: 90px;
-          }
-
-          .detail-value {
-            color: rgba(255, 255, 255, 0.9);
-            flex: 1;
           }
 
           .season-controls { 
@@ -1213,8 +1138,6 @@ export default function WatchPage() {
             width: 100%; 
             height: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             z-index: 1;
             border-radius: 10px;
           }
@@ -1242,8 +1165,6 @@ export default function WatchPage() {
              display: flex; 
              flex-direction: column; 
              justify-content: flex-end;
-             backdrop-filter: blur(8px);
-             -webkit-backdrop-filter: blur(8px);
           }
 
           .ep-card:hover { 
@@ -1361,7 +1282,6 @@ export default function WatchPage() {
             height: 100%; 
             border: none;
             animation: embedFadeIn 0.5s ease 0.2s backwards;
-            pointer-events: auto;
           }
 
           @keyframes embedFadeIn {
@@ -1624,32 +1544,8 @@ export default function WatchPage() {
             </div>
 
             <div className="glass-panel details-container">
-              <div className="details-header">
+              <div className="text-left">
                 <h2 className="media-title">{content.title || content.name}</h2>
-                {(releaseDate !== 'Desconhecido' || rating !== 'N/A' || genres !== 'Gênero desconhecido') && (
-                  <button 
-                    className="expand-btn" 
-                    onClick={() => setDetailsExpanded(!detailsExpanded)}
-                    title={detailsExpanded ? "Recolher" : "Expandir"}
-                  >
-                    <i className={`fas fa-chevron-${detailsExpanded ? 'up' : 'down'}`}></i>
-                  </button>
-                )}
-              </div>
-
-              <div className={`details-extra ${detailsExpanded ? 'expanded' : ''}`}>
-                <div className="detail-row">
-                  <span className="detail-label">Lançamento:</span>
-                  <span className="detail-value">{releaseDate.split('-').reverse().join('/')}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Avaliação:</span>
-                  <span className="detail-value">{rating} ⭐</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Gêneros:</span>
-                  <span className="detail-value">{genres}</span>
-                </div>
               </div>
 
               {type === 'tv' && (
