@@ -148,8 +148,8 @@ const LoadingScreen = ({ visible }) => {
   return (
     <div className={`loading-overlay ${!visible ? 'fade-out' : ''}`}>
       <div className="loading-content">
-        <div className="spinner-apple">
-          <div className="spinner-ring"></div>
+        <div className="floating-cloud">
+          <i className="fas fa-cloud"></i>
         </div>
         <div className="loading-bar">
           <div className="loading-progress"></div>
@@ -425,12 +425,14 @@ export default function WatchPage() {
       if (activeCard) {
         activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
         
-        const offsetLeft = activeCard.offsetLeft
-        const width = activeCard.offsetWidth
-        const arrowPos = offsetLeft + (width / 2) - 8 
+        const containerRect = carouselRef.current.getBoundingClientRect()
+        const cardRect = activeCard.getBoundingClientRect()
+        const scrollLeft = carouselRef.current.scrollLeft
+        
+        const cardCenter = (cardRect.left - containerRect.left) + scrollLeft + (activeCard.offsetWidth / 2)
         
         setIndicatorStyle({
-          transform: `translateX(${arrowPos}px)`,
+          transform: `translateX(${cardCenter}px)`,
           opacity: 1
         })
       }
@@ -565,30 +567,29 @@ export default function WatchPage() {
             text-transform: uppercase;
           }
 
-          .spinner-apple {
+          .floating-cloud {
             position: relative;
             width: 60px;
             height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
+            animation: cloudFloat 3s ease-in-out infinite;
           }
 
-          .spinner-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 2.5px solid rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
-            border-top-color: #ffffff;
-            border-right-color: rgba(255, 255, 255, 0.3);
-            border-bottom-color: rgba(255, 255, 255, 0.15);
-            animation: appleSpinner 1s linear infinite;
+          .floating-cloud i {
+            font-size: 48px;
+            color: rgba(255, 255, 255, 0.9);
+            filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.2));
           }
 
-          @keyframes appleSpinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+          @keyframes cloudFloat {
+            0%, 100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-15px);
+            }
           }
 
           .loading-bar {
@@ -983,7 +984,7 @@ export default function WatchPage() {
           .container {
             max-width: 1280px; 
             margin: 0 auto;
-            padding-top: 20rem; 
+            padding-top: 6.5rem; 
             padding-bottom: 7rem;
             padding-left: 2rem; 
             padding-right: 2rem;
@@ -1145,7 +1146,8 @@ export default function WatchPage() {
 
           .indicator-arrow {
             position: absolute;
-            bottom: 5px; 
+            bottom: 5px;
+            left: 0;
             width: 16px;
             height: 16px;
             pointer-events: none;
