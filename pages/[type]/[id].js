@@ -190,7 +190,6 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
   
-  // Estado para o indicador de seta deslizante
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, opacity: 0 })
 
   const toastTimerRef = useRef(null)
@@ -420,17 +419,14 @@ export default function WatchPage() {
     }
   }, [closeAllPopups])
 
-  // Lógica do indicador de seta deslizante
   useEffect(() => {
     if (carouselRef.current && seasonData) {
       const activeCard = carouselRef.current.querySelector('.ep-card.active')
       if (activeCard) {
         activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
         
-        // Calcular posição para a seta
         const offsetLeft = activeCard.offsetLeft
         const width = activeCard.offsetWidth
-        // A seta deve ficar centralizada no card: offset + metade do card - metade da seta (8px aprox)
         const arrowPos = offsetLeft + (width / 2) - 8 
         
         setIndicatorStyle({
@@ -520,7 +516,7 @@ export default function WatchPage() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(5, 5, 5, 0.85); /* Escurecido */
+            background: rgba(5, 5, 5, 0.85);
             pointer-events: none;
             z-index: 0;
           }
@@ -987,7 +983,7 @@ export default function WatchPage() {
           .container {
             max-width: 1280px; 
             margin: 0 auto;
-            padding-top: 5rem; 
+            padding-top: 20rem; 
             padding-bottom: 7rem;
             padding-left: 2rem; 
             padding-right: 2rem;
@@ -1066,10 +1062,10 @@ export default function WatchPage() {
           .native-season-select {
             appearance: none; 
             -webkit-appearance: none;
-            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 10px center;
-            padding: 8px 36px 8px 16px; 
+            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
+            padding: 4px 28px 4px 10px; 
             border-radius: 12px;
-            font-size: 0.9rem; 
+            font-size: 0.8rem; 
             color: #fff; 
             border: 1px solid rgba(255,255,255,0.1);
             cursor: pointer; 
@@ -1091,7 +1087,7 @@ export default function WatchPage() {
             display: flex; 
             gap: 10px; 
             overflow-x: auto; 
-            padding: 10px 14px 14px 14px; 
+            padding: 10px 14px 25px 14px; 
             scrollbar-width: none; 
             margin: 0 -14px;
             position: relative;
@@ -1124,8 +1120,8 @@ export default function WatchPage() {
              height: 100%;
              padding: 6px 8px;
              display: flex; 
-             align-items: flex-end; 
-             justify-content: flex-end;
+             align-items: flex-start; 
+             justify-content: flex-start;
           }
 
           .ep-card:hover { 
@@ -1147,10 +1143,9 @@ export default function WatchPage() {
             border-radius: 4px;
           }
 
-          /* Indicador de Seta Flutuante */
           .indicator-arrow {
             position: absolute;
-            bottom: 0px; 
+            bottom: 5px; 
             width: 16px;
             height: 16px;
             pointer-events: none;
@@ -1500,7 +1495,6 @@ export default function WatchPage() {
           )}
 
           <main className="container">
-            {/* Cabeçalho removido e containers subiram conforme solicitado */}
 
             <div 
               className="player-banner-container" 
