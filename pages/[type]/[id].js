@@ -8,20 +8,10 @@ const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.
 
 export const Header = ({ 
   label, scrolled, 
-  showInfo, toggleInfo, infoClosing, 
   showTech, toggleTech, techClosing,
   navHidden
 }) => {
   
-  const handleRightClick = (e) => {
-    e.stopPropagation()
-    if (scrolled) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      toggleInfo()
-    }
-  }
-
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''} ${navHidden ? 'nav-hidden' : ''}`}>
@@ -40,27 +30,15 @@ export const Header = ({
 
         <button 
           className="round-btn glass-panel" 
-          title={scrolled ? "Voltar ao topo" : "Informações"}
-          onClick={handleRightClick}
+          title="Voltar ao topo"
+          onClick={(e) => { 
+            e.stopPropagation();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
+          <i className="fas fa-chevron-up" style={{ fontSize: '14px' }}></i>
         </button>
       </header>
-
-      {showInfo && (
-        <div 
-          className={`standard-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="popup-icon-wrapper info">
-            <i className="fas fa-shield-halved"></i>
-          </div>
-          <div className="popup-content">
-            <p className="popup-title">Proteção Recomendada</p>
-            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
-          </div>
-        </div>
-      )}
 
       {showTech && (
         <div 
@@ -167,10 +145,9 @@ export default function WatchPage() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
+  const [detailsExpanded, setDetailsExpanded] = useState(true)
 
   const [scrolled, setScrolled] = useState(false)
-  const [showInfoPopup, setShowInfoPopup] = useState(false)
-  const [infoClosing, setInfoClosing] = useState(false)
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
   const [showSynopsisPopup, setShowSynopsisPopup] = useState(false)
@@ -203,7 +180,7 @@ export default function WatchPage() {
   }, [content])
 
   const showToast = (message, type = 'info') => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
+    if (showTechPopup || showSynopsisPopup || showDataPopup) {
       closeAllPopups()
     }
     
@@ -322,10 +299,6 @@ export default function WatchPage() {
   }
 
   const closeAllPopups = useCallback(() => {
-    if (showInfoPopup && !infoClosing) {
-      setInfoClosing(true)
-      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
-    }
     if (showTechPopup && !techClosing) {
       setTechClosing(true)
       setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
@@ -341,22 +314,10 @@ export default function WatchPage() {
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
     }
-  }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
-
-  const toggleInfoPopup = () => {
-    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
-      closeAllPopups()
-      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
-    } else {
-      if (showInfoPopup) {
-        setInfoClosing(true)
-        setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
-      } else { setShowInfoPopup(true) }
-    }
-  }
+  }, [showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
 
   const toggleTechPopup = () => {
-    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
+    if (showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
     } else {
@@ -368,7 +329,7 @@ export default function WatchPage() {
   }
 
   const toggleDataPopup = () => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
+    if (showTechPopup || showSynopsisPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 200)
     } else {
@@ -380,7 +341,7 @@ export default function WatchPage() {
   }
 
   const toggleSynopsisPopup = () => {
-    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
+    if (showTechPopup || showDataPopup || currentToast) {
       closeAllPopups()
       setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 200)
     } else {
@@ -392,6 +353,7 @@ export default function WatchPage() {
   }
 
   const toggleNavVisibility = () => {
+    closeAllPopups()
     setNavHidden(!navHidden)
   }
 
@@ -628,21 +590,21 @@ export default function WatchPage() {
             gap: 12px; 
             width: 90%; 
             max-width: var(--pill-max-width);
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .top-bar { 
             top: 20px;
             opacity: 1;
             visibility: visible;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar { 
             bottom: 20px;
             opacity: 1;
             visibility: visible;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .top-bar.nav-hidden {
@@ -650,14 +612,14 @@ export default function WatchPage() {
             visibility: hidden;
             pointer-events: none;
             transform: translateX(-50%) translateY(-100px);
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar.nav-hidden {
             width: auto;
             max-width: auto;
             gap: 12px;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar.nav-hidden .pill-container {
@@ -669,7 +631,7 @@ export default function WatchPage() {
             border-radius: 50%;
             gap: 0;
             padding: 0;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
             background: rgba(255, 255, 255, 0.06);
           }
 
@@ -680,7 +642,16 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+          }
+
+          .bottom-bar .nav-btn:not(.hide-toggle-pill-btn) {
+            opacity: 1;
+            width: auto;
+            height: 100%;
+            overflow: visible;
+            pointer-events: auto;
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar.nav-hidden .hide-toggle-pill-btn {
@@ -690,7 +661,7 @@ export default function WatchPage() {
             flex: 1;
             opacity: 1;
             pointer-events: auto;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
             color: rgba(255, 255, 255, 0.6);
             border-radius: 50%;
           }
@@ -705,7 +676,16 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+          }
+
+          .bottom-bar .round-btn {
+            opacity: 1;
+            width: var(--pill-height);
+            height: var(--pill-height);
+            overflow: visible;
+            pointer-events: auto;
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .bottom-bar.nav-hidden .round-btn:first-child {
@@ -714,7 +694,7 @@ export default function WatchPage() {
             height: 0;
             overflow: hidden;
             pointer-events: none;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .top-bar.scrolled-state { 
@@ -751,7 +731,7 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             position: relative;
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .nav-btn { 
@@ -768,7 +748,7 @@ export default function WatchPage() {
 
           .hide-toggle-pill-btn {
             color: rgba(255, 255, 255, 0.6);
-            transition: all 0.6s var(--ease-smooth);
+            transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
           }
 
           .hide-toggle-pill-btn i {
@@ -865,11 +845,6 @@ export default function WatchPage() {
             align-items: center; 
             justify-content: center; 
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
-          }
-          
-          .popup-icon-wrapper.info { 
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
           }
 
           .popup-icon-wrapper.tech { 
@@ -1092,6 +1067,14 @@ export default function WatchPage() {
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             background: rgba(255, 255, 255, 0.03);
+            overflow: hidden;
+            transition: all 0.4s var(--ease-smooth);
+          }
+
+          .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
           }
 
           .media-title { 
@@ -1099,6 +1082,42 @@ export default function WatchPage() {
             font-weight: 700; 
             color: #fff; 
             line-height: 1.2; 
+          }
+
+          .toggle-details-btn {
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            flex-shrink: 0;
+          }
+
+          .toggle-details-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            transform: scale(1.05);
+          }
+
+          .toggle-details-btn:active {
+            transform: scale(0.95);
+          }
+
+          .details-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+          }
+
+          .details-content.expanded {
+            max-height: 1000px;
+            opacity: 1;
           }
 
           .season-controls { 
@@ -1151,9 +1170,9 @@ export default function WatchPage() {
             background-position: center;
             border-radius: 10px; 
             padding: 0; 
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.12);
             cursor: pointer; 
-            transition: all 0.2s ease; 
+            transition: all 0.3s var(--ease-smooth); 
             position: relative; 
             overflow: visible;
           }
@@ -1167,6 +1186,7 @@ export default function WatchPage() {
             background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
             z-index: 1;
             border-radius: 10px;
+            transition: all 0.3s var(--ease-smooth);
           }
           
           .ep-card::after {
@@ -1177,9 +1197,10 @@ export default function WatchPage() {
             transform: translateX(-50%) scale(0);
             width: 8px;
             height: 8px;
-            background: #ffffff;
+            background: linear-gradient(135deg, #0a84ff, #007aff);
             border-radius: 50%;
-            transition: transform 0.3s var(--ease-smooth);
+            box-shadow: 0 0 12px rgba(10, 132, 255, 0.6);
+            transition: all 0.4s var(--ease-elastic);
             z-index: 3;
           }
           
@@ -1192,15 +1213,25 @@ export default function WatchPage() {
              display: flex; 
              flex-direction: column; 
              justify-content: flex-end;
+             transition: all 0.3s var(--ease-smooth);
           }
 
           .ep-card:hover { 
-            border-color: rgba(255,255,255,0.4); 
-            transform: scale(1.05); 
+            border-color: rgba(255,255,255,0.3); 
+            transform: scale(1.05) translateY(-2px); 
+          }
+
+          .ep-card:hover::before {
+            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
           }
           
           .ep-card.active { 
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(10, 132, 255, 0.6);
+            box-shadow: 0 4px 20px rgba(10, 132, 255, 0.2);
+          }
+
+          .ep-card.active::before {
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(10, 50, 100, 0.4) 50%, transparent 100%);
           }
 
           .ep-card.active::after {
@@ -1211,6 +1242,12 @@ export default function WatchPage() {
             font-size: 0.75rem; 
             font-weight: 700; 
             color: #fff; 
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+          }
+
+          .ep-card.active .ep-card-num {
+            color: #0a84ff;
+            text-shadow: 0 0 8px rgba(10, 132, 255, 0.4);
           }
 
           .ep-card-title { 
@@ -1494,9 +1531,6 @@ export default function WatchPage() {
           <Header
             label={scrolled ? "Reproduzindo" : "Yoshikawa"}
             scrolled={scrolled}
-            showInfo={showInfoPopup}
-            toggleInfo={toggleInfoPopup}
-            infoClosing={infoClosing}
             showTech={showTechPopup}
             toggleTech={toggleTechPopup}
             techClosing={techClosing}
@@ -1577,47 +1611,52 @@ export default function WatchPage() {
             </div>
 
             <div className="glass-panel details-container">
-              <div className="text-left">
+              <div className="details-header">
                 <h2 className="media-title">{content.title || content.name}</h2>
+                <button className="toggle-details-btn" onClick={() => setDetailsExpanded(!detailsExpanded)}>
+                  {detailsExpanded ? 'Ocultar' : 'Ver Mais'}
+                </button>
               </div>
 
-              {type === 'tv' && (
-                <>
-                  <div className="season-controls">
-                    <select 
-                      className="native-season-select"
-                      value={season}
-                      onChange={handleNativeSeasonChange}
-                    >
-                       {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                          <option key={num} value={num}>Temporada {num}</option>
-                       ))}
-                    </select>
-                  </div>
-
-                  <div className="episodes-carousel" ref={carouselRef}>
-                    {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
-                      <div 
-                        key={ep.id} 
-                        className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                        onClick={() => setEpisode(ep.episode_number)}
-                        style={{
-                          backgroundImage: ep.still_path 
-                            ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                            : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
-                        }}
+              <div className={`details-content ${detailsExpanded ? 'expanded' : ''}`}>
+                {type === 'tv' && (
+                  <>
+                    <div className="season-controls">
+                      <select 
+                        className="native-season-select"
+                        value={season}
+                        onChange={handleNativeSeasonChange}
                       >
-                        <div className="ep-card-info">
-                          <span className="ep-card-num">Ep {ep.episode_number}</span>
-                          <span className="ep-card-title">{ep.name}</span>
+                         {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                            <option key={num} value={num}>Temporada {num}</option>
+                         ))}
+                      </select>
+                    </div>
+
+                    <div className="episodes-carousel" ref={carouselRef}>
+                      {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                        <div 
+                          key={ep.id} 
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                          onClick={() => setEpisode(ep.episode_number)}
+                          style={{
+                            backgroundImage: ep.still_path 
+                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                              : 'linear-gradient(135deg, #1a1a1a, #0a0a0a)'
+                          }}
+                        >
+                          <div className="ep-card-info">
+                            <span className="ep-card-num">Ep {ep.episode_number}</span>
+                            <span className="ep-card-title">{ep.name}</span>
+                          </div>
                         </div>
-                      </div>
-                    )) : (
-                      <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
-                    )}
-                  </div>
-                </>
-              )}
+                      )) : (
+                        <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </main>
 
@@ -1678,4 +1717,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+                                                                   }
