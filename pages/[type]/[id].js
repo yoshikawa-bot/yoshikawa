@@ -636,20 +636,14 @@ export default function WatchPage() {
 
           .glass-panel {
             position: relative;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
-          }
-
-          .glass-panel-light {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
           }
 
           .bar-container {
@@ -700,7 +694,6 @@ export default function WatchPage() {
             position: fixed;
             bottom: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
             z-index: 999;
             width: 48px;
             height: 48px;
@@ -712,6 +705,7 @@ export default function WatchPage() {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
+            transform: translateX(-50%) translateY(100px);
             transition: all 0.6s var(--ease-smooth);
           }
 
@@ -720,12 +714,11 @@ export default function WatchPage() {
             visibility: visible;
             pointer-events: auto;
             transform: translateX(-50%) translateY(0);
-            transition-delay: 0.3s;
           }
 
           .show-nav-btn:hover {
             transform: translateX(-50%) scale(1.1);
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 255, 0.12);
             border-color: rgba(255, 255, 255, 0.3);
           }
 
@@ -751,7 +744,7 @@ export default function WatchPage() {
 
           .round-btn:hover { 
             transform: scale(1.08); 
-            background: rgba(0, 0, 0, 0.6); 
+            background: rgba(255, 255, 255, 0.12); 
             border-color: rgba(255, 255, 255, 0.2); 
           }
 
@@ -984,31 +977,40 @@ export default function WatchPage() {
             width: 100%; 
             aspect-ratio: 16/9; 
             border-radius: 24px; 
-            overflow: hidden; 
+            overflow: visible;
             position: relative;
             background-color: #1a1a1a; 
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.6);
-            margin-bottom: 24px; 
+            margin-bottom: 48px;
             cursor: pointer;
+          }
+
+          .player-banner-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            z-index: 0;
           }
 
           .player-banner-container::after {
             content: '';
             position: absolute;
-            bottom: 0;
+            bottom: -24px;
             left: 0;
             right: 0;
-            height: 100px;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
             pointer-events: none;
-            z-index: 1;
+            z-index: -1;
           }
 
           .banner-image { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
+            border-radius: 24px;
             transition: transform 0.8s var(--ease-elastic); 
           }
 
@@ -1047,7 +1049,7 @@ export default function WatchPage() {
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: none;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.03);
           }
 
           .media-title { 
@@ -1066,7 +1068,7 @@ export default function WatchPage() {
           .native-season-select {
             appearance: none; 
             -webkit-appearance: none;
-            background: rgba(0,0,0,0.4) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
+            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
             padding: 4px 28px 4px 10px; 
             border-radius: 12px;
             font-size: 0.8rem; 
@@ -1076,11 +1078,10 @@ export default function WatchPage() {
             font-family: inherit; 
             outline: none; 
             transition: background 0.2s;
-            backdrop-filter: blur(10px);
           }
 
           .native-season-select:hover { 
-            background-color: rgba(0,0,0,0.6); 
+            background-color: rgba(255,255,255,0.15); 
           }
 
           .native-season-select option { 
@@ -1328,7 +1329,7 @@ export default function WatchPage() {
           .control-btn {
             width: 48px; 
             height: 48px; 
-            background: rgba(0, 0, 0, 0.4); 
+            background: rgba(255, 255, 255, 0.08); 
             backdrop-filter: blur(10px);
             border-radius: 50%; 
             display: flex; 
@@ -1343,7 +1344,7 @@ export default function WatchPage() {
           }
 
           .control-btn:hover { 
-            background: rgba(0, 0, 0, 0.6); 
+            background: rgba(255, 255, 255, 0.15); 
             transform: scale(1.1);
             border-color: rgba(255, 255, 255, 0.3);
           }
@@ -1370,7 +1371,7 @@ export default function WatchPage() {
           }
 
           .nav-ep-btn {
-            background: rgba(0, 0, 0, 0.4); 
+            background: rgba(255, 255, 255, 0.08); 
             padding: 12px 32px; 
             border-radius: 50px;
             color: rgba(255, 255, 255, 0.9); 
@@ -1388,7 +1389,7 @@ export default function WatchPage() {
           }
 
           .nav-ep-btn:hover { 
-            background: rgba(0, 0, 0, 0.6); 
+            background: rgba(255, 255, 255, 0.15); 
             transform: scale(1.08);
             border-color: rgba(255, 255, 255, 0.3);
           }
@@ -1412,14 +1413,15 @@ export default function WatchPage() {
 
           .nav-ep-btn:disabled:hover {
             transform: scale(1);
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.15);
           }
 
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
-            .player-banner-container { border-radius: 16px; }
+            .player-banner-container { border-radius: 16px; margin-bottom: 40px; }
+            .player-banner-container::after { bottom: -20px; height: 60px; }
             .details-container { padding: 14px; }
             .media-title { font-size: 1rem; }
             .popup-size-square { width: 85vw; height: 85vw; }
