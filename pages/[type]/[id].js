@@ -836,11 +836,17 @@ export default function WatchPage() {
             gap: 14px;
             padding: 16px 18px; 
             border-radius: 22px;
-            transform: translateX(-50%) translateY(-50%) scale(0.3);
+            transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
             transform-origin: top center;
             opacity: 0;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            perspective: 1000px;
+            -webkit-perspective: 1000px;
             animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            contain: layout style paint;
           }
           
           .standard-popup { 
@@ -858,13 +864,27 @@ export default function WatchPage() {
           }
 
           @keyframes popupZoomIn {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.3); }
-            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+            0% { 
+              opacity: 0; 
+              transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1); 
+            }
+            100% { 
+              opacity: 1; 
+              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); 
+              pointer-events: auto; 
+            }
           }
 
           @keyframes popupZoomOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-30%) scale(0.5); pointer-events: none; }
+            0% { 
+              opacity: 1; 
+              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); 
+            }
+            100% { 
+              opacity: 0; 
+              transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1); 
+              pointer-events: none; 
+            }
           }
           
           .popup-icon-wrapper, .toast-icon-wrapper { 
@@ -874,8 +894,13 @@ export default function WatchPage() {
             border-radius: 12px; 
             display: flex; 
             align-items: center; 
-            justify-content: center; 
+            justify-content: center;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
             animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
+            contain: layout style paint;
           }
           
           .popup-icon-wrapper.info { 
@@ -919,7 +944,11 @@ export default function WatchPage() {
 
           .popup-icon-wrapper i, .toast-icon-wrapper i { 
             font-size: 20px; 
-            color: #fff; 
+            color: #fff;
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
           }
 
           .popup-content, .toast-content { 
@@ -929,13 +958,23 @@ export default function WatchPage() {
             gap: 4px; 
             max-height: 60vh; 
             overflow-y: auto;
-            opacity: 0; 
+            opacity: 0;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             animation: contentFade 0.4s ease 0.2s forwards; 
+            contain: layout style;
           }
 
           @keyframes contentFade { 
-            from { opacity: 0; transform: translateX(10px); } 
-            to { opacity: 1; transform: translateX(0); } 
+            from { 
+              opacity: 0; 
+              transform: translate3d(10px, 0, 0); 
+            } 
+            to { 
+              opacity: 1; 
+              transform: translate3d(0, 0, 0); 
+            } 
           }
           
           .popup-title, .toast-title { 
@@ -954,8 +993,14 @@ export default function WatchPage() {
           }
 
           @keyframes iconPop { 
-            from { transform: scale(0); opacity: 0; } 
-            to { transform: scale(1); opacity: 1; } 
+            from { 
+              transform: scale3d(0, 0, 1); 
+              opacity: 0; 
+            } 
+            to { 
+              transform: scale3d(1, 1, 1); 
+              opacity: 1; 
+            } 
           }
 
           .toast-wrap { 
@@ -1142,6 +1187,7 @@ export default function WatchPage() {
             height: 16px;
             pointer-events: none;
             z-index: 10;
+            will-change: transform, opacity;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
           }
 
