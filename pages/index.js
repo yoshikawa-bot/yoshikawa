@@ -197,7 +197,6 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           ></i>
         </button>
       </div>
-      <span className="card-title">{item.title || item.name}</span>
     </Link>
   )
 }
@@ -918,26 +917,6 @@ export default function Home() {
           
           .card-wrapper:hover .content-poster {
             transform: scale(1.12);
-          }
-          
-          .card-title {
-            margin-top: 10px; 
-            font-size: 0.8rem; 
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.85); 
-            line-height: 1.3;
-            display: -webkit-box; 
-            -webkit-line-clamp: 1; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            transition: color 0.3s ease, transform 0.3s ease;
-            transform-origin: left center;
-          }
-          
-          .card-wrapper:hover .card-title {
-            color: #fff;
-            transform: translateX(2px);
           }
           
           .fav-btn {
