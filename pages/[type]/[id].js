@@ -144,22 +144,41 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+// ── LOADING SCREEN (gatinho + fio de lã) ──────────────────────────────────────
 const LoadingScreen = ({ visible }) => {
-  if (!visible) return null;
+  if (!visible) return null
   return (
-    <div className={`loading-overlay ${!visible ? 'fade-out' : ''}`}>
+    <div className={`loading-overlay${!visible ? ' fade-out' : ''}`}>
       <div className="loading-content">
-        <div className="floating-cloud">
-          <i className="fas fa-cloud"></i>
+
+        {/* sprite do gatinho */}
+        <div className="cat-wrap">
+          <div id="gato"></div>
         </div>
-        <div className="loading-bar">
-          <div className="loading-progress"></div>
+
+        {/* fileira do fio de lã */}
+        <div className="yarn-row">
+          <span className="yarn-icon">🧶</span>
+          <div className="thread-container">
+            <svg viewBox="0 0 240 48" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path className="thread-path"
+                d="M0,24
+                   Q20,10 40,24
+                   Q60,38 80,24
+                   Q100,10 120,24
+                   Q140,38 160,24
+                   Q180,10 200,24
+                   Q220,38 240,24"/>
+            </svg>
+          </div>
         </div>
+
       </div>
-      <div className="loading-footer">SOFTWARE BY KAWA &lt;3</div>
+      <div className="loading-footer">By: Kawa</div>
     </div>
   )
 }
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function WatchPage() {
   const router = useRouter()
@@ -486,7 +505,7 @@ export default function WatchPage() {
       <Head>
         <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -531,21 +550,25 @@ export default function WatchPage() {
             z-index: 1;
           }
 
+          /* ── LOADING OVERLAY ── */
           .loading-overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
             z-index: 9999;
-            display: flex; 
+            display: flex;
             flex-direction: column;
-            align-items: center; 
+            align-items: center;
             justify-content: center;
-            background: #050505;
+            gap: 24px;
+            background: #000;
+            font-family: 'DM Mono', monospace;
+            overflow: hidden;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.8s ease;
           }
-          
+
           .loading-overlay.fade-out {
             opacity: 0;
             visibility: hidden;
@@ -553,71 +576,102 @@ export default function WatchPage() {
           }
 
           .loading-content {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 24px;
-            margin-bottom: 20px;
           }
 
-          .loading-footer {
-            position: absolute;
-            bottom: 40px;
-            font-size: 10px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 2px;
-            text-transform: uppercase;
+          /* ── CAT SPRITE ── */
+          .cat-wrap {
+            width: 228px;
+            height: 134px;
+            overflow: hidden;
+            flex-shrink: 0;
           }
 
-          .floating-cloud {
-            position: relative;
-            width: 60px;
-            height: 60px;
+          #gato {
+            width: 228px;
+            height: 134px;
+            background-image: url('https://res.cloudinary.com/pastelitos/image/upload/v1610526571/eva/gatito_pushui.svg');
+            background-size: 3648px 134px;
+            background-repeat: no-repeat;
+            background-position: 0 0;
+            animation: walk 1.2s steps(16, end) infinite;
+          }
+
+          @keyframes walk {
+            from { background-position:    0px 0; }
+            to   { background-position: -3648px 0; }
+          }
+
+          /* ── YARN ROW ── */
+          .yarn-row {
             display: flex;
             align-items: center;
-            justify-content: center;
-            animation: cloudFloat 3s ease-in-out infinite;
-          }
-
-          .floating-cloud i {
-            font-size: 48px;
-            color: rgba(255, 255, 255, 0.9);
-            filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.2));
-          }
-
-          @keyframes cloudFloat {
-            0%, 100% {
-              transform: translateY(0px);
-            }
-            50% {
-              transform: translateY(-15px);
-            }
-          }
-
-          .loading-bar {
-            width: 180px;
-            height: 2.5px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 2px;
-            overflow: hidden;
+            width: min(300px, 80vw);
+            height: 48px;
             position: relative;
           }
 
-          .loading-progress {
-            height: 100%;
-            background: #ffffff;
-            animation: loadingBar 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            width: 0%;
+          .yarn-icon {
+            font-size: 32px;
+            line-height: 1;
+            flex-shrink: 0;
+            animation: iconPulse 2.4s ease-in-out infinite;
+            user-select: none;
           }
 
-          @keyframes loadingBar {
-            0% { width: 0%; }
-            20% { width: 15%; }
-            40% { width: 35%; }
-            60% { width: 65%; }
-            80% { width: 85%; }
-            100% { width: 100%; }
+          @keyframes iconPulse {
+            0%, 100% { transform: scale(1);    }
+            50%       { transform: scale(1.06); }
+          }
+
+          .thread-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            margin-left: 6px;
+            overflow: hidden;
+          }
+
+          .thread-container svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow: visible;
+          }
+
+          .thread-path {
+            fill: none;
+            stroke: #fff;
+            stroke-width: 2.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 260;
+            stroke-dashoffset: 260;
+            animation: threadLoop 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          }
+
+          @keyframes threadLoop {
+            0%   { stroke-dashoffset: 260; opacity: 1; }
+            60%  { stroke-dashoffset:   0; opacity: 1; }
+            80%  { stroke-dashoffset:   0; opacity: 1; }
+            100% { stroke-dashoffset:   0; opacity: 0; }
+          }
+
+          /* ── LOADING FOOTER ── */
+          .loading-footer {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-family: 'DM Mono', monospace;
+            letter-spacing: 0.22em;
+            color: rgba(255,255,255,0.18);
+            text-transform: uppercase;
+            white-space: nowrap;
           }
 
           a { color: inherit; text-decoration: none; }
@@ -1667,4 +1721,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                }
+}
