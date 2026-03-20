@@ -104,7 +104,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
         </button>
 
         <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-          <i className="fas fa-minus" style={{ fontSize: '16px', borderRadius: '999px' }}></i>
+          <i className="fas fa-minus" style={{ fontSize: '18px', WebkitTextStroke: '1px currentColor' }}></i>
         </button>
 
         <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
@@ -930,9 +930,9 @@ export default function WatchPage() {
             pointer-events: none;
             z-index: 10;
             transform: translateX(-50%);
-            transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-            font-size: 10px;
-            color: rgba(255,255,255,0.7);
+            transition: left 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease;
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
             line-height: 1;
           }
 
