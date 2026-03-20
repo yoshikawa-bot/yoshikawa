@@ -12,7 +12,6 @@ export const Header = ({
   showTech, toggleTech, techClosing,
   navHidden
 }) => {
-  
   const handleRightClick = (e) => {
     e.stopPropagation()
     if (scrolled) {
@@ -25,12 +24,8 @@ export const Header = ({
   return (
     <>
       <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''} ${navHidden ? 'nav-hidden' : ''}`}>
-        
         <Link href="/">
-          <button 
-            className="round-btn glass-panel" 
-            title="Voltar ao Início"
-          >
+          <button className="round-btn glass-panel" title="Voltar ao Início">
             <i className="fas fa-arrow-left" style={{ fontSize: '14px' }}></i>
           </button>
         </Link>
@@ -87,7 +82,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
   const handleShare = async () => {
     if (navigator.share) {
       try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } 
-      catch (err) { console.log('Share canceled') }
+      catch (err) {}
     } else { alert('Compartilhar não suportado') }
   }
 
@@ -104,17 +99,17 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
       </button>
 
       <div className={`pill-container glass-panel ${navHidden ? 'hidden-pill' : ''}`}>
-         <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
-            <i className="fas fa-film"></i>
-         </button>
+        <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
+          <i className="fas fa-film"></i>
+        </button>
 
-         <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-            <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
-         </button>
+        <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
+          <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
+        </button>
 
-         <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
-            <i className="fas fa-align-left"></i>
-         </button>
+        <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
+          <i className="fas fa-align-left"></i>
+        </button>
       </div>
 
       <button className={`round-btn glass-panel ${navHidden ? 'hidden-fav' : ''}`} onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
@@ -144,41 +139,17 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
-// ── LOADING SCREEN (gatinho + fio de lã) ──────────────────────────────────────
 const LoadingScreen = ({ visible }) => {
-  if (!visible) return null
   return (
     <div className={`loading-overlay${!visible ? ' fade-out' : ''}`}>
-      <div className="loading-content">
-
-        {/* sprite do gatinho */}
-        <div className="cat-wrap">
-          <div id="gato"></div>
-        </div>
-
-        {/* fileira do fio de lã */}
-        <div className="yarn-row">
-          <span className="yarn-icon">🧶</span>
-          <div className="thread-container">
-            <svg viewBox="0 0 240 48" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <path className="thread-path"
-                d="M0,24
-                   Q20,10 40,24
-                   Q60,38 80,24
-                   Q100,10 120,24
-                   Q140,38 160,24
-                   Q180,10 200,24
-                   Q220,38 240,24"/>
-            </svg>
-          </div>
-        </div>
-
+      <div className="loading-spinner">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
       </div>
-      <div className="loading-footer">By: Kawa</div>
     </div>
   )
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function WatchPage() {
   const router = useRouter()
@@ -210,15 +181,13 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
   
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, opacity: 0 })
+  const [indicatorLeft, setIndicatorLeft] = useState(null)
 
   const toastTimerRef = useRef(null)
 
   useEffect(() => {
     if (content) {
-      const timer = setTimeout(() => {
-        setIsLoading(false)
-      }, 1000) 
+      const timer = setTimeout(() => setIsLoading(false), 1000)
       return () => clearTimeout(timer)
     }
   }, [content])
@@ -227,7 +196,6 @@ export default function WatchPage() {
     if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
       closeAllPopups()
     }
-    
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
       setTimeout(() => {
@@ -268,25 +236,18 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (!id || !type) return
-
     const loadContent = async () => {
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
         const data = await res.json()
         setContent(data)
-
-        if (type === 'tv') {
-          await fetchSeason(id, 1)
-        }
-
+        if (type === 'tv') await fetchSeason(id, 1)
         checkFavoriteStatus(data)
       } catch (error) {
-        console.error("Erro ao carregar", error)
         showToast('Erro ao carregar conteúdo', 'error')
-        setIsLoading(false) 
+        setIsLoading(false)
       }
     }
-
     loadContent()
   }, [id, type])
 
@@ -297,7 +258,6 @@ export default function WatchPage() {
       setSeasonData(data)
       setSeason(seasonNum)
     } catch (err) { 
-      console.error(err)
       showToast('Erro ao carregar temporada', 'error')
     }
   }
@@ -306,8 +266,7 @@ export default function WatchPage() {
     try {
       const stored = localStorage.getItem('yoshikawaFavorites')
       const favorites = stored ? JSON.parse(stored) : []
-      const exists = favorites.some(f => f.id === item.id && f.media_type === type)
-      setIsFavorite(exists)
+      setIsFavorite(favorites.some(f => f.id === item.id && f.media_type === type))
     } catch {
       setIsFavorite(false)
     }
@@ -315,12 +274,10 @@ export default function WatchPage() {
 
   const toggleFavorite = () => {
     if (!content) return
-
     try {
       const stored = localStorage.getItem('yoshikawaFavorites')
       let favorites = stored ? JSON.parse(stored) : []
       const exists = favorites.some(f => f.id === content.id && f.media_type === type)
-
       if (exists) {
         favorites = favorites.filter(f => !(f.id === content.id && f.media_type === type))
         setIsFavorite(false)
@@ -335,7 +292,6 @@ export default function WatchPage() {
         setIsFavorite(true)
         showToast('Adicionado aos favoritos', 'success')
       }
-
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favorites))
     } catch {
       showToast('Erro ao salvar favorito', 'error')
@@ -413,9 +369,7 @@ export default function WatchPage() {
   }
 
   const toggleNavVisibility = () => {
-    if (!navHidden) {
-      closeAllPopups()
-    }
+    if (!navHidden) closeAllPopups()
     setNavHidden(!navHidden)
   }
 
@@ -425,14 +379,12 @@ export default function WatchPage() {
       setScrolled(window.scrollY > 60) 
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    
     const onClick = (e) => { 
       if (!e.target.closest('.standard-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container') && !e.target.closest('.show-nav-btn')) {
         closeAllPopups() 
       }
     }
     window.addEventListener('click', onClick)
-    
     return () => { 
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('click', onClick) 
@@ -440,28 +392,22 @@ export default function WatchPage() {
   }, [closeAllPopups])
 
   useEffect(() => {
-    if (carouselRef.current && seasonData) {
-      const activeCard = carouselRef.current.querySelector('.ep-card.active')
-      if (activeCard) {
-        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-        
-        const containerRect = carouselRef.current.getBoundingClientRect()
-        const cardRect = activeCard.getBoundingClientRect()
-        const scrollLeft = carouselRef.current.scrollLeft
-        
-        const cardCenter = (cardRect.left - containerRect.left) + scrollLeft + (activeCard.offsetWidth / 2)
-        
-        setIndicatorStyle({
-          transform: `translateX(${cardCenter}px)`,
-          opacity: 1
-        })
-      }
-    }
+    if (!carouselRef.current || !seasonData) return
+    const activeCard = carouselRef.current.querySelector('.ep-card.active')
+    if (!activeCard) return
+
+    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+
+    const containerLeft = carouselRef.current.getBoundingClientRect().left
+    const cardRect = activeCard.getBoundingClientRect()
+    const cardCenterRelative = cardRect.left - containerLeft + cardRect.width / 2
+
+    setIndicatorLeft(cardCenterRelative)
   }, [episode, seasonData])
 
   const handleNextEp = () => {
     const nextEp = episode + 1
-    if (seasonData && seasonData.episodes && nextEp <= seasonData.episodes.length) {
+    if (seasonData?.episodes && nextEp <= seasonData.episodes.length) {
       setEpisode(nextEp)
     } else {
       showToast('Fim da temporada', 'info')
@@ -469,23 +415,16 @@ export default function WatchPage() {
   }
   
   const handlePrevEp = () => {
-    if (episode > 1) {
-      setEpisode(episode - 1)
-    }
+    if (episode > 1) setEpisode(episode - 1)
   }
   
   const getEmbedUrl = () => {
     if (!content) return ''
-    
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      if (!imdbId) {
-        showToast('ID IMDB não encontrado', 'error')
-        return ''
-      }
+      if (!imdbId) { showToast('ID IMDB não encontrado', 'error'); return '' }
       return `https://playerflixapi.com/filme/${imdbId}`
     }
-    
     return `https://playerflixapi.com/serie/${id}/${season}/${episode}`
   }
 
@@ -534,10 +473,7 @@ export default function WatchPage() {
           .site-wrapper::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(5, 5, 5, 0.4);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -545,27 +481,17 @@ export default function WatchPage() {
             z-index: 0;
           }
 
-          .site-wrapper > * {
-            position: relative;
-            z-index: 1;
-          }
+          .site-wrapper > * { position: relative; z-index: 1; }
 
-          /* ── LOADING OVERLAY ── */
           .loading-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 9999;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 24px;
             background: #000;
-            font-family: 'DM Mono', monospace;
-            overflow: hidden;
             transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.8s ease;
           }
 
@@ -575,103 +501,41 @@ export default function WatchPage() {
             pointer-events: none;
           }
 
-          .loading-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-          }
-
-          /* ── CAT SPRITE ── */
-          .cat-wrap {
-            width: 228px;
-            height: 134px;
-            overflow: hidden;
-            flex-shrink: 0;
-          }
-
-          #gato {
-            width: 228px;
-            height: 134px;
-            background-image: url('https://res.cloudinary.com/pastelitos/image/upload/v1610526571/eva/gatito_pushui.svg');
-            background-size: 3648px 134px;
-            background-repeat: no-repeat;
-            background-position: 0 0;
-            animation: walk 1.2s steps(16, end) infinite;
-          }
-
-          @keyframes walk {
-            from { background-position:    0px 0; }
-            to   { background-position: -3648px 0; }
-          }
-
-          /* ── YARN ROW ── */
-          .yarn-row {
-            display: flex;
-            align-items: center;
-            width: min(300px, 80vw);
+          .loading-spinner {
+            width: 48px;
             height: 48px;
             position: relative;
           }
 
-          .yarn-icon {
-            font-size: 32px;
-            line-height: 1;
-            flex-shrink: 0;
-            animation: iconPulse 2.4s ease-in-out infinite;
-            user-select: none;
-          }
-
-          @keyframes iconPulse {
-            0%, 100% { transform: scale(1);    }
-            50%       { transform: scale(1.06); }
-          }
-
-          .thread-container {
-            flex: 1;
-            height: 100%;
-            position: relative;
-            margin-left: 6px;
-            overflow: hidden;
-          }
-
-          .thread-container svg {
+          .loading-spinner span {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            overflow: visible;
-          }
-
-          .thread-path {
-            fill: none;
-            stroke: #fff;
-            stroke-width: 2.8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            stroke-dasharray: 260;
-            stroke-dashoffset: 260;
-            animation: threadLoop 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-          }
-
-          @keyframes threadLoop {
-            0%   { stroke-dashoffset: 260; opacity: 1; }
-            60%  { stroke-dashoffset:   0; opacity: 1; }
-            80%  { stroke-dashoffset:   0; opacity: 1; }
-            100% { stroke-dashoffset:   0; opacity: 0; }
-          }
-
-          /* ── LOADING FOOTER ── */
-          .loading-footer {
-            position: fixed;
-            bottom: 28px;
+            top: 0;
             left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: 0.22em;
-            color: rgba(255,255,255,0.18);
-            text-transform: uppercase;
-            white-space: nowrap;
+            width: 3px;
+            height: 11px;
+            margin-left: -1.5px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.15);
+            transform-origin: center 24px;
+            animation: spinnerTick 1s linear infinite;
+          }
+
+          .loading-spinner span:nth-child(1)  { transform: rotate(0deg);   animation-delay: -0.917s; }
+          .loading-spinner span:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.833s; }
+          .loading-spinner span:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.750s; }
+          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.667s; }
+          .loading-spinner span:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.583s; }
+          .loading-spinner span:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.500s; }
+          .loading-spinner span:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.417s; }
+          .loading-spinner span:nth-child(8)  { transform: rotate(210deg); animation-delay: -0.333s; }
+          .loading-spinner span:nth-child(9)  { transform: rotate(240deg); animation-delay: -0.250s; }
+          .loading-spinner span:nth-child(10) { transform: rotate(270deg); animation-delay: -0.167s; }
+          .loading-spinner span:nth-child(11) { transform: rotate(300deg); animation-delay: -0.083s; }
+          .loading-spinner span:nth-child(12) { transform: rotate(330deg); animation-delay: 0s;      }
+
+          @keyframes spinnerTick {
+            0%   { background: rgba(255,255,255,0.85); }
+            100% { background: rgba(255,255,255,0.10); }
           }
 
           a { color: inherit; text-decoration: none; }
@@ -733,7 +597,6 @@ export default function WatchPage() {
             visibility: hidden;
             pointer-events: none;
             transform: translateX(-50%) translateY(-100px);
-            transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar.nav-hidden {
@@ -741,7 +604,6 @@ export default function WatchPage() {
             visibility: hidden;
             pointer-events: none;
             transform: translateX(-50%) translateY(100px);
-            transition: all 0.6s var(--ease-smooth);
           }
 
           .show-nav-btn {
@@ -804,9 +666,7 @@ export default function WatchPage() {
             border-color: rgba(255, 255, 255, 0.2); 
           }
 
-          .round-btn:active { 
-            transform: scale(0.92); 
-          }
+          .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
             height: var(--pill-height); 
@@ -856,9 +716,7 @@ export default function WatchPage() {
             color: rgba(255,255,255,0.8); 
           }
 
-          .nav-btn:active i { 
-            transform: scale(0.9); 
-          }
+          .nav-btn:active i { transform: scale(0.9); }
 
           .bar-label { 
             font-size: 0.9rem; 
@@ -903,52 +761,27 @@ export default function WatchPage() {
             contain: layout style paint;
           }
           
-          .standard-popup { 
-            z-index: 950; 
-            pointer-events: none; 
-          }
-
-          .toast { 
-            z-index: 960; 
-            pointer-events: auto; 
-          }
+          .standard-popup { z-index: 950; pointer-events: none; }
+          .toast { z-index: 960; pointer-events: auto; }
 
           .standard-popup.closing, .toast.closing { 
             animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
           @keyframes popupZoomIn {
-            0% { 
-              opacity: 0; 
-              transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1); 
-            }
-            100% { 
-              opacity: 1; 
-              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); 
-              pointer-events: auto; 
-            }
+            0%   { opacity: 0; transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1); }
+            100% { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); pointer-events: auto; }
           }
 
           @keyframes popupZoomOut {
-            0% { 
-              opacity: 1; 
-              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); 
-            }
-            100% { 
-              opacity: 0; 
-              transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1); 
-              pointer-events: none; 
-            }
+            0%   { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); }
+            100% { opacity: 0; transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1); pointer-events: none; }
           }
           
           .popup-icon-wrapper, .toast-icon-wrapper { 
-            width: 42px; 
-            height: 42px; 
-            min-width: 42px; 
+            width: 42px; height: 42px; min-width: 42px; 
             border-radius: 12px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             will-change: transform, opacity;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -957,48 +790,18 @@ export default function WatchPage() {
             contain: layout style paint;
           }
           
-          .popup-icon-wrapper.info { 
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
-          }
+          .popup-icon-wrapper.info { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+          .popup-icon-wrapper.synopsis { background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3); }
+          .popup-icon-wrapper.data { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); }
 
-          .popup-icon-wrapper.tech { 
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
-          }
-
-          .popup-icon-wrapper.synopsis { 
-            background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); 
-            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3); 
-          }
-
-          .popup-icon-wrapper.data { 
-            background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); 
-            box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); 
-          }
-
-          .toast-icon-wrapper { 
-            border-radius: 50%; 
-          }
-
-          .toast.success .toast-icon-wrapper { 
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%); 
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); 
-          }
-
-          .toast.info .toast-icon-wrapper { 
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); 
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); 
-          }
-
-          .toast.error .toast-icon-wrapper { 
-            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); 
-            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); 
-          }
+          .toast-icon-wrapper { border-radius: 50%; }
+          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .toast.info    .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+          .toast.error   .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
 
           .popup-icon-wrapper i, .toast-icon-wrapper i { 
-            font-size: 20px; 
-            color: #fff;
+            font-size: 20px; color: #fff;
             will-change: transform;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -1006,12 +809,8 @@ export default function WatchPage() {
           }
 
           .popup-content, .toast-content { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 4px; 
-            max-height: 60vh; 
-            overflow-y: auto;
+            flex: 1; display: flex; flex-direction: column; gap: 4px; 
+            max-height: 60vh; overflow-y: auto;
             opacity: 0;
             will-change: transform, opacity;
             backface-visibility: hidden;
@@ -1021,40 +820,16 @@ export default function WatchPage() {
           }
 
           @keyframes contentFade { 
-            from { 
-              opacity: 0; 
-              transform: translate3d(10px, 0, 0); 
-            } 
-            to { 
-              opacity: 1; 
-              transform: translate3d(0, 0, 0); 
-            } 
+            from { opacity: 0; transform: translate3d(10px, 0, 0); } 
+            to   { opacity: 1; transform: translate3d(0, 0, 0); } 
           }
           
-          .popup-title, .toast-title { 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            color: #fff; 
-            margin: 0; 
-            line-height: 1.3; 
-          }
-
-          .popup-text, .toast-msg { 
-            font-size: 0.8rem; 
-            color: rgba(255, 255, 255, 0.7); 
-            margin: 0; 
-            line-height: 1.4; 
-          }
+          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .popup-text,  .toast-msg   { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
 
           @keyframes iconPop { 
-            from { 
-              transform: scale3d(0, 0, 1); 
-              opacity: 0; 
-            } 
-            to { 
-              transform: scale3d(1, 1, 1); 
-              opacity: 1; 
-            } 
+            from { transform: scale3d(0, 0, 1); opacity: 0; } 
+            to   { transform: scale3d(1, 1, 1); opacity: 1; } 
           }
 
           .toast-wrap { 
@@ -1075,432 +850,218 @@ export default function WatchPage() {
           }
 
           .player-banner-container {
-            width: 100%; 
-            aspect-ratio: 16/9; 
-            border-radius: 24px; 
-            overflow: hidden;
-            position: relative;
-            background-color: #1a1a1a; 
+            width: 100%; aspect-ratio: 16/9; 
+            border-radius: 24px; overflow: hidden;
+            position: relative; background-color: #1a1a1a; 
             border: 1px solid rgba(255, 255, 255, 0.15);
-            margin-bottom: 24px; 
-            cursor: pointer;
-            box-shadow: 
-              0 4px 6px -1px rgba(0, 0, 0, 0.3),
-              0 2px 4px -2px rgba(0, 0, 0, 0.2);
+            margin-bottom: 24px; cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
           }
 
-          .banner-image { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transition: transform 0.8s var(--ease-elastic); 
-          }
-
-          .player-banner-container:hover .banner-image { 
-            transform: scale(1.05); 
-          }
+          .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
+          .player-banner-container:hover .banner-image { transform: scale(1.05); }
 
           .play-button-static {
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            width: 64px; 
-            height: 64px; 
-            background: rgba(0,0,0,0.5); 
-            backdrop-filter: blur(8px);
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border: 1px solid rgba(255,255,255,0.3);
-            z-index: 2;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.3); z-index: 2;
           }
 
-          .play-button-static i { 
-            color: #fff; 
-            font-size: 24px; 
-            margin-left: 4px; 
-          }
+          .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
 
           .details-container {
-            border-radius: 24px; 
-            padding: 18px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 16px;
+            border-radius: 24px; padding: 18px; 
+            display: flex; flex-direction: column; gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 
-              0 4px 6px -1px rgba(0, 0, 0, 0.3),
-              0 2px 4px -2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
             background: rgba(255, 255, 255, 0.03);
           }
 
-          .media-title { 
-            font-size: 1.15rem; 
-            font-weight: 700; 
-            color: #fff; 
-            line-height: 1.2; 
-          }
+          .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
 
-          .season-controls { 
-            display: flex; 
-            align-items: center; 
-            margin-top: 8px; 
-          }
+          .season-controls { display: flex; align-items: center; margin-top: 8px; }
 
           .native-season-select {
-            appearance: none; 
-            -webkit-appearance: none;
+            appearance: none; -webkit-appearance: none;
             background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
-            padding: 4px 28px 4px 10px; 
-            border-radius: 12px;
-            font-size: 0.8rem; 
-            color: #fff; 
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; 
-            font-family: inherit; 
-            outline: none; 
-            transition: background 0.2s;
+            padding: 4px 28px 4px 10px; border-radius: 12px;
+            font-size: 0.8rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; font-family: inherit; outline: none; transition: background 0.2s;
           }
 
-          .native-season-select:hover { 
-            background-color: rgba(255,255,255,0.15); 
-          }
-
-          .native-season-select option { 
-            background: #1a1a1a; 
-            color: #fff; 
-          }
+          .native-season-select:hover { background-color: rgba(255,255,255,0.15); }
+          .native-season-select option { background: #1a1a1a; color: #fff; }
 
           .episodes-carousel { 
-            display: flex; 
-            gap: 10px; 
-            overflow-x: auto; 
-            padding: 10px 14px 25px 14px; 
+            display: flex; gap: 10px; overflow-x: auto; 
+            padding: 10px 14px 28px 14px; 
             scrollbar-width: none; 
             margin: 0 -14px;
             position: relative;
           }
 
-          .episodes-carousel::-webkit-scrollbar { 
-            display: none; 
-          }
+          .episodes-carousel::-webkit-scrollbar { display: none; }
           
           .ep-card {
-            min-width: 110px; 
-            height: 65px; 
-            background-size: cover; 
-            background-position: center;
-            border-radius: 10px; 
-            padding: 0; 
+            min-width: 110px; height: 65px; 
+            background-size: cover; background-position: center;
+            border-radius: 10px; padding: 0; 
             border: 1px solid rgba(255,255,255,0.15);
-            cursor: pointer; 
-            transition: all 0.2s ease; 
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: none;
+            cursor: pointer; transition: all 0.2s ease; 
+            position: relative; overflow: hidden; 
             background-color: #1a1a1a;
           }
           
           .ep-card-info {
-             position: relative; 
-             z-index: 2;
-             width: 100%; 
-             height: 100%;
-             padding: 6px 8px;
-             display: flex; 
-             align-items: flex-start; 
-             justify-content: flex-start;
+            position: relative; z-index: 2;
+            width: 100%; height: 100%;
+            padding: 6px 8px;
+            display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
-          .ep-card:hover { 
-            border-color: rgba(255,255,255,0.4); 
-            transform: scale(1.05); 
-          }
-          
-          .ep-card.active { 
-            border: 1px solid rgba(255,255,255,0.4);
-          }
+          .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
+          .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
           
           .ep-card-num { 
-            font-size: 0.8rem; 
-            font-weight: 700; 
-            color: #fff; 
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
-            padding: 2px 6px;
-            border-radius: 4px;
+            font-size: 0.8rem; font-weight: 700; color: #fff; 
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            padding: 2px 6px; border-radius: 4px;
           }
 
           .indicator-arrow {
             position: absolute;
-            bottom: 5px;
-            left: 0;
-            width: 16px;
-            height: 16px;
+            bottom: 6px;
+            width: 14px;
+            height: 8px;
             pointer-events: none;
             z-index: 10;
-            will-change: transform, opacity;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            transform: translateX(-50%);
+            transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
           }
 
-          .indicator-arrow::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 0; 
-            height: 0; 
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 8px solid #fff;
+          .indicator-arrow svg {
+            width: 100%;
+            height: 100%;
+            display: block;
           }
 
           .no-image-placeholder {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #111;
-            color: rgba(255,255,255,0.2);
-            font-size: 20px;
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #111; color: rgba(255,255,255,0.2); font-size: 20px;
           }
 
           .player-overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0;
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 2000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 2000; display: flex; align-items: center; justify-content: center;
             animation: overlayFadeIn 0.4s var(--ease-smooth);
           }
 
           @keyframes overlayFadeIn {
-            from {
-              opacity: 0;
-              backdrop-filter: blur(0px);
-            }
-            to {
-              opacity: 1;
-              backdrop-filter: blur(20px);
-            }
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to   { opacity: 1; backdrop-filter: blur(20px); }
           }
 
           .player-wrapper-vertical {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            position: relative;
-            width: auto;
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; width: auto;
             animation: playerSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
           @keyframes playerSlideUp {
-            from {
-              opacity: 0;
-              transform: translateY(60px) scale(0.9);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
+            from { opacity: 0; transform: translateY(60px) scale(0.9); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
           }
 
           .player-popup-container {
-            position: relative; 
-            background: #000; 
-            border-radius: 20px; 
-            overflow: hidden;
+            position: relative; background: #000; border-radius: 20px; overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
             border: 1.5px solid rgba(255, 255, 255, 0.2);
             transition: all 0.4s var(--ease-elastic); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
           }
 
           @keyframes playerContainerPop {
-            from {
-              opacity: 0;
-              transform: scale(0.8);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.8); }
+            to   { opacity: 1; transform: scale(1); }
           }
           
-          .popup-size-square { 
-            width: min(70vw, 40vh); 
-            height: min(70vw, 40vh); 
-            aspect-ratio: 1/1; 
-          }
-
-          .popup-size-banner { 
-            width: 80vw; 
-            max-width: 900px; 
-            aspect-ratio: 16/9; 
-          }
+          .popup-size-square { width: min(70vw, 40vh); height: min(70vw, 40vh); aspect-ratio: 1/1; }
+          .popup-size-banner { width: 80vw; max-width: 900px; aspect-ratio: 16/9; }
 
           .player-embed { 
-            width: 100%; 
-            height: 100%; 
-            border: none;
+            width: 100%; height: 100%; border: none;
             animation: embedFadeIn 0.5s ease 0.2s backwards;
           }
 
           @keyframes embedFadeIn {
-            from {
-              opacity: 0;
-            }
-            to {
-              opacity: 1;
-            }
+            from { opacity: 0; }
+            to   { opacity: 1; }
           }
           
           .player-header-controls {
-            width: 100%; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; 
             animation: controlsFadeIn 0.5s ease 0.15s backwards;
           }
 
           @keyframes controlsFadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
           
           .ep-indicator { 
-            font-size: 1rem; 
-            font-weight: 700; 
-            color: #fff; 
+            font-size: 1rem; font-weight: 700; color: #fff; 
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.4); 
-            padding: 10px 20px; 
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 12px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
             transition: all 0.3s var(--ease-smooth);
           }
 
           .ep-indicator:hover {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(0,0,0,0.5);
+            border-color: rgba(255,255,255,0.25);
             transform: scale(1.05);
           }
 
-          .right-controls { 
-            display: flex; 
-            gap: 12px; 
-          }
+          .right-controls { display: flex; gap: 12px; }
 
           .control-btn {
-            width: 48px; 
-            height: 48px; 
-            background: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(10px);
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: rgba(255, 255, 255, 0.9); 
-            transition: all 0.3s var(--ease-smooth); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
+            width: 48px; height: 48px; background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            color: rgba(255,255,255,0.9); transition: all 0.3s var(--ease-smooth); 
+            border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
           }
 
-          .control-btn:hover { 
-            background: rgba(255, 255, 255, 0.15); 
-            transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.3);
-          }
-
-          .control-btn:active {
-            transform: scale(0.95);
-          }
-
-          .control-btn i {
-            font-size: 18px;
-            transition: all 0.3s var(--ease-smooth);
-          }
-
-          .control-btn:hover i {
-            transform: scale(1.15);
-          }
+          .control-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
+          .control-btn:active { transform: scale(0.95); }
+          .control-btn i { font-size: 18px; transition: all 0.3s var(--ease-smooth); }
+          .control-btn:hover i { transform: scale(1.15); }
           
           .player-bottom-controls {
-            display: flex; 
-            justify-content: center; 
-            gap: 20px;
+            display: flex; justify-content: center; gap: 20px;
             margin-top: 20px;
             animation: controlsFadeIn 0.5s ease 0.25s backwards;
           }
 
           .nav-ep-btn {
-            background: rgba(255, 255, 255, 0.08); 
-            padding: 12px 32px; 
-            border-radius: 50px;
-            color: rgba(255, 255, 255, 0.9); 
-            font-weight: 600; 
-            font-size: 0.95rem;
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            transition: all 0.3s var(--ease-smooth); 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
+            background: rgba(255,255,255,0.08); padding: 12px 32px; border-radius: 50px;
+            color: rgba(255,255,255,0.9); font-weight: 600; font-size: 0.95rem;
+            display: flex; align-items: center; gap: 10px;
+            transition: all 0.3s var(--ease-smooth); backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
           }
 
-          .nav-ep-btn:hover { 
-            background: rgba(255, 255, 255, 0.15); 
-            transform: scale(1.08);
-            border-color: rgba(255, 255, 255, 0.3);
-          }
+          .nav-ep-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.08); border-color: rgba(255,255,255,0.3); }
+          .nav-ep-btn:active { transform: scale(0.95); }
+          .nav-ep-btn i { transition: all 0.3s var(--ease-smooth); }
+          .nav-ep-btn:hover i { transform: scale(1.2); }
 
-          .nav-ep-btn:active { 
-            transform: scale(0.95); 
-          }
-
-          .nav-ep-btn i {
-            transition: all 0.3s var(--ease-smooth);
-          }
-
-          .nav-ep-btn:hover i {
-            transform: scale(1.2);
-          }
-
-          .nav-ep-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-          }
-
-          .nav-ep-btn:disabled:hover {
-            transform: scale(1);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-          }
+          .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+          .nav-ep-btn:disabled:hover { transform: scale(1); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
 
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
@@ -1515,7 +1076,6 @@ export default function WatchPage() {
             .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
             .popup-title, .toast-title { font-size: 0.88rem; }
             .popup-text, .toast-msg { font-size: 0.75rem; }
-            
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
@@ -1587,7 +1147,6 @@ export default function WatchPage() {
           )}
 
           <main className="container">
-
             <div 
               className="player-banner-container" 
               onClick={() => setIsPlaying(true)}
@@ -1619,16 +1178,25 @@ export default function WatchPage() {
                       value={season}
                       onChange={handleNativeSeasonChange}
                     >
-                       {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                          <option key={num} value={num}>Temporada {num}</option>
-                       ))}
+                      {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>Temporada {num}</option>
+                      ))}
                     </select>
                   </div>
 
                   <div className="episodes-carousel" ref={carouselRef}>
-                    <div className="indicator-arrow" style={indicatorStyle}></div>
+                    {indicatorLeft !== null && (
+                      <div 
+                        className="indicator-arrow" 
+                        style={{ left: indicatorLeft, opacity: 1 }}
+                      >
+                        <svg viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1 7L7 1L13 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
 
-                    {seasonData && seasonData.episodes ? seasonData.episodes.map(ep => (
+                    {seasonData?.episodes ? seasonData.episodes.map(ep => (
                       <div 
                         key={ep.id} 
                         className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
@@ -1641,7 +1209,7 @@ export default function WatchPage() {
                       >
                         {!ep.still_path && (
                           <div className="no-image-placeholder">
-                             <i className="fas fa-image"></i>
+                            <i className="fas fa-image"></i>
                           </div>
                         )}
                         <div className="ep-card-info">
@@ -1679,10 +1247,9 @@ export default function WatchPage() {
       {isPlaying && (
         <div className="player-overlay">
           <div className="player-wrapper-vertical">
-            
             <div className="player-header-controls">
               <span className="ep-indicator">
-                 {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+                {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
               </span>
               <div className="right-controls">
                 <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
