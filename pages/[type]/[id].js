@@ -492,13 +492,10 @@ export default function WatchPage() {
             align-items: center;
             justify-content: center;
             background: #000;
-            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.8s ease;
           }
 
           .loading-overlay.fade-out {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
+            display: none;
           }
 
           .loading-spinner {
@@ -931,19 +928,14 @@ export default function WatchPage() {
 
           .indicator-arrow {
             position: absolute;
-            bottom: 6px;
-            width: 14px;
-            height: 8px;
+            bottom: 4px;
             pointer-events: none;
             z-index: 10;
             transform: translateX(-50%);
             transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-          }
-
-          .indicator-arrow svg {
-            width: 100%;
-            height: 100%;
-            display: block;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1;
           }
 
           .no-image-placeholder {
@@ -1186,14 +1178,10 @@ export default function WatchPage() {
 
                   <div className="episodes-carousel" ref={carouselRef}>
                     {indicatorLeft !== null && (
-                      <div 
-                        className="indicator-arrow" 
+                      <i 
+                        className="indicator-arrow fas fa-chevron-up"
                         style={{ left: indicatorLeft, opacity: 1 }}
-                      >
-                        <svg viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 7L7 1L13 7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
+                      />
                     )}
 
                     {seasonData?.episodes ? seasonData.episodes.map(ep => (
