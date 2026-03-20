@@ -104,7 +104,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
         </button>
 
         <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
-          <i className={navHidden ? "fas fa-chevron-down" : "fas fa-chevron-up"}></i>
+          <i className="fas fa-minus" style={{ fontSize: '16px', borderRadius: '999px' }}></i>
         </button>
 
         <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
@@ -398,11 +398,9 @@ export default function WatchPage() {
 
     activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
 
-    const containerLeft = carouselRef.current.getBoundingClientRect().left
-    const cardRect = activeCard.getBoundingClientRect()
-    const cardCenterRelative = cardRect.left - containerLeft + cardRect.width / 2
+    const cardCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2
 
-    setIndicatorLeft(cardCenterRelative)
+    setIndicatorLeft(cardCenter)
   }, [episode, seasonData])
 
   const handleNextEp = () => {
