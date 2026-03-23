@@ -43,7 +43,7 @@ export const WelcomeScreen = ({ onEnter }) => {
           <p className="welcome-subtitle">Uso Interno — Yoshikawa Bot</p>
           <div className="welcome-divider"></div>
           <p className="welcome-text">
-            Este site é de uso interno exclusivo para usuários do <strong>Yoshikawa Bot</strong>.
+            Este site é de uso interno exclusivo para usuários da <strong>Yoshikawa Bot</strong>.
             Não hospeda nem direciona nenhum conteúdo — utiliza apenas uma <strong>API pública de embed</strong>.
             O projeto é totalmente <strong>open source</strong> e não viola direitos autorais nem leis de copyright.
           </p>
