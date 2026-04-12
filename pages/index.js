@@ -227,8 +227,8 @@ export default function Home() {
     setFavorites(next)
     try { localStorage.setItem('ywFavs', JSON.stringify(next)) } catch {}
     pushNotif(has
-      ? { src: 'fav', icon: 'fa-heart-crack',        title: 'Removido',  msg: 'Retirado dos favoritos'  }
-      : { src: 'fav', icon: 'fa-heart-circle-check',  title: 'Favorito',  msg: 'Adicionado aos favoritos' }
+      ? { src: 'fav', icon: 'fa-info-circle',   title: 'Removido', msg: 'Retirado dos favoritos'   }
+      : { src: 'fav', icon: 'fa-check-circle',  title: 'Favorito', msg: 'Adicionado aos favoritos' }
     )
   }
 
@@ -540,7 +540,7 @@ const css = `
     display:flex;
     align-items:center;
     justify-content:center;
-    background:#1F1E1C;
+    background:#30302E;
     border:0.5px solid rgba(232,227,213,0.1);
     color:rgba(232,227,213,0.55);
     font-size:13px;
@@ -553,7 +553,7 @@ const css = `
     height:44px;
     flex:1;
     border-radius:50px;
-    background:#1F1E1C;
+    background:#30302E;
     border:0.5px solid rgba(232,227,213,0.1);
     display:flex;
     align-items:center;
@@ -648,8 +648,7 @@ const css = `
 
   .card {
     display:block;
-    opacity:0;
-    animation:cardIn .46s cubic-bezier(.34,1.56,.64,1) backwards;
+    animation:cardIn .46s cubic-bezier(.34,1.56,.64,1) both;
   }
   @keyframes cardIn {
     from{opacity:0;transform:translateY(22px) scale(.94)}
