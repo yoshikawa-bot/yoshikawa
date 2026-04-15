@@ -11,6 +11,8 @@ const SECTION_TITLES = {
   favorites: 'Favoritos'
 }
 
+const SESSION_SECTION_KEY = 'yoshikawaSection'
+
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -73,6 +75,34 @@ export const WelcomeScreen = ({ onEnter }) => {
   )
 }
 
+// ─── HeroSection ──────────────────────────────────────────────────────────────
+export const HeroSection = ({ section }) => {
+  const content = {
+    releases: {
+      badge: 'Atualizado hoje',
+      title: <>Novidades em <em>cartaz</em></>,
+      desc: 'Filmes e séries recém-lançados, direto do cinema e das plataformas. Fique sempre por dentro do que acabou de chegar.',
+    },
+    recommendations: {
+      badge: 'Tendências globais',
+      title: <>O que está em <em>alta</em></>,
+      desc: 'Os títulos mais assistidos e comentados agora. Descubra o que o mundo inteiro está vendo neste momento.',
+    },
+  }
+
+  const c = content[section]
+  if (!c) return null
+
+  return (
+    <div className="hero-section">
+      <span className="hero-badge">{c.badge}</span>
+      <h2 className="hero-title">{c.title}</h2>
+      <p className="hero-desc">{c.desc}</p>
+      <div className="hero-divider" />
+    </div>
+  )
+}
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
@@ -106,7 +136,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
       {showInfo && (
         <div className={`esm-popup${infoClosing ? ' closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-          <div className="popup-icon-box">
+          <div className="popup-icon-box popup-icon-green">
             <i className="fas fa-shield-halved" />
           </div>
           <div className="popup-body">
@@ -118,7 +148,7 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
 
       {showTech && (
         <div className={`esm-popup${techClosing ? ' closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-          <div className="popup-icon-box">
+          <div className="popup-icon-box popup-icon-blue">
             <i className="fas fa-microchip" />
           </div>
           <div className="popup-body">
@@ -204,7 +234,7 @@ export const BottomNav = ({
 // ─── ToastContainer ───────────────────────────────────────────────────────────
 export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
-  const icons = { success: 'fa-check', error: 'fa-exclamation', info: 'fa-info' }
+  const icons  = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' }
   const labels = { success: 'Sucesso', error: 'Erro', info: 'Info' }
   return (
     <div className="toast-wrap">
@@ -213,7 +243,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
         onClick={closeToast}
       >
         <div className="toast-icon-box">
-          <i className={`fas ${icons[toast.type] || 'fa-info'}`} />
+          <i className={`fas ${icons[toast.type] || 'fa-info-circle'}`} />
         </div>
         <div className="toast-body">
           <div className="toast-title">{labels[toast.type] || 'Info'}</div>
@@ -248,7 +278,7 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
         <button className="fav-btn" type="button" onClick={handleFavClick}>
           <i
             className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'}${animating ? ' heart-pulse' : ''}`}
-            style={{ color: isFavorite ? 'var(--accent)' : 'var(--text-pale)', fontSize: '13px' }}
+            style={{ color: isFavorite ? '#ff3b30' : 'rgba(255,255,255,0.75)', fontSize: '13px' }}
           />
         </button>
       </div>
@@ -260,7 +290,7 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
 export const Footer = () => (
   <footer className="footer-bar">
     <p className="footer-text">
-      Yoshikawa Player · Criado por{' '}
+      Yoshikawa Player · Desenvolvido por{' '}
       <a href="https://github.com/kawa-lyansky" rel="noopener noreferrer">
         <span className="footer-credit">@kawalyansky</span>
       </a>
@@ -271,27 +301,47 @@ export const Footer = () => (
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const [welcomed, setWelcomed] = useState(false)
-  const [releases, setReleases] = useState([])
+  const [welcomed, setWelcomed]               = useState(false)
+  const [releases, setReleases]               = useState([])
   const [recommendations, setRecommendations] = useState([])
-  const [favorites, setFavorites] = useState([])
-  const [searchResults, setSearchResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeSection, setActiveSection] = useState('releases')
-  const [searchActive, setSearchActive] = useState(false)
-  const [currentToast, setCurrentToast] = useState(null)
-  const [toastQueue, setToastQueue] = useState([])
-  const [scrolled, setScrolled] = useState(false)
-  const [showInfoPopup, setShowInfoPopup] = useState(false)
-  const [infoClosing, setInfoClosing] = useState(false)
-  const [showTechPopup, setShowTechPopup] = useState(false)
-  const [techClosing, setTechClosing] = useState(false)
+  const [favorites, setFavorites]             = useState([])
+  const [searchResults, setSearchResults]     = useState([])
+  const [loading, setLoading]                 = useState(false)
+  const [searchQuery, setSearchQuery]         = useState('')
+  const [activeSection, setActiveSectionRaw]  = useState('releases')
+  const [searchActive, setSearchActive]       = useState(false)
+  const [currentToast, setCurrentToast]       = useState(null)
+  const [toastQueue, setToastQueue]           = useState([])
+  const [scrolled, setScrolled]               = useState(false)
+  const [showInfoPopup, setShowInfoPopup]     = useState(false)
+  const [infoClosing, setInfoClosing]         = useState(false)
+  const [showTechPopup, setShowTechPopup]     = useState(false)
+  const [techClosing, setTechClosing]         = useState(false)
   const searchInputRef = useRef(null)
-  const toastTimerRef = useRef(null)
+  const toastTimerRef  = useRef(null)
 
+  // ── persist activeSection so back-navigation doesn't reset it ──────────────
+  const setActiveSection = useCallback((section) => {
+    setActiveSectionRaw(section)
+    try { sessionStorage.setItem(SESSION_SECTION_KEY, section) } catch {}
+  }, [])
+
+  // ── restore section on mount + sync popstate ───────────────────────────────
   useEffect(() => {
-    try { if (sessionStorage.getItem('yoshikawaWelcomed')) setWelcomed(true) } catch {}
+    try {
+      if (sessionStorage.getItem('yoshikawaWelcomed')) setWelcomed(true)
+      const saved = sessionStorage.getItem(SESSION_SECTION_KEY)
+      if (saved && SECTION_TITLES[saved]) setActiveSectionRaw(saved)
+    } catch {}
+
+    const onPop = () => {
+      try {
+        const saved = sessionStorage.getItem(SESSION_SECTION_KEY)
+        if (saved && SECTION_TITLES[saved]) setActiveSectionRaw(saved)
+      } catch {}
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   const handleEnter = () => {
@@ -299,6 +349,7 @@ export default function Home() {
     setWelcomed(true)
   }
 
+  // ── toast system ──────────────────────────────────────────────────────────
   const showToast = (message, type = 'info') => {
     if (showInfoPopup || showTechPopup) closeAllPopups()
     if (currentToast && !currentToast.closing) {
@@ -409,6 +460,7 @@ export default function Home() {
     if (!searchActive) { setSearchResults([]); setSearchQuery('') }
   }, [searchActive])
 
+  // ── TMDB helpers ─────────────────────────────────────────────────────────
   const fetchTMDB = async (url) => {
     try {
       const r = await fetch(url)
@@ -502,13 +554,18 @@ export default function Home() {
 
   const displayItems = searchActive
     ? searchResults
-    : activeSection === 'releases' ? releases : activeSection === 'recommendations' ? recommendations : favorites
+    : activeSection === 'releases'
+      ? releases
+      : activeSection === 'recommendations'
+        ? recommendations
+        : favorites
 
   const headerLabel = scrolled
     ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo')
     : 'Yoshikawa'
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
+  const showHero  = !searchActive && (activeSection === 'releases' || activeSection === 'recommendations')
 
   return (
     <>
@@ -519,13 +576,10 @@ export default function Home() {
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
           rel="stylesheet"
         />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           /* ── Reset ─────────────────────────────────────────────────────────── */
-          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+          *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           html { scroll-behavior: smooth; }
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
@@ -534,27 +588,27 @@ export default function Home() {
           /* ── Design Tokens ──────────────────────────────────────────────────── */
           :root {
             color-scheme: dark;
-            --bg:            #262624;
-            --bg-raised:     #1F1E1C;
-            --bg-card:       #30302E;
-            --bg-card-hover: #383734;
-            --text:          #FAF9F5;
-            --text-muted:    #9D9A93;
-            --text-dim:      rgba(232, 227, 213, 0.45);
-            --text-ghost:    rgba(232, 227, 213, 0.22);
-            --text-faint:    rgba(232, 227, 213, 0.38);
-            --text-pale:     rgba(232, 227, 213, 0.6);
-            --accent:        #DB7757;
-            --accent-bg:     rgba(219, 119, 87, 0.12);
-            --accent-bg-hover: rgba(219, 119, 87, 0.2);
-            --border:        rgba(232, 227, 213, 0.08);
-            --border-nav:    rgba(232, 227, 213, 0.1);
-            --border-btn:    rgba(232, 227, 213, 0.3);
-            --hover-bg:      rgba(232, 227, 213, 0.07);
-            --ease-elastic:  cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-smooth:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --pill-height:   44px;
-            --pill-max-width: 520px;
+            --bg:              #262624;
+            --bg-raised:       #1F1E1C;
+            --bg-card:         #30302E;
+            --bg-card-hover:   #383734;
+            --text:            #FAF9F5;
+            --text-muted:      #9D9A93;
+            --text-dim:        rgba(232,227,213,0.45);
+            --text-ghost:      rgba(232,227,213,0.22);
+            --text-faint:      rgba(232,227,213,0.38);
+            --text-pale:       rgba(232,227,213,0.6);
+            --accent:          #DB7757;
+            --accent-bg:       rgba(219,119,87,0.12);
+            --accent-bg-hover: rgba(219,119,87,0.2);
+            --border:          rgba(232,227,213,0.08);
+            --border-nav:      rgba(232,227,213,0.1);
+            --border-btn:      rgba(232,227,213,0.3);
+            --hover-bg:        rgba(232,227,213,0.07);
+            --ease-elastic:    cubic-bezier(0.34,1.56,0.64,1);
+            --ease-smooth:     cubic-bezier(0.25,0.46,0.45,0.94);
+            --pill-height:     44px;
+            --pill-max-width:  520px;
           }
 
           /* ── Body ───────────────────────────────────────────────────────────── */
@@ -570,41 +624,28 @@ export default function Home() {
 
           /* ── Welcome Overlay ────────────────────────────────────────────────── */
           .welcome-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             background: var(--bg-raised);
             animation: overlayIn 0.4s ease forwards;
           }
           .welcome-overlay.closing { animation: overlayOut 0.6s ease forwards; }
-          @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes overlayIn  { from { opacity: 0; } to { opacity: 1; } }
           @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
 
           .welcome-bar-row {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 90%;
-            max-width: var(--pill-max-width);
+            position: absolute; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            width: 90%; max-width: var(--pill-max-width);
           }
-          .welcome-top-row { top: 20px; }
+          .welcome-top-row    { top: 20px; }
           .welcome-bottom-row { bottom: 20px; }
 
           .welcome-content {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            text-align: right;
-            gap: 12px;
-            width: 90%;
-            max-width: 380px;
+            display: flex; flex-direction: column;
+            align-items: flex-end; text-align: right;
+            gap: 12px; width: 90%; max-width: 380px;
             animation: contentIn 0.55s var(--ease-elastic) 0.12s backwards;
           }
           @keyframes contentIn {
@@ -614,91 +655,88 @@ export default function Home() {
 
           .welcome-title {
             font-family: 'Instrument Serif', serif;
-            font-size: clamp(2rem, 6vw, 2.8rem);
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1.15;
-            letter-spacing: 0.01em;
+            font-size: clamp(2rem,6vw,2.8rem);
+            font-weight: 700; color: var(--text);
+            line-height: 1.15; letter-spacing: 0.01em;
           }
           .welcome-title em { font-style: italic; color: var(--accent); }
 
           .welcome-subtitle {
-            font-size: 11px;
-            color: var(--text-muted);
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
-            font-weight: 400;
+            font-size: 11px; color: var(--text-muted);
+            letter-spacing: 0.07em; text-transform: uppercase; font-weight: 400;
           }
 
-          .welcome-divider {
-            width: 40px;
-            height: 0.5px;
-            background: var(--border-btn);
-          }
+          .welcome-divider { width: 40px; height: 0.5px; background: var(--border-btn); }
 
           .welcome-text {
-            font-size: 13px;
-            color: var(--text-dim);
-            line-height: 1.65;
-            font-weight: 300;
+            font-size: 13px; color: var(--text-dim);
+            line-height: 1.65; font-weight: 300;
           }
           .welcome-text strong { color: var(--text-pale); font-weight: 500; }
 
           .welcome-enter-btn {
-            background: transparent;
-            color: var(--text);
+            background: transparent; color: var(--text);
             border: 0.5px solid var(--border-btn);
-            padding: 9px 26px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 400;
-            font-family: 'DM Sans', sans-serif;
-            cursor: pointer;
+            padding: 9px 26px; border-radius: 6px;
+            font-size: 14px; font-weight: 400;
+            font-family: 'DM Sans', sans-serif; cursor: pointer;
             transition: background 0.2s, border-color 0.2s;
             margin-top: 4px;
           }
-          .welcome-enter-btn:hover { background: var(--hover-bg); border-color: var(--text-muted); }
+          .welcome-enter-btn:hover  { background: var(--hover-bg); border-color: var(--text-muted); }
           .welcome-enter-btn:active { background: var(--bg-card); }
+
+          /* ── Hero Section ───────────────────────────────────────────────────── */
+          .hero-section {
+            padding: 2.8rem 0 2rem;
+            display: flex; flex-direction: column; gap: 10px;
+          }
+
+          .hero-badge {
+            display: inline-block;
+            font-size: 10px; letter-spacing: 0.07em;
+            color: var(--accent); background: var(--accent-bg);
+            padding: 3px 10px; border-radius: 99px;
+            font-weight: 500; text-transform: uppercase; width: fit-content;
+          }
+
+          .hero-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(1.9rem,5vw,2.8rem);
+            font-weight: 700; color: var(--text);
+            line-height: 1.15; letter-spacing: 0.01em; max-width: 520px;
+          }
+          .hero-title em { font-style: italic; color: var(--accent); }
+
+          .hero-desc {
+            font-size: 14px; color: var(--text-muted);
+            line-height: 1.7; font-weight: 300; max-width: 400px;
+          }
+
+          .hero-divider { width: 100%; height: 0.5px; background: var(--border); margin-top: 10px; }
 
           /* ── Shared: Round Button ───────────────────────────────────────────── */
           .esm-round-btn {
-            width: var(--pill-height);
-            height: var(--pill-height);
-            min-width: var(--pill-height);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-card);
-            border: 0.5px solid var(--border-nav);
-            color: var(--text-muted);
-            cursor: pointer;
-            flex-shrink: 0;
+            width: var(--pill-height); height: var(--pill-height); min-width: var(--pill-height);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-card); border: 0.5px solid var(--border-nav);
+            color: var(--text-muted); cursor: pointer; flex-shrink: 0;
             transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-elastic);
           }
-          .esm-round-btn:hover { background: var(--bg-card-hover); color: var(--text); transform: scale(1.06); }
+          .esm-round-btn:hover  { background: var(--bg-card-hover); color: var(--text); transform: scale(1.06); }
           .esm-round-btn:active { transform: scale(0.94); }
 
           /* ── Shared: Pill ───────────────────────────────────────────────────── */
           .esm-pill {
-            height: var(--pill-height);
-            flex: 1;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-card);
-            border: 0.5px solid var(--border-nav);
-            overflow: hidden;
-            transition: all 0.3s var(--ease-smooth);
+            height: var(--pill-height); flex: 1; border-radius: 50px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-card); border: 0.5px solid var(--border-nav);
+            overflow: hidden; transition: all 0.3s var(--ease-smooth);
           }
 
-          .esm-pill-label,
-          .bar-label {
+          .esm-pill-label, .bar-label {
             font-family: 'Instrument Serif', serif;
-            font-size: 17px;
-            font-weight: 400;
-            color: var(--text);
+            font-size: 17px; font-weight: 400; color: var(--text);
             letter-spacing: 0.01em;
             animation: labelFadeIn 0.35s var(--ease-elastic) forwards;
           }
@@ -709,114 +747,86 @@ export default function Home() {
 
           /* ── Nav Buttons inside Pill ────────────────────────────────────────── */
           .esm-nav-btn {
-            flex: 1;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: color 0.2s;
+            flex: 1; height: 100%; display: flex; align-items: center;
+            justify-content: center; color: var(--text-muted); cursor: pointer; transition: color 0.2s;
           }
-          .esm-nav-btn i { font-size: 16px; transition: transform 0.3s var(--ease-elastic); }
-          .esm-nav-btn:hover { color: var(--text-pale); }
-          .esm-nav-btn:hover i { transform: scale(1.18); }
+          .esm-nav-btn i        { font-size: 16px; transition: transform 0.3s var(--ease-elastic); }
+          .esm-nav-btn:hover    { color: var(--text-pale); }
+          .esm-nav-btn:hover i  { transform: scale(1.18); }
           .esm-nav-btn:active i { transform: scale(0.9); }
-          .esm-nav-btn.active { color: var(--accent); }
+          .esm-nav-btn.active   { color: var(--accent); }
           .esm-nav-btn.active i { transform: scale(1.08); }
 
           /* ── Floating Bar Containers ────────────────────────────────────────── */
           .bar-container {
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 90%;
-            max-width: var(--pill-max-width);
+            position: fixed; left: 50%; transform: translateX(-50%);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            gap: 10px; width: 90%; max-width: var(--pill-max-width);
             transition: all 0.4s var(--ease-smooth);
           }
-          .top-bar { top: 20px; }
+          .top-bar    { top: 20px; }
           .bottom-bar { bottom: 20px; }
           .top-bar.scrolled-state { transform: translateX(-50%) translateY(-4px); }
 
-          /* ── Info / Tech Popup ──────────────────────────────────────────────── */
+          /* ── Popup ──────────────────────────────────────────────────────────── */
           .esm-popup {
             position: fixed;
             top: calc(20px + var(--pill-height) + 14px);
-            left: 50%;
-            z-index: 950;
-            min-width: 300px;
-            max-width: 90%;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            border-radius: 10px;
-            background: var(--bg-card);
-            border: 0.5px solid var(--border-nav);
-            pointer-events: none;
-            opacity: 0;
+            left: 50%; z-index: 950;
+            min-width: 300px; max-width: 90%;
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 16px; border-radius: 10px;
+            background: var(--bg-card); border: 0.5px solid var(--border-nav);
+            pointer-events: none; opacity: 0;
             animation: popupIn 0.42s var(--ease-elastic) forwards;
           }
           .esm-popup.closing { animation: popupOut 0.32s ease forwards; }
-
           @keyframes popupIn {
-            from { opacity: 0; transform: translate(-50%, -16px) scale(0.9); }
-            to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            from { opacity: 0; transform: translate(-50%,-16px) scale(0.9); }
+            to   { opacity: 1; transform: translate(-50%,0) scale(1); }
           }
           @keyframes popupOut {
-            from { opacity: 1; transform: translate(-50%, 0) scale(1); }
-            to   { opacity: 0; transform: translate(-50%, -12px) scale(0.92); }
+            from { opacity: 1; transform: translate(-50%,0) scale(1); }
+            to   { opacity: 0; transform: translate(-50%,-12px) scale(0.92); }
           }
 
           .popup-icon-box {
-            width: 38px;
-            height: 38px;
-            min-width: 38px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--accent-bg);
-            flex-shrink: 0;
+            width: 38px; height: 38px; min-width: 38px;
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
           }
-          .popup-icon-box i { font-size: 16px; color: var(--accent); }
+          .popup-icon-green {
+            background: linear-gradient(135deg,#34c759 0%,#30d158 100%);
+            box-shadow: 0 4px 12px rgba(52,199,89,0.3);
+          }
+          .popup-icon-blue {
+            background: linear-gradient(135deg,#0A84FF 0%,#007aff 100%);
+            box-shadow: 0 4px 12px rgba(10,132,255,0.3);
+          }
+          .popup-icon-box i { color: #fff; font-size: 16px; }
 
-          .popup-body { display: flex; flex-direction: column; gap: 3px; }
-          .popup-title { font-size: 13px; font-weight: 500; color: var(--text); margin: 0; }
-          .popup-desc { font-size: 12px; color: var(--text-muted); margin: 0; font-weight: 300; line-height: 1.5; }
+          .popup-body        { display: flex; flex-direction: column; gap: 3px; }
+          .popup-title       { font-size: 13px; font-weight: 500; color: var(--text); margin: 0; }
+          .popup-desc        { font-size: 12px; color: var(--text-muted); margin: 0; font-weight: 300; line-height: 1.5; }
           .popup-desc strong { color: var(--text-pale); font-weight: 500; }
 
           /* ── Toast ──────────────────────────────────────────────────────────── */
           .toast-wrap {
             position: fixed;
             top: calc(20px + var(--pill-height) + 14px);
-            left: 50%;
-            z-index: 960;
-            pointer-events: none;
+            left: 50%; z-index: 960; pointer-events: none;
           }
 
           .esm-toast {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 10px;
-            background: var(--bg-card);
-            border: 0.5px solid var(--border-nav);
-            min-width: 280px;
-            max-width: 90vw;
-            pointer-events: auto;
-            cursor: pointer;
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; border-radius: 10px;
+            background: var(--bg-card); border: 0.5px solid var(--border-nav);
+            min-width: 280px; max-width: 90vw;
+            pointer-events: auto; cursor: pointer;
             transform: translateX(-50%);
             animation: toastIn 0.42s var(--ease-elastic) forwards;
           }
           .esm-toast.closing { animation: toastOut 0.32s ease forwards; }
-
           @keyframes toastIn {
             from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
             to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
@@ -827,88 +837,62 @@ export default function Home() {
           }
 
           .toast-icon-box {
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 34px; height: 34px; min-width: 34px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
           }
-          .esm-toast.success .toast-icon-box { background: var(--accent-bg); }
-          .esm-toast.info    .toast-icon-box { background: var(--hover-bg); }
-          .esm-toast.error   .toast-icon-box { background: rgba(192, 80, 80, 0.12); }
-          .esm-toast.success .toast-icon-box i { color: var(--accent); }
-          .esm-toast.info    .toast-icon-box i { color: var(--text-muted); }
-          .esm-toast.error   .toast-icon-box i { color: #C06070; }
-          .toast-icon-box i { font-size: 13px; }
+          /* original iOS palette */
+          .esm-toast.success .toast-icon-box { background: linear-gradient(135deg,#34c759,#30d158); box-shadow: 0 4px 12px rgba(52,199,89,0.3); }
+          .esm-toast.info    .toast-icon-box { background: linear-gradient(135deg,#0A84FF,#007aff); box-shadow: 0 4px 12px rgba(10,132,255,0.3); }
+          .esm-toast.error   .toast-icon-box { background: linear-gradient(135deg,#ff453a,#ff3b30); box-shadow: 0 4px 12px rgba(255,69,58,0.3); }
+          .toast-icon-box i  { font-size: 14px; color: #fff; }
 
-          .toast-body { display: flex; flex-direction: column; gap: 2px; }
+          .toast-body  { display: flex; flex-direction: column; gap: 2px; }
           .toast-title { font-size: 13px; font-weight: 500; color: var(--text); }
           .toast-msg   { font-size: 12px; color: var(--text-muted); font-weight: 300; }
 
           /* ── Main Container ──────────────────────────────────────────────────── */
           .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding-top: 6.5rem;
-            padding-bottom: 7rem;
-            padding-left: 2rem;
-            padding-right: 2rem;
+            max-width: 1280px; margin: 0 auto;
+            padding-top: 6.5rem; padding-bottom: 7rem;
+            padding-left: 2rem; padding-right: 2rem;
           }
 
           /* ── Page Header ─────────────────────────────────────────────────────── */
           .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
+            display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 0;
           }
 
           .page-title {
             font-family: 'Instrument Serif', serif;
-            font-size: 20px;
-            font-weight: 400;
-            color: var(--text);
-            letter-spacing: 0.02em;
+            font-size: 20px; font-weight: 400;
+            color: var(--text); letter-spacing: 0.02em;
           }
 
+          /* ── Status dots — static, macOS style ──────────────────────────────── */
           .status-dots { display: flex; align-items: center; gap: 7px; }
-          .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: dotPulse 2.5s ease-in-out infinite;
-          }
-          .dot.red    { background: #C06070; animation-delay: 0s; }
-          .dot.yellow { background: var(--text-muted); animation-delay: 0.4s; }
-          .dot.green  { background: var(--accent); animation-delay: 0.8s; }
-          @keyframes dotPulse {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50%      { opacity: 1;   transform: scale(1.28); }
-          }
+          .dot { width: 8px; height: 8px; border-radius: 50%; }
+          .dot.red    { background: #ff5f57; }
+          .dot.yellow { background: #febc2e; }
+          .dot.green  { background: #28c840; }
 
           /* ── Content Grid ────────────────────────────────────────────────────── */
           .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
             gap: 20px 12px;
           }
 
           /* ── Movie Cards ─────────────────────────────────────────────────────── */
           .card-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            position: relative;
+            display: flex; flex-direction: column; width: 100%; position: relative;
             animation: cardIn 0.45s var(--ease-elastic) backwards;
           }
           @keyframes cardIn {
             from { opacity: 0; transform: translateY(20px); }
             to   { opacity: 1; transform: translateY(0); }
           }
-
           .card-wrapper:nth-child(1)  { animation-delay: 20ms; }
           .card-wrapper:nth-child(2)  { animation-delay: 50ms; }
           .card-wrapper:nth-child(3)  { animation-delay: 80ms; }
@@ -931,50 +915,34 @@ export default function Home() {
           .card-wrapper:nth-child(20) { animation-delay: 590ms; }
 
           .card-poster-frame {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            aspect-ratio: 2/3;
-            background: var(--bg-raised);
+            position: relative; border-radius: 10px; overflow: hidden;
+            aspect-ratio: 2/3; background: var(--bg-raised);
             border: 0.5px solid var(--border);
             transition: border-color 0.2s, transform 0.25s var(--ease-smooth);
           }
           .card-wrapper:hover .card-poster-frame {
-            border-color: rgba(232, 227, 213, 0.22);
-            transform: translateY(-5px);
+            border-color: rgba(232,227,213,0.22); transform: translateY(-5px);
           }
           .card-wrapper:active .card-poster-frame { transform: scale(0.97); }
 
           .content-poster {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100%; height: 100%; object-fit: cover;
             transition: transform 0.5s var(--ease-smooth);
           }
           .card-wrapper:hover .content-poster { transform: scale(1.06); }
 
           .fav-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(38, 38, 36, 0.88);
-            border: 0.5px solid var(--border);
-            opacity: 0;
-            transform: scale(0.82);
+            position: absolute; top: 8px; right: 8px;
+            width: 30px; height: 30px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(38,38,36,0.88); border: 0.5px solid var(--border);
+            opacity: 0; transform: scale(0.82);
             transition: all 0.2s var(--ease-elastic);
-            z-index: 20;
-            cursor: pointer;
+            z-index: 20; cursor: pointer;
           }
           .card-poster-frame:hover .fav-btn { opacity: 1; transform: scale(1); }
-          .fav-btn:hover { background: var(--bg-card); border-color: var(--border-btn); transform: scale(1.1); }
+          .fav-btn:hover  { background: var(--bg-card); border-color: var(--border-btn); transform: scale(1.1); }
           .fav-btn:active { transform: scale(0.9); }
-
           @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); } }
 
           .heart-pulse { animation: heartZoom 0.4s var(--ease-elastic); }
@@ -986,8 +954,7 @@ export default function Home() {
 
           /* ── Search Input ────────────────────────────────────────────────────── */
           .search-wrap {
-            width: 100%;
-            padding: 0 16px;
+            width: 100%; padding: 0 16px;
             animation: searchIn 0.3s var(--ease-elastic);
           }
           @keyframes searchIn {
@@ -995,86 +962,62 @@ export default function Home() {
             to   { opacity: 1; transform: scaleX(1); }
           }
           .search-wrap input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 400;
+            width: 100%; background: transparent; border: none; outline: none;
+            color: var(--text); font-size: 14px;
+            font-family: 'DM Sans', sans-serif; font-weight: 400;
           }
           .search-wrap input::placeholder { color: var(--text-muted); font-weight: 300; }
 
-          /* ── Empty States ────────────────────────────────────────────────────── */
+          /* ── Empty / Loading States ──────────────────────────────────────────── */
           .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted);
-            margin-top: 4rem;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 300;
+            display: flex; flex-direction: column; align-items: center;
+            color: var(--text-muted); margin-top: 4rem;
+            gap: 10px; font-size: 14px; font-weight: 300;
             animation: emptyIn 0.4s ease forwards;
           }
           .empty-state i {
-            font-size: 1.8rem;
-            color: var(--text-ghost);
-            margin-bottom: 4px;
-            animation: floatIcon 3s ease-in-out infinite;
+            font-size: 1.8rem; color: var(--text-ghost);
+            margin-bottom: 4px; animation: floatIcon 3s ease-in-out infinite;
           }
-          @keyframes floatIcon {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-8px); }
-          }
-          @keyframes emptyIn {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
+          @keyframes floatIcon { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+          @keyframes emptyIn   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
           .spinner {
-            width: 22px;
-            height: 22px;
-            border: 1.5px solid var(--border-nav);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            width: 22px; height: 22px;
+            border: 1.5px solid var(--border-nav); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
           }
           @keyframes spin { to { transform: rotate(360deg); } }
 
           /* ── Footer ─────────────────────────────────────────────────────────── */
           .footer-bar {
-            margin-top: 3rem;
-            padding: 2rem;
-            text-align: center;
+            margin-top: 3rem; padding: 2rem; text-align: center;
             border-top: 0.5px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display: flex; flex-direction: column; gap: 6px;
           }
-          .footer-text { font-size: 12px; color: var(--text-ghost); line-height: 1.9; }
-          .footer-text a { color: var(--text-faint); }
+          .footer-text         { font-size: 12px; color: var(--text-ghost); line-height: 1.9; }
+          .footer-text a       { color: var(--text-faint); }
           .footer-text a:hover { color: var(--text-pale); }
           .footer-credit {
             font-family: 'Instrument Serif', serif;
-            font-style: italic;
-            color: var(--accent);
+            font-style: italic; color: var(--accent);
           }
           .footer-sub { font-size: 11px; color: var(--text-ghost); font-weight: 300; }
 
           /* ── Responsive ──────────────────────────────────────────────────────── */
           @media (max-width: 640px) {
-            .container { padding-left: 1rem; padding-right: 1rem; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px 10px; }
-            .bar-container { width: 94%; gap: 8px; }
+            .container         { padding-left: 1rem; padding-right: 1rem; }
+            .content-grid      { grid-template-columns: repeat(2,1fr) !important; gap: 14px 10px; }
+            .bar-container     { width: 94%; gap: 8px; }
             .card-poster-frame { border-radius: 8px; }
-            .esm-popup, .esm-toast { min-width: 260px; padding: 12px 14px; }
-            .popup-icon-box { width: 34px; height: 34px; min-width: 34px; }
-            .popup-icon-box i { font-size: 14px; }
-            .toast-icon-box { width: 28px; height: 28px; min-width: 28px; }
-            .page-title { font-size: 18px; }
-            .dot { width: 7px; height: 7px; }
+            .esm-popup,
+            .esm-toast         { min-width: 260px; padding: 12px 14px; }
+            .popup-icon-box    { width: 34px; height: 34px; min-width: 34px; }
+            .toast-icon-box    { width: 28px; height: 28px; min-width: 28px; }
+            .page-title        { font-size: 18px; }
+            .dot               { width: 7px; height: 7px; }
+            .hero-title        { font-size: 1.7rem; }
+            .hero-desc         { font-size: 13px; }
           }
         `}</style>
       </Head>
@@ -1103,6 +1046,8 @@ export default function Home() {
             <span className="dot green" />
           </div>
         </div>
+
+        {showHero && <HeroSection section={activeSection} />}
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
