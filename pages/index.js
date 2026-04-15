@@ -4,7 +4,6 @@ import Link from 'next/link'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
-const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 
 const SECTION_TITLES = {
   releases: 'Lançamentos',
@@ -22,130 +21,109 @@ const useDebounce = (callback, delay) => {
 
 const getItemKey = (item) => `${item.media_type}-${item.id}`
 
+// ─── WelcomeScreen ────────────────────────────────────────────────────────────
 export const WelcomeScreen = ({ onEnter }) => {
   const [closing, setClosing] = useState(false)
-
-  const handleEnter = () => {
-    setClosing(true)
-    setTimeout(onEnter, 600)
-  }
+  const handleEnter = () => { setClosing(true); setTimeout(onEnter, 600) }
 
   return (
-    <div className={`welcome-overlay ${closing ? 'closing' : ''}`} style={{ padding: 0 }}>
-      <div style={{
-        position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '12px', width: '90%', maxWidth: '520px'
-      }}>
-        <button className="round-btn glass-panel">
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>*</span>
+    <div className={`welcome-overlay${closing ? ' closing' : ''}`}>
+      <div className="welcome-bar-row welcome-top-row">
+        <button className="esm-round-btn" type="button">
+          <i className="fas fa-play" style={{ fontSize: '11px', transform: 'translateX(1px)' }} />
         </button>
-        <div className="pill-container glass-panel">
-          <span className="bar-label">******</span>
+        <div className="esm-pill">
+          <span className="esm-pill-label">Yoshikawa Player</span>
         </div>
-        <button className="round-btn glass-panel">
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>*</span>
+        <button className="esm-round-btn" type="button">
+          <i className="fas fa-info-circle" style={{ fontSize: '12px' }} />
         </button>
       </div>
 
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-        textAlign: 'right', gap: '12px', width: '90%', maxWidth: '380px'
-      }}>
-        <p className="welcome-title">Yoshikawa Player</p>
-        <p className="welcome-subtitle">Uso Interno — Yoshikawa Bot</p>
-        <div className="welcome-divider"></div>
-        <p className="welcome-text" style={{ textAlign: 'right' }}>
-          Este site é de uso interno exclusivo para usuários da <strong>Yoshikawa Bot</strong>.
-          Não hospeda nem direciona nenhum conteúdo — utiliza apenas uma <strong>API pública de embed</strong>.
-          O projeto é totalmente <strong>open source</strong> e não viola direitos autorais nem leis de copyright.
+      <div className="welcome-content">
+        <h1 className="welcome-title">Yoshikawa <em>Player</em></h1>
+        <p className="welcome-subtitle">Uso Interno · Yoshikawa Bot</p>
+        <div className="welcome-divider" />
+        <p className="welcome-text">
+          Este site é de uso interno exclusivo para usuários da{' '}
+          <strong>Yoshikawa Bot</strong>. Não hospeda nem direciona nenhum
+          conteúdo — utiliza apenas uma <strong>API pública de embed</strong>.
+          O projeto é totalmente <strong>open source</strong> e não viola
+          direitos autorais nem leis de copyright.
         </p>
-        <button className="welcome-btn glass-panel" onClick={handleEnter} style={{ width: 'auto', minWidth: '140px' }}>
-          <span>Entrar</span>
+        <button className="welcome-enter-btn" type="button" onClick={handleEnter}>
+          Entrar
         </button>
       </div>
 
-      <div style={{
-        position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '12px', width: '90%', maxWidth: '520px'
-      }}>
-        <button className="round-btn glass-panel">
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '15px' }}>*</span>
+      <div className="welcome-bar-row welcome-bottom-row">
+        <button className="esm-round-btn" type="button">
+          <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '12px', transform: 'translateY(-1px)' }} />
         </button>
-        <div className="pill-container glass-panel" style={{ justifyContent: 'space-around' }}>
-          <button className="nav-btn"><span>*</span></button>
-          <button className="nav-btn"><span>*</span></button>
-          <button className="nav-btn"><span>*</span></button>
+        <div className="esm-pill" style={{ justifyContent: 'space-around' }}>
+          <button className="esm-nav-btn" type="button"><i className="fas fa-film" /></button>
+          <button className="esm-nav-btn" type="button"><i className="fas fa-fire-flame-curved" /></button>
+          <button className="esm-nav-btn" type="button"><i className="fas fa-heart" /></button>
         </div>
-        <button className="round-btn glass-panel">
-          <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '15px' }}>*</span>
+        <button className="esm-round-btn" type="button">
+          <i className="fas fa-magnifying-glass" style={{ fontSize: '12px' }} />
         </button>
       </div>
     </div>
   )
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
 export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing }) => {
   const handleRightClick = (e) => {
     e.stopPropagation()
-    if (scrolled) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      toggleInfo()
-    }
+    scrolled ? window.scrollTo({ top: 0, behavior: 'smooth' }) : toggleInfo()
   }
 
   return (
     <>
-      <header className={`bar-container top-bar ${scrolled ? 'scrolled-state' : ''}`}>
+      <header className={`bar-container top-bar${scrolled ? ' scrolled-state' : ''}`}>
         <button
-          className="round-btn glass-panel"
+          className="esm-round-btn"
+          type="button"
           onClick={(e) => { e.stopPropagation(); toggleTech() }}
           title="Info Técnica"
         >
-          <i className="fas fa-microchip" style={{ fontSize: '14px' }}></i>
+          <i className="fas fa-microchip" style={{ fontSize: '13px' }} />
         </button>
-
-        <div className="pill-container glass-panel">
+        <div className="esm-pill">
           <span key={label} className="bar-label">{label}</span>
         </div>
-
         <button
-          className="round-btn glass-panel"
-          title={scrolled ? "Voltar ao topo" : "Informações"}
+          className="esm-round-btn"
+          type="button"
           onClick={handleRightClick}
+          title={scrolled ? 'Voltar ao topo' : 'Informações'}
         >
-          <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
+          <i className={scrolled ? 'fas fa-chevron-up' : 'fas fa-info-circle'} style={{ fontSize: '13px' }} />
         </button>
       </header>
 
       {showInfo && (
-        <div
-          className={`info-popup glass-panel ${infoClosing ? 'closing' : ''}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="popup-icon-wrapper">
-            <i className="fas fa-shield-halved"></i>
+        <div className={`esm-popup${infoClosing ? ' closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className="popup-icon-box">
+            <i className="fas fa-shield-halved" />
           </div>
-          <div className="popup-content">
+          <div className="popup-body">
             <p className="popup-title">Proteção Recomendada</p>
-            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
+            <p className="popup-desc">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
           </div>
         </div>
       )}
 
       {showTech && (
-        <div
-          className={`info-popup glass-panel ${techClosing ? 'closing' : ''}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="popup-icon-wrapper tech">
-            <i className="fas fa-microchip"></i>
+        <div className={`esm-popup${techClosing ? ' closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className="popup-icon-box">
+            <i className="fas fa-microchip" />
           </div>
-          <div className="popup-content">
+          <div className="popup-body">
             <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
+            <p className="popup-desc">v2.6.0 · Next.js · TMDB API</p>
           </div>
         </div>
       )}
@@ -153,21 +131,16 @@ export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, sho
   )
 }
 
+// ─── BottomNav ────────────────────────────────────────────────────────────────
 export const BottomNav = ({
   activeSection, setActiveSection,
   searchActive, setSearchActive,
   searchQuery, setSearchQuery,
   onSearchSubmit, inputRef
 }) => {
-
   const handleShare = async () => {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Yoshikawa Player',
-          url: window.location.href,
-        })
-      } catch (err) { console.log('Share canceled') }
+      try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } catch {}
     } else {
       alert('Compartilhar não suportado neste navegador')
     }
@@ -175,21 +148,17 @@ export const BottomNav = ({
 
   return (
     <div className="bar-container bottom-bar">
-      <button
-        className="round-btn glass-panel"
-        onClick={handleShare}
-        title="Compartilhar"
-      >
-        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
+      <button className="esm-round-btn" type="button" onClick={handleShare} title="Compartilhar">
+        <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '13px', transform: 'translateY(-1px)' }} />
       </button>
 
-      <div className={`pill-container glass-panel ${searchActive ? 'search-mode' : ''}`}>
+      <div className={`esm-pill${searchActive ? ' search-mode' : ''}`}>
         {searchActive ? (
           <div className="search-wrap">
             <input
               ref={inputRef}
               type="text"
-              placeholder="Buscar..."
+              placeholder="Buscar filme ou série..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && onSearchSubmit(searchQuery)}
@@ -197,36 +166,57 @@ export const BottomNav = ({
           </div>
         ) : (
           <>
-            <button className={`nav-btn ${activeSection === 'releases' ? 'active' : ''}`} onClick={() => setActiveSection('releases')}>
-              <i className="fas fa-film"></i>
+            <button
+              className={`esm-nav-btn${activeSection === 'releases' ? ' active' : ''}`}
+              type="button"
+              onClick={() => setActiveSection('releases')}
+            >
+              <i className="fas fa-film" />
             </button>
-            <button className={`nav-btn ${activeSection === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveSection('recommendations')}>
-              <i className="fas fa-fire-flame-curved"></i>
+            <button
+              className={`esm-nav-btn${activeSection === 'recommendations' ? ' active' : ''}`}
+              type="button"
+              onClick={() => setActiveSection('recommendations')}
+            >
+              <i className="fas fa-fire-flame-curved" />
             </button>
-            <button className={`nav-btn ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-              <i className="fas fa-heart"></i>
+            <button
+              className={`esm-nav-btn${activeSection === 'favorites' ? ' active' : ''}`}
+              type="button"
+              onClick={() => setActiveSection('favorites')}
+            >
+              <i className="fas fa-heart" />
             </button>
           </>
         )}
       </div>
 
-      <button className="round-btn glass-panel" onClick={() => setSearchActive(s => !s)}>
-        <i className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'} style={{ fontSize: searchActive ? '17px' : '15px' }}></i>
+      <button className="esm-round-btn" type="button" onClick={() => setSearchActive(s => !s)}>
+        <i
+          className={searchActive ? 'fas fa-xmark' : 'fas fa-magnifying-glass'}
+          style={{ fontSize: searchActive ? '17px' : '13px' }}
+        />
       </button>
     </div>
   )
 }
 
+// ─── ToastContainer ───────────────────────────────────────────────────────────
 export const ToastContainer = ({ toast, closeToast }) => {
   if (!toast) return null
+  const icons = { success: 'fa-check', error: 'fa-exclamation', info: 'fa-info' }
+  const labels = { success: 'Sucesso', error: 'Erro', info: 'Info' }
   return (
     <div className="toast-wrap">
-      <div className={`toast glass-panel ${toast.type} ${toast.closing ? 'closing' : ''}`} onClick={closeToast}>
-        <div className="toast-icon-wrapper">
-          <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}`}></i>
+      <div
+        className={`esm-toast ${toast.type}${toast.closing ? ' closing' : ''}`}
+        onClick={closeToast}
+      >
+        <div className="toast-icon-box">
+          <i className={`fas ${icons[toast.type] || 'fa-info'}`} />
         </div>
-        <div className="toast-content">
-          <div className="toast-title">{toast.type === 'success' ? 'Sucesso' : toast.type === 'error' ? 'Erro' : 'Info'}</div>
+        <div className="toast-body">
+          <div className="toast-title">{labels[toast.type] || 'Info'}</div>
           <div className="toast-msg">{toast.message}</div>
         </div>
       </div>
@@ -234,6 +224,7 @@ export const ToastContainer = ({ toast, closeToast }) => {
   )
 }
 
+// ─── MovieCard ────────────────────────────────────────────────────────────────
 export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
   const [animating, setAnimating] = useState(false)
 
@@ -254,25 +245,31 @@ export const MovieCard = ({ item, isFavorite, toggleFavorite }) => {
           className="content-poster"
           loading="lazy"
         />
-        <button className="fav-btn glass-panel" onClick={handleFavClick}>
+        <button className="fav-btn" type="button" onClick={handleFavClick}>
           <i
-            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-            style={{ color: isFavorite ? '#ff3b30' : '#ffffff' }}
-          ></i>
+            className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'}${animating ? ' heart-pulse' : ''}`}
+            style={{ color: isFavorite ? 'var(--accent)' : 'var(--text-pale)', fontSize: '13px' }}
+          />
         </button>
       </div>
     </Link>
   )
 }
 
+// ─── Footer ───────────────────────────────────────────────────────────────────
 export const Footer = () => (
-  <footer className="footer-credits">
-    <p className="footer-main">Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
-    <p className="footer-author">Criado por Kawa</p>
-    <p className="footer-tech">React 18 • TMDB API • v2.6.0</p>
+  <footer className="footer-bar">
+    <p className="footer-text">
+      Yoshikawa Player · Criado por{' '}
+      <a href="https://github.com/kawa-lyansky" rel="noopener noreferrer">
+        <span className="footer-credit">@kawalyansky</span>
+      </a>
+    </p>
+    <p className="footer-sub">Next.js · TMDB API · v2.6.0</p>
   </footer>
 )
 
+// ─── Home ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [welcomed, setWelcomed] = useState(false)
   const [releases, setReleases] = useState([])
@@ -283,26 +280,18 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSection, setActiveSection] = useState('releases')
   const [searchActive, setSearchActive] = useState(false)
-
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
-
   const [scrolled, setScrolled] = useState(false)
-
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
-
   const [showTechPopup, setShowTechPopup] = useState(false)
   const [techClosing, setTechClosing] = useState(false)
-
   const searchInputRef = useRef(null)
   const toastTimerRef = useRef(null)
 
   useEffect(() => {
-    try {
-      const seen = sessionStorage.getItem('yoshikawaWelcomed')
-      if (seen) setWelcomed(true)
-    } catch {}
+    try { if (sessionStorage.getItem('yoshikawaWelcomed')) setWelcomed(true) } catch {}
   }, [])
 
   const handleEnter = () => {
@@ -311,15 +300,10 @@ export default function Home() {
   }
 
   const showToast = (message, type = 'info') => {
-    if (showInfoPopup || showTechPopup) {
-      closeAllPopups()
-    }
-
+    if (showInfoPopup || showTechPopup) closeAllPopups()
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
-      setTimeout(() => {
-        setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
-      }, 200)
+      setTimeout(() => setToastQueue(prev => [...prev, { message, type, id: Date.now() }]), 200)
     } else {
       setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
     }
@@ -370,9 +354,7 @@ export default function Home() {
   const toggleInfoPopup = () => {
     if (showTechPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => {
-        if (!showInfoPopup) setShowInfoPopup(true)
-      }, 200)
+      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
     } else {
       if (showInfoPopup) {
         setInfoClosing(true)
@@ -386,9 +368,7 @@ export default function Home() {
   const toggleTechPopup = () => {
     if (showInfoPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => {
-        if (!showTechPopup) setShowTechPopup(true)
-      }, 200)
+      setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
     } else {
       if (showTechPopup) {
         setTechClosing(true)
@@ -404,98 +384,74 @@ export default function Home() {
       if (window.scrollY > 10) closeAllPopups()
       setScrolled(window.scrollY > 60)
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-
     const onClick = (e) => {
-      if (!e.target.closest('.info-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container')) {
+      if (
+        !e.target.closest('.esm-popup') &&
+        !e.target.closest('.esm-toast') &&
+        !e.target.closest('.esm-round-btn') &&
+        !e.target.closest('.esm-pill')
+      ) {
         closeAllPopups()
       }
     }
+    window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('click', onClick)
-
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('click', onClick)
     }
   }, [closeAllPopups])
 
-  useEffect(() => {
-    loadHomeContent()
-    loadFavorites()
-  }, [])
+  useEffect(() => { loadHomeContent(); loadFavorites() }, [])
 
   useEffect(() => {
     if (searchActive && searchInputRef.current) searchInputRef.current.focus()
-    if (!searchActive) {
-      setSearchResults([])
-      setSearchQuery('')
-    }
+    if (!searchActive) { setSearchResults([]); setSearchQuery('') }
   }, [searchActive])
 
   const fetchTMDB = async (url) => {
     try {
-      const response = await fetch(url)
-      if (!response.ok) throw new Error('Network error')
-      const data = await response.json()
-      return data.results || []
-    } catch (error) {
-      console.error('TMDB fetch error:', error)
-      return []
-    }
+      const r = await fetch(url)
+      if (!r.ok) throw new Error('Network error')
+      const d = await r.json()
+      return d.results || []
+    } catch { return [] }
   }
 
   const fetchTMDBPages = async (endpoint) => {
     try {
-      const [results1, results2] = await Promise.all([
+      const [p1, p2] = await Promise.all([
         fetchTMDB(`${endpoint}&page=1`),
         fetchTMDB(`${endpoint}&page=2`)
       ])
-      return [...results1, ...results2]
-    } catch {
-      return []
-    }
+      return [...p1, ...p2]
+    } catch { return [] }
   }
 
   const fetchSearchResults = async (query) => {
-    if (!query.trim()) {
-      setSearchResults([])
-      setLoading(false)
-      return
-    }
-
+    if (!query.trim()) { setSearchResults([]); setLoading(false); return }
     setLoading(true)
     try {
       const [movies, tv] = await Promise.all([
         fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
       ])
-
       const combined = [
         ...movies.map(i => ({ ...i, media_type: 'movie' })),
         ...tv.map(i => ({ ...i, media_type: 'tv' }))
-      ]
-        .filter(i => i.poster_path)
-        .sort((a, b) => b.popularity - a.popularity)
-        .slice(0, 40)
-
+      ].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 40)
       setSearchResults(combined)
-    } catch (error) {
+    } catch {
       showToast('Erro na busca', 'error')
       setSearchResults([])
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
 
   const handleSearchChange = (q) => {
     setSearchQuery(q)
-    if (!q.trim()) {
-      setSearchResults([])
-      setLoading(false)
-      return
-    }
+    if (!q.trim()) { setSearchResults([]); setLoading(false); return }
     setLoading(true)
     debouncedSearch(q)
   }
@@ -508,37 +464,26 @@ export default function Home() {
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
-
-      const releasesData = [
-        ...moviesNow.map(i => ({ ...i, media_type: 'movie' })),
-        ...tvNow.map(i => ({ ...i, media_type: 'tv' }))
-      ]
-        .filter(i => i.poster_path)
-        .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
-        .slice(0, 36)
-
-      const recommendationsData = [
-        ...moviesPopular.map(i => ({ ...i, media_type: 'movie' })),
-        ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))
-      ]
-        .filter(i => i.poster_path)
-        .sort((a, b) => b.popularity - a.popularity)
-        .slice(0, 36)
-
-      setReleases(releasesData)
-      setRecommendations(recommendationsData)
-    } catch (error) {
-      console.error('Load error:', error)
-    }
+      setReleases(
+        [...moviesNow.map(i => ({ ...i, media_type: 'movie' })), ...tvNow.map(i => ({ ...i, media_type: 'tv' }))]
+          .filter(i => i.poster_path)
+          .sort((a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date))
+          .slice(0, 36)
+      )
+      setRecommendations(
+        [...moviesPopular.map(i => ({ ...i, media_type: 'movie' })), ...tvPopular.map(i => ({ ...i, media_type: 'tv' }))]
+          .filter(i => i.poster_path)
+          .sort((a, b) => b.popularity - a.popularity)
+          .slice(0, 36)
+      )
+    } catch (e) { console.error('Load error:', e) }
   }
 
   const loadFavorites = () => {
     try {
       const stored = localStorage.getItem('yoshikawaFavorites')
       setFavorites(stored ? JSON.parse(stored) : [])
-    } catch {
-      setFavorites([])
-    }
+    } catch { setFavorites([]) }
   }
 
   const isFavorite = (item) => favorites.some(f => f.id === item.id && f.media_type === item.media_type)
@@ -546,256 +491,241 @@ export default function Home() {
   const toggleFavorite = (item) => {
     setFavorites(prev => {
       const exists = prev.some(f => f.id === item.id && f.media_type === item.media_type)
-      let updated
-
-      if (exists) {
-        updated = prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
-        showToast('Removido dos favoritos', 'info')
-      } else {
-        updated = [...prev, {
-          id: item.id,
-          media_type: item.media_type,
-          title: item.title || item.name,
-          poster_path: item.poster_path
-        }]
-        showToast('Adicionado aos favoritos', 'success')
-      }
-
-      try {
-        localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated))
-      } catch {
-        showToast('Erro ao salvar favoritos', 'error')
-      }
-
+      const updated = exists
+        ? prev.filter(f => !(f.id === item.id && f.media_type === item.media_type))
+        : [...prev, { id: item.id, media_type: item.media_type, title: item.title || item.name, poster_path: item.poster_path }]
+      showToast(exists ? 'Removido dos favoritos' : 'Adicionado aos favoritos', exists ? 'info' : 'success')
+      try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch { showToast('Erro ao salvar favoritos', 'error') }
       return updated
     })
   }
 
-  const activeList = searchActive ? searchResults : (activeSection === 'releases' ? releases : (activeSection === 'recommendations' ? recommendations : favorites))
-  const displayItems = activeList
+  const displayItems = searchActive
+    ? searchResults
+    : activeSection === 'releases' ? releases : activeSection === 'recommendations' ? recommendations : favorites
+
+  const headerLabel = scrolled
+    ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo')
+    : 'Yoshikawa'
 
   const pageTitle = searchActive ? 'Resultados' : (SECTION_TITLES[activeSection] || 'Conteúdo')
-  const headerLabel = scrolled ? (searchActive ? 'Resultados' : SECTION_TITLES[activeSection] || 'Conteúdo') : 'Yoshikawa'
 
   return (
     <>
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
         <style>{`
+          /* ── Reset ─────────────────────────────────────────────────────────── */
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
           html { scroll-behavior: smooth; }
-
-          body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #050505;
-            color: #f5f5f7;
-            line-height: 1.6;
-            font-size: 16px;
-            min-height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, #1a1a1a, #050505 80%);
-            background-attachment: fixed;
-          }
-
           a { color: inherit; text-decoration: none; }
           button { font-family: inherit; border: none; outline: none; background: none; cursor: pointer; user-select: none; }
           img { max-width: 100%; height: auto; display: block; }
 
+          /* ── Design Tokens ──────────────────────────────────────────────────── */
           :root {
-            --pill-height: 44px;
-            --pill-radius: 50px;
+            color-scheme: dark;
+            --bg:            #262624;
+            --bg-raised:     #1F1E1C;
+            --bg-card:       #30302E;
+            --bg-card-hover: #383734;
+            --text:          #FAF9F5;
+            --text-muted:    #9D9A93;
+            --text-dim:      rgba(232, 227, 213, 0.45);
+            --text-ghost:    rgba(232, 227, 213, 0.22);
+            --text-faint:    rgba(232, 227, 213, 0.38);
+            --text-pale:     rgba(232, 227, 213, 0.6);
+            --accent:        #DB7757;
+            --accent-bg:     rgba(219, 119, 87, 0.12);
+            --accent-bg-hover: rgba(219, 119, 87, 0.2);
+            --border:        rgba(232, 227, 213, 0.08);
+            --border-nav:    rgba(232, 227, 213, 0.1);
+            --border-btn:    rgba(232, 227, 213, 0.3);
+            --hover-bg:      rgba(232, 227, 213, 0.07);
+            --ease-elastic:  cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-smooth:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --pill-height:   44px;
             --pill-max-width: 520px;
-            --ios-blue: #0A84FF;
-            --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
-            --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
           }
 
-          .glass-panel {
-            position: relative;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: inherit;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
+          /* ── Body ───────────────────────────────────────────────────────────── */
+          body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
           }
 
+          /* ── Welcome Overlay ────────────────────────────────────────────────── */
           .welcome-overlay {
             position: fixed;
             inset: 0;
             z-index: 9999;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(5, 5, 5, 0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--bg-raised);
             animation: overlayIn 0.4s ease forwards;
           }
+          .welcome-overlay.closing { animation: overlayOut 0.6s ease forwards; }
+          @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
 
-          .welcome-overlay.closing {
-            animation: overlayOut 0.6s ease forwards;
+          .welcome-bar-row {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 90%;
+            max-width: var(--pill-max-width);
           }
+          .welcome-top-row { top: 20px; }
+          .welcome-bottom-row { bottom: 20px; }
 
-          @keyframes overlayIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          @keyframes overlayOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-          }
-
-          .welcome-card {
-            border-radius: 28px;
-            width: 100%;
+          .welcome-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            gap: 12px;
+            width: 90%;
             max-width: 380px;
-            padding: 32px 28px 28px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            animation: cardIn 0.6s var(--ease-elastic) 0.1s backwards;
+            animation: contentIn 0.55s var(--ease-elastic) 0.12s backwards;
           }
-
-          .welcome-card.closing {
-            animation: cardOut 0.5s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
-          }
-
-          @keyframes cardIn {
-            from { opacity: 0; transform: translateY(40px) scale(0.88); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-
-          @keyframes cardOut {
-            from { opacity: 1; transform: translateY(0) scale(1); }
-            to { opacity: 0; transform: translateY(-30px) scale(0.92); }
-          }
-
-          .welcome-logo-wrap {
-            animation: logoPop 0.7s var(--ease-elastic) 0.25s backwards;
-          }
-
-          @keyframes logoPop {
-            from { opacity: 0; transform: scale(0.3); }
-            to { opacity: 1; transform: scale(1); }
-          }
-
-          .welcome-logo-ring {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
-            border: 1px solid rgba(255,255,255,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-          }
-
-          .welcome-logo-ring i {
-            font-size: 22px;
-            color: rgba(255,255,255,0.9);
-            transform: translateX(2px);
-          }
-
-          .welcome-body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            animation: bodyFade 0.5s ease 0.35s backwards;
-          }
-
-          @keyframes bodyFade {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
+          @keyframes contentIn {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
 
           .welcome-title {
-            font-size: 1.25rem;
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(2rem, 6vw, 2.8rem);
             font-weight: 700;
-            color: #fff;
-            letter-spacing: -0.03em;
-            margin: 0;
+            color: var(--text);
+            line-height: 1.15;
+            letter-spacing: 0.01em;
           }
+          .welcome-title em { font-style: italic; color: var(--accent); }
 
           .welcome-subtitle {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: rgba(255,255,255,0.35);
-            letter-spacing: 0.06em;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.07em;
             text-transform: uppercase;
-            margin: 0;
+            font-weight: 400;
           }
 
           .welcome-divider {
             width: 40px;
-            height: 1px;
-            background: rgba(255,255,255,0.1);
-            margin: 4px 0;
+            height: 0.5px;
+            background: var(--border-btn);
           }
 
           .welcome-text {
-            font-size: 0.82rem;
-            color: rgba(255,255,255,0.55);
-            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
             line-height: 1.65;
-            margin: 0;
+            font-weight: 300;
           }
+          .welcome-text strong { color: var(--text-pale); font-weight: 500; }
 
-          .welcome-text strong {
-            color: rgba(255,255,255,0.85);
-            font-weight: 600;
+          .welcome-enter-btn {
+            background: transparent;
+            color: var(--text);
+            border: 0.5px solid var(--border-btn);
+            padding: 9px 26px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 400;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            margin-top: 4px;
           }
+          .welcome-enter-btn:hover { background: var(--hover-bg); border-color: var(--text-muted); }
+          .welcome-enter-btn:active { background: var(--bg-card); }
 
-          .welcome-btn {
-            border-radius: 50px;
-            height: 46px;
-            width: 100%;
+          /* ── Shared: Round Button ───────────────────────────────────────────── */
+          .esm-round-btn {
+            width: var(--pill-height);
+            height: var(--pill-height);
+            min-width: var(--pill-height);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            color: #fff;
-            font-size: 0.9rem;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            transition: all 0.3s var(--ease-elastic);
-            animation: btnFade 0.5s ease 0.45s backwards;
-            background: rgba(255,255,255,0.1) !important;
-            border-color: rgba(255,255,255,0.15) !important;
+            background: var(--bg-card);
+            border: 0.5px solid var(--border-nav);
+            color: var(--text-muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-elastic);
+          }
+          .esm-round-btn:hover { background: var(--bg-card-hover); color: var(--text); transform: scale(1.06); }
+          .esm-round-btn:active { transform: scale(0.94); }
+
+          /* ── Shared: Pill ───────────────────────────────────────────────────── */
+          .esm-pill {
+            height: var(--pill-height);
+            flex: 1;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 0.5px solid var(--border-nav);
+            overflow: hidden;
+            transition: all 0.3s var(--ease-smooth);
           }
 
-          @keyframes btnFade {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+          .esm-pill-label,
+          .bar-label {
+            font-family: 'Instrument Serif', serif;
+            font-size: 17px;
+            font-weight: 400;
+            color: var(--text);
+            letter-spacing: 0.01em;
+            animation: labelFadeIn 0.35s var(--ease-elastic) forwards;
+          }
+          @keyframes labelFadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.92); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
           }
 
-          .welcome-btn:hover {
-            background: rgba(255,255,255,0.16) !important;
-            border-color: rgba(255,255,255,0.25) !important;
-            transform: scale(1.02);
+          /* ── Nav Buttons inside Pill ────────────────────────────────────────── */
+          .esm-nav-btn {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
           }
+          .esm-nav-btn i { font-size: 16px; transition: transform 0.3s var(--ease-elastic); }
+          .esm-nav-btn:hover { color: var(--text-pale); }
+          .esm-nav-btn:hover i { transform: scale(1.18); }
+          .esm-nav-btn:active i { transform: scale(0.9); }
+          .esm-nav-btn.active { color: var(--accent); }
+          .esm-nav-btn.active i { transform: scale(1.08); }
 
-          .welcome-btn:active {
-            transform: scale(0.97);
-          }
-
-          .welcome-btn i {
-            font-size: 13px;
-            opacity: 0.8;
-          }
-
+          /* ── Floating Bar Containers ────────────────────────────────────────── */
           .bar-container {
             position: fixed;
             left: 50%;
@@ -804,225 +734,121 @@ export default function Home() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             width: 90%;
             max-width: var(--pill-max-width);
             transition: all 0.4s var(--ease-smooth);
           }
-
           .top-bar { top: 20px; }
           .bottom-bar { bottom: 20px; }
+          .top-bar.scrolled-state { transform: translateX(-50%) translateY(-4px); }
 
-          .top-bar.scrolled-state {
-            transform: translateX(-50%) translateY(-5px);
+          /* ── Info / Tech Popup ──────────────────────────────────────────────── */
+          .esm-popup {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 14px);
+            left: 50%;
+            z-index: 950;
+            min-width: 300px;
+            max-width: 90%;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 0.5px solid var(--border-nav);
+            pointer-events: none;
+            opacity: 0;
+            animation: popupIn 0.42s var(--ease-elastic) forwards;
+          }
+          .esm-popup.closing { animation: popupOut 0.32s ease forwards; }
+
+          @keyframes popupIn {
+            from { opacity: 0; transform: translate(-50%, -16px) scale(0.9); }
+            to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+          }
+          @keyframes popupOut {
+            from { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            to   { opacity: 0; transform: translate(-50%, -12px) scale(0.92); }
           }
 
-          .round-btn {
-            width: var(--pill-height);
-            height: var(--pill-height);
+          .popup-icon-box {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-bg);
+            flex-shrink: 0;
+          }
+          .popup-icon-box i { font-size: 16px; color: var(--accent); }
+
+          .popup-body { display: flex; flex-direction: column; gap: 3px; }
+          .popup-title { font-size: 13px; font-weight: 500; color: var(--text); margin: 0; }
+          .popup-desc { font-size: 12px; color: var(--text-muted); margin: 0; font-weight: 300; line-height: 1.5; }
+          .popup-desc strong { color: var(--text-pale); font-weight: 500; }
+
+          /* ── Toast ──────────────────────────────────────────────────────────── */
+          .toast-wrap {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 14px);
+            left: 50%;
+            z-index: 960;
+            pointer-events: none;
+          }
+
+          .esm-toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 0.5px solid var(--border-nav);
+            min-width: 280px;
+            max-width: 90vw;
+            pointer-events: auto;
+            cursor: pointer;
+            transform: translateX(-50%);
+            animation: toastIn 0.42s var(--ease-elastic) forwards;
+          }
+          .esm-toast.closing { animation: toastOut 0.32s ease forwards; }
+
+          @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          }
+          @keyframes toastOut {
+            from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            to   { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.92); }
+          }
+
+          .toast-icon-box {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.9);
             flex-shrink: 0;
-            transition: all 0.3s var(--ease-elastic);
           }
+          .esm-toast.success .toast-icon-box { background: var(--accent-bg); }
+          .esm-toast.info    .toast-icon-box { background: var(--hover-bg); }
+          .esm-toast.error   .toast-icon-box { background: rgba(192, 80, 80, 0.12); }
+          .esm-toast.success .toast-icon-box i { color: var(--accent); }
+          .esm-toast.info    .toast-icon-box i { color: var(--text-muted); }
+          .esm-toast.error   .toast-icon-box i { color: #C06070; }
+          .toast-icon-box i { font-size: 13px; }
 
-          .round-btn:hover {
-            transform: scale(1.08);
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.2);
-          }
-          .round-btn:active { transform: scale(0.92); }
+          .toast-body { display: flex; flex-direction: column; gap: 2px; }
+          .toast-title { font-size: 13px; font-weight: 500; color: var(--text); }
+          .toast-msg   { font-size: 12px; color: var(--text-muted); font-weight: 300; }
 
-          .pill-container {
-            height: var(--pill-height);
-            flex: 1;
-            border-radius: var(--pill-radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: all 0.4s var(--ease-elastic);
-          }
-
-          .bar-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #fff;
-            white-space: nowrap;
-            letter-spacing: -0.01em;
-            animation: labelFadeIn 0.4s var(--ease-elastic) forwards;
-            position: relative;
-            z-index: 5;
-          }
-
-          @keyframes labelFadeIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.9); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-
-          .info-popup, .toast {
-            position: fixed;
-            top: calc(20px + var(--pill-height) + 16px);
-            left: 50%;
-            z-index: 960;
-            min-width: 320px;
-            max-width: 90%;
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            padding: 16px 18px;
-            border-radius: 22px;
-            transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
-            transform-origin: top center;
-            opacity: 0;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            perspective: 1000px;
-            -webkit-perspective: 1000px;
-            animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            contain: layout style paint;
-          }
-
-          .info-popup { z-index: 950; pointer-events: none; }
-          .toast { z-index: 960; pointer-events: auto; align-items: center; }
-
-          .info-popup.closing, .toast.closing {
-            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
-          }
-
-          @keyframes popupZoomIn {
-            0% {
-              opacity: 0;
-              transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
-            }
-            100% {
-              opacity: 1;
-              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1);
-              pointer-events: auto;
-            }
-          }
-
-          @keyframes popupZoomOut {
-            0% {
-              opacity: 1;
-              transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1);
-            }
-            100% {
-              opacity: 0;
-              transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1);
-              pointer-events: none;
-            }
-          }
-
-          .popup-icon-wrapper, .toast-icon-wrapper {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transform: translate3d(0, 0, 0);
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
-            contain: layout style paint;
-          }
-
-          .popup-icon-wrapper {
-             background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-             box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-          }
-
-          .toast-icon-wrapper {
-             border-radius: 50%;
-          }
-
-          @keyframes iconPop {
-            from {
-              transform: scale3d(0, 0, 1);
-              opacity: 0;
-            }
-            to {
-              transform: scale3d(1, 1, 1);
-              opacity: 1;
-            }
-          }
-
-          .popup-icon-wrapper.tech {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
-          }
-
-          .toast.success .toast-icon-wrapper {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-          }
-
-          .toast.info .toast-icon-wrapper {
-            background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
-            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
-          }
-
-          .toast.error .toast-icon-wrapper {
-            background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%);
-            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
-          }
-
-          .popup-icon-wrapper i, .toast-icon-wrapper i {
-            font-size: 20px;
-            color: #fff;
-            will-change: transform;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transform: translate3d(0, 0, 0);
-          }
-
-          .popup-content, .toast-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            opacity: 0;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            animation: contentFade 0.4s ease 0.2s forwards;
-            contain: layout style;
-          }
-
-          @keyframes contentFade {
-            from {
-              opacity: 0;
-              transform: translate3d(10px, 0, 0);
-            }
-            to {
-              opacity: 1;
-              transform: translate3d(0, 0, 0);
-            }
-          }
-
-          .popup-title, .toast-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #fff;
-            margin: 0;
-            line-height: 1.3;
-          }
-
-          .popup-text, .toast-msg {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin: 0;
-            line-height: 1.4;
-          }
-
+          /* ── Main Container ──────────────────────────────────────────────────── */
           .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -1032,342 +858,223 @@ export default function Home() {
             padding-right: 2rem;
           }
 
+          /* ── Page Header ─────────────────────────────────────────────────────── */
           .page-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            animation: headerFadeIn 0.8s var(--ease-elastic) forwards;
-          }
-
-          @keyframes headerFadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
           }
 
           .page-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-            color: #fff;
-            letter-spacing: -0.03em;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            font-family: 'Instrument Serif', serif;
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--text);
+            letter-spacing: 0.02em;
           }
 
-          .status-dots {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
+          .status-dots { display: flex; align-items: center; gap: 7px; }
           .dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            animation: dotPulse 2s ease-in-out infinite;
-            transform-origin: center;
+            animation: dotPulse 2.5s ease-in-out infinite;
           }
-
-          .dot.red {
-            background: linear-gradient(135deg, #ff453a, #ff3b30);
-            box-shadow: 0 2px 8px rgba(255, 69, 58, 0.4);
-          }
-
-          .dot.yellow {
-            background: linear-gradient(135deg, #ffd60a, #ffcc00);
-            box-shadow: 0 2px 8px rgba(255, 204, 0, 0.4);
-            animation-delay: 0.3s;
-          }
-
-          .dot.green {
-            background: linear-gradient(135deg, #34c759, #30d158);
-            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.4);
-            animation-delay: 0.6s;
-          }
-
+          .dot.red    { background: #C06070; animation-delay: 0s; }
+          .dot.yellow { background: var(--text-muted); animation-delay: 0.4s; }
+          .dot.green  { background: var(--accent); animation-delay: 0.8s; }
           @keyframes dotPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.6; }
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.28); }
           }
 
+          /* ── Content Grid ────────────────────────────────────────────────────── */
           .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 24px 12px;
-            width: 100%;
+            gap: 20px 12px;
           }
 
+          /* ── Movie Cards ─────────────────────────────────────────────────────── */
           .card-wrapper {
             display: flex;
             flex-direction: column;
             width: 100%;
             position: relative;
-            animation: cardEntrance 0.7s var(--ease-elastic) backwards;
-            transition: transform 0.2s ease;
+            animation: cardIn 0.45s var(--ease-elastic) backwards;
+          }
+          @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
 
-          .card-wrapper:active {
-            transform: scale(0.95);
-          }
-
-          @keyframes cardEntrance {
-            from { opacity: 0; transform: translateY(40px) scale(0.9); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-
-          .card-wrapper:nth-child(1) { animation-delay: 30ms; }
-          .card-wrapper:nth-child(2) { animation-delay: 60ms; }
-          .card-wrapper:nth-child(3) { animation-delay: 90ms; }
-          .card-wrapper:nth-child(4) { animation-delay: 120ms; }
-          .card-wrapper:nth-child(5) { animation-delay: 150ms; }
-          .card-wrapper:nth-child(6) { animation-delay: 180ms; }
-          .card-wrapper:nth-child(7) { animation-delay: 210ms; }
-          .card-wrapper:nth-child(8) { animation-delay: 240ms; }
-          .card-wrapper:nth-child(9) { animation-delay: 270ms; }
-          .card-wrapper:nth-child(10) { animation-delay: 300ms; }
-          .card-wrapper:nth-child(11) { animation-delay: 330ms; }
-          .card-wrapper:nth-child(12) { animation-delay: 360ms; }
-          .card-wrapper:nth-child(13) { animation-delay: 390ms; }
-          .card-wrapper:nth-child(14) { animation-delay: 420ms; }
-          .card-wrapper:nth-child(15) { animation-delay: 450ms; }
-          .card-wrapper:nth-child(16) { animation-delay: 480ms; }
-          .card-wrapper:nth-child(17) { animation-delay: 510ms; }
-          .card-wrapper:nth-child(18) { animation-delay: 540ms; }
-          .card-wrapper:nth-child(19) { animation-delay: 570ms; }
-          .card-wrapper:nth-child(20) { animation-delay: 600ms; }
+          .card-wrapper:nth-child(1)  { animation-delay: 20ms; }
+          .card-wrapper:nth-child(2)  { animation-delay: 50ms; }
+          .card-wrapper:nth-child(3)  { animation-delay: 80ms; }
+          .card-wrapper:nth-child(4)  { animation-delay: 110ms; }
+          .card-wrapper:nth-child(5)  { animation-delay: 140ms; }
+          .card-wrapper:nth-child(6)  { animation-delay: 170ms; }
+          .card-wrapper:nth-child(7)  { animation-delay: 200ms; }
+          .card-wrapper:nth-child(8)  { animation-delay: 230ms; }
+          .card-wrapper:nth-child(9)  { animation-delay: 260ms; }
+          .card-wrapper:nth-child(10) { animation-delay: 290ms; }
+          .card-wrapper:nth-child(11) { animation-delay: 320ms; }
+          .card-wrapper:nth-child(12) { animation-delay: 350ms; }
+          .card-wrapper:nth-child(13) { animation-delay: 380ms; }
+          .card-wrapper:nth-child(14) { animation-delay: 410ms; }
+          .card-wrapper:nth-child(15) { animation-delay: 440ms; }
+          .card-wrapper:nth-child(16) { animation-delay: 470ms; }
+          .card-wrapper:nth-child(17) { animation-delay: 500ms; }
+          .card-wrapper:nth-child(18) { animation-delay: 530ms; }
+          .card-wrapper:nth-child(19) { animation-delay: 560ms; }
+          .card-wrapper:nth-child(20) { animation-delay: 590ms; }
 
           .card-poster-frame {
             position: relative;
-            border-radius: 16px;
+            border-radius: 10px;
             overflow: hidden;
             aspect-ratio: 2/3;
-            background: #1a1a1a;
-            border: 1px solid rgba(255,255,255,0.18);
-            transition: all 0.5s var(--ease-elastic);
+            background: var(--bg-raised);
+            border: 0.5px solid var(--border);
+            transition: border-color 0.2s, transform 0.25s var(--ease-smooth);
           }
-
           .card-wrapper:hover .card-poster-frame {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            border-color: rgba(255,255,255,0.4);
+            border-color: rgba(232, 227, 213, 0.22);
+            transform: translateY(-5px);
           }
+          .card-wrapper:active .card-poster-frame { transform: scale(0.97); }
 
           .content-poster {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.8s var(--ease-elastic);
+            transition: transform 0.5s var(--ease-smooth);
           }
-
-          .card-wrapper:hover .content-poster {
-            transform: scale(1.12);
-          }
+          .card-wrapper:hover .content-poster { transform: scale(1.06); }
 
           .fav-btn {
             position: absolute;
             top: 8px;
             right: 8px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(38, 38, 36, 0.88);
+            border: 0.5px solid var(--border);
             opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.4s var(--ease-elastic);
-            border: none;
+            transform: scale(0.82);
+            transition: all 0.2s var(--ease-elastic);
             z-index: 20;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
+            cursor: pointer;
           }
+          .card-poster-frame:hover .fav-btn { opacity: 1; transform: scale(1); }
+          .fav-btn:hover { background: var(--bg-card); border-color: var(--border-btn); transform: scale(1.1); }
+          .fav-btn:active { transform: scale(0.9); }
 
-          .card-poster-frame:hover .fav-btn, .fav-btn:active {
-            opacity: 1;
-            transform: scale(1);
-          }
+          @media (hover: none) { .fav-btn { opacity: 1; transform: scale(1); } }
 
-          .fav-btn:hover {
-            background: rgba(255,255,255,0.2);
-            transform: scale(1.1);
-          }
-
-          .fav-btn:active {
-            transform: scale(0.9);
-          }
-
-          @media (hover: none) {
-            .fav-btn {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-
-          .heart-pulse {
-            animation: heartZoom 0.5s var(--ease-elastic);
-          }
-
+          .heart-pulse { animation: heartZoom 0.4s var(--ease-elastic); }
           @keyframes heartZoom {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.6); }
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.5); }
             100% { transform: scale(1); }
           }
 
-          .nav-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: rgba(255,255,255,0.4);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 5;
-          }
-
-          .nav-btn i {
-            font-size: 18px;
-            transition: all 0.4s var(--ease-elastic);
-            transform-origin: center;
-          }
-
-          .nav-btn:hover i {
-            transform: scale(1.2);
-            color: rgba(255,255,255,0.8);
-          }
-
-          .nav-btn:active i {
-            transform: scale(0.9);
-          }
-
-          .nav-btn.active { color: #fff; }
-          .nav-btn.active i {
-            transform: scale(1.15);
-          }
-
+          /* ── Search Input ────────────────────────────────────────────────────── */
           .search-wrap {
             width: 100%;
             padding: 0 16px;
-            position: relative;
-            z-index: 5;
-            animation: searchExpand 0.4s var(--ease-elastic);
+            animation: searchIn 0.3s var(--ease-elastic);
           }
-
-          @keyframes searchExpand {
+          @keyframes searchIn {
             from { opacity: 0; transform: scaleX(0.9); }
-            to { opacity: 1; transform: scaleX(1); }
+            to   { opacity: 1; transform: scaleX(1); }
           }
-
           .search-wrap input {
             width: 100%;
             background: transparent;
             border: none;
             outline: none;
-            color: #fff;
-            font-size: 15px;
-            font-family: inherit;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
           }
+          .search-wrap input::placeholder { color: var(--text-muted); font-weight: 300; }
 
-          .toast-wrap {
-            position: fixed;
-            top: calc(20px + var(--pill-height) + 16px);
-            left: 50%;
-            z-index: 960;
-            pointer-events: none;
-          }
-
-          .footer-credits {
-            margin-top: 3rem;
-            padding: 2rem;
-            text-align: center;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.75rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            animation: footerFadeIn 0.8s ease forwards;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-
-          .footer-main {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: rgba(255,255,255,0.4);
-          }
-
-          .footer-author {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.25);
-            font-style: italic;
-          }
-
-          .footer-tech {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.2);
-            font-family: 'Courier New', monospace;
-          }
-
-          @keyframes footerFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          .spinner {
-            width: 24px;
-            height: 24px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
-
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-
+          /* ── Empty States ────────────────────────────────────────────────────── */
           .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #555;
-            margin-top: 3rem;
-            gap: 12px;
-            animation: emptyStateFadeIn 0.6s var(--ease-elastic) forwards;
+            color: var(--text-muted);
+            margin-top: 4rem;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 300;
+            animation: emptyIn 0.4s ease forwards;
           }
-
           .empty-state i {
-            font-size: 2rem;
-            opacity: 0.5;
-            margin-bottom: 8px;
+            font-size: 1.8rem;
+            color: var(--text-ghost);
+            margin-bottom: 4px;
             animation: floatIcon 3s ease-in-out infinite;
           }
-
           @keyframes floatIcon {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            50%      { transform: translateY(-8px); }
+          }
+          @keyframes emptyIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
 
-          @keyframes emptyStateFadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+          .spinner {
+            width: 22px;
+            height: 22px;
+            border: 1.5px solid var(--border-nav);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
           }
+          @keyframes spin { to { transform: rotate(360deg); } }
 
-          @media (max-width: 768px) {
+          /* ── Footer ─────────────────────────────────────────────────────────── */
+          .footer-bar {
+            margin-top: 3rem;
+            padding: 2rem;
+            text-align: center;
+            border-top: 0.5px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .footer-text { font-size: 12px; color: var(--text-ghost); line-height: 1.9; }
+          .footer-text a { color: var(--text-faint); }
+          .footer-text a:hover { color: var(--text-pale); }
+          .footer-credit {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            color: var(--accent);
+          }
+          .footer-sub { font-size: 11px; color: var(--text-ghost); font-weight: 300; }
+
+          /* ── Responsive ──────────────────────────────────────────────────────── */
+          @media (max-width: 640px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
-            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px 10px; }
+            .content-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px 10px; }
             .bar-container { width: 94%; gap: 8px; }
-            .card-poster-frame { border-radius: 14px; }
-            .info-popup, .toast { min-width: 280px; padding: 14px 16px; }
-            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
-            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
-            .popup-title, .toast-title { font-size: 0.88rem; }
-            .popup-text, .toast-msg { font-size: 0.75rem; }
-            .page-title { font-size: 1.3rem; }
-            .dot { width: 8px; height: 8px; }
-            .status-dots { gap: 6px; }
-            .welcome-card { padding: 28px 22px 24px; }
-            .welcome-title { font-size: 1.1rem; }
-            .welcome-text { font-size: 0.78rem; }
+            .card-poster-frame { border-radius: 8px; }
+            .esm-popup, .esm-toast { min-width: 260px; padding: 12px 14px; }
+            .popup-icon-box { width: 34px; height: 34px; min-width: 34px; }
+            .popup-icon-box i { font-size: 14px; }
+            .toast-icon-box { width: 28px; height: 28px; min-width: 28px; }
+            .page-title { font-size: 18px; }
+            .dot { width: 7px; height: 7px; }
           }
         `}</style>
       </Head>
@@ -1391,21 +1098,21 @@ export default function Home() {
         <div className="page-header">
           <h1 className="page-title">{pageTitle}</h1>
           <div className="status-dots">
-            <span className="dot red"></span>
-            <span className="dot yellow"></span>
-            <span className="dot green"></span>
+            <span className="dot red" />
+            <span className="dot yellow" />
+            <span className="dot green" />
           </div>
         </div>
 
         {loading && (searchActive || releases.length === 0) && (
           <div className="empty-state">
-            <div className="spinner"></div>
+            <div className="spinner" />
           </div>
         )}
 
         {searchActive && !loading && searchResults.length === 0 && searchQuery.trim() && (
           <div className="empty-state">
-            <i className="fas fa-ghost"></i>
+            <i className="fas fa-ghost" />
             <p>Nada encontrado</p>
           </div>
         )}
@@ -1425,7 +1132,7 @@ export default function Home() {
 
         {!searchActive && activeSection === 'favorites' && favorites.length === 0 && !loading && (
           <div className="empty-state">
-            <i className="far fa-folder-open"></i>
+            <i className="far fa-folder-open" />
             <p>Lista vazia</p>
           </div>
         )}
