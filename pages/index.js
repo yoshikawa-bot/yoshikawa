@@ -408,10 +408,10 @@ export default function Home(){
           @keyframes headerFadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
           .page-title{font-size:1.5rem;font-weight:700;margin:0;color:#fff;letter-spacing:-0.03em;text-shadow:0 4px 20px rgba(0,0,0,0.5)}
           .title-row{display:flex;align-items:center;gap:10px}
-          .hero-toggle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);transition:all 0.3s var(--ease-elastic);flex-shrink:0}
-          .hero-toggle:hover{background:rgba(255,255,255,0.13);color:rgba(255,255,255,0.9);transform:scale(1.08)}
-          .hero-toggle:active{transform:scale(0.92)}
-          .hero-toggle i{font-size:11px;transition:transform 0.35s ease}
+          .hero-toggle{display:flex;align-items:center;justify-content:center;color:#fff;background:none;border:none;padding:0;flex-shrink:0;opacity:0.85}
+          .hero-toggle:hover{opacity:1}
+          .hero-toggle:active{opacity:0.6}
+          .hero-toggle i{font-size:13px;transition:transform 0.45s cubic-bezier(0.34,1.56,0.64,1)}
           .hero-toggle.open i{transform:rotate(180deg)}
           .section-hero{border-radius:16px;padding:16px 20px;margin-bottom:1.5rem;font-family:Georgia,'Times New Roman',serif;font-size:0.88rem;color:rgba(255,255,255,0.58);line-height:1.8;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);animation:heroIn 0.35s var(--ease-elastic) forwards}
           .section-hero.closing{animation:heroOut 0.3s ease forwards}
@@ -530,4 +530,4 @@ export default function Home(){
       <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} searchActive={searchActive} setSearchActive={setSearchActive} searchQuery={searchQuery} setSearchQuery={handleSearchChange} onSearchSubmit={debouncedSearch} inputRef={searchInputRef}/>
     </>
   )
-            }
+  }
