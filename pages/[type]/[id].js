@@ -417,13 +417,17 @@ export default function WatchPage() {
   }
   
   const getEmbedUrl = () => {
-    if (!content) return ''
-    if (type === 'movie') {
-      const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      if (!imdbId) { showToast('ID IMDB não encontrado', 'error'); return '' }
-      return `https://playerflixapi.com/filme/${imdbId}`
+  if (!content) return ''
+  if (type === 'movie') {
+    const imdbId = content.external_ids?.imdb_id || content.imdb_id
+    if (!imdbId) {
+      showToast('ID IMDB não encontrado', 'error')
+      return ''
     }
-    return `https://playerflixapi.com/serie/${id}/${season}/${episode}`
+    return `https://superflixapi.best/filme/${imdbId}`
+  }
+
+  return `https://superflixapi.best/serie/${id}/${season}/${episode}`
   }
 
   const handleNativeSeasonChange = (e) => {
