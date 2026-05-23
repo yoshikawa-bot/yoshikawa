@@ -674,6 +674,7 @@ export default function WatchPage() {
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
             --ease-fluid: cubic-bezier(0.4, 0.0, 0.2, 1);
+            --shadow-standard: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
           }
 
           .glass-panel {
@@ -865,9 +866,9 @@ export default function WatchPage() {
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
             z-index: 960;
-            min-width: 280px;
-            max-width: 360px;
             width: auto;
+            min-width: 280px;
+            max-width: min(360px, calc(100vw - 32px));
             display: flex; 
             align-items: center; 
             gap: 14px;
@@ -983,7 +984,7 @@ export default function WatchPage() {
             position: relative; background-color: #1a1a1a; 
             border: none;
             cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow-standard);
             transition: background-image 0.5s var(--ease-smooth);
           }
 
@@ -1012,7 +1013,7 @@ export default function WatchPage() {
             border-radius: 24px; padding: 18px; 
             display: flex; flex-direction: column; gap: 16px;
             border: none;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow-standard);
             background: rgba(255, 255, 255, 0.03);
           }
 
@@ -1131,7 +1132,7 @@ export default function WatchPage() {
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-standard);
             padding: 8px 16px;
           }
 
@@ -1556,4 +1557,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+}
