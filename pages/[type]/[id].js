@@ -688,6 +688,18 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
+          .glass-panel-no-border {
+            position: relative;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: none;
+            border-radius: inherit;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.3s var(--ease-elastic), background 0.3s ease;
+          }
+
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -978,7 +990,7 @@ export default function WatchPage() {
             width: 100%; aspect-ratio: 16/9; 
             border-radius: 24px; overflow: hidden;
             position: relative; background-color: #1a1a1a; 
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: none;
             margin-bottom: 24px; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
             transition: background-image 0.5s var(--ease-smooth);
@@ -1008,7 +1020,7 @@ export default function WatchPage() {
           .details-container {
             border-radius: 24px; padding: 18px; 
             display: flex; flex-direction: column; gap: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: none;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
             background: rgba(255, 255, 255, 0.03);
           }
@@ -1046,18 +1058,16 @@ export default function WatchPage() {
             min-width: 110px; height: 65px; 
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: none;
             cursor: pointer; transition: all 0.4s var(--ease-smooth); 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
-            outline: 1px solid rgba(255, 255, 255, 0.06);
-            outline-offset: -1px;
           }
 
           .ep-card.active {
-            border: 1px solid rgba(255, 255, 255, 0.5);
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
           }
 
           .ep-card:hover { 
@@ -1070,7 +1080,7 @@ export default function WatchPage() {
 
           .ep-card.unwatched .ep-blur-overlay {
             position: absolute;
-            inset: -1px;
+            inset: 0;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -1136,6 +1146,7 @@ export default function WatchPage() {
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             padding: 8px 16px;
             margin-top: 12px;
           }
