@@ -1030,12 +1030,12 @@ export default function WatchPage() {
 
           .episodes-wrapper {
             position: relative;
-            padding-bottom: 28px;
+            padding-bottom: 40px;
           }
 
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
-            padding: 12px 14px 8px 14px; 
+            padding: 10px 14px 28px 14px; 
             scrollbar-width: none; 
             margin: 0 -14px;
             position: relative;
@@ -1052,7 +1052,6 @@ export default function WatchPage() {
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
-            clip-path: inset(0 round 10px);
           }
 
           .ep-card.active {
@@ -1071,8 +1070,6 @@ export default function WatchPage() {
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
             transition: all 0.4s var(--ease-smooth);
-            border-radius: 10px;
-            clip-path: inset(0 round 10px);
           }
 
           .ep-card.unwatched.active .ep-blur-overlay {
@@ -1088,13 +1085,13 @@ export default function WatchPage() {
 
           .ep-watched-icon {
             position: absolute;
-            top: 50%;
+            top: -12px;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             z-index: 5;
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            font-size: 14px;
+            color: rgba(52, 199, 89, 0.9);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
             pointer-events: none;
             transition: all 0.3s var(--ease-smooth);
           }
@@ -1109,7 +1106,7 @@ export default function WatchPage() {
 
           .indicator-arrow {
             position: absolute;
-            bottom: 2px;
+            bottom: 4px;
             pointer-events: none;
             z-index: 10;
             transform: translateX(-50%);
@@ -1121,11 +1118,16 @@ export default function WatchPage() {
 
           .scrollbar-container {
             display: none;
-            width: 100%;
-            padding: 0 14px;
             position: absolute;
-            bottom: 8px;
+            bottom: 6px;
             left: 0;
+            right: 0;
+            padding: 8px 18px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 20px;
+            margin: 0 14px;
           }
 
           .custom-scrollbar {
@@ -1134,14 +1136,14 @@ export default function WatchPage() {
             width: 100%;
             height: 4px;
             border-radius: 2px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             outline: none;
             cursor: pointer;
             transition: background 0.2s ease;
           }
 
           .custom-scrollbar:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.22);
           }
 
           .custom-scrollbar::-webkit-slider-thumb {
@@ -1150,27 +1152,27 @@ export default function WatchPage() {
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
           }
 
           .custom-scrollbar::-webkit-slider-thumb:hover {
             background: rgba(255, 255, 255, 1);
             transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
           }
 
           .custom-scrollbar::-moz-range-thumb {
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
           }
 
           .no-image-placeholder {
