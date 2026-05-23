@@ -1265,6 +1265,7 @@ export default function WatchPage() {
             margin-bottom: 16px; 
             animation: controlsFadeIn 0.5s ease 0.15s backwards;
             flex-shrink: 0;
+            padding: 0 4px;
           }
 
           @keyframes controlsFadeIn {
@@ -1273,11 +1274,17 @@ export default function WatchPage() {
           }
           
           .ep-indicator { 
-            font-size: 1rem; font-weight: 700; color: #fff; 
+            font-size: 1rem; 
+            font-weight: 700; 
+            color: #fff; 
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 12px;
-            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.4); 
+            padding: 10px 20px; 
+            border-radius: 12px;
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.15);
             transition: all 0.3s var(--ease-smooth);
+            flex-shrink: 0;
           }
 
           .ep-indicator:hover {
@@ -1286,13 +1293,28 @@ export default function WatchPage() {
             transform: scale(1.05);
           }
 
-          .right-controls { display: flex; gap: 12px; }
+          .right-controls { 
+            display: flex; 
+            gap: 12px; 
+            flex-shrink: 0;
+          }
 
           .control-btn {
-            width: 48px; height: 48px; background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: rgba(255,255,255,0.9); transition: all 0.3s var(--ease-smooth); 
-            border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
+            width: 48px; 
+            height: 48px; 
+            background: rgba(255,255,255,0.08); 
+            backdrop-filter: blur(10px);
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: rgba(255,255,255,0.9); 
+            transition: all 0.3s var(--ease-smooth); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            cursor: pointer; 
+            position: relative; 
+            overflow: hidden;
+            flex-shrink: 0;
           }
 
           .control-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
@@ -1307,6 +1329,7 @@ export default function WatchPage() {
             margin-top: 16px;
             animation: controlsFadeIn 0.5s ease 0.25s backwards;
             flex-shrink: 0;
+            width: 100%;
           }
 
           .nav-ep-btn {
@@ -1326,6 +1349,7 @@ export default function WatchPage() {
             position: relative; 
             overflow: hidden;
             white-space: nowrap;
+            flex-shrink: 0;
           }
 
           .nav-ep-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.08); border-color: rgba(255,255,255,0.3); }
@@ -1636,4 +1660,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
