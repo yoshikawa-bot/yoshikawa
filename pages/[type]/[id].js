@@ -230,15 +230,16 @@ export default function WatchPage() {
           try {
             const w = localStorage.getItem(`yoshikawaWatched_${id}`)
             if (w) {
-              setWatchedEps(new Set(JSON.parse(w)))
+              const watchedSet = new Set(JSON.parse(w))
+              setWatchedEps(watchedSet)
             }
           } catch (e) {}
 
-          const { season: lastSeason, episode: lastEpisode } = getLastWatchedEpisode()
+          const savedProgress = getLastWatchedEpisodeFromStorage()
           
-          setSeason(lastSeason)
-          setEpisode(lastEpisode)
-          await fetchSeasonData(id, lastSeason)
+          setSeason(savedProgress.season)
+          setEpisode(savedProgress.episode)
+          await fetchSeasonData(id, savedProgress.season)
         }
 
         checkFavoriteStatus(data)
@@ -249,9 +250,19 @@ export default function WatchPage() {
       }
     }
     
-    const { season: lastSeason, episode: lastEpisode } = getLastWatchedEpisode()
     loadContent()
-  }, [id, type, getLastWatchedEpisode])
+  }, [id, type])
+
+  const getLastWatchedEpisodeFromStorage = () => {
+    try {
+      const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+      if (saved) {
+        const p = JSON.parse(saved)
+        return { season: p.season || 1, episode: p.episode || 1 }
+      }
+    } catch (e) {}
+    return { season: 1, episode: 1 }
+  }
 
   useEffect(() => {
     if (content) {
@@ -507,6 +518,10 @@ export default function WatchPage() {
     const newSeason = parseInt(e.target.value)
     fetchSeasonData(id, newSeason)
     setEpisode(1)
+  }
+
+  const handleEpisodeClick = (epNumber) => {
+    setEpisode(epNumber)
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -980,31 +995,37 @@ export default function WatchPage() {
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
             border: 1px solid rgba(255,255,255,0.15);
-            cursor: pointer; transition: all 0.2s ease; 
+            cursor: pointer; transition: all 0.3s ease; 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
           }
 
-          .ep-card.unwatched {
-            filter: blur(8px);
-            opacity: 0.6;
+          .ep-card.unwatched::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 2;
+            transition: all 0.3s ease;
           }
 
-          .ep-card.unwatched:hover {
-            filter: blur(4px);
-            opacity: 0.8;
+          .ep-card.unwatched.active::after,
+          .ep-card.unwatched:hover::after {
+            opacity: 0;
           }
           
           .ep-card-info {
-            position: relative; z-index: 2;
+            position: relative; z-index: 3;
             width: 100%; height: 100%;
             padding: 6px 8px;
             display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
-          .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
+          .ep-card.active { border: 1px solid rgba(255,255,255,0.6); }
 
           .ep-watched-badge {
             position: absolute;
@@ -1017,15 +1038,17 @@ export default function WatchPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 3;
+            z-index: 4;
           }
 
           .ep-watched-badge i { font-size: 7px; color: #fff; }
           
           .ep-card-num { 
             font-size: 0.8rem; font-weight: 700; color: #fff; 
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
             padding: 2px 6px; border-radius: 4px;
+            position: relative;
+            z-index: 3;
           }
 
           .indicator-arrow {
@@ -1044,6 +1067,7 @@ export default function WatchPage() {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
             background: #111; color: rgba(255,255,255,0.2); font-size: 20px;
+            z-index: 1;
           }
 
           .player-overlay {
@@ -1299,7 +1323,7 @@ export default function WatchPage() {
                         <div 
                           key={ep.id} 
                           className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
-                          onClick={() => setEpisode(ep.episode_number)}
+                          onClick={() => handleEpisodeClick(ep.episode_number)}
                           style={{
                             backgroundImage: ep.still_path 
                               ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
@@ -1393,4 +1417,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+  }
