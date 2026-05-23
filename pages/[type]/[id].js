@@ -155,6 +155,7 @@ export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
   const carouselRef = useRef(null)
+  const initialLoadDone = useRef(false)
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
@@ -237,6 +238,9 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (!id || !type) return
+    if (initialLoadDone.current) return
+    initialLoadDone.current = true
+
     const loadContent = async () => {
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
@@ -267,6 +271,7 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (type !== 'tv' || !id) return
+    if (!initialLoadDone.current) return
     try {
       localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
     } catch {}
