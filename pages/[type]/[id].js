@@ -253,6 +253,7 @@ export default function WatchPage() {
             if (w) setWatchedEps(new Set(JSON.parse(w)))
           } catch {}
           await fetchSeason(id, savedSeason)
+          setSeason(savedSeason)
           setEpisode(savedEpisode)
         }
         checkFavoriteStatus(data)
@@ -953,15 +954,6 @@ export default function WatchPage() {
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
           .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
 
-          .ep-card.watched::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(52, 199, 89, 0.18);
-            pointer-events: none;
-            z-index: 1;
-          }
-
           .ep-watched-badge {
             position: absolute;
             bottom: 5px;
@@ -1247,7 +1239,7 @@ export default function WatchPage() {
                       return (
                         <div 
                           key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${isWatched ? 'watched' : ''}`}
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
                           onClick={() => setEpisode(ep.episode_number)}
                           style={{
                             backgroundImage: ep.still_path 
@@ -1342,4 +1334,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
