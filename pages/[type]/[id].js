@@ -688,18 +688,6 @@ export default function WatchPage() {
             transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
-          .glass-panel-no-border {
-            position: relative;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: none;
-            border-radius: inherit;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            transition: transform 0.3s var(--ease-elastic), background 0.3s ease;
-          }
-
           .bar-container {
             position: fixed; 
             left: 50%; 
@@ -984,6 +972,9 @@ export default function WatchPage() {
             padding-bottom: 7rem;
             padding-left: 2rem; 
             padding-right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
           }
 
           .player-banner-container {
@@ -991,7 +982,7 @@ export default function WatchPage() {
             border-radius: 24px; overflow: hidden;
             position: relative; background-color: #1a1a1a; 
             border: none;
-            margin-bottom: 24px; cursor: pointer;
+            cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
             transition: background-image 0.5s var(--ease-smooth);
           }
@@ -1067,15 +1058,17 @@ export default function WatchPage() {
 
           .ep-card.active {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
           }
 
           .ep-card:hover { 
             transform: translateY(-3px); 
+            box-shadow: 0 8px 25px -5px rgba(0,0,0,0.5);
           }
 
           .ep-card.active:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1102,21 +1095,14 @@ export default function WatchPage() {
 
           .ep-watched-icon {
             position: absolute;
-            bottom: 4px;
-            right: 4px;
+            bottom: 5px;
+            right: 5px;
             z-index: 5;
-            font-size: 12px;
+            font-size: 14px;
             color: #fff;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
             pointer-events: none;
             transition: all 0.3s var(--ease-smooth);
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
           }
 
           .ep-card-num { 
@@ -1148,7 +1134,6 @@ export default function WatchPage() {
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             padding: 8px 16px;
-            margin-top: 12px;
           }
 
           .custom-scrollbar {
@@ -1326,7 +1311,11 @@ export default function WatchPage() {
           }
 
           @media (max-width: 768px) {
-            .container { padding-left: 1rem; padding-right: 1rem; }
+            .container { 
+              padding-left: 1rem; 
+              padding-right: 1rem; 
+              gap: 24px;
+            }
             .bar-container { width: 94%; }
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 14px; }
@@ -1476,7 +1465,7 @@ export default function WatchPage() {
                             </div>
                             {isWatched && (
                               <div className="ep-watched-icon">
-                                <i className="fas fa-eye"></i>
+                                <i className="fas fa-check-circle"></i>
                               </div>
                             )}
                           </div>
