@@ -156,6 +156,7 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   const contentLoaded = useRef(false)
+  const savedProgressRef = useRef(null)
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
@@ -182,39 +183,10 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
   const [watchedEps, setWatchedEps] = useState(new Set())
-  const [allSeasonsData, setAllSeasonsData] = useState({})
   
   const [indicatorLeft, setIndicatorLeft] = useState(null)
 
   const toastTimerRef = useRef(null)
-
-  const getLastWatchedEpisode = useCallback(() => {
-    if (!content || type !== 'tv') return { season: 1, episode: 1 }
-    
-    const allWatched = []
-    for (const key of watchedEps) {
-      const [s, e] = key.split('-').map(Number)
-      allWatched.push({ season: s, episode: e })
-    }
-    
-    if (allWatched.length === 0) {
-      try {
-        const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
-        if (saved) {
-          const p = JSON.parse(saved)
-          return { season: p.season || 1, episode: p.episode || 1 }
-        }
-      } catch (e) {}
-      return { season: 1, episode: 1 }
-    }
-    
-    allWatched.sort((a, b) => {
-      if (a.season !== b.season) return b.season - a.season
-      return b.episode - a.episode
-    })
-    
-    return allWatched[0]
-  }, [content, type, watchedEps, id])
 
   useEffect(() => {
     if (!id || !type) return
@@ -227,19 +199,28 @@ export default function WatchPage() {
         setContent(data)
 
         if (type === 'tv') {
+          let targetSeason = 1
+          let targetEpisode = 1
+
           try {
-            const w = localStorage.getItem(`yoshikawaWatched_${id}`)
-            if (w) {
-              const watchedSet = new Set(JSON.parse(w))
-              setWatchedEps(watchedSet)
+            const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+            if (saved) {
+              const p = JSON.parse(saved)
+              targetSeason = p.season || 1
+              targetEpisode = p.episode || 1
             }
           } catch (e) {}
 
-          const savedProgress = getLastWatchedEpisodeFromStorage()
-          
-          setSeason(savedProgress.season)
-          setEpisode(savedProgress.episode)
-          await fetchSeasonData(id, savedProgress.season)
+          try {
+            const w = localStorage.getItem(`yoshikawaWatched_${id}`)
+            if (w) {
+              setWatchedEps(new Set(JSON.parse(w)))
+            }
+          } catch (e) {}
+
+          setSeason(targetSeason)
+          setEpisode(targetEpisode)
+          await fetchSeasonData(id, targetSeason)
         }
 
         checkFavoriteStatus(data)
@@ -249,20 +230,8 @@ export default function WatchPage() {
         setIsLoading(false)
       }
     }
-    
     loadContent()
   }, [id, type])
-
-  const getLastWatchedEpisodeFromStorage = () => {
-    try {
-      const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
-      if (saved) {
-        const p = JSON.parse(saved)
-        return { season: p.season || 1, episode: p.episode || 1 }
-      }
-    } catch (e) {}
-    return { season: 1, episode: 1 }
-  }
 
   useEffect(() => {
     if (content) {
@@ -291,17 +260,9 @@ export default function WatchPage() {
 
   const fetchSeasonData = async (tvId, seasonNum) => {
     try {
-      if (allSeasonsData[seasonNum]) {
-        setSeasonData(allSeasonsData[seasonNum])
-        setSeason(seasonNum)
-        return
-      }
-      
       const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
       const data = await res.json()
-      setAllSeasonsData(prev => ({ ...prev, [seasonNum]: data }))
       setSeasonData(data)
-      setSeason(seasonNum)
     } catch (err) {
       showToast('Erro ao carregar temporada', 'error')
     }
@@ -517,11 +478,8 @@ export default function WatchPage() {
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
     fetchSeasonData(id, newSeason)
+    setSeason(newSeason)
     setEpisode(1)
-  }
-
-  const handleEpisodeClick = (epNumber) => {
-    setEpisode(epNumber)
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -995,37 +953,20 @@ export default function WatchPage() {
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
             border: 1px solid rgba(255,255,255,0.15);
-            cursor: pointer; transition: all 0.3s ease; 
+            cursor: pointer; transition: all 0.2s ease; 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
-            flex-shrink: 0;
-          }
-
-          .ep-card.unwatched::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 2;
-            transition: all 0.3s ease;
-          }
-
-          .ep-card.unwatched.active::after,
-          .ep-card.unwatched:hover::after {
-            opacity: 0;
           }
           
           .ep-card-info {
-            position: relative; z-index: 3;
+            position: relative; z-index: 2;
             width: 100%; height: 100%;
             padding: 6px 8px;
             display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
-          .ep-card.active { border: 1px solid rgba(255,255,255,0.6); }
+          .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
 
           .ep-watched-badge {
             position: absolute;
@@ -1038,17 +979,15 @@ export default function WatchPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 4;
+            z-index: 3;
           }
 
           .ep-watched-badge i { font-size: 7px; color: #fff; }
           
           .ep-card-num { 
             font-size: 0.8rem; font-weight: 700; color: #fff; 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
             padding: 2px 6px; border-radius: 4px;
-            position: relative;
-            z-index: 3;
           }
 
           .indicator-arrow {
@@ -1067,7 +1006,6 @@ export default function WatchPage() {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
             background: #111; color: rgba(255,255,255,0.2); font-size: 20px;
-            z-index: 1;
           }
 
           .player-overlay {
@@ -1180,13 +1118,6 @@ export default function WatchPage() {
 
           .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
           .nav-ep-btn:disabled:hover { transform: scale(1); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
-
-          @media (min-width: 769px) {
-            .ep-card {
-              min-width: 160px;
-              height: 90px;
-            }
-          }
 
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
@@ -1322,8 +1253,8 @@ export default function WatchPage() {
                       return (
                         <div 
                           key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
-                          onClick={() => handleEpisodeClick(ep.episode_number)}
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                          onClick={() => setEpisode(ep.episode_number)}
                           style={{
                             backgroundImage: ep.still_path 
                               ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
@@ -1417,4 +1348,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+            }
