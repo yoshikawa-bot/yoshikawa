@@ -1030,11 +1030,12 @@ export default function WatchPage() {
 
           .episodes-wrapper {
             position: relative;
+            padding-bottom: 28px;
           }
 
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 14px 8px 14px; 
+            padding: 12px 14px 8px 14px; 
             scrollbar-width: none; 
             margin: 0 -14px;
             position: relative;
@@ -1051,10 +1052,15 @@ export default function WatchPage() {
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
+            clip-path: inset(0 round 10px);
           }
 
           .ep-card.active {
             border: 1px solid rgba(255, 255, 255, 0.5);
+          }
+
+          .ep-card:hover { 
+            transform: translateY(-3px); 
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1066,10 +1072,10 @@ export default function WatchPage() {
             z-index: 2;
             transition: all 0.4s var(--ease-smooth);
             border-radius: 10px;
+            clip-path: inset(0 round 10px);
           }
 
-          .ep-card.unwatched.active .ep-blur-overlay,
-          .ep-card.unwatched:hover .ep-blur-overlay {
+          .ep-card.unwatched.active .ep-blur-overlay {
             opacity: 0;
           }
           
@@ -1080,25 +1086,19 @@ export default function WatchPage() {
             display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
-          .ep-card:hover { transform: scale(1.05); }
-          .ep-card.active { transform: scale(1.08); }
-
-          .ep-watched-badge {
+          .ep-watched-icon {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
-            width: 15px;
-            height: 15px;
-            background: rgba(52, 199, 89, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 4;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            transition: all 0.3s var(--ease-smooth);
           }
 
-          .ep-watched-badge i { font-size: 7px; color: #fff; }
-          
           .ep-card-num { 
             font-size: 0.8rem; font-weight: 700; color: #fff; 
             background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
@@ -1109,7 +1109,7 @@ export default function WatchPage() {
 
           .indicator-arrow {
             position: absolute;
-            bottom: 4px;
+            bottom: 2px;
             pointer-events: none;
             z-index: 10;
             transform: translateX(-50%);
@@ -1122,53 +1122,55 @@ export default function WatchPage() {
           .scrollbar-container {
             display: none;
             width: 100%;
-            padding: 8px 14px 4px 14px;
-            margin-top: 0;
+            padding: 0 14px;
+            position: absolute;
+            bottom: 8px;
+            left: 0;
           }
 
           .custom-scrollbar {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
-            height: 3px;
+            height: 4px;
             border-radius: 2px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             outline: none;
             cursor: pointer;
             transition: background 0.2s ease;
           }
 
           .custom-scrollbar:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.15);
           }
 
           .custom-scrollbar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
           }
 
           .custom-scrollbar::-webkit-slider-thumb:hover {
-            background: rgba(255, 255, 255, 0.95);
-            transform: scale(1.15);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.5);
           }
 
           .custom-scrollbar::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
           }
 
           .no-image-placeholder {
@@ -1450,8 +1452,8 @@ export default function WatchPage() {
                               <span className="ep-card-num">Ep {ep.episode_number}</span>
                             </div>
                             {isWatched && (
-                              <div className="ep-watched-badge">
-                                <i className="fas fa-check"></i>
+                              <div className="ep-watched-icon">
+                                <i className="fas fa-eye"></i>
                               </div>
                             )}
                           </div>
@@ -1541,4 +1543,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+            }
