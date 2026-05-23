@@ -155,7 +155,8 @@ export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
   const carouselRef = useRef(null)
-  const initialLoadDone = useRef(false)
+  const contentLoaded = useRef(false)
+  const savedProgressRef = useRef(null)
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
@@ -188,11 +189,84 @@ export default function WatchPage() {
   const toastTimerRef = useRef(null)
 
   useEffect(() => {
+    if (!id || !type) return
+    if (contentLoaded.current) return
+
+    const loadContent = async () => {
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
+        const data = await res.json()
+        setContent(data)
+
+        if (type === 'tv') {
+          let targetSeason = 1
+          let targetEpisode = 1
+
+          try {
+            const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+            if (saved) {
+              const p = JSON.parse(saved)
+              targetSeason = p.season || 1
+              targetEpisode = p.episode || 1
+            }
+          } catch (e) {}
+
+          try {
+            const w = localStorage.getItem(`yoshikawaWatched_${id}`)
+            if (w) {
+              setWatchedEps(new Set(JSON.parse(w)))
+            }
+          } catch (e) {}
+
+          setSeason(targetSeason)
+          setEpisode(targetEpisode)
+          await fetchSeasonData(id, targetSeason)
+        }
+
+        checkFavoriteStatus(data)
+        contentLoaded.current = true
+      } catch (error) {
+        showToast('Erro ao carregar conteúdo', 'error')
+        setIsLoading(false)
+      }
+    }
+    loadContent()
+  }, [id, type])
+
+  useEffect(() => {
     if (content) {
       const timer = setTimeout(() => setIsLoading(false), 1000)
       return () => clearTimeout(timer)
     }
   }, [content])
+
+  useEffect(() => {
+    if (type !== 'tv' || !id || !contentLoaded.current) return
+    try {
+      localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
+    } catch (e) {}
+  }, [season, episode, id, type])
+
+  useEffect(() => {
+    if (type !== 'tv' || !id || !isPlaying) return
+    const key = `${season}-${episode}`
+    setWatchedEps(prev => {
+      if (prev.has(key)) return prev
+      const next = new Set([...prev, key])
+      try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch (e) {}
+      return next
+    })
+  }, [season, episode, isPlaying, id, type])
+
+  const fetchSeasonData = async (tvId, seasonNum) => {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+      const data = await res.json()
+      setSeasonData(data)
+    } catch (err) {
+      showToast('Erro ao carregar temporada', 'error')
+    }
+  }
 
   const showToast = (message, type = 'info') => {
     if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
@@ -232,71 +306,8 @@ export default function WatchPage() {
     }
   }, [currentToast])
 
-  const manualCloseToast = () => { 
-    if (currentToast) setCurrentToast({ ...currentToast, closing: true }) 
-  }
-
-  useEffect(() => {
-    if (!id || !type) return
-    if (initialLoadDone.current) return
-    initialLoadDone.current = true
-
-    const loadContent = async () => {
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
-        const data = await res.json()
-        setContent(data)
-        if (type === 'tv') {
-          let savedSeason = 1, savedEpisode = 1
-          try {
-            const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
-            if (saved) { const p = JSON.parse(saved); savedSeason = p.season || 1; savedEpisode = p.episode || 1 }
-          } catch {}
-          try {
-            const w = localStorage.getItem(`yoshikawaWatched_${id}`)
-            if (w) setWatchedEps(new Set(JSON.parse(w)))
-          } catch {}
-          await fetchSeason(id, savedSeason)
-          setSeason(savedSeason)
-          setEpisode(savedEpisode)
-        }
-        checkFavoriteStatus(data)
-      } catch (error) {
-        showToast('Erro ao carregar conteúdo', 'error')
-        setIsLoading(false)
-      }
-    }
-    loadContent()
-  }, [id, type])
-
-  useEffect(() => {
-    if (type !== 'tv' || !id) return
-    if (!initialLoadDone.current) return
-    try {
-      localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
-    } catch {}
-  }, [season, episode, id, type])
-
-  useEffect(() => {
-    if (type !== 'tv' || !id || !isPlaying) return
-    const key = `${season}-${episode}`
-    setWatchedEps(prev => {
-      if (prev.has(key)) return prev
-      const next = new Set([...prev, key])
-      try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch {}
-      return next
-    })
-  }, [season, episode, isPlaying, id, type])
-
-  const fetchSeason = async (tvId, seasonNum) => {
-    try {
-      const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
-      const data = await res.json()
-      setSeasonData(data)
-      setSeason(seasonNum)
-    } catch (err) { 
-      showToast('Erro ao carregar temporada', 'error')
-    }
+  const manualCloseToast = () => {
+    if (currentToast) setCurrentToast({ ...currentToast, closing: true })
   }
 
   const checkFavoriteStatus = (item) => {
@@ -411,20 +422,20 @@ export default function WatchPage() {
   }
 
   useEffect(() => {
-    const onScroll = () => { 
+    const onScroll = () => {
       if (window.scrollY > 10) closeAllPopups()
-      setScrolled(window.scrollY > 60) 
+      setScrolled(window.scrollY > 60)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    const onClick = (e) => { 
+    const onClick = (e) => {
       if (!e.target.closest('.standard-popup') && !e.target.closest('.toast') && !e.target.closest('.round-btn') && !e.target.closest('.pill-container') && !e.target.closest('.show-nav-btn')) {
-        closeAllPopups() 
+        closeAllPopups()
       }
     }
     window.addEventListener('click', onClick)
-    return () => { 
+    return () => {
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('click', onClick) 
+      window.removeEventListener('click', onClick)
     }
   }, [closeAllPopups])
 
@@ -434,9 +445,7 @@ export default function WatchPage() {
     if (!activeCard) return
 
     activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-
     const cardCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2
-
     setIndicatorLeft(cardCenter)
   }, [episode, seasonData])
 
@@ -448,28 +457,28 @@ export default function WatchPage() {
       showToast('Fim da temporada', 'info')
     }
   }
-  
+
   const handlePrevEp = () => {
     if (episode > 1) setEpisode(episode - 1)
   }
-  
-  const getEmbedUrl = () => {
-  if (!content) return ''
-  if (type === 'movie') {
-    const imdbId = content.external_ids?.imdb_id || content.imdb_id
-    if (!imdbId) {
-      showToast('ID IMDB não encontrado', 'error')
-      return ''
-    }
-    return `https://superflixapi.best/filme/${imdbId}`
-  }
 
-  return `https://superflixapi.best/serie/${id}/${season}/${episode}`
+  const getEmbedUrl = () => {
+    if (!content) return ''
+    if (type === 'movie') {
+      const imdbId = content.external_ids?.imdb_id || content.imdb_id
+      if (!imdbId) {
+        showToast('ID IMDB não encontrado', 'error')
+        return ''
+      }
+      return `https://superflixapi.best/filme/${imdbId}`
+    }
+    return `https://superflixapi.best/serie/${id}/${season}/${episode}`
   }
 
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
-    fetchSeason(id, newSeason)
+    fetchSeasonData(id, newSeason)
+    setSeason(newSeason)
     setEpisode(1)
   }
 
