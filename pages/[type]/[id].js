@@ -1034,7 +1034,7 @@ export default function WatchPage() {
 
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 14px 28px 14px; 
+            padding: 10px 14px 8px 14px; 
             scrollbar-width: none; 
             margin: 0 -14px;
             position: relative;
@@ -1046,7 +1046,7 @@ export default function WatchPage() {
             min-width: 110px; height: 65px; 
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
-            border: none;
+            border: 1px solid transparent;
             cursor: pointer; transition: all 0.4s var(--ease-smooth); 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
@@ -1054,7 +1054,7 @@ export default function WatchPage() {
           }
 
           .ep-card.active {
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.5);
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1122,45 +1122,53 @@ export default function WatchPage() {
           .scrollbar-container {
             display: none;
             width: 100%;
-            padding: 0 14px;
-            margin-top: -20px;
+            padding: 8px 14px 4px 14px;
+            margin-top: 0;
           }
 
           .custom-scrollbar {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
-            height: 4px;
+            height: 3px;
             border-radius: 2px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             outline: none;
             cursor: pointer;
+            transition: background 0.2s ease;
+          }
+
+          .custom-scrollbar:hover {
+            background: rgba(255, 255, 255, 0.12);
           }
 
           .custom-scrollbar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
             transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
           }
 
           .custom-scrollbar::-webkit-slider-thumb:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.15);
+            border-color: rgba(255, 255, 255, 0.4);
           }
 
           .custom-scrollbar::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
           }
 
           .no-image-placeholder {
@@ -1533,4 +1541,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+  }
