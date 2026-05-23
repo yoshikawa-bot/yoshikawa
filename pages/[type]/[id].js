@@ -89,7 +89,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
   const handleFavClick = () => {
     setAnimating(true)
     onToggleFavorite()
-    setTimeout(() => setAnimating(false), 400)
+    setTimeout(() => setAnimating(false), 600)
   }
 
   return (
@@ -326,7 +326,7 @@ export default function WatchPage() {
       setCurrentToast(prev => ({ ...prev, closing: true }))
       setTimeout(() => {
         setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
-      }, 200)
+      }, 300)
     } else {
       setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
     }
@@ -421,7 +421,7 @@ export default function WatchPage() {
   const toggleInfoPopup = () => {
     if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 200)
+      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 300)
     } else {
       if (showInfoPopup) {
         setInfoClosing(true)
@@ -433,7 +433,7 @@ export default function WatchPage() {
   const toggleTechPopup = () => {
     if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 200)
+      setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 300)
     } else {
       if (showTechPopup) {
         setTechClosing(true)
@@ -445,7 +445,7 @@ export default function WatchPage() {
   const toggleDataPopup = () => {
     if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 200)
+      setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 300)
     } else {
       if (showDataPopup) {
         setDataClosing(true)
@@ -457,7 +457,7 @@ export default function WatchPage() {
   const toggleSynopsisPopup = () => {
     if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
       closeAllPopups()
-      setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 200)
+      setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 300)
     } else {
       if (showSynopsisPopup) {
         setSynopsisClosing(true)
@@ -852,7 +852,7 @@ export default function WatchPage() {
             z-index: 5;
           }
 
-          .heart-pulse { animation: heartZoom 0.5s var(--ease-elastic); }
+          .heart-pulse { animation: heartZoom 0.6s var(--ease-elastic); }
 
           @keyframes heartZoom { 
             0% { transform: scale(1); } 
@@ -865,12 +865,13 @@ export default function WatchPage() {
             top: calc(20px + var(--pill-height) + 16px); 
             left: 50%;
             z-index: 960;
-            min-width: 320px;
-            max-width: 90%;
+            min-width: 280px;
+            max-width: 360px;
+            width: auto;
             display: flex; 
             align-items: center; 
             gap: 14px;
-            padding: 16px 18px; 
+            padding: 14px 16px; 
             border-radius: 22px;
             transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
             transform-origin: top center;
@@ -889,7 +890,7 @@ export default function WatchPage() {
           .toast { z-index: 960; pointer-events: auto; }
 
           .standard-popup.closing, .toast.closing { 
-            animation: popupZoomOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
+            animation: popupZoomOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
           }
 
           @keyframes popupZoomIn {
@@ -903,7 +904,7 @@ export default function WatchPage() {
           }
           
           .popup-icon-wrapper, .toast-icon-wrapper { 
-            width: 42px; height: 42px; min-width: 42px; 
+            width: 38px; height: 38px; min-width: 38px; 
             border-radius: 12px; 
             display: flex; align-items: center; justify-content: center;
             will-change: transform, opacity;
@@ -925,7 +926,7 @@ export default function WatchPage() {
           .toast.error   .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
 
           .popup-icon-wrapper i, .toast-icon-wrapper i { 
-            font-size: 20px; color: #fff;
+            font-size: 18px; color: #fff;
             will-change: transform;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -948,8 +949,8 @@ export default function WatchPage() {
             to   { opacity: 1; transform: translate3d(0, 0, 0); } 
           }
           
-          .popup-title, .toast-title { font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
-          .popup-text,  .toast-msg   { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
+          .popup-title, .toast-title { font-size: 0.88rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
+          .popup-text,  .toast-msg   { font-size: 0.75rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
 
           @keyframes iconPop { 
             from { transform: scale3d(0, 0, 1); opacity: 0; } 
@@ -980,6 +981,7 @@ export default function WatchPage() {
             border: 1px solid rgba(255, 255, 255, 0.15);
             margin-bottom: 24px; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+            transition: background-image 0.5s var(--ease-smooth);
           }
 
           .player-banner-container::after {
@@ -1045,14 +1047,14 @@ export default function WatchPage() {
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
             border: none;
-            cursor: pointer; transition: all 0.3s var(--ease-smooth); 
+            cursor: pointer; transition: all 0.4s var(--ease-smooth); 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
           }
 
           .ep-card.active {
-            border: 2px solid rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.6);
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1062,7 +1064,7 @@ export default function WatchPage() {
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
-            transition: all 0.3s var(--ease-smooth);
+            transition: all 0.4s var(--ease-smooth);
             border-radius: 10px;
           }
 
@@ -1298,11 +1300,6 @@ export default function WatchPage() {
             .media-title { font-size: 1rem; }
             .popup-size-square { width: 85vw; height: 85vw; }
             .popup-size-banner { width: 90vw; }
-            .standard-popup, .toast { min-width: 280px; padding: 14px 16px; }
-            .popup-icon-wrapper, .toast-icon-wrapper { width: 38px; height: 38px; min-width: 38px; }
-            .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; }
-            .popup-title, .toast-title { font-size: 0.88rem; }
-            .popup-text, .toast-msg { font-size: 0.75rem; }
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
@@ -1536,4 +1533,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+            }
