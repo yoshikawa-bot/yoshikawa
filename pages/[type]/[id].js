@@ -186,6 +186,7 @@ export default function WatchPage() {
   const [allSeasonsData, setAllSeasonsData] = useState({})
   
   const [indicatorLeft, setIndicatorLeft] = useState(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   const toastTimerRef = useRef(null)
 
@@ -284,6 +285,20 @@ export default function WatchPage() {
       return next
     })
   }, [season, episode, isPlaying, id, type])
+
+  useEffect(() => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+
+    const handleScroll = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = carousel
+      const progress = scrollLeft / (scrollWidth - clientWidth)
+      setScrollProgress(progress || 0)
+    }
+
+    carousel.addEventListener('scroll', handleScroll, { passive: true })
+    return () => carousel.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const fetchSeasonData = async (tvId, seasonNum) => {
     try {
@@ -536,6 +551,14 @@ export default function WatchPage() {
 
   const handleEpisodeClick = (epNumber) => {
     setEpisode(epNumber)
+  }
+
+  const handleScrollbarChange = (e) => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    const newProgress = parseFloat(e.target.value)
+    const maxScroll = carousel.scrollWidth - carousel.clientWidth
+    carousel.scrollLeft = newProgress * maxScroll
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -1003,6 +1026,10 @@ export default function WatchPage() {
           .native-season-select:hover { background-color: rgba(255,255,255,0.15); }
           .native-season-select option { background: #1a1a1a; color: #fff; }
 
+          .episodes-wrapper {
+            position: relative;
+          }
+
           .episodes-carousel { 
             display: flex; gap: 10px; overflow-x: auto; 
             padding: 10px 14px 28px 14px; 
@@ -1018,7 +1045,7 @@ export default function WatchPage() {
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
             border: none;
-            cursor: pointer; transition: all 0.2s ease; 
+            cursor: pointer; transition: all 0.3s var(--ease-smooth); 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
@@ -1035,7 +1062,7 @@ export default function WatchPage() {
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
-            transition: all 0.3s ease;
+            transition: all 0.3s var(--ease-smooth);
             border-radius: 10px;
           }
 
@@ -1051,8 +1078,8 @@ export default function WatchPage() {
             display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
-          .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
-          .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
+          .ep-card:hover { transform: scale(1.05); }
+          .ep-card.active { transform: scale(1.08); }
 
           .ep-watched-badge {
             position: absolute;
@@ -1088,6 +1115,50 @@ export default function WatchPage() {
             font-size: 13px;
             color: rgba(255,255,255,0.75);
             line-height: 1;
+          }
+
+          .scrollbar-container {
+            display: none;
+            width: 100%;
+            padding: 0 14px;
+            margin-top: -20px;
+          }
+
+          .custom-scrollbar {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            cursor: pointer;
+          }
+
+          .custom-scrollbar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          .custom-scrollbar::-webkit-slider-thumb:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+          }
+
+          .custom-scrollbar::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
           }
 
           .no-image-placeholder {
@@ -1213,6 +1284,10 @@ export default function WatchPage() {
               min-width: 160px;
               height: 90px;
             }
+
+            .scrollbar-container {
+              display: block;
+            }
           }
 
           @media (max-width: 768px) {
@@ -1336,48 +1411,62 @@ export default function WatchPage() {
                     </select>
                   </div>
 
-                  <div className="episodes-carousel" ref={carouselRef}>
-                    {indicatorLeft !== null && (
-                      <i 
-                        className="indicator-arrow fas fa-chevron-up"
-                        style={{ left: indicatorLeft, opacity: 1 }}
-                      />
-                    )}
+                  <div className="episodes-wrapper">
+                    <div className="episodes-carousel" ref={carouselRef}>
+                      {indicatorLeft !== null && (
+                        <i 
+                          className="indicator-arrow fas fa-chevron-up"
+                          style={{ left: indicatorLeft, opacity: 1 }}
+                        />
+                      )}
 
-                    {seasonData?.episodes ? seasonData.episodes.map(ep => {
-                      const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
-                      return (
-                        <div 
-                          key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
-                          onClick={() => handleEpisodeClick(ep.episode_number)}
-                          style={{
-                            backgroundImage: ep.still_path 
-                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                              : 'none'
-                          }}
-                        >
-                          {!ep.still_path && (
-                            <div className="no-image-placeholder">
-                              <i className="fas fa-image"></i>
+                      {seasonData?.episodes ? seasonData.episodes.map(ep => {
+                        const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
+                        return (
+                          <div 
+                            key={ep.id} 
+                            className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
+                            onClick={() => handleEpisodeClick(ep.episode_number)}
+                            style={{
+                              backgroundImage: ep.still_path 
+                                ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                                : 'none'
+                            }}
+                          >
+                            {!ep.still_path && (
+                              <div className="no-image-placeholder">
+                                <i className="fas fa-image"></i>
+                              </div>
+                            )}
+                            {!isWatched && (
+                              <div className="ep-blur-overlay"></div>
+                            )}
+                            <div className="ep-card-info">
+                              <span className="ep-card-num">Ep {ep.episode_number}</span>
                             </div>
-                          )}
-                          {!isWatched && (
-                            <div className="ep-blur-overlay"></div>
-                          )}
-                          <div className="ep-card-info">
-                            <span className="ep-card-num">Ep {ep.episode_number}</span>
+                            {isWatched && (
+                              <div className="ep-watched-badge">
+                                <i className="fas fa-check"></i>
+                              </div>
+                            )}
                           </div>
-                          {isWatched && (
-                            <div className="ep-watched-badge">
-                              <i className="fas fa-check"></i>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    }) : (
-                      <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
-                    )}
+                        )
+                      }) : (
+                        <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
+                      )}
+                    </div>
+                    
+                    <div className="scrollbar-container">
+                      <input 
+                        type="range" 
+                        className="custom-scrollbar"
+                        min="0" 
+                        max="1" 
+                        step="0.001"
+                        value={scrollProgress}
+                        onChange={handleScrollbarChange}
+                      />
+                    </div>
                   </div>
                 </>
               )}
@@ -1447,4 +1536,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+  }
