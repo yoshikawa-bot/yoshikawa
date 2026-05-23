@@ -582,6 +582,7 @@ export default function WatchPage() {
             line-height: 1.6;
             font-size: 16px;
             min-height: 100vh;
+            min-height: 100dvh;
             overflow-y: auto;
             overflow-x: hidden;
           }
@@ -589,6 +590,7 @@ export default function WatchPage() {
           .site-wrapper {
             width: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -613,6 +615,7 @@ export default function WatchPage() {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
+            height: 100dvh;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -703,14 +706,14 @@ export default function WatchPage() {
           }
 
           .top-bar { 
-            top: 20px;
+            top: max(20px, env(safe-area-inset-top, 20px));
             opacity: 1;
             visibility: visible;
             transition: all 0.6s var(--ease-smooth);
           }
 
           .bottom-bar { 
-            bottom: 20px;
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
             opacity: 1;
             visibility: visible;
             transition: all 0.6s var(--ease-smooth);
@@ -732,7 +735,7 @@ export default function WatchPage() {
 
           .show-nav-btn {
             position: fixed;
-            bottom: 20px;
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
             left: 50%;
             z-index: 999;
             width: 48px;
@@ -862,7 +865,7 @@ export default function WatchPage() {
 
           .standard-popup, .toast {
             position: fixed;
-            top: calc(20px + var(--pill-height) + 16px); 
+            top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px); 
             left: 50%;
             z-index: 960;
             width: auto;
@@ -959,7 +962,7 @@ export default function WatchPage() {
 
           .toast-wrap { 
             position: fixed; 
-            top: calc(20px + var(--pill-height) + 16px); 
+            top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px); 
             left: 50%; 
             z-index: 960; 
             pointer-events: none; 
@@ -1193,8 +1196,14 @@ export default function WatchPage() {
           .player-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
+            z-index: 2000; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
             animation: overlayFadeIn 0.4s var(--ease-smooth);
+            padding: 16px;
+            overflow-y: auto;
           }
 
           @keyframes overlayFadeIn {
@@ -1203,8 +1212,12 @@ export default function WatchPage() {
           }
 
           .player-wrapper-vertical {
-            display: flex; flex-direction: column; align-items: center;
-            position: relative; width: auto;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
             animation: playerSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
@@ -1214,14 +1227,18 @@ export default function WatchPage() {
           }
 
           .player-popup-container {
-            position: relative; background: #000; border-radius: 20px; overflow: hidden;
+            position: relative; 
+            background: #000; 
+            border-radius: 20px; 
+            overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
             border: 1.5px solid rgba(255, 255, 255, 0.2);
             transition: all 0.4s var(--ease-elastic); 
-            display: flex; align-items: center; justify-content: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
             animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
-            width: min(80vw, 80vh);
-            height: min(80vw, 80vh);
+            width: 100%;
             aspect-ratio: 1/1;
           }
 
@@ -1241,9 +1258,13 @@ export default function WatchPage() {
           }
           
           .player-header-controls {
-            width: 100%; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 16px; 
             animation: controlsFadeIn 0.5s ease 0.15s backwards;
+            flex-shrink: 0;
           }
 
           @keyframes controlsFadeIn {
@@ -1280,17 +1301,31 @@ export default function WatchPage() {
           .control-btn:hover i { transform: scale(1.15); }
           
           .player-bottom-controls {
-            display: flex; justify-content: center; gap: 20px;
-            margin-top: 20px;
+            display: flex; 
+            justify-content: center; 
+            gap: 16px;
+            margin-top: 16px;
             animation: controlsFadeIn 0.5s ease 0.25s backwards;
+            flex-shrink: 0;
           }
 
           .nav-ep-btn {
-            background: rgba(255,255,255,0.08); padding: 12px 32px; border-radius: 50px;
-            color: rgba(255,255,255,0.9); font-weight: 600; font-size: 0.95rem;
-            display: flex; align-items: center; gap: 10px;
-            transition: all 0.3s var(--ease-smooth); backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.08); 
+            padding: 12px 24px; 
+            border-radius: 50px;
+            color: rgba(255,255,255,0.9); 
+            font-weight: 600; 
+            font-size: 0.95rem;
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            transition: all 0.3s var(--ease-smooth); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            cursor: pointer; 
+            position: relative; 
+            overflow: hidden;
+            white-space: nowrap;
           }
 
           .nav-ep-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.08); border-color: rgba(255,255,255,0.3); }
@@ -1322,13 +1357,56 @@ export default function WatchPage() {
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 14px; }
             .media-title { font-size: 1rem; }
+            .player-wrapper-vertical {
+              max-width: 100%;
+            }
             .player-popup-container {
-              width: 85vw;
-              height: 85vw;
+              width: 100%;
+            }
+            .player-header-controls {
+              margin-bottom: 12px;
             }
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
-            .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
+            .nav-ep-btn { padding: 10px 18px; font-size: 0.85rem; }
+            .player-bottom-controls {
+              margin-top: 12px;
+              gap: 12px;
+            }
+          }
+
+          @media (max-height: 500px) {
+            .player-overlay {
+              padding: 8px;
+              justify-content: flex-start;
+              padding-top: 60px;
+            }
+            .player-wrapper-vertical {
+              max-width: 100%;
+            }
+            .player-popup-container {
+              width: min(60vh, 90vw);
+              aspect-ratio: 1/1;
+            }
+            .player-header-controls {
+              margin-bottom: 8px;
+            }
+            .player-bottom-controls {
+              margin-top: 8px;
+            }
+            .ep-indicator { 
+              font-size: 0.75rem; 
+              padding: 4px 10px; 
+            }
+            .control-btn { 
+              width: 32px; 
+              height: 32px; 
+            }
+            .control-btn i { font-size: 14px; }
+            .nav-ep-btn { 
+              padding: 6px 14px; 
+              font-size: 0.75rem; 
+            }
           }
         `}</style>
       </Head>
@@ -1558,4 +1636,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+}
