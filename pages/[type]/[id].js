@@ -1030,7 +1030,6 @@ export default function WatchPage() {
 
           .episodes-wrapper {
             position: relative;
-            padding-bottom: 40px;
           }
 
           .episodes-carousel { 
@@ -1052,6 +1051,8 @@ export default function WatchPage() {
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
+            outline: 1px solid rgba(255, 255, 255, 0.06);
+            outline-offset: -1px;
           }
 
           .ep-card.active {
@@ -1064,12 +1065,13 @@ export default function WatchPage() {
 
           .ep-card.unwatched .ep-blur-overlay {
             position: absolute;
-            inset: 0;
+            inset: -1px;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
             transition: all 0.4s var(--ease-smooth);
+            border-radius: 10px;
           }
 
           .ep-card.unwatched.active .ep-blur-overlay {
@@ -1085,15 +1087,21 @@ export default function WatchPage() {
 
           .ep-watched-icon {
             position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 4px;
+            right: 4px;
             z-index: 5;
-            font-size: 14px;
+            font-size: 10px;
             color: rgba(52, 199, 89, 0.9);
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
             pointer-events: none;
             transition: all 0.3s var(--ease-smooth);
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .ep-card-num { 
@@ -1116,18 +1124,15 @@ export default function WatchPage() {
             line-height: 1;
           }
 
-          .scrollbar-container {
+          .scrollbar-container-desktop {
             display: none;
-            position: absolute;
-            bottom: 6px;
-            left: 0;
-            right: 0;
-            padding: 8px 18px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 14px;
+            margin-top: 8px;
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 20px;
-            margin: 0 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
           }
 
           .custom-scrollbar {
@@ -1136,14 +1141,14 @@ export default function WatchPage() {
             width: 100%;
             height: 4px;
             border-radius: 2px;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
             outline: none;
             cursor: pointer;
             transition: background 0.2s ease;
           }
 
           .custom-scrollbar:hover {
-            background: rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.18);
           }
 
           .custom-scrollbar::-webkit-slider-thumb {
@@ -1299,7 +1304,7 @@ export default function WatchPage() {
               height: 90px;
             }
 
-            .scrollbar-container {
+            .scrollbar-container-desktop {
               display: block;
             }
           }
@@ -1453,11 +1458,9 @@ export default function WatchPage() {
                             <div className="ep-card-info">
                               <span className="ep-card-num">Ep {ep.episode_number}</span>
                             </div>
-                            {isWatched && (
-                              <div className="ep-watched-icon">
-                                <i className="fas fa-eye"></i>
-                              </div>
-                            )}
+                            <div className="ep-watched-icon">
+                              <i className={`fas ${isWatched ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+                            </div>
                           </div>
                         )
                       }) : (
@@ -1465,7 +1468,7 @@ export default function WatchPage() {
                       )}
                     </div>
                     
-                    <div className="scrollbar-container">
+                    <div className="scrollbar-container-desktop">
                       <input 
                         type="range" 
                         className="custom-scrollbar"
