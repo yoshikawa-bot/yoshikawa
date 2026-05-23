@@ -156,7 +156,6 @@ export default function WatchPage() {
   const { type, id } = router.query
   const carouselRef = useRef(null)
   const contentLoaded = useRef(false)
-  const savedProgressRef = useRef(null)
   
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
@@ -183,10 +182,39 @@ export default function WatchPage() {
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
   const [watchedEps, setWatchedEps] = useState(new Set())
+  const [allSeasonsData, setAllSeasonsData] = useState({})
   
   const [indicatorLeft, setIndicatorLeft] = useState(null)
 
   const toastTimerRef = useRef(null)
+
+  const getLastWatchedEpisode = useCallback(() => {
+    if (!content || type !== 'tv') return { season: 1, episode: 1 }
+    
+    const allWatched = []
+    for (const key of watchedEps) {
+      const [s, e] = key.split('-').map(Number)
+      allWatched.push({ season: s, episode: e })
+    }
+    
+    if (allWatched.length === 0) {
+      try {
+        const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+        if (saved) {
+          const p = JSON.parse(saved)
+          return { season: p.season || 1, episode: p.episode || 1 }
+        }
+      } catch (e) {}
+      return { season: 1, episode: 1 }
+    }
+    
+    allWatched.sort((a, b) => {
+      if (a.season !== b.season) return b.season - a.season
+      return b.episode - a.episode
+    })
+    
+    return allWatched[0]
+  }, [content, type, watchedEps, id])
 
   useEffect(() => {
     if (!id || !type) return
@@ -199,18 +227,6 @@ export default function WatchPage() {
         setContent(data)
 
         if (type === 'tv') {
-          let targetSeason = 1
-          let targetEpisode = 1
-
-          try {
-            const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
-            if (saved) {
-              const p = JSON.parse(saved)
-              targetSeason = p.season || 1
-              targetEpisode = p.episode || 1
-            }
-          } catch (e) {}
-
           try {
             const w = localStorage.getItem(`yoshikawaWatched_${id}`)
             if (w) {
@@ -218,9 +234,11 @@ export default function WatchPage() {
             }
           } catch (e) {}
 
-          setSeason(targetSeason)
-          setEpisode(targetEpisode)
-          await fetchSeasonData(id, targetSeason)
+          const { season: lastSeason, episode: lastEpisode } = getLastWatchedEpisode()
+          
+          setSeason(lastSeason)
+          setEpisode(lastEpisode)
+          await fetchSeasonData(id, lastSeason)
         }
 
         checkFavoriteStatus(data)
@@ -230,8 +248,10 @@ export default function WatchPage() {
         setIsLoading(false)
       }
     }
+    
+    const { season: lastSeason, episode: lastEpisode } = getLastWatchedEpisode()
     loadContent()
-  }, [id, type])
+  }, [id, type, getLastWatchedEpisode])
 
   useEffect(() => {
     if (content) {
@@ -260,9 +280,17 @@ export default function WatchPage() {
 
   const fetchSeasonData = async (tvId, seasonNum) => {
     try {
+      if (allSeasonsData[seasonNum]) {
+        setSeasonData(allSeasonsData[seasonNum])
+        setSeason(seasonNum)
+        return
+      }
+      
       const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
       const data = await res.json()
+      setAllSeasonsData(prev => ({ ...prev, [seasonNum]: data }))
       setSeasonData(data)
+      setSeason(seasonNum)
     } catch (err) {
       showToast('Erro ao carregar temporada', 'error')
     }
@@ -478,7 +506,6 @@ export default function WatchPage() {
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
     fetchSeasonData(id, newSeason)
-    setSeason(newSeason)
     setEpisode(1)
   }
 
@@ -956,6 +983,17 @@ export default function WatchPage() {
             cursor: pointer; transition: all 0.2s ease; 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
+            flex-shrink: 0;
+          }
+
+          .ep-card.unwatched {
+            filter: blur(8px);
+            opacity: 0.6;
+          }
+
+          .ep-card.unwatched:hover {
+            filter: blur(4px);
+            opacity: 0.8;
           }
           
           .ep-card-info {
@@ -1119,6 +1157,13 @@ export default function WatchPage() {
           .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
           .nav-ep-btn:disabled:hover { transform: scale(1); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
 
+          @media (min-width: 769px) {
+            .ep-card {
+              min-width: 160px;
+              height: 90px;
+            }
+          }
+
           @media (max-width: 768px) {
             .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
@@ -1253,7 +1298,7 @@ export default function WatchPage() {
                       return (
                         <div 
                           key={ep.id} 
-                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
                           onClick={() => setEpisode(ep.episode_number)}
                           style={{
                             backgroundImage: ep.still_path 
