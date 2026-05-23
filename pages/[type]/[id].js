@@ -1046,7 +1046,7 @@ export default function WatchPage() {
             min-width: 110px; height: 65px; 
             background-size: cover; background-position: center;
             border-radius: 10px; padding: 0; 
-            border: 1px solid transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer; transition: all 0.4s var(--ease-smooth); 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
@@ -1057,10 +1057,15 @@ export default function WatchPage() {
 
           .ep-card.active {
             border: 1px solid rgba(255, 255, 255, 0.5);
+            transform: translateY(-5px);
           }
 
           .ep-card:hover { 
             transform: translateY(-3px); 
+          }
+
+          .ep-card.active:hover {
+            transform: translateY(-5px);
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1090,15 +1095,15 @@ export default function WatchPage() {
             bottom: 4px;
             right: 4px;
             z-index: 5;
-            font-size: 10px;
-            color: rgba(52, 199, 89, 0.9);
+            font-size: 12px;
+            color: #fff;
             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
             pointer-events: none;
             transition: all 0.3s var(--ease-smooth);
             background: rgba(0, 0, 0, 0.4);
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1124,22 +1129,22 @@ export default function WatchPage() {
             line-height: 1;
           }
 
-          .scrollbar-container-desktop {
+          .scrollbar-wrapper {
             display: none;
-            padding: 10px 14px;
-            margin-top: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            margin-top: 12px;
           }
 
           .custom-scrollbar {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
-            height: 4px;
+            height: 3px;
             border-radius: 2px;
             background: rgba(255, 255, 255, 0.1);
             outline: none;
@@ -1154,8 +1159,8 @@ export default function WatchPage() {
           .custom-scrollbar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(255, 255, 255, 0.4);
@@ -1171,8 +1176,8 @@ export default function WatchPage() {
           }
 
           .custom-scrollbar::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(255, 255, 255, 0.4);
@@ -1304,7 +1309,7 @@ export default function WatchPage() {
               height: 90px;
             }
 
-            .scrollbar-container-desktop {
+            .scrollbar-wrapper {
               display: block;
             }
           }
@@ -1458,31 +1463,35 @@ export default function WatchPage() {
                             <div className="ep-card-info">
                               <span className="ep-card-num">Ep {ep.episode_number}</span>
                             </div>
-                            <div className="ep-watched-icon">
-                              <i className={`fas ${isWatched ? 'fa-eye' : 'fa-eye-slash'}`}></i>
-                            </div>
+                            {isWatched && (
+                              <div className="ep-watched-icon">
+                                <i className="fas fa-eye"></i>
+                              </div>
+                            )}
                           </div>
                         )
                       }) : (
                         <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
                       )}
                     </div>
-                    
-                    <div className="scrollbar-container-desktop">
-                      <input 
-                        type="range" 
-                        className="custom-scrollbar"
-                        min="0" 
-                        max="1" 
-                        step="0.001"
-                        value={scrollProgress}
-                        onChange={handleScrollbarChange}
-                      />
-                    </div>
                   </div>
                 </>
               )}
             </div>
+
+            {type === 'tv' && (
+              <div className="scrollbar-wrapper">
+                <input 
+                  type="range" 
+                  className="custom-scrollbar"
+                  min="0" 
+                  max="1" 
+                  step="0.001"
+                  value={scrollProgress}
+                  onChange={handleScrollbarChange}
+                />
+              </div>
+            )}
           </main>
 
           <BottomNav 
