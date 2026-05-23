@@ -180,6 +180,7 @@ export default function WatchPage() {
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
+  const [watchedEps, setWatchedEps] = useState(new Set())
   
   const [indicatorLeft, setIndicatorLeft] = useState(null)
 
@@ -247,6 +248,10 @@ export default function WatchPage() {
             const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
             if (saved) { const p = JSON.parse(saved); savedSeason = p.season || 1; savedEpisode = p.episode || 1 }
           } catch {}
+          try {
+            const w = localStorage.getItem(`yoshikawaWatched_${id}`)
+            if (w) setWatchedEps(new Set(JSON.parse(w)))
+          } catch {}
           await fetchSeason(id, savedSeason)
           setEpisode(savedEpisode)
         }
@@ -265,6 +270,17 @@ export default function WatchPage() {
       localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
     } catch {}
   }, [season, episode, id, type])
+
+  useEffect(() => {
+    if (type !== 'tv' || !id || !isPlaying) return
+    const key = `${season}-${episode}`
+    setWatchedEps(prev => {
+      if (prev.has(key)) return prev
+      const next = new Set([...prev, key])
+      try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch {}
+      return next
+    })
+  }, [season, episode, isPlaying, id, type])
 
   const fetchSeason = async (tvId, seasonNum) => {
     try {
@@ -537,7 +553,7 @@ export default function WatchPage() {
           .loading-spinner span:nth-child(1)  { transform: rotate(0deg);   animation-delay: -0.917s; }
           .loading-spinner span:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.833s; }
           .loading-spinner span:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.667s; }
+          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.750s; }
           .loading-spinner span:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.583s; }
           .loading-spinner span:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.500s; }
           .loading-spinner span:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.417s; }
@@ -936,6 +952,31 @@ export default function WatchPage() {
 
           .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
           .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
+
+          .ep-card.watched::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(52, 199, 89, 0.18);
+            pointer-events: none;
+            z-index: 1;
+          }
+
+          .ep-watched-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            background: rgba(52, 199, 89, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+          }
+
+          .ep-watched-badge i { font-size: 7px; color: #fff; }
           
           .ep-card-num { 
             font-size: 0.8rem; font-weight: 700; color: #fff; 
@@ -1201,27 +1242,35 @@ export default function WatchPage() {
                       />
                     )}
 
-                    {seasonData?.episodes ? seasonData.episodes.map(ep => (
-                      <div 
-                        key={ep.id} 
-                        className={`ep-card ${ep.episode_number === episode ? 'active' : ''}`}
-                        onClick={() => setEpisode(ep.episode_number)}
-                        style={{
-                          backgroundImage: ep.still_path 
-                            ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                            : 'none'
-                        }}
-                      >
-                        {!ep.still_path && (
-                          <div className="no-image-placeholder">
-                            <i className="fas fa-image"></i>
+                    {seasonData?.episodes ? seasonData.episodes.map(ep => {
+                      const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
+                      return (
+                        <div 
+                          key={ep.id} 
+                          className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${isWatched ? 'watched' : ''}`}
+                          onClick={() => setEpisode(ep.episode_number)}
+                          style={{
+                            backgroundImage: ep.still_path 
+                              ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                              : 'none'
+                          }}
+                        >
+                          {!ep.still_path && (
+                            <div className="no-image-placeholder">
+                              <i className="fas fa-image"></i>
+                            </div>
+                          )}
+                          <div className="ep-card-info">
+                            <span className="ep-card-num">Ep {ep.episode_number}</span>
                           </div>
-                        )}
-                        <div className="ep-card-info">
-                          <span className="ep-card-num">Ep {ep.episode_number}</span>
+                          {isWatched && (
+                            <div className="ep-watched-badge">
+                              <i className="fas fa-check"></i>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )) : (
+                      )
+                    }) : (
                       <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
                     )}
                   </div>
