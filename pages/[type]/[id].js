@@ -959,6 +959,15 @@ export default function WatchPage() {
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
           }
 
+          .player-banner-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 1;
+          }
+
           .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
           .player-banner-container:hover .banner-image { transform: scale(1.05); }
 
@@ -966,7 +975,7 @@ export default function WatchPage() {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            border: 1px solid rgba(255,255,255,0.3); z-index: 2;
+            border: 1px solid rgba(255,255,255,0.3); z-index: 3;
           }
 
           .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
@@ -1007,9 +1016,9 @@ export default function WatchPage() {
           .ep-card {
             min-width: 110px; height: 65px; 
             background-size: cover; background-position: center;
-            border-radius: 40px; padding: 0; 
+            border-radius: 10px; padding: 0; 
             border: none;
-            cursor: pointer; transition: all 0.3s ease; 
+            cursor: pointer; transition: all 0.2s ease; 
             position: relative; overflow: hidden; 
             background-color: #1a1a1a;
             flex-shrink: 0;
@@ -1019,8 +1028,7 @@ export default function WatchPage() {
             border: 2px solid rgba(255, 255, 255, 0.8);
           }
 
-          .ep-card.unwatched::after {
-            content: '';
+          .ep-card.unwatched .ep-blur-overlay {
             position: absolute;
             inset: 0;
             background: rgba(0, 0, 0, 0.5);
@@ -1028,10 +1036,11 @@ export default function WatchPage() {
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
             transition: all 0.3s ease;
+            border-radius: 10px;
           }
 
-          .ep-card.unwatched.active::after,
-          .ep-card.unwatched:hover::after {
+          .ep-card.unwatched.active .ep-blur-overlay,
+          .ep-card.unwatched:hover .ep-blur-overlay {
             opacity: 0;
           }
           
@@ -1042,8 +1051,8 @@ export default function WatchPage() {
             display: flex; align-items: flex-start; justify-content: flex-start;
           }
 
-          .ep-card:hover { transform: scale(1.05); }
-          .ep-card.active { transform: scale(1.08); }
+          .ep-card:hover { border-color: rgba(255,255,255,0.4); transform: scale(1.05); }
+          .ep-card.active { border: 1px solid rgba(255,255,255,0.4); }
 
           .ep-watched-badge {
             position: absolute;
@@ -1352,6 +1361,9 @@ export default function WatchPage() {
                             <div className="no-image-placeholder">
                               <i className="fas fa-image"></i>
                             </div>
+                          )}
+                          {!isWatched && (
+                            <div className="ep-blur-overlay"></div>
                           )}
                           <div className="ep-card-info">
                             <span className="ep-card-num">Ep {ep.episode_number}</span>
