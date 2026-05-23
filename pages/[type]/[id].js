@@ -241,7 +241,15 @@ export default function WatchPage() {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
         const data = await res.json()
         setContent(data)
-        if (type === 'tv') await fetchSeason(id, 1)
+        if (type === 'tv') {
+          let savedSeason = 1, savedEpisode = 1
+          try {
+            const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+            if (saved) { const p = JSON.parse(saved); savedSeason = p.season || 1; savedEpisode = p.episode || 1 }
+          } catch {}
+          await fetchSeason(id, savedSeason)
+          setEpisode(savedEpisode)
+        }
         checkFavoriteStatus(data)
       } catch (error) {
         showToast('Erro ao carregar conteúdo', 'error')
@@ -250,6 +258,13 @@ export default function WatchPage() {
     }
     loadContent()
   }, [id, type])
+
+  useEffect(() => {
+    if (type !== 'tv' || !id) return
+    try {
+      localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
+    } catch {}
+  }, [season, episode, id, type])
 
   const fetchSeason = async (tvId, seasonNum) => {
     try {
