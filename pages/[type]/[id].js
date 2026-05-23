@@ -1217,7 +1217,7 @@ export default function WatchPage() {
             align-items: center;
             justify-content: center;
             width: 100%;
-            max-width: 500px;
+            max-width: 90vw;
             animation: playerSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
           }
 
@@ -1368,6 +1368,10 @@ export default function WatchPage() {
 
             .scrollbar-wrapper {
               display: flex;
+            }
+            
+            .player-wrapper-vertical {
+              max-width: 700px;
             }
           }
 
