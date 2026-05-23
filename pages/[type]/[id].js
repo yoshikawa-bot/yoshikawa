@@ -176,7 +176,6 @@ export default function WatchPage() {
   
   const [content, setContent] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isWideMode, setIsWideMode] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   
   const [season, setSeason] = useState(1)
@@ -1133,7 +1132,9 @@ export default function WatchPage() {
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: var(--shadow-standard);
-            padding: 8px 16px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
           }
 
           .custom-scrollbar {
@@ -1146,6 +1147,7 @@ export default function WatchPage() {
             outline: none;
             cursor: pointer;
             transition: background 0.2s ease;
+            margin: 0;
           }
 
           .custom-scrollbar:hover {
@@ -1218,15 +1220,15 @@ export default function WatchPage() {
             transition: all 0.4s var(--ease-elastic); 
             display: flex; align-items: center; justify-content: center;
             animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
+            width: min(80vw, 80vh);
+            height: min(80vw, 80vh);
+            aspect-ratio: 1/1;
           }
 
           @keyframes playerContainerPop {
             from { opacity: 0; transform: scale(0.8); }
             to   { opacity: 1; transform: scale(1); }
           }
-          
-          .popup-size-square { width: min(70vw, 40vh); height: min(70vw, 40vh); aspect-ratio: 1/1; }
-          .popup-size-banner { width: 80vw; max-width: 900px; aspect-ratio: 16/9; }
 
           .player-embed { 
             width: 100%; height: 100%; border: none;
@@ -1306,7 +1308,7 @@ export default function WatchPage() {
             }
 
             .scrollbar-wrapper {
-              display: block;
+              display: flex;
             }
           }
 
@@ -1320,8 +1322,10 @@ export default function WatchPage() {
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 14px; }
             .media-title { font-size: 1rem; }
-            .popup-size-square { width: 85vw; height: 85vw; }
-            .popup-size-banner { width: 90vw; }
+            .player-popup-container {
+              width: 85vw;
+              height: 85vw;
+            }
             .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
             .control-btn { width: 38px; height: 38px; }
             .nav-ep-btn { padding: 8px 18px; font-size: 0.9rem; }
@@ -1521,16 +1525,13 @@ export default function WatchPage() {
                 {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
               </span>
               <div className="right-controls">
-                <button className="control-btn" onClick={() => setIsWideMode(!isWideMode)} title="Alterar Formato">
-                  <i className={isWideMode ? "fas fa-compress" : "fas fa-expand"}></i>
-                </button>
                 <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
                   <i className="fas fa-xmark"></i>
                 </button>
               </div>
             </div>
 
-            <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
+            <div className="player-popup-container">
               <iframe 
                 src={getEmbedUrl()} 
                 className="player-embed" 
@@ -1557,4 +1558,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
