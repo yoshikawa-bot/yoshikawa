@@ -98,7 +98,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
         <i className="fas fa-arrow-up-from-bracket" style={{ fontSize: '15px', transform: 'translateY(-1px)' }}></i>
       </button>
 
-      <div className={`pill-container glass-panel ${navHidden ? 'hidden-pill' : ''}`}>
+      <div className="pill-container glass-panel">
         <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
           <i className="fas fa-film"></i>
         </button>
@@ -112,7 +112,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
         </button>
       </div>
 
-      <button className={`round-btn glass-panel ${navHidden ? 'hidden-fav' : ''}`} onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+      <button className="round-btn glass-panel" onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
         <i 
           className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
           style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
@@ -202,12 +202,10 @@ export default function WatchPage() {
             const [s, e] = key.split('-').map(Number)
             return { season: s, episode: e }
           })
-          
           allWatched.sort((a, b) => {
             if (a.season !== b.season) return b.season - a.season
             return b.episode - a.episode
           })
-          
           return allWatched[0]
         }
       } catch (e) {}
@@ -237,9 +235,7 @@ export default function WatchPage() {
         if (type === 'tv') {
           try {
             const w = localStorage.getItem(`yoshikawaWatched_${id}`)
-            if (w) {
-              setWatchedEps(new Set(JSON.parse(w)))
-            }
+            if (w) setWatchedEps(new Set(JSON.parse(w)))
           } catch (e) {}
 
           const lastWatched = getLastWatchedEpisode()
@@ -289,13 +285,10 @@ export default function WatchPage() {
   useEffect(() => {
     const carousel = carouselRef.current
     if (!carousel) return
-
     const handleScroll = () => {
       const { scrollLeft, scrollWidth, clientWidth } = carousel
-      const progress = scrollLeft / (scrollWidth - clientWidth)
-      setScrollProgress(progress || 0)
+      setScrollProgress(scrollLeft / (scrollWidth - clientWidth) || 0)
     }
-
     carousel.addEventListener('scroll', handleScroll, { passive: true })
     return () => carousel.removeEventListener('scroll', handleScroll)
   }, [])
@@ -307,7 +300,6 @@ export default function WatchPage() {
         setSeason(seasonNum)
         return
       }
-      
       const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
       const data = await res.json()
       setAllSeasonsData(prev => ({ ...prev, [seasonNum]: data }))
@@ -319,9 +311,7 @@ export default function WatchPage() {
   }
 
   const showToast = (message, type = 'info') => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
-      closeAllPopups()
-    }
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) closeAllPopups()
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
       setTimeout(() => {
@@ -491,11 +481,10 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (!carouselRef.current || !seasonData) return
-    const activeCard = carouselRef.current.querySelector('.ep-card.active')
-    if (!activeCard) return
-
-    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-    const cardCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2
+    const activeWrapper = carouselRef.current.querySelector('.ep-card-wrapper.active')
+    if (!activeWrapper) return
+    activeWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    const cardCenter = activeWrapper.offsetLeft + activeWrapper.offsetWidth / 2
     setIndicatorLeft(cardCenter)
   }, [episode, seasonData])
 
@@ -540,10 +529,7 @@ export default function WatchPage() {
         const seasonEps = watchedArray
           .filter(key => key.startsWith(`${seasonNum}-`))
           .map(key => parseInt(key.split('-')[1]))
-        
-        if (seasonEps.length > 0) {
-          return Math.max(...seasonEps)
-        }
+        if (seasonEps.length > 0) return Math.max(...seasonEps)
       }
     } catch (e) {}
     return 1
@@ -621,9 +607,7 @@ export default function WatchPage() {
             background: #000;
           }
 
-          .loading-overlay.fade-out {
-            display: none;
-          }
+          .loading-overlay.fade-out { display: none; }
 
           .loading-spinner {
             width: 48px;
@@ -647,7 +631,7 @@ export default function WatchPage() {
           .loading-spinner span:nth-child(1)  { transform: rotate(0deg);   animation-delay: -0.917s; }
           .loading-spinner span:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.833s; }
           .loading-spinner span:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.750s; }
+          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.667s; }
           .loading-spinner span:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.583s; }
           .loading-spinner span:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.500s; }
           .loading-spinner span:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.417s; }
@@ -689,27 +673,27 @@ export default function WatchPage() {
           }
 
           .bar-container {
-            position: fixed; 
-            left: 50%; 
-            transform: translateX(-50%); 
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            width: 90%; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 90%;
             max-width: var(--pill-max-width);
             transition: all 0.6s var(--ease-smooth);
           }
 
-          .top-bar { 
+          .top-bar {
             top: 20px;
             opacity: 1;
             visibility: visible;
             transition: all 0.6s var(--ease-smooth);
           }
 
-          .bottom-bar { 
+          .bottom-bar {
             bottom: 20px;
             opacity: 1;
             visibility: visible;
@@ -765,53 +749,53 @@ export default function WatchPage() {
           }
 
           .show-nav-btn:active {
-            transform: translateX(-50%) scale(0.95);
+            transform: translateX(-50%) translateY(0) scale(0.95);
           }
 
-          .top-bar.scrolled-state { 
-            transform: translateX(-50%) translateY(-5px); 
+          .top-bar.scrolled-state {
+            transform: translateX(-50%) translateY(-5px);
           }
 
           .round-btn {
-            width: var(--pill-height); 
-            height: var(--pill-height); 
+            width: var(--pill-height);
+            height: var(--pill-height);
             border-radius: 50%;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: rgba(255, 255, 255, 0.9);
-            flex-shrink: 0; 
+            flex-shrink: 0;
             transition: all 0.5s var(--ease-smooth);
           }
 
-          .round-btn:hover { 
-            transform: scale(1.08); 
-            background: rgba(255, 255, 255, 0.12); 
-            border-color: rgba(255, 255, 255, 0.2); 
+          .round-btn:hover {
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
           }
 
           .round-btn:active { transform: scale(0.92); }
 
           .pill-container {
-            height: var(--pill-height); 
-            flex: 1; 
+            height: var(--pill-height);
+            flex: 1;
             border-radius: var(--pill-radius);
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
             transition: all 0.6s var(--ease-fluid);
           }
 
-          .nav-btn { 
-            flex: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100%; 
-            color: rgba(255,255,255,0.4); 
+          .nav-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: rgba(255,255,255,0.4);
             transition: all 0.3s ease;
-            position: relative; 
+            position: relative;
             z-index: 5;
           }
 
@@ -830,48 +814,48 @@ export default function WatchPage() {
             color: rgba(255, 255, 255, 0.9);
           }
 
-          .nav-btn i { 
-            font-size: 18px; 
-            transition: all 0.4s var(--ease-elastic); 
+          .nav-btn i {
+            font-size: 18px;
+            transition: all 0.4s var(--ease-elastic);
           }
 
-          .nav-btn:hover i { 
-            transform: scale(1.2); 
-            color: rgba(255,255,255,0.8); 
+          .nav-btn:hover i {
+            transform: scale(1.2);
+            color: rgba(255,255,255,0.8);
           }
 
           .nav-btn:active i { transform: scale(0.9); }
 
-          .bar-label { 
-            font-size: 0.9rem; 
-            font-weight: 600; 
-            color: #fff; 
+          .bar-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
             white-space: nowrap;
             letter-spacing: -0.01em;
-            position: relative; 
+            position: relative;
             z-index: 5;
           }
 
           .heart-pulse { animation: heartZoom 0.6s var(--ease-elastic); }
 
-          @keyframes heartZoom { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.6); } 
-            100% { transform: scale(1); } 
+          @keyframes heartZoom {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.6); }
+            100% { transform: scale(1); }
           }
 
           .standard-popup, .toast {
             position: fixed;
-            top: calc(20px + var(--pill-height) + 16px); 
+            top: calc(20px + var(--pill-height) + 16px);
             left: 50%;
             z-index: 960;
             min-width: 280px;
             max-width: 360px;
             width: auto;
-            display: flex; 
-            align-items: center; 
+            display: flex;
+            align-items: center;
             gap: 14px;
-            padding: 14px 16px; 
+            padding: 14px 16px;
             border-radius: 22px;
             transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
             transform-origin: top center;
@@ -885,12 +869,12 @@ export default function WatchPage() {
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
             contain: layout style paint;
           }
-          
+
           .standard-popup { z-index: 950; pointer-events: none; }
           .toast { z-index: 960; pointer-events: auto; }
 
-          .standard-popup.closing, .toast.closing { 
-            animation: popupZoomOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
+          .standard-popup.closing, .toast.closing {
+            animation: popupZoomOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
           }
 
           @keyframes popupZoomIn {
@@ -902,30 +886,30 @@ export default function WatchPage() {
             0%   { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); }
             100% { opacity: 0; transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1); pointer-events: none; }
           }
-          
-          .popup-icon-wrapper, .toast-icon-wrapper { 
-            width: 38px; height: 38px; min-width: 38px; 
-            border-radius: 12px; 
+
+          .popup-icon-wrapper, .toast-icon-wrapper {
+            width: 38px; height: 38px; min-width: 38px;
+            border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
             will-change: transform, opacity;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             transform: translate3d(0, 0, 0);
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
+            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards;
             contain: layout style paint;
           }
-          
-          .popup-icon-wrapper.info { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
-          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+
+          .popup-icon-wrapper.info    { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
+          .popup-icon-wrapper.tech    { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
           .popup-icon-wrapper.synopsis { background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3); }
-          .popup-icon-wrapper.data { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); }
+          .popup-icon-wrapper.data    { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); }
 
           .toast-icon-wrapper { border-radius: 50%; }
           .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
           .toast.info    .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
           .toast.error   .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
 
-          .popup-icon-wrapper i, .toast-icon-wrapper i { 
+          .popup-icon-wrapper i, .toast-icon-wrapper i {
             font-size: 18px; color: #fff;
             will-change: transform;
             backface-visibility: hidden;
@@ -933,56 +917,53 @@ export default function WatchPage() {
             transform: translate3d(0, 0, 0);
           }
 
-          .popup-content, .toast-content { 
-            flex: 1; display: flex; flex-direction: column; gap: 4px; 
+          .popup-content, .toast-content {
+            flex: 1; display: flex; flex-direction: column; gap: 4px;
             max-height: 60vh; overflow-y: auto;
             opacity: 0;
             will-change: transform, opacity;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            animation: contentFade 0.4s ease 0.2s forwards; 
+            animation: contentFade 0.4s ease 0.2s forwards;
             contain: layout style;
           }
 
-          @keyframes contentFade { 
-            from { opacity: 0; transform: translate3d(10px, 0, 0); } 
-            to   { opacity: 1; transform: translate3d(0, 0, 0); } 
+          @keyframes contentFade {
+            from { opacity: 0; transform: translate3d(10px, 0, 0); }
+            to   { opacity: 1; transform: translate3d(0, 0, 0); }
           }
-          
+
           .popup-title, .toast-title { font-size: 0.88rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
           .popup-text,  .toast-msg   { font-size: 0.75rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
 
-          @keyframes iconPop { 
-            from { transform: scale3d(0, 0, 1); opacity: 0; } 
-            to   { transform: scale3d(1, 1, 1); opacity: 1; } 
+          @keyframes iconPop {
+            from { transform: scale3d(0, 0, 1); opacity: 0; }
+            to   { transform: scale3d(1, 1, 1); opacity: 1; }
           }
 
-          .toast-wrap { 
-            position: fixed; 
-            top: calc(20px + var(--pill-height) + 16px); 
-            left: 50%; 
-            z-index: 960; 
-            pointer-events: none; 
+          .toast-wrap {
+            position: fixed;
+            top: calc(20px + var(--pill-height) + 16px);
+            left: 50%;
+            z-index: 960;
+            pointer-events: none;
           }
 
           .container {
-            max-width: 1280px; 
+            max-width: 1280px;
             margin: 0 auto;
-            padding-top: 6.5rem; 
+            padding-top: 6.5rem;
             padding-bottom: 7rem;
-            padding-left: 2rem; 
+            padding-left: 2rem;
             padding-right: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
           }
 
           .player-banner-container {
-            width: 100%; aspect-ratio: 16/9; 
+            width: 100%; aspect-ratio: 16/9;
             border-radius: 24px; overflow: hidden;
-            position: relative; background-color: #1a1a1a; 
+            position: relative; background-color: #1a1a1a;
             border: none;
-            cursor: pointer;
+            margin-bottom: 24px; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
             transition: background-image 0.5s var(--ease-smooth);
           }
@@ -1009,7 +990,7 @@ export default function WatchPage() {
           .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
 
           .details-container {
-            border-radius: 24px; padding: 18px; 
+            border-radius: 24px; padding: 18px;
             display: flex; flex-direction: column; gap: 16px;
             border: none;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
@@ -1031,44 +1012,65 @@ export default function WatchPage() {
           .native-season-select:hover { background-color: rgba(255,255,255,0.15); }
           .native-season-select option { background: #1a1a1a; color: #fff; }
 
-          .episodes-wrapper {
-            position: relative;
-          }
+          .episodes-wrapper { position: relative; }
 
-          .episodes-carousel { 
-            display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 14px 28px 14px; 
-            scrollbar-width: none; 
+          .episodes-carousel {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding: 10px 14px 28px 14px;
+            scrollbar-width: none;
             margin: 0 -14px;
             position: relative;
           }
 
           .episodes-carousel::-webkit-scrollbar { display: none; }
-          
-          .ep-card {
-            min-width: 110px; height: 65px; 
-            background-size: cover; background-position: center;
-            border-radius: 10px; padding: 0; 
-            border: none;
-            cursor: pointer; transition: all 0.4s var(--ease-smooth); 
-            position: relative; overflow: hidden; 
-            background-color: #1a1a1a;
+
+          .ep-card-wrapper {
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            min-width: 110px;
+            height: 65px;
+          }
+
+          .ep-card-wrapper.active {
+            z-index: 10;
+          }
+
+          .ep-card-wrapper.active::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            clip-path: inset(0 -40px -40px -40px);
+            pointer-events: none;
+            z-index: -1;
+          }
+
+          .ep-card {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.4s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+            background-color: #1a1a1a;
           }
 
           .ep-card.active {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
           }
 
-          .ep-card:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 8px 25px -5px rgba(0,0,0,0.5);
+          .ep-card:hover {
+            transform: translateY(-3px);
           }
 
           .ep-card.active:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
           }
 
           .ep-card.unwatched .ep-blur-overlay {
@@ -1085,7 +1087,7 @@ export default function WatchPage() {
           .ep-card.unwatched.active .ep-blur-overlay {
             opacity: 0;
           }
-          
+
           .ep-card-info {
             position: relative; z-index: 3;
             width: 100%; height: 100%;
@@ -1096,17 +1098,17 @@ export default function WatchPage() {
           .ep-watched-icon {
             position: absolute;
             bottom: 5px;
-            right: 5px;
+            right: 6px;
             z-index: 5;
-            font-size: 14px;
-            color: #fff;
-            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.95);
+            filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9));
             pointer-events: none;
-            transition: all 0.3s var(--ease-smooth);
+            transition: opacity 0.3s var(--ease-smooth);
           }
 
-          .ep-card-num { 
-            font-size: 0.8rem; font-weight: 700; color: #fff; 
+          .ep-card-num {
+            font-size: 0.8rem; font-weight: 700; color: #fff;
             background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
             padding: 2px 6px; border-radius: 4px;
             position: relative;
@@ -1134,6 +1136,7 @@ export default function WatchPage() {
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             padding: 8px 16px;
+            margin-top: 24px;
           }
 
           .custom-scrollbar {
@@ -1215,7 +1218,7 @@ export default function WatchPage() {
             position: relative; background: #000; border-radius: 20px; overflow: hidden;
             box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
             border: 1.5px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.4s var(--ease-elastic); 
+            transition: all 0.4s var(--ease-elastic);
             display: flex; align-items: center; justify-content: center;
             animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
           }
@@ -1224,11 +1227,11 @@ export default function WatchPage() {
             from { opacity: 0; transform: scale(0.8); }
             to   { opacity: 1; transform: scale(1); }
           }
-          
+
           .popup-size-square { width: min(70vw, 40vh); height: min(70vw, 40vh); aspect-ratio: 1/1; }
           .popup-size-banner { width: 80vw; max-width: 900px; aspect-ratio: 16/9; }
 
-          .player-embed { 
+          .player-embed {
             width: 100%; height: 100%; border: none;
             animation: embedFadeIn 0.5s ease 0.2s backwards;
           }
@@ -1237,10 +1240,10 @@ export default function WatchPage() {
             from { opacity: 0; }
             to   { opacity: 1; }
           }
-          
+
           .player-header-controls {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px; 
+            margin-bottom: 20px;
             animation: controlsFadeIn 0.5s ease 0.15s backwards;
           }
 
@@ -1248,9 +1251,9 @@ export default function WatchPage() {
             from { opacity: 0; transform: translateY(-10px); }
             to   { opacity: 1; transform: translateY(0); }
           }
-          
-          .ep-indicator { 
-            font-size: 1rem; font-weight: 700; color: #fff; 
+
+          .ep-indicator {
+            font-size: 1rem; font-weight: 700; color: #fff;
             text-shadow: 0 2px 10px rgba(0,0,0,0.8);
             background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 12px;
             backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
@@ -1267,8 +1270,8 @@ export default function WatchPage() {
 
           .control-btn {
             width: 48px; height: 48px; background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            color: rgba(255,255,255,0.9); transition: all 0.3s var(--ease-smooth); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.9); transition: all 0.3s var(--ease-smooth);
             border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
           }
 
@@ -1276,7 +1279,7 @@ export default function WatchPage() {
           .control-btn:active { transform: scale(0.95); }
           .control-btn i { font-size: 18px; transition: all 0.3s var(--ease-smooth); }
           .control-btn:hover i { transform: scale(1.15); }
-          
+
           .player-bottom-controls {
             display: flex; justify-content: center; gap: 20px;
             margin-top: 20px;
@@ -1287,7 +1290,7 @@ export default function WatchPage() {
             background: rgba(255,255,255,0.08); padding: 12px 32px; border-radius: 50px;
             color: rgba(255,255,255,0.9); font-weight: 600; font-size: 0.95rem;
             display: flex; align-items: center; gap: 10px;
-            transition: all 0.3s var(--ease-smooth); backdrop-filter: blur(10px); 
+            transition: all 0.3s var(--ease-smooth); backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; overflow: hidden;
           }
 
@@ -1295,27 +1298,21 @@ export default function WatchPage() {
           .nav-ep-btn:active { transform: scale(0.95); }
           .nav-ep-btn i { transition: all 0.3s var(--ease-smooth); }
           .nav-ep-btn:hover i { transform: scale(1.2); }
-
           .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
           .nav-ep-btn:disabled:hover { transform: scale(1); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
 
           @media (min-width: 769px) {
-            .ep-card {
+            .ep-card-wrapper {
               min-width: 160px;
               height: 90px;
             }
-
             .scrollbar-wrapper {
               display: block;
             }
           }
 
           @media (max-width: 768px) {
-            .container { 
-              padding-left: 1rem; 
-              padding-right: 1rem; 
-              gap: 24px;
-            }
+            .container { padding-left: 1rem; padding-right: 1rem; }
             .bar-container { width: 94%; }
             .player-banner-container { border-radius: 16px; }
             .details-container { padding: 14px; }
@@ -1441,37 +1438,33 @@ export default function WatchPage() {
 
                       {seasonData?.episodes ? seasonData.episodes.map(ep => {
                         const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
+                        const isActive = ep.episode_number === episode
                         return (
-                          <div 
-                            key={ep.id} 
-                            className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
-                            onClick={() => handleEpisodeClick(ep.episode_number)}
-                            style={{
-                              backgroundImage: ep.still_path 
-                                ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                                : 'none'
-                            }}
-                          >
-                            {!ep.still_path && (
-                              <div className="no-image-placeholder">
-                                <i className="fas fa-image"></i>
+                          <div key={ep.id} className={`ep-card-wrapper${isActive ? ' active' : ''}`}>
+                            <div
+                              className={`ep-card${isActive ? ' active' : ''}${!isWatched ? ' unwatched' : ''}`}
+                              onClick={() => handleEpisodeClick(ep.episode_number)}
+                              style={{
+                                backgroundImage: ep.still_path
+                                  ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
+                                  : 'none'
+                              }}
+                            >
+                              {!ep.still_path && (
+                                <div className="no-image-placeholder">
+                                  <i className="fas fa-image" />
+                                </div>
+                              )}
+                              {!isWatched && <div className="ep-blur-overlay" />}
+                              <div className="ep-card-info">
+                                <span className="ep-card-num">Ep {ep.episode_number}</span>
                               </div>
-                            )}
-                            {!isWatched && (
-                              <div className="ep-blur-overlay"></div>
-                            )}
-                            <div className="ep-card-info">
-                              <span className="ep-card-num">Ep {ep.episode_number}</span>
+                              {isWatched && <i className="far fa-eye ep-watched-icon" />}
                             </div>
-                            {isWatched && (
-                              <div className="ep-watched-icon">
-                                <i className="fas fa-check-circle"></i>
-                              </div>
-                            )}
                           </div>
                         )
                       }) : (
-                        <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
+                        <div style={{ color: '#666', fontSize: '0.8rem', paddingLeft: '8px' }}>Carregando...</div>
                       )}
                     </div>
                   </div>
@@ -1481,11 +1474,11 @@ export default function WatchPage() {
 
             {type === 'tv' && (
               <div className="scrollbar-wrapper">
-                <input 
-                  type="range" 
+                <input
+                  type="range"
                   className="custom-scrollbar"
-                  min="0" 
-                  max="1" 
+                  min="0"
+                  max="1"
                   step="0.001"
                   value={scrollProgress}
                   onChange={handleScrollbarChange}
@@ -1531,11 +1524,11 @@ export default function WatchPage() {
             </div>
 
             <div className={`player-popup-container ${isWideMode ? 'popup-size-banner' : 'popup-size-square'}`}>
-              <iframe 
-                src={getEmbedUrl()} 
-                className="player-embed" 
+              <iframe
+                src={getEmbedUrl()}
+                className="player-embed"
                 frameBorder="0"
-                allowFullScreen 
+                allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 referrerPolicy="origin"
                 title="Player"
