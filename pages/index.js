@@ -24,34 +24,94 @@ const useDebounce=(callback,delay)=>{
 
 const getItemKey=(item)=>`${item.media_type}-${item.id}`
 
-export const WelcomeScreen=({onEnter})=>{
+export const LoadingScreen=({onComplete})=>{
+  const canvasRef=useRef(null)
+  const animFrameRef=useRef(null)
+  const timeRef=useRef(0)
   const[closing,setClosing]=useState(false)
-  const handleEnter=()=>{setClosing(true);setTimeout(onEnter,600)}
+
+  useEffect(()=>{
+    const canvas=canvasRef.current
+    if(!canvas)return
+    const ctx=canvas.getContext('2d')
+    const W=canvas.width=280
+    const H=canvas.height=280
+    const cx=W/2
+    const cy=H/2
+
+    const drawModulatedRing=(t,baseR,amplitude,freq,phase,alpha,lineW)=>{
+      ctx.beginPath()
+      const steps=280
+      for(let i=0;i<=steps;i++){
+        const angle=(i/steps)*Math.PI*2
+        const mod=Math.sin(freq*angle+phase+t*0.75)+Math.sin(freq*2.4*angle+phase*1.6+t*1.05)*0.45+Math.sin(freq*0.35*angle-phase*0.7+t*0.55)*0.55
+        const r=baseR+amplitude*mod
+        const x=cx+r*Math.cos(angle)
+        const y=cy+r*Math.sin(angle)
+        if(i===0)ctx.moveTo(x,y)
+        else ctx.lineTo(x,y)
+      }
+      ctx.closePath()
+      ctx.strokeStyle=`rgba(255,255,255,${alpha})`
+      ctx.lineWidth=lineW
+      ctx.stroke()
+    }
+
+    const drawDot=(x,y,r,alpha)=>{
+      ctx.beginPath()
+      ctx.arc(x,y,r,0,Math.PI*2)
+      ctx.fillStyle=`rgba(255,255,255,${alpha})`
+      ctx.fill()
+    }
+
+    const animate=()=>{
+      ctx.clearRect(0,0,W,H)
+      timeRef.current+=0.016
+
+      drawModulatedRing(timeRef.current,76,20,5.2,0.0,0.50,1.8)
+      drawModulatedRing(timeRef.current,88,13,7.3,2.3,0.32,1.2)
+      drawModulatedRing(timeRef.current,58,9,3.1,4.8,0.42,1.0)
+      drawModulatedRing(timeRef.current,45,5.5,1.9,1.6,0.24,0.7)
+
+      const numParticles=3
+      for(let i=0;i<numParticles;i++){
+        const orbitR=42+i*20
+        const speed=0.65+i*0.28
+        const angle=timeRef.current*speed+i*(Math.PI*2/numParticles)
+        const px=cx+orbitR*Math.cos(angle)
+        const py=cy+orbitR*Math.sin(angle)
+        const dotR=2.6-i*0.45
+        drawDot(px,py,dotR,0.68-i*0.14)
+      }
+
+      animFrameRef.current=requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    const timer=setTimeout(()=>{
+      setClosing(true)
+      setTimeout(()=>{
+        if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
+        onComplete()
+      },600)
+    },1800)
+
+    return()=>{
+      clearTimeout(timer)
+      if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
+    }
+  },[onComplete])
+
   return(
-    <div className={`welcome-overlay ${closing?'closing':''}`} style={{padding:0}}>
-      <div style={{position:'absolute',top:'20px',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',width:'90%',maxWidth:'520px'}}>
-        <button className="round-btn glass-panel"><span style={{color:'rgba(255,255,255,0.9)',fontSize:'14px'}}>*</span></button>
-        <div className="pill-container glass-panel"><span className="bar-label">******</span></div>
-        <button className="round-btn glass-panel"><span style={{color:'rgba(255,255,255,0.9)',fontSize:'14px'}}>*</span></button>
+    <div className={`loading-overlay ${closing?'closing':''}`}>
+      <div className="loading-visual-container">
+        <canvas ref={canvasRef} width="280" height="280"></canvas>
       </div>
-      <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',textAlign:'right',gap:'12px',width:'90%',maxWidth:'380px'}}>
-        <p className="welcome-title">Yoshikawa Player</p>
-        <p className="welcome-subtitle">Uso Interno — Yoshikawa Bot</p>
-        <div className="welcome-divider"></div>
-        <p className="welcome-text" style={{textAlign:'right'}}>
-          Este site é de uso interno exclusivo para usuários da <strong>Yoshikawa Bot</strong>. Não hospeda nem direciona nenhum conteúdo — utiliza apenas uma <strong>API pública de embed</strong>. O projeto é totalmente <strong>open source</strong> e não viola direitos autorais nem leis de copyright.
-        </p>
-        <button className="welcome-btn glass-panel" onClick={handleEnter} style={{width:'auto',minWidth:'140px'}}><span>Entrar</span></button>
-      </div>
-      <div style={{position:'absolute',bottom:'20px',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',justifyContent:'center',gap:'12px',width:'90%',maxWidth:'520px'}}>
-        <button className="round-btn glass-panel"><span style={{color:'rgba(255,255,255,0.9)',fontSize:'15px'}}>*</span></button>
-        <div className="pill-container glass-panel" style={{justifyContent:'space-around'}}>
-          <button className="nav-btn"><span>*</span></button>
-          <button className="nav-btn"><span>*</span></button>
-          <button className="nav-btn"><span>*</span></button>
-        </div>
-        <button className="round-btn glass-panel"><span style={{color:'rgba(255,255,255,0.9)',fontSize:'15px'}}>*</span></button>
-      </div>
+      <div className="loading-brand-text">YOSHIKAWA ESM</div>
+      <div className="loading-scanlines"></div>
+      <div className="loading-vignette"></div>
+      <div className="loading-noise"></div>
     </div>
   )
 }
@@ -196,7 +256,7 @@ export default function Home(){
     try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen)setWelcomed(true)}catch{}
   },[])
 
-  const handleEnter=()=>{
+  const handleLoadingComplete=()=>{
     try{sessionStorage.setItem('yoshikawaWelcomed','1')}catch{}
     setWelcomed(true)
   }
@@ -351,7 +411,7 @@ export default function Home(){
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -362,18 +422,18 @@ export default function Home(){
           img{max-width:100%;height:auto;display:block}
           :root{--pill-height:44px;--pill-radius:50px;--pill-max-width:520px;--ios-blue:#0A84FF;--ease-elastic:cubic-bezier(0.34,1.56,0.64,1);--ease-smooth:cubic-bezier(0.25,0.46,0.45,0.94)}
           .glass-panel{position:relative;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.3s var(--ease-elastic),background 0.3s ease,border-color 0.3s ease}
-          .welcome-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(5,5,5,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:overlayIn 0.4s ease forwards}
-          .welcome-overlay.closing{animation:overlayOut 0.6s ease forwards}
-          @keyframes overlayIn{from{opacity:0}to{opacity:1}}
-          @keyframes overlayOut{from{opacity:1}to{opacity:0}}
-          .welcome-title{font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:-0.03em;margin:0}
-          .welcome-subtitle{font-size:0.75rem;font-weight:500;color:rgba(255,255,255,0.35);letter-spacing:0.06em;text-transform:uppercase;margin:0}
-          .welcome-divider{width:40px;height:1px;background:rgba(255,255,255,0.1);margin:4px 0;align-self:flex-end}
-          .welcome-text{font-size:0.82rem;color:rgba(255,255,255,0.55);line-height:1.65;margin:0}
-          .welcome-text strong{color:rgba(255,255,255,0.85);font-weight:600}
-          .welcome-btn{border-radius:50px;height:46px;display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;font-size:0.9rem;font-weight:600;letter-spacing:-0.01em;transition:all 0.3s var(--ease-elastic);background:rgba(255,255,255,0.1)!important;border-color:rgba(255,255,255,0.15)!important}
-          .welcome-btn:hover{background:rgba(255,255,255,0.16)!important;border-color:rgba(255,255,255,0.25)!important;transform:scale(1.02)}
-          .welcome-btn:active{transform:scale(0.97)}
+
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingIn 0.5s ease forwards}
+          .loading-overlay.closing{animation:loadingSlideUp 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards}
+          @keyframes loadingIn{from{opacity:0}to{opacity:1}}
+          @keyframes loadingSlideUp{from{transform:translateY(0);opacity:1}to{transform:translateY(-100%);opacity:0}}
+          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:45px;display:flex;align-items:center;justify-content:center}
+          .loading-visual-container canvas{display:block;position:relative;z-index:2}
+          .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;opacity:0.92}
+          .loading-scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.09) 2px,rgba(0,0,0,0.09) 4px)}
+          .loading-vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.7) 100%)}
+          .loading-noise{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:11;opacity:0.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:200px 200px}
+
           .bar-container{position:fixed;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;justify-content:center;gap:12px;width:90%;max-width:var(--pill-max-width);transition:all 0.4s var(--ease-smooth)}
           .top-bar{top:20px}
           .bottom-bar{bottom:20px}
@@ -473,11 +533,14 @@ export default function Home(){
             .page-title{font-size:1.3rem}
             .dot{width:8px;height:8px}
             .status-dots{gap:6px}
+            .loading-visual-container{width:220px;height:220px;margin-bottom:32px}
+            .loading-visual-container canvas{width:220px;height:220px}
+            .loading-brand-text{font-size:1rem;bottom:24px}
           }
         `}</style>
       </Head>
 
-      {!welcomed&&<WelcomeScreen onEnter={handleEnter}/>}
+      {!welcomed&&<LoadingScreen onComplete={handleLoadingComplete}/>}
 
       <Header label={headerLabel} scrolled={scrolled} showInfo={showInfoPopup} toggleInfo={toggleInfoPopup} infoClosing={infoClosing} showTech={showTechPopup} toggleTech={toggleTechPopup} techClosing={techClosing}/>
 
