@@ -30,7 +30,6 @@ export const LoadingScreen=({onComplete})=>{
   const timeRef=useRef(0)
   const[closing,setClosing]=useState(false)
   const[mounted,setMounted]=useState(true)
-  const[userClicked,setUserClicked]=useState(false)
 
   useEffect(()=>{
     const canvas=canvasRef.current
@@ -97,7 +96,6 @@ export const LoadingScreen=({onComplete})=>{
   },[])
 
   const handleEnter=()=>{
-    setUserClicked(true)
     setClosing(true)
   }
 
@@ -125,8 +123,8 @@ export const LoadingScreen=({onComplete})=>{
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 74 74"
-          height="34"
-          width="34"
+          height="28"
+          width="28"
         >
           <circle stroke-width="3" stroke="white" r="35.5" cy="37" cx="37"></circle>
           <path
@@ -281,11 +279,11 @@ export default function Home(){
   const toastTimerRef=useRef(null)
 
   useEffect(()=>{
-    try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}}catch{}
+    setWelcomed(false)
+    setLoadingComplete(false)
   },[])
 
   const handleLoadingComplete=()=>{
-    try{sessionStorage.setItem('yoshikawaWelcomed','1')}catch{}
     setWelcomed(true)
     setLoadingComplete(true)
   }
@@ -452,15 +450,15 @@ export default function Home(){
           :root{--pill-height:44px;--pill-radius:50px;--pill-max-width:520px;--ios-blue:#0A84FF;--ease-elastic:cubic-bezier(0.34,1.56,0.64,1);--ease-smooth:cubic-bezier(0.25,0.46,0.45,0.94)}
           .glass-panel{position:relative;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.3s var(--ease-elastic),background 0.3s ease,border-color 0.3s ease}
 
-          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideUp 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideRight 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
           .loading-overlay.closing{animation-play-state:running}
-          @keyframes loadingSlideUp{from{transform:translateY(0)}to{transform:translateY(-100%)}}
-          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:24px;display:flex;align-items:center;justify-content:center}
+          @keyframes loadingSlideRight{from{transform:translateX(0)}to{transform:translateX(100%)}}
+          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:20px;display:flex;align-items:center;justify-content:center}
           .loading-visual-container canvas{display:block;position:relative;z-index:2}
-          .loading-enter-btn{cursor:pointer;font-weight:700;transition:all 0.2s;padding:10px 20px;border-radius:100px;background:#DA7757;border:1px solid transparent;display:flex;align-items:center;font-size:15px;color:#ffffff;z-index:13;position:relative;margin-bottom:32px}
+          .loading-enter-btn{cursor:pointer;font-weight:700;transition:all 0.2s;padding:8px 18px;border-radius:100px;background:#DA7757;border:1px solid transparent;display:flex;align-items:center;font-size:14px;color:#ffffff;z-index:13;position:relative;margin-bottom:32px}
           .loading-enter-btn:hover{background:#c96a4d}
-          .loading-enter-btn>svg{width:34px;margin-left:10px;transition:transform 0.3s ease-in-out}
-          .loading-enter-btn:hover svg{transform:translateX(5px)}
+          .loading-enter-btn>svg{width:28px;margin-left:8px;transition:transform 0.3s ease-in-out}
+          .loading-enter-btn:hover svg{transform:translateX(4px)}
           .loading-enter-btn:active{transform:scale(0.95)}
           .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap}
           .loading-scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.09) 2px,rgba(0,0,0,0.09) 4px)}
@@ -566,7 +564,7 @@ export default function Home(){
             .page-title{font-size:1.3rem}
             .dot{width:8px;height:8px}
             .status-dots{gap:6px}
-            .loading-visual-container{width:220px;height:220px;margin-bottom:20px}
+            .loading-visual-container{width:220px;height:220px;margin-bottom:16px}
             .loading-visual-container canvas{width:220px;height:220px}
             .loading-enter-btn{margin-bottom:24px}
             .loading-brand-text{font-size:1rem;bottom:24px}
@@ -631,4 +629,4 @@ export default function Home(){
       )}
     </>
   )
-                                                   }
+  }
