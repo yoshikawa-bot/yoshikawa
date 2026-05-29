@@ -53,7 +53,7 @@ export const LoadingScreen=({onComplete})=>{
         else ctx.lineTo(x,y)
       }
       ctx.closePath()
-      ctx.strokeStyle=`rgba(255,255,255,${alpha})`
+      ctx.strokeStyle=`rgba(218,119,87,${alpha})`
       ctx.lineWidth=lineW
       ctx.stroke()
     }
@@ -61,7 +61,7 @@ export const LoadingScreen=({onComplete})=>{
     const drawDot=(x,y,r,alpha)=>{
       ctx.beginPath()
       ctx.arc(x,y,r,0,Math.PI*2)
-      ctx.fillStyle=`rgba(255,255,255,${alpha})`
+      ctx.fillStyle=`rgba(218,119,87,${alpha})`
       ctx.fill()
     }
 
@@ -105,7 +105,7 @@ export const LoadingScreen=({onComplete})=>{
         if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
         setMounted(false)
         onComplete()
-      },600)
+      },400)
       return()=>clearTimeout(timer)
     }
   },[closing,onComplete])
@@ -256,7 +256,7 @@ export const Footer=()=>(
 )
 
 export default function Home(){
-  const[welcomed,setWelcomed]=useState(false)
+  const[welcomed,setWelcomed]=useState(true)
   const[loadingComplete,setLoadingComplete]=useState(false)
   const[releases,setReleases]=useState([])
   const[recommendations,setRecommendations]=useState([])
@@ -279,11 +279,11 @@ export default function Home(){
   const toastTimerRef=useRef(null)
 
   useEffect(()=>{
-    setWelcomed(false)
-    setLoadingComplete(false)
+    try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}else{setWelcomed(false)}}catch{setWelcomed(false)}
   },[])
 
   const handleLoadingComplete=()=>{
+    try{sessionStorage.setItem('yoshikawaWelcomed','1')}catch{}
     setWelcomed(true)
     setLoadingComplete(true)
   }
@@ -450,7 +450,7 @@ export default function Home(){
           :root{--pill-height:44px;--pill-radius:50px;--pill-max-width:520px;--ios-blue:#0A84FF;--ease-elastic:cubic-bezier(0.34,1.56,0.64,1);--ease-smooth:cubic-bezier(0.25,0.46,0.45,0.94)}
           .glass-panel{position:relative;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.3s var(--ease-elastic),background 0.3s ease,border-color 0.3s ease}
 
-          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideRight 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideRight 0.35s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
           .loading-overlay.closing{animation-play-state:running}
           @keyframes loadingSlideRight{from{transform:translateX(0)}to{transform:translateX(100%)}}
           .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:20px;display:flex;align-items:center;justify-content:center}
@@ -629,4 +629,4 @@ export default function Home(){
       )}
     </>
   )
-  }
+    }
