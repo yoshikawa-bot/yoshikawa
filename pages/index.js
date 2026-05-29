@@ -29,6 +29,7 @@ export const LoadingScreen=({onComplete})=>{
   const animFrameRef=useRef(null)
   const timeRef=useRef(0)
   const[closing,setClosing]=useState(false)
+  const[mounted,setMounted]=useState(true)
 
   useEffect(()=>{
     const canvas=canvasRef.current
@@ -91,17 +92,26 @@ export const LoadingScreen=({onComplete})=>{
 
     const timer=setTimeout(()=>{
       setClosing(true)
-      setTimeout(()=>{
-        if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
-        onComplete()
-      },600)
     },1800)
 
     return()=>{
       clearTimeout(timer)
       if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
     }
-  },[onComplete])
+  },[])
+
+  useEffect(()=>{
+    if(closing){
+      const timer=setTimeout(()=>{
+        if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
+        setMounted(false)
+        onComplete()
+      },600)
+      return()=>clearTimeout(timer)
+    }
+  },[closing,onComplete])
+
+  if(!mounted)return null
 
   return(
     <div className={`loading-overlay ${closing?'closing':''}`}>
@@ -232,6 +242,7 @@ export const Footer=()=>(
 
 export default function Home(){
   const[welcomed,setWelcomed]=useState(false)
+  const[loadingComplete,setLoadingComplete]=useState(false)
   const[releases,setReleases]=useState([])
   const[recommendations,setRecommendations]=useState([])
   const[favorites,setFavorites]=useState([])
@@ -253,12 +264,13 @@ export default function Home(){
   const toastTimerRef=useRef(null)
 
   useEffect(()=>{
-    try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen)setWelcomed(true)}catch{}
+    try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}}catch{}
   },[])
 
   const handleLoadingComplete=()=>{
     try{sessionStorage.setItem('yoshikawaWelcomed','1')}catch{}
     setWelcomed(true)
+    setLoadingComplete(true)
   }
 
   const toggleHero=()=>{
@@ -423,13 +435,12 @@ export default function Home(){
           :root{--pill-height:44px;--pill-radius:50px;--pill-max-width:520px;--ios-blue:#0A84FF;--ease-elastic:cubic-bezier(0.34,1.56,0.64,1);--ease-smooth:cubic-bezier(0.25,0.46,0.45,0.94)}
           .glass-panel{position:relative;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.3s var(--ease-elastic),background 0.3s ease,border-color 0.3s ease}
 
-          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingIn 0.5s ease forwards}
-          .loading-overlay.closing{animation:loadingSlideUp 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards}
-          @keyframes loadingIn{from{opacity:0}to{opacity:1}}
-          @keyframes loadingSlideUp{from{transform:translateY(0);opacity:1}to{transform:translateY(-100%);opacity:0}}
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideUp 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
+          .loading-overlay.closing{animation-play-state:running}
+          @keyframes loadingSlideUp{from{transform:translateY(0)}to{transform:translateY(-100%)}}
           .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:45px;display:flex;align-items:center;justify-content:center}
           .loading-visual-container canvas{display:block;position:relative;z-index:2}
-          .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;opacity:0.92}
+          .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap}
           .loading-scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.09) 2px,rgba(0,0,0,0.09) 4px)}
           .loading-vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.7) 100%)}
           .loading-noise{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:11;opacity:0.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:200px 200px}
@@ -542,55 +553,59 @@ export default function Home(){
 
       {!welcomed&&<LoadingScreen onComplete={handleLoadingComplete}/>}
 
-      <Header label={headerLabel} scrolled={scrolled} showInfo={showInfoPopup} toggleInfo={toggleInfoPopup} infoClosing={infoClosing} showTech={showTechPopup} toggleTech={toggleTechPopup} techClosing={techClosing}/>
+      {loadingComplete&&(
+        <>
+          <Header label={headerLabel} scrolled={scrolled} showInfo={showInfoPopup} toggleInfo={toggleInfoPopup} infoClosing={infoClosing} showTech={showTechPopup} toggleTech={toggleTechPopup} techClosing={techClosing}/>
 
-      <ToastContainer toast={currentToast} closeToast={manualCloseToast}/>
+          <ToastContainer toast={currentToast} closeToast={manualCloseToast}/>
 
-      <main className="container">
-        <div className="page-header">
-          <div className="title-row">
-            <h1 className="page-title">{pageTitle}</h1>
-            <button className={`hero-toggle ${heroOpen?'open':''}`} onClick={toggleHero}>
-              <i className="fas fa-chevron-down"></i>
-            </button>
-          </div>
-          <div className="status-dots">
-            <span className="dot red"></span>
-            <span className="dot yellow"></span>
-            <span className="dot green"></span>
-          </div>
-        </div>
+          <main className="container">
+            <div className="page-header">
+              <div className="title-row">
+                <h1 className="page-title">{pageTitle}</h1>
+                <button className={`hero-toggle ${heroOpen?'open':''}`} onClick={toggleHero}>
+                  <i className="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div className="status-dots">
+                <span className="dot red"></span>
+                <span className="dot yellow"></span>
+                <span className="dot green"></span>
+              </div>
+            </div>
 
-        {heroOpen&&(
-          <div className={`section-hero ${heroClosing?'closing':''}`}>
-            {SECTION_HERO[searchActive?'search':activeSection]}
-          </div>
-        )}
+            {heroOpen&&(
+              <div className={`section-hero ${heroClosing?'closing':''}`}>
+                {SECTION_HERO[searchActive?'search':activeSection]}
+              </div>
+            )}
 
-        {loading&&(searchActive||releases.length===0)&&(
-          <div className="empty-state"><div className="spinner"></div></div>
-        )}
+            {loading&&(searchActive||releases.length===0)&&(
+              <div className="empty-state"><div className="spinner"></div></div>
+            )}
 
-        {searchActive&&!loading&&searchResults.length===0&&searchQuery.trim()&&(
-          <div className="empty-state"><i className="fas fa-ghost"></i><p>Nada encontrado</p></div>
-        )}
+            {searchActive&&!loading&&searchResults.length===0&&searchQuery.trim()&&(
+              <div className="empty-state"><i className="fas fa-ghost"></i><p>Nada encontrado</p></div>
+            )}
 
-        {activeList.length>0&&!loading&&(
-          <div className="content-grid" key={activeSection+(searchActive?'-search':'')}>
-            {activeList.map(item=>(
-              <MovieCard key={getItemKey(item)} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-            ))}
-          </div>
-        )}
+            {activeList.length>0&&!loading&&(
+              <div className="content-grid" key={activeSection+(searchActive?'-search':'')}>
+                {activeList.map(item=>(
+                  <MovieCard key={getItemKey(item)} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            )}
 
-        {!searchActive&&activeSection==='favorites'&&favorites.length===0&&!loading&&(
-          <div className="empty-state"><i className="far fa-folder-open"></i><p>Lista vazia</p></div>
-        )}
+            {!searchActive&&activeSection==='favorites'&&favorites.length===0&&!loading&&(
+              <div className="empty-state"><i className="far fa-folder-open"></i><p>Lista vazia</p></div>
+            )}
 
-        <Footer/>
-      </main>
+            <Footer/>
+          </main>
 
-      <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} searchActive={searchActive} setSearchActive={setSearchActive} searchQuery={searchQuery} setSearchQuery={handleSearchChange} onSearchSubmit={debouncedSearch} inputRef={searchInputRef}/>
+          <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} searchActive={searchActive} setSearchActive={setSearchActive} searchQuery={searchQuery} setSearchQuery={handleSearchChange} onSearchSubmit={debouncedSearch} inputRef={searchInputRef}/>
+        </>
+      )}
     </>
   )
   }
