@@ -30,6 +30,7 @@ export const LoadingScreen=({onComplete})=>{
   const timeRef=useRef(0)
   const[closing,setClosing]=useState(false)
   const[mounted,setMounted]=useState(true)
+  const[userClicked,setUserClicked]=useState(false)
 
   useEffect(()=>{
     const canvas=canvasRef.current
@@ -90,15 +91,15 @@ export const LoadingScreen=({onComplete})=>{
 
     animate()
 
-    const timer=setTimeout(()=>{
-      setClosing(true)
-    },1800)
-
     return()=>{
-      clearTimeout(timer)
       if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
     }
   },[])
+
+  const handleEnter=()=>{
+    setUserClicked(true)
+    setClosing(true)
+  }
 
   useEffect(()=>{
     if(closing){
@@ -118,6 +119,22 @@ export const LoadingScreen=({onComplete})=>{
       <div className="loading-visual-container">
         <canvas ref={canvasRef} width="280" height="280"></canvas>
       </div>
+      <button className="loading-enter-btn" onClick={handleEnter}>
+        <span>Entrar</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 74 74"
+          height="34"
+          width="34"
+        >
+          <circle stroke-width="3" stroke="white" r="35.5" cy="37" cx="37"></circle>
+          <path
+            fill="white"
+            d="M25 35.5C24.1716 35.5 23.5 36.1716 23.5 37C23.5 37.8284 24.1716 38.5 25 38.5V35.5ZM49.0607 38.0607C49.6464 37.4749 49.6464 36.5251 49.0607 35.9393L39.5147 26.3934C38.9289 25.8076 37.9792 25.8076 37.3934 26.3934C36.8076 26.9792 36.8076 27.9289 37.3934 28.5147L45.8787 37L37.3934 45.4853C36.8076 46.0711 36.8076 47.0208 37.3934 47.6066C37.9792 48.1924 38.9289 48.1924 39.5147 47.6066L49.0607 38.0607ZM25 38.5L48 38.5V35.5L25 35.5V38.5Z"
+          ></path>
+        </svg>
+      </button>
       <div className="loading-brand-text">YOSHIKAWA ESM</div>
       <div className="loading-scanlines"></div>
       <div className="loading-vignette"></div>
@@ -438,8 +455,13 @@ export default function Home(){
           .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideUp 0.6s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
           .loading-overlay.closing{animation-play-state:running}
           @keyframes loadingSlideUp{from{transform:translateY(0)}to{transform:translateY(-100%)}}
-          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:45px;display:flex;align-items:center;justify-content:center}
+          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:24px;display:flex;align-items:center;justify-content:center}
           .loading-visual-container canvas{display:block;position:relative;z-index:2}
+          .loading-enter-btn{cursor:pointer;font-weight:700;transition:all 0.2s;padding:10px 20px;border-radius:100px;background:#DA7757;border:1px solid transparent;display:flex;align-items:center;font-size:15px;color:#ffffff;z-index:13;position:relative;margin-bottom:32px}
+          .loading-enter-btn:hover{background:#c96a4d}
+          .loading-enter-btn>svg{width:34px;margin-left:10px;transition:transform 0.3s ease-in-out}
+          .loading-enter-btn:hover svg{transform:translateX(5px)}
+          .loading-enter-btn:active{transform:scale(0.95)}
           .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap}
           .loading-scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.09) 2px,rgba(0,0,0,0.09) 4px)}
           .loading-vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.7) 100%)}
@@ -544,8 +566,9 @@ export default function Home(){
             .page-title{font-size:1.3rem}
             .dot{width:8px;height:8px}
             .status-dots{gap:6px}
-            .loading-visual-container{width:220px;height:220px;margin-bottom:32px}
+            .loading-visual-container{width:220px;height:220px;margin-bottom:20px}
             .loading-visual-container canvas{width:220px;height:220px}
+            .loading-enter-btn{margin-bottom:24px}
             .loading-brand-text{font-size:1rem;bottom:24px}
           }
         `}</style>
@@ -608,4 +631,4 @@ export default function Home(){
       )}
     </>
   )
-  }
+                                                   }
