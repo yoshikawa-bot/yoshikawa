@@ -1,4 +1,3 @@
-// pages/index.js
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -82,10 +81,10 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick }) => {
 
 export const BottomNav = ({ activeSection, setActiveSection }) => (
   <nav className="bottom-nav">
-    <button className={`nav-item ${activeSection==='home'?'active':''}`} onClick={()=>setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
-    <button className={`nav-item ${activeSection==='animes'?'active':''}`} onClick={()=>setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
-    <button className={`nav-item ${activeSection==='favorites'?'active':''}`} onClick={()=>setActiveSection('favorites')}><i className="fas fa-heart" /><span>Favoritos</span></button>
-    <button className={`nav-item ${activeSection==='menu'?'active':''}`} onClick={()=>setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
+    <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
+    <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
+    <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart" /><span>Favoritos</span></button>
+    <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
   </nav>
 )
 
@@ -93,7 +92,7 @@ export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
     <div className="trending-card" onClick={() => onPlay?.(item)}>
-      <img src={backdropUrl} alt={item.title||item.name} className="trending-bg-img" />
+      <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
     </div>
   )
 }
@@ -102,9 +101,9 @@ export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
     <div className="episode-card" onClick={() => onPlay?.(item)}>
-      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name||item.title} className="episode-img" /></div>
-      <h4 className="episode-title">{item.name||item.title}</h4>
-      <p className="episode-info">Em exibição • {year||'N/A'}</p>
+      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
+      <h4 className="episode-title">{item.name || item.title}</h4>
+      <p className="episode-info">Em exibição • {year || 'N/A'}</p>
     </div>
   )
 }
@@ -112,22 +111,23 @@ export const EpisodeCard = ({ item, onPlay }) => {
 export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const year = getItemYear(item)
   const ratingClass = item.adult ? 'rating-18' : 'rating-L'
+  const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
   return (
     <div className="featured-card">
-      <div className="featured-poster"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title||item.name} className="featured-img" /></div>
+      <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
       <div className="featured-details">
         <div className="featured-text">
-          <h2 className="featured-title">{item.title||item.name}</h2>
+          <h2 className="featured-title">{item.title || item.name}</h2>
           <div className="featured-meta">
-            <span className={`featured-rating ${ratingClass}`}>{item.adult?'18+':'L'}</span>
-            <span className="featured-genre">{item.genre||'Ação'}</span>
+            <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
+            <span className="featured-genre">{item.genre || 'Ação'}</span>
             {year && <span className="featured-year">{year}</span>}
           </div>
-          <p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p>
+          <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
         </div>
         <div className="featured-actions">
-          <button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play" /></button>
-          <button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info" /></button>
+          <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
+          <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
         </div>
       </div>
     </div>
@@ -140,7 +140,7 @@ export const MovieCard = ({ item }) => {
   return (
     <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
       <div className="card-poster-frame">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title||item.name} className="content-poster" loading="lazy" />
+        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
       </div>
     </div>
   )
@@ -155,12 +155,12 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
       <div className="favorite-content">
         <h3 className="favorite-title">{item.title}</h3>
         {year && <p className="favorite-year">{year}</p>}
-        <p className="favorite-episodes">{item.episodes||'12 Episódios'}</p>
-        <div className="favorite-badge" style={{background: mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>
-          {mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}
+        <p className="favorite-episodes">{item.episodes || '12 Episódios'}</p>
+        <div className="favorite-badge" style={{ background: mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#8B4A4A' }}>
+          {mediaType === 'anime' ? 'Anime' : mediaType === 'tv' ? 'Série' : 'Filme'}
         </div>
       </div>
-      <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times" /></button>
+      <button className="favorite-remove" onClick={(e) => { e.stopPropagation(); onRemove?.(item) }}><i className="fas fa-times" /></button>
     </div>
   )
 }
@@ -170,13 +170,13 @@ export const SearchResultItem = ({ item, onClick }) => {
   const year = getItemYear(item)
   return (
     <div className="search-result-item" onClick={() => onClick?.(item)}>
-      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster" />
+      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="search-result-poster" />
       <div className="search-result-content">
-        <h3 className="search-result-title">{item.title||item.name}</h3>
+        <h3 className="search-result-title">{item.title || item.name}</h3>
         {year && <p className="search-result-year">{year}</p>}
         <p className="search-result-episodes">{item.popularity ? `${Math.round(item.popularity)} Popularidade` : '12 Episódios'}</p>
-        <div className="search-result-badge" style={{background: mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>
-          {mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}
+        <div className="search-result-badge" style={{ background: mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#8B4A4A' }}>
+          {mediaType === 'anime' ? 'Anime' : mediaType === 'tv' ? 'Série' : 'Filme'}
         </div>
       </div>
     </div>
@@ -184,9 +184,9 @@ export const SearchResultItem = ({ item, onClick }) => {
 }
 
 export const CategoryCard = ({ category }) => (
-  <div className="category-card" style={{background: category.color}}>
+  <div className="category-card" style={{ background: category.color }}>
     <h3 className="category-title">{category.name}</h3>
-    <img src={category.image||DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e=>{e.target.src=DEFAULT_POSTER}} />
+    <img src={category.image || DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e => { e.target.src = DEFAULT_POSTER }} />
   </div>
 )
 
@@ -199,7 +199,7 @@ export const SettingsItem = ({ icon, title, description, onClick }) => (
 
 export const LogoutConfirm = ({ onConfirm, onCancel }) => (
   <div className="profile-creation-overlay" onClick={onCancel}>
-    <div className="logout-confirm-modal" onClick={e=>e.stopPropagation()}>
+    <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
         <h3 className="logout-confirm-title">Sair do perfil</h3>
         <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times" /></button>
@@ -231,12 +231,12 @@ export const ProfileCreation = ({ onCreate, onClose }) => {
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
         <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
-        <div className="profile-avatar-preview" style={{background: selectedColor}}>
+        <div className="profile-avatar-preview" style={{ background: selectedColor }}>
           {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
         </div>
-        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e=>{setName(e.target.value);setError('')}} maxLength={20} autoFocus />
+        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
         {error && <p className="profile-error">{error}</p>}
-        <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor===color?'selected':''}`} style={{background:color}} onClick={()=>setSelectedColor(color)} />)}</div>
+        <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />)}</div>
         <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
         <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
       </div>
@@ -248,28 +248,28 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
-      <div className="profile-view-modal" onClick={e=>e.stopPropagation()}>
+      <div className="profile-view-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="profile-view-name">{userProfile.name}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
-        <div className="profile-view-avatar" style={{background: userProfile.color, margin: '0 auto 24px'}}>
+        <div className="profile-view-avatar" style={{ background: userProfile.color, margin: '0 auto 24px' }}>
           <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" />
         </div>
         <div className="profile-view-stats">
-          <div className="profile-stat"><span className="profile-stat-value">{userProfile.favoritesCount||0}</span><span className="profile-stat-label">Favoritos</span></div>
-          <div className="profile-stat"><span className="profile-stat-value">{userProfile.createdAt?new Date(userProfile.createdAt).toLocaleDateString():'Hoje'}</span><span className="profile-stat-label">Membro desde</span></div>
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.favoritesCount || 0}</span><span className="profile-stat-label">Favoritos</span></div>
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span><span className="profile-stat-label">Membro desde</span></div>
         </div>
-        <button className="profile-logout-btn" onClick={()=>setShowLogoutConfirm(true)}><i className="fas fa-sign-out-alt" /> Sair da conta</button>
+        <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}><i className="fas fa-sign-out-alt" /> Sair da conta</button>
       </div>
-      {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={()=>setShowLogoutConfirm(false)} />}
+      {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </div>
   )
 }
 
 export const AboutModal = ({ onClose }) => (
   <div className="profile-creation-overlay" onClick={onClose}>
-    <div className="about-modal" onClick={e=>e.stopPropagation()}>
+    <div className="about-modal" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
         <h2 className="about-title">Yoshikawa Player</h2>
         <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
@@ -483,7 +483,7 @@ export default function Home() {
       )}
       <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(28px,4vw,40px)', color: '#fff' }} />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(24px,4vw,36px)', color: '#fff', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
