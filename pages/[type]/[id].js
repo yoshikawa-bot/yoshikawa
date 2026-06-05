@@ -5,14 +5,56 @@ import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
+const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
+const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
-const LoadingScreen = ({ visible }) => (
-  <div className={`loading-overlay${!visible ? ' fade-out' : ''}`}>
-    <div className="loading-spinner">
-      {[...Array(12)].map((_, i) => <span key={i}></span>)}
-    </div>
+const getAvatarUrl = (name, color) => {
+  const bg = color?.replace('#', '') || '4D4BAF'
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&bold=true&format=svg`
+}
+
+const ContentLoader = () => (
+  <div className="content-loader">
+    <div className="loading-spinner" />
   </div>
 )
+
+const ProfileCreation = ({ onCreate, onClose }) => {
+  const [name, setName] = useState('')
+  const [selectedColor, setSelectedColor] = useState(PROFILE_COLORS[0])
+  const [error, setError] = useState('')
+
+  const handleSubmit = () => {
+    const trimmed = name.trim()
+    if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
+    if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
+    onCreate({ name: trimmed, color: selectedColor })
+  }
+
+  return (
+    <div className="profile-overlay">
+      <div className="profile-card">
+        <div className="modal-header">
+          <h2 className="modal-title">Criar Perfil</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <p className="modal-subtitle">Escolha seu nome e cor para continuar</p>
+        <div className="profile-avatar-preview" style={{ background: selectedColor }}>
+          {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
+        </div>
+        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
+        {error && <p className="profile-error">{error}</p>}
+        <div className="profile-colors">
+          {PROFILE_COLORS.map(color => (
+            <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />
+          ))}
+        </div>
+        <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
+        <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
+      </div>
+    </div>
+  )
+}
 
 export default function WatchPage() {
   const router = useRouter()
@@ -30,7 +72,17 @@ export default function WatchPage() {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
+  const [userProfile, setUserProfile] = useState(null)
+  const [showProfileCreation, setShowProfileCreation] = useState(false)
+
   const contentLoaded = useRef(false)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('yoshikawaProfile')
+      if (saved) setUserProfile(JSON.parse(saved))
+    } catch (e) {}
+  }, [])
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -56,10 +108,22 @@ export default function WatchPage() {
   }, [id, type])
 
   useEffect(() => {
+    contentLoaded.current = false
+    setContent(null)
+    setIsLoading(true)
+    setSeason(1)
+    setEpisode(1)
+    setSeasonData(null)
+    setAllSeasonsData({})
+    setWatchedEps(new Set())
+  }, [id, type])
+
+  useEffect(() => {
     if (!id || !type || contentLoaded.current) return
     const load = async () => {
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
+        if (!res.ok) throw new Error('Erro na API')
         const data = await res.json()
         setContent(data)
         if (type === 'tv') {
@@ -109,6 +173,10 @@ export default function WatchPage() {
 
   const toggleFavorite = () => {
     if (!content) return
+    if (!userProfile) {
+      setShowProfileCreation(true)
+      return
+    }
     try {
       const stored = localStorage.getItem('yoshikawaFavorites')
       let favs = stored ? JSON.parse(stored) : []
@@ -171,14 +239,20 @@ export default function WatchPage() {
     if (!content) return ''
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      if (imdbId) return `https://superflixapi.best/filme/${imdbId}`
-      return `https://superflixapi.best/filme/${id}`
+      return imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
     }
     return `https://superflixapi.best/serie/${id}/${season}/${episode}`
   }
 
   const handleShare = () => {
     if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href })
+  }
+
+  const handleCreateProfile = (profile) => {
+    const newProfile = { ...profile, createdAt: new Date().toISOString(), favoritesCount: 0 }
+    setUserProfile(newProfile)
+    try { localStorage.setItem('yoshikawaProfile', JSON.stringify(newProfile)) } catch (e) {}
+    setShowProfileCreation(false)
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -198,23 +272,9 @@ export default function WatchPage() {
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body { font-family: 'Inter', sans-serif; background: #050505; color: #fff; line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 
-          .loading-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #050505; }
-          .loading-overlay.fade-out { display: none; }
-          .loading-spinner { width: 48px; height: 48px; position: relative; }
-          .loading-spinner span { position: absolute; top: 0; left: 50%; width: 3px; height: 11px; margin-left: -1.5px; border-radius: 999px; background: rgba(255,255,255,0.15); transform-origin: center 24px; animation: spinTick 1s linear infinite; }
-          .loading-spinner span:nth-child(1) { transform: rotate(0deg); animation-delay: -0.917s; }
-          .loading-spinner span:nth-child(2) { transform: rotate(30deg); animation-delay: -0.833s; }
-          .loading-spinner span:nth-child(3) { transform: rotate(60deg); animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(4) { transform: rotate(90deg); animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(5) { transform: rotate(120deg); animation-delay: -0.583s; }
-          .loading-spinner span:nth-child(6) { transform: rotate(150deg); animation-delay: -0.500s; }
-          .loading-spinner span:nth-child(7) { transform: rotate(180deg); animation-delay: -0.417s; }
-          .loading-spinner span:nth-child(8) { transform: rotate(210deg); animation-delay: -0.333s; }
-          .loading-spinner span:nth-child(9) { transform: rotate(240deg); animation-delay: -0.250s; }
-          .loading-spinner span:nth-child(10) { transform: rotate(270deg); animation-delay: -0.167s; }
-          .loading-spinner span:nth-child(11) { transform: rotate(300deg); animation-delay: -0.083s; }
-          .loading-spinner span:nth-child(12) { transform: rotate(330deg); animation-delay: 0s; }
-          @keyframes spinTick { 0% { background: rgba(255,255,255,0.85); } 100% { background: rgba(255,255,255,0.10); } }
+          .content-loader { display: flex; align-items: center; justify-content: center; padding: clamp(60px,10vw,100px) 0; }
+          .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+          @keyframes spin { to { transform: rotate(360deg); } }
 
           .hero { position: relative; width: 100%; height: clamp(450px, 60vw, 620px); overflow: hidden; }
           .hero-bg { width: 100%; height: 100%; object-fit: cover; }
@@ -269,13 +329,31 @@ export default function WatchPage() {
           .nav-ep-btn:hover { background: rgba(255,255,255,0.2); }
           .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+          .profile-overlay { position: fixed; inset: 0; z-index: 10000; background: #101010; display: flex; align-items: center; justify-content: center; padding: 20px; }
+          .profile-card { background: #1B1B1B; border-radius: 24px; padding: clamp(24px,4vw,40px); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: clamp(16px,2.5vw,24px); }
+          .modal-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+          .modal-close-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; background: none; border: none; cursor: pointer; flex-shrink: 0; }
+          .modal-title { font-size: 28px; font-weight: 800; color: #fff; margin: 0; }
+          .modal-subtitle { font-size: 16px; color: #888; text-align: center; width: 100%; }
+          .profile-avatar-preview { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 40px; font-weight: 700; overflow: hidden; }
+          .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+          .profile-name-input { width: 100%; padding: 12px 16px; border-radius: 12px; background: #2a2a2a; border: 1px solid #333; color: #fff; font-size: 16px; outline: none; text-align: center; }
+          .profile-error { color: #E04E4E; font-size: 13px; }
+          .profile-colors { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+          .profile-color-btn { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; transition: border-color 0.2s; }
+          .profile-color-btn.selected { border-color: #fff; }
+          .profile-terms { font-size: 13px; color: #888; text-align: center; padding: 0 10px; }
+          .profile-terms strong { color: #ddd; }
+          .profile-create-btn { width: 100%; padding: 14px; border-radius: 14px; background: #fff; color: #000; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+          .profile-create-btn:hover { opacity: 0.9; }
+
           @media (min-width: 768px) {
             .ep-thumb { width: 170px; height: 95px; }
           }
         `}</style>
       </Head>
 
-      <LoadingScreen visible={isLoading} />
+      {isLoading && <ContentLoader />}
 
       {content && (
         <>
@@ -284,12 +362,12 @@ export default function WatchPage() {
             <div className="hero-gradient" />
             <div className="top-bar">
               <Link href="/" className="top-btn">
-                <i className="fas fa-arrow-left"></i>
+                <i className="fas fa-arrow-left" />
               </Link>
             </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}>
-                <i className="fas fa-play"></i> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
+                <i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
               </button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
@@ -302,15 +380,15 @@ export default function WatchPage() {
 
           <div className="social-bar">
             <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
-              <i className="fas fa-thumbs-up"></i>
+              <i className="fas fa-thumbs-up" />
               <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
             </button>
             <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
-              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
               <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
             </button>
             <button className="social-item" onClick={handleShare}>
-              <i className="fas fa-share-alt"></i>
+              <i className="fas fa-share-alt" />
               <span>Compartilhar</span>
             </button>
           </div>
@@ -319,7 +397,7 @@ export default function WatchPage() {
             <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {hasLongSynopsis && (
               <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
-                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`}></i>
+                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
               </button>
             )}
           </div>
@@ -333,7 +411,7 @@ export default function WatchPage() {
                   ))}
                 </select>
                 <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
-                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort"></i>
+                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" />
                 </button>
               </div>
 
@@ -345,7 +423,7 @@ export default function WatchPage() {
                     <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
                         {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
-                          <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image"></i></div>
+                          <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
                         )}
                         {watched && <div className="watched-label">Assistido</div>}
                       </div>
@@ -374,7 +452,7 @@ export default function WatchPage() {
                 if (type === 'tv') {
                   try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode })) } catch (e) {}
                 }
-              }}><i className="fas fa-times"></i></button>
+              }}><i className="fas fa-times" /></button>
             </div>
             <div className="player-frame">
               <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
@@ -388,7 +466,7 @@ export default function WatchPage() {
                     markWatched(season, prevEp)
                   }
                 }} disabled={episode === 1}>
-                  <i className="fas fa-backward"></i> Anterior
+                  <i className="fas fa-backward" /> Anterior
                 </button>
                 <button className="nav-ep-btn" onClick={() => {
                   if (seasonData && episode < seasonData.episodes.length) {
@@ -397,13 +475,20 @@ export default function WatchPage() {
                     markWatched(season, nextEp)
                   }
                 }}>
-                  Próximo <i className="fas fa-forward"></i>
+                  Próximo <i className="fas fa-forward" />
                 </button>
               </div>
             )}
           </div>
         </div>
       )}
+
+      {showProfileCreation && (
+        <ProfileCreation
+          onCreate={handleCreateProfile}
+          onClose={() => setShowProfileCreation(false)}
+        />
+      )}
     </>
   )
-        }
+  }
