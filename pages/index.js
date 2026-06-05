@@ -2,8 +2,8 @@ import{useState,useEffect,useRef,useCallback}from'react'
 import Head from'next/head'
 
 const TMDB_API_KEY='66223dd3ad2885cf1129b181c7826287'
-const DEFAULT_POSTER='https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
-const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/fec8bb6d.png'
+const DEFAULT_POSTER='https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
+const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/a9a3ec25.png'
 
 const PROFILE_COLORS=['#E04E4E','#4D4BAF','#4A8B4A','#E97820','#9D95C8','#3F6D89','#C43708','#43A45D','#E38CA8','#72615F']
 
@@ -20,7 +20,7 @@ const CATEGORIES=[
   {name:'Sobrenatural',color:'#9D95C8',image:'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg'}
 ]
 
-const FILTERS=['Tudo','Filmes','Séries','Animes']
+const FAVORITE_FILTERS=['Tudo','Filmes','Séries']
 const SEARCH_FILTERS=['Tudo','Animes','Filmes','Séries']
 
 const useDebounce=(callback,delay)=>{
@@ -68,14 +68,14 @@ export const LoadingScreen=({onComplete})=>{
 
 export const ContentLoader=()=>(<div className="content-loader"><div className="loading-spinner"></div></div>)
 
-export const Header=({onSearchClick,userProfile})=>{
+export const Header=({onSearchClick,userProfile,onProfileClick})=>{
   const avatarSize='clamp(40px,6vw,60px)'
   return(
     <header className="header">
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{width:avatarSize,height:avatarSize}}/>
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search"></i></button>
-        <button className="header-btn profile-btn" style={userProfile?{background:userProfile.color}:{}}>
+        <button className="header-btn profile-btn" style={userProfile?{background:userProfile.color}:{}} onClick={onProfileClick}>
           {userProfile?<img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>:<i className="fas fa-user"></i>}
         </button>
       </div>
@@ -120,7 +120,18 @@ export const MovieCard=({item,isFavorite,toggleFavorite,userProfile})=>{
 export const FavoriteItem=({item,onRemove,onClick})=>{
   const mediaType=item.media_type||'movie'
   const year=getItemYear(item)
-  return(<div className="favorite-item" onClick={()=>onClick?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/><div className="favorite-content"><h3 className="favorite-title">{item.title}</h3>{year&&<p className="favorite-year">{year}</p>}<p className="favorite-episodes">{item.episodes||'12 Episódios'}</p><div className="favorite-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div></div><button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times"></i></button></div>)
+  return(
+    <div className="favorite-item" onClick={()=>onClick?.(item)}>
+      <img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/>
+      <div className="favorite-content">
+        <h3 className="favorite-title">{item.title}</h3>
+        {year&&<p className="favorite-year">{year}</p>}
+        <p className="favorite-episodes">{item.episodes||'12 Episódios'}</p>
+        <div className="favorite-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div>
+      </div>
+      <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times"></i></button>
+    </div>
+  )
 }
 
 export const SearchResultItem=({item,onClick})=>{
@@ -140,6 +151,20 @@ export const SettingsItem=({icon,title,description,onClick})=>(
   <div className="settings-item" onClick={onClick}>
     <div className="settings-icon"><i className={`fas fa-${icon}`}></i></div>
     <div className="settings-content"><h4 className="settings-title">{title}</h4><p className="settings-desc">{description}</p></div>
+  </div>
+)
+
+export const LogoutConfirm=({onConfirm,onCancel})=>(
+  <div className="profile-creation-overlay" onClick={onCancel}>
+    <div className="logout-confirm-modal" onClick={e=>e.stopPropagation()}>
+      <button className="profile-close-btn" onClick={onCancel}><i className="fas fa-times"></i></button>
+      <h3 className="logout-confirm-title">Sair do perfil</h3>
+      <p className="logout-confirm-text">Ao sair, todos os seus favoritos serão perdidos permanentemente. Deseja continuar?</p>
+      <div className="logout-confirm-actions">
+        <button className="logout-cancel-btn" onClick={onCancel}>Cancelar</button>
+        <button className="logout-confirm-btn" onClick={onConfirm}>Sair e limpar dados</button>
+      </div>
+    </div>
   </div>
 )
 
@@ -174,6 +199,37 @@ export const ProfileCreation=({onCreate,onClose})=>{
   )
 }
 
+export const ProfileView=({userProfile,onLogout,onClose})=>{
+  const[showLogoutConfirm,setShowLogoutConfirm]=useState(false)
+  return(
+    <div className="profile-creation-overlay" onClick={onClose}>
+      <div className="profile-view-modal" onClick={e=>e.stopPropagation()}>
+        <button className="profile-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
+        <div className="profile-view-header">
+          <div className="profile-view-avatar" style={{background:userProfile.color}}>
+            <img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>
+          </div>
+          <h2 className="profile-view-name">{userProfile.name}</h2>
+        </div>
+        <div className="profile-view-stats">
+          <div className="profile-stat">
+            <span className="profile-stat-value">{userProfile.favoritesCount||0}</span>
+            <span className="profile-stat-label">Favoritos</span>
+          </div>
+          <div className="profile-stat">
+            <span className="profile-stat-value">{userProfile.createdAt?new Date(userProfile.createdAt).toLocaleDateString():'Hoje'}</span>
+            <span className="profile-stat-label">Membro desde</span>
+          </div>
+        </div>
+        <button className="profile-logout-btn" onClick={()=>setShowLogoutConfirm(true)}>
+          <i className="fas fa-sign-out-alt"></i> Sair da conta
+        </button>
+      </div>
+      {showLogoutConfirm&&<LogoutConfirm onConfirm={onLogout} onCancel={()=>setShowLogoutConfirm(false)}/>}
+    </div>
+  )
+}
+
 export const AboutModal=({onClose})=>(
   <div className="profile-creation-overlay" onClick={onClose}>
     <div className="about-modal" onClick={e=>e.stopPropagation()}>
@@ -198,6 +254,7 @@ export default function Home(){
   const[loadingComplete,setLoadingComplete]=useState(false)
   const[userProfile,setUserProfile]=useState(null)
   const[showProfileCreation,setShowProfileCreation]=useState(false)
+  const[showProfileView,setShowProfileView]=useState(false)
   const[showAbout,setShowAbout]=useState(false)
   const[contentLoading,setContentLoading]=useState(true)
   const[trending,setTrending]=useState([])
@@ -222,7 +279,7 @@ export default function Home(){
 
   useEffect(()=>{
     try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}else{setWelcomed(false)}}catch{setWelcomed(false)}
-    try{const saved=localStorage.getItem('yoshikawaProfile');if(saved)setUserProfile(JSON.parse(saved))}catch{}
+    try{const saved=localStorage.getItem('yoshikawaProfile');if(saved){const p=JSON.parse(saved);p.favoritesCount=JSON.parse(localStorage.getItem('yoshikawaFavorites')||'[]').length;setUserProfile(p)}}catch{}
   },[])
 
   const handleLoadingComplete=()=>{
@@ -239,24 +296,25 @@ export default function Home(){
     setContentLoading(true)
     try{
       const[trendingMovies,nowPlaying,onAir,upcoming,popular,dubbedShows,adventureShows,comedyShows,romanceShows,topRated,animeMovies,animeTV]=await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_original_language=pt`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749`),
-        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`)
+        fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_original_language=pt&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`)
       ])
-      setTrending(trendingMovies.filter(i=>i.poster_path).slice(0,10))
+      const filterQuality=(items)=>items.filter(i=>i.poster_path&&i.vote_count>50&&i.popularity>10)
+      setTrending(filterQuality(trendingMovies).slice(0,10))
       setNewEpisodes(onAir.filter(i=>i.poster_path).slice(0,10))
       setRecentlyAdded(nowPlaying.filter(i=>i.poster_path).slice(0,10))
       setWeeklies(upcoming.filter(i=>i.poster_path).slice(0,10))
-      setFeatured(trendingMovies.filter(i=>i.poster_path)[0]||null)
+      setFeatured(filterQuality(trendingMovies)[0]||null)
       setDubbed(dubbedShows.filter(i=>i.poster_path).slice(0,10))
       setAdventure(adventureShows.filter(i=>i.poster_path).slice(0,10))
       setComedy(comedyShows.filter(i=>i.poster_path).slice(0,10))
@@ -281,7 +339,7 @@ export default function Home(){
   }
 
   const loadFavorites=()=>{
-    try{const s=localStorage.getItem('yoshikawaFavorites');if(s)setFavorites(JSON.parse(s))}catch{setFavorites([])}
+    try{const s=localStorage.getItem('yoshikawaFavorites');setFavorites(s?JSON.parse(s):[])}catch{setFavorites([])}
   }
 
   const isFavorite=(item)=>favorites.some(f=>f.id===item.id&&f.media_type===item.media_type)
@@ -316,15 +374,25 @@ export default function Home(){
       localStorage.removeItem('yoshikawaProfile')
       localStorage.removeItem('yoshikawaFavorites')
     }catch{}
+    setShowProfileView(false)
   }
 
   const handlePlay=(item)=>window.location.href=`/${item.media_type}/${item.id}`
   const handleInfo=(item)=>window.location.href=`/${item.media_type}/${item.id}`
 
   const handleCreateProfile=(profile)=>{
-    setUserProfile(profile)
-    try{localStorage.setItem('yoshikawaProfile',JSON.stringify(profile))}catch{}
+    const newProfile={...profile,createdAt:new Date().toISOString(),favoritesCount:0}
+    setUserProfile(newProfile)
+    try{localStorage.setItem('yoshikawaProfile',JSON.stringify(newProfile))}catch{}
     setShowProfileCreation(false)
+  }
+
+  const handleProfileClick=()=>{
+    if(userProfile){
+      setShowProfileView(true)
+    }else{
+      setShowProfileCreation(true)
+    }
   }
 
   const fetchSearchResults=async(query)=>{
@@ -366,7 +434,6 @@ export default function Home(){
   const filteredFavorites=activeFilter==='Tudo'?favorites:
     activeFilter==='Filmes'?favorites.filter(f=>f.media_type==='movie'):
     activeFilter==='Séries'?favorites.filter(f=>f.media_type==='tv'):
-    activeFilter==='Animes'?favorites.filter(f=>f.media_type==='anime'):
     favorites
 
   const renderHomePage=()=>{
@@ -402,7 +469,7 @@ export default function Home(){
   const renderFavoritesPage=()=>(
     <section className="section">
       <h2 className="section-title" style={{fontSize:'clamp(24px,5vw,34px)',fontWeight:'800'}}>Favoritos</h2>
-      <div className="filters-container">{FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
+      <div className="filters-container">{FAVORITE_FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
         {filteredFavorites.length===0?<div className="empty-favorites"><i className="far fa-heart" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i><p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum favorito encontrado</p></div>
         :filteredFavorites.map(item=><FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay}/>)}
@@ -432,7 +499,7 @@ export default function Home(){
         </>
       ):(
         <>
-          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>{FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
+          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>{FAVORITE_FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
           <section className="section"><h2 className="section-title" style={{fontSize:'clamp(24px,5vw,38px)',fontWeight:'800'}}>Categorias</h2><div className="categories-grid">{CATEGORIES.map((category,index)=><CategoryCard key={index} category={category}/>)}</div></section>
         </>
       )}
@@ -441,13 +508,15 @@ export default function Home(){
 
   const renderMenuPage=()=>(
     <section className="section" style={{paddingTop:'clamp(40px,8vw,80px)'}}>
-      <div className="menu-banner-container"><div className="verify-banner"><span>Verifique sua conta para personalização e comentários!</span><i className="fas fa-chevron-right"></i></div></div>
-      <div className="user-card" onClick={()=>!userProfile&&setShowProfileCreation(true)}>
+      {!userProfile&&(
+        <div className="menu-banner-container"><div className="verify-banner"><span>Crie seu perfil para salvar favoritos e personalizar sua experiência!</span><i className="fas fa-chevron-right"></i></div></div>
+      )}
+      <div className="user-card" onClick={()=>!userProfile?setShowProfileCreation(true):setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile?{background:userProfile.color}:{}}>
           {userProfile?<img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>:<i className="fas fa-user" style={{fontSize:'clamp(28px,4vw,40px)',color:'#666'}}></i>}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile?userProfile.name:'@user'}</h3>{!userProfile&&<p className="user-email">Criar perfil</p>}</div>
-        {userProfile&&<button className="logout-btn" onClick={(e)=>{e.stopPropagation();handleLogout()}}><i className="fas fa-sign-out-alt"></i></button>}
+        {userProfile&&<button className="logout-btn" onClick={(e)=>{e.stopPropagation();setShowProfileView(true)}}><i className="fas fa-sign-out-alt"></i></button>}
       </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile?'Editar Perfil':'Criar Perfil'} description={userProfile?'Alterar nome e cor':'Personalize sua experiência'} onClick={()=>setShowProfileCreation(true)}/>
@@ -493,7 +562,7 @@ export default function Home(){
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;background:#2a2a2a;color:#666;font-size:clamp(20px,3vw,28px);overflow:hidden}
+          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;background:#2a2a2a;color:#666;font-size:clamp(20px,3vw,28px);overflow:hidden;cursor:pointer}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
@@ -559,12 +628,12 @@ export default function Home(){
           .favorites-list{padding:0 clamp(12px,2.5vw,20px);margin-top:clamp(16px,3vw,24px)}
           .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(12px,2.5vw,20px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
           .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
-          .favorite-content{flex:1;min-width:0}
-          .favorite-title{font-size:clamp(14px,2vw,18px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+          .favorite-content{flex:1;min-width:0;padding-right:clamp(28px,5vw,44px)}
+          .favorite-title{font-size:clamp(14px,2vw,18px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
           .favorite-year{font-size:clamp(12px,1.8vw,16px);color:#A5A5A5;margin-bottom:4px}
           .favorite-episodes{font-size:clamp(11px,1.6vw,15px);color:#A5A5A5;margin-bottom:clamp(8px,1.5vw,12px)}
           .favorite-badge{display:inline-block;padding:clamp(3px,0.6vw,6px) clamp(10px,2vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.6vw,15px);font-weight:600;color:#ffffff}
-          .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center}
+          .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
           .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,18px);padding:clamp(12px,2vw,24px) clamp(16px,4vw,34px);padding-top:clamp(20px,3vw,40px)}
@@ -627,6 +696,24 @@ export default function Home(){
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
           .profile-create-btn:hover{opacity:0.9}
 
+          .profile-view-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;position:relative}
+          .profile-view-header{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:24px}
+          .profile-view-avatar{width:clamp(72px,12vw,96px);height:clamp(72px,12vw,96px);border-radius:50%;overflow:hidden}
+          .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff}
+          .profile-view-stats{display:flex;justify-content:space-around;margin-bottom:24px;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
+          .profile-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+          .profile-stat-value{font-size:clamp(16px,2.5vw,20px);font-weight:700;color:#ffffff}
+          .profile-stat-label{font-size:clamp(11px,1.5vw,13px);color:#888}
+          .profile-logout-btn{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#E04E4E;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s}
+          .profile-logout-btn:hover{background:rgba(224,78,78,0.1)}
+
+          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;position:relative}
+          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin-bottom:12px}
+          .logout-confirm-text{font-size:clamp(13px,2vw,15px);color:#888;line-height:1.5;margin-bottom:24px}
+          .logout-confirm-actions{display:flex;gap:12px}
+          .logout-cancel-btn{flex:1;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
+          .logout-confirm-btn{flex:1;padding:12px;border-radius:12px;background:#E04E4E;color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
+
           .about-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative}
           .about-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin-bottom:20px}
           .about-content{color:#ccc;font-size:clamp(13px,2vw,15px);line-height:1.6}
@@ -639,7 +726,7 @@ export default function Home(){
 
       {loadingComplete&&(
         <>
-          {!showSearch&&<Header onSearchClick={()=>setShowSearch(true)} userProfile={userProfile}/>}
+          {!showSearch&&<Header onSearchClick={()=>setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick}/>}
 
           <main className="container" style={showSearch?{paddingTop:'0'}:{}}>
             {showSearch?renderSearchPage():
@@ -660,6 +747,7 @@ export default function Home(){
           }}/>}
 
           {showProfileCreation&&<ProfileCreation onCreate={handleCreateProfile} onClose={()=>setShowProfileCreation(false)}/>}
+          {showProfileView&&userProfile&&<ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={()=>setShowProfileView(false)}/>}
           {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
         </>
       )}
