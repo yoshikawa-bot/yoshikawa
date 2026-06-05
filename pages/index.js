@@ -20,6 +20,7 @@ const CATEGORIES=[
 ]
 
 const FILTERS=['Tudo','Filmes','Séries','Animes']
+const SEARCH_FILTERS=['Tudo','Animes','Filmes','Séries']
 
 const useDebounce=(callback,delay)=>{
   const timeoutRef=useRef(null)
@@ -27,6 +28,24 @@ const useDebounce=(callback,delay)=>{
     if(timeoutRef.current)clearTimeout(timeoutRef.current)
     timeoutRef.current=setTimeout(()=>callback(...args),delay)
   },[callback,delay])
+}
+
+const getMediaType=(item)=>{
+  if(item.genre_ids?.includes(16))return'anime'
+  if(item.original_language==='ja'&&(item.genre_ids?.includes(16)||item.genre_ids?.includes(14)||item.genre_ids?.includes(27)))return'anime'
+  return item.media_type||'movie'
+}
+
+const getBadgeColor=(type)=>{
+  if(type==='anime')return'#4D4BAF'
+  if(type==='tv')return'#4A8B4A'
+  return'#8B4A4A'
+}
+
+const getBadgeText=(type)=>{
+  if(type==='anime')return'Anime'
+  if(type==='tv')return'Série'
+  return'Filme'
 }
 
 export const LoadingScreen=({onComplete})=>{
@@ -120,18 +139,19 @@ export const HorizontalCard=({item,onPlay})=>{
       <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="horizontal-card-img"/>
       <div className="horizontal-card-info">
         <h3 className="horizontal-card-title">{item.title||item.name}</h3>
-        <p className="horizontal-card-subtitle">{item.media_type==='tv'?'Série':'Filme'} • {new Date(item.release_date||item.first_air_date).getFullYear()||'N/A'}</p>
+        <p className="horizontal-card-subtitle">{getBadgeText(getMediaType(item))} • {new Date(item.release_date||item.first_air_date).getFullYear()||'N/A'}</p>
       </div>
     </div>
   )
 }
 
 export const EpisodeCard=({item})=>{
+  const mediaType=getMediaType(item)
   return(
     <div className="episode-card">
       <div className="episode-thumbnail">
         <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/>
-        <div className="episode-badge">Dublado</div>
+        <div className="episode-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
       </div>
       <h4 className="episode-title">{item.name||item.title}</h4>
       <p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||'N/A'}</p>
@@ -187,6 +207,7 @@ export const MovieCard=({item,isFavorite,toggleFavorite})=>{
 }
 
 export const FavoriteItem=({item,onRemove,onClick})=>{
+  const mediaType=getMediaType(item)
   return(
     <div className="favorite-item" onClick={()=>onClick?.(item)}>
       <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/>
@@ -194,7 +215,7 @@ export const FavoriteItem=({item,onRemove,onClick})=>{
         <h3 className="favorite-title">{item.title}</h3>
         <p className="favorite-year">{item.year||'2025'}</p>
         <p className="favorite-episodes">{item.episodes||'12 Episódios'}</p>
-        <div className="favorite-badge">Anime</div>
+        <div className="favorite-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
       </div>
       <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}>
         <i className="fas fa-times"></i>
@@ -203,11 +224,43 @@ export const FavoriteItem=({item,onRemove,onClick})=>{
   )
 }
 
+export const SearchResultItem=({item,onClick})=>{
+  const mediaType=getMediaType(item)
+  const year=new Date(item.release_date||item.first_air_date).getFullYear()
+  return(
+    <div className="search-result-item" onClick={()=>onClick?.(item)}>
+      <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster"/>
+      <div className="search-result-content">
+        <h3 className="search-result-title">{item.title||item.name}</h3>
+        <p className="search-result-year">{year||'N/A'}</p>
+        <p className="search-result-episodes">{item.popularity?`${Math.round(item.popularity)} Popularidade`:'12 Episódios'}</p>
+        <div className="search-result-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
+      </div>
+    </div>
+  )
+}
+
 export const CategoryCard=({category})=>{
+  const getImageForCategory=()=>{
+    const images={
+      'Aventura':'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
+      'Ação':'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg',
+      'Comédia':'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+      'Dublado':'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg',
+      'Drama':'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
+      'Escolar':'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg',
+      'Fantasia':'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg',
+      'Romance':'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg',
+      'Slice of Life':'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg',
+      'Sobrenatural':'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg'
+    }
+    return images[category.name]||DEFAULT_POSTER
+  }
+
   return(
     <div className="category-card" style={{background:category.color}}>
       <h3 className="category-title">{category.name}</h3>
-      <img src={`https://image.tmdb.org/t/p/w500/aQvJ5WPzZgYVDrxLX4R6cLJCEaQ.jpg`} className="category-thumbnail" alt={category.name}/>
+      <img src={getImageForCategory()} className="category-thumbnail" alt={category.name}/>
     </div>
   )
 }
@@ -245,6 +298,7 @@ export default function Home(){
   const[searchResults,setSearchResults]=useState([])
   const[activeSection,setActiveSection]=useState('home')
   const[activeFilter,setActiveFilter]=useState('Tudo')
+  const[activeSearchFilter,setActiveSearchFilter]=useState('Tudo')
   const[showSearch,setShowSearch]=useState(false)
   const[searchLoading,setSearchLoading]=useState(false)
 
@@ -351,13 +405,30 @@ export default function Home(){
     if(!query.trim()){setSearchResults([]);setSearchLoading(false);return}
     setSearchLoading(true)
     try{
+      let results=[]
+      const mediaType=item=>{
+        if(item.genre_ids?.includes(16))return'anime'
+        if(item.original_language==='ja')return'anime'
+        return item.media_type||'movie'
+      }
+
       const[movies,tv]=await Promise.all([
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
+        fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
       ])
-      const combined=[...movies.map(i=>({...i,media_type:'movie'})),...tv.map(i=>({...i,media_type:'tv'}))]
-        .filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,20)
-      setSearchResults(combined)
+
+      results=[...movies.map(i=>({...i,media_type:'movie'})),...tv.map(i=>({...i,media_type:'tv'}))]
+
+      if(activeSearchFilter==='Animes'){
+        results=results.filter(i=>mediaType(i)==='anime')
+      }else if(activeSearchFilter==='Filmes'){
+        results=results.filter(i=>mediaType(i)==='movie')
+      }else if(activeSearchFilter==='Séries'){
+        results=results.filter(i=>mediaType(i)==='tv')
+      }
+
+      results=results.filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,30)
+      setSearchResults(results)
     }catch{setSearchResults([])}
     finally{setSearchLoading(false)}
   }
@@ -370,6 +441,12 @@ export default function Home(){
     setSearchLoading(true)
     debouncedSearch(q)
   }
+
+  useEffect(()=>{
+    if(searchQuery.trim()){
+      fetchSearchResults(searchQuery)
+    }
+  },[activeSearchFilter])
 
   const filteredFavorites=activeFilter==='Tudo'?favorites:
     activeFilter==='Filmes'?favorites.filter(f=>f.media_type==='movie'):
@@ -546,60 +623,70 @@ export default function Home(){
 
   const renderSearchPage=()=>(
     <>
-      <section className="section">
-        <div className="search-container">
-          <button className="search-back-btn" onClick={()=>{setShowSearch(false);setSearchQuery('');setSearchResults([])}}>
-            <i className="fas fa-arrow-left"></i>
-          </button>
-          <div className="search-bar">
-            <i className="fas fa-search search-icon"></i>
-            <input 
-              type="text" 
-              placeholder="O que está procurando?"
-              className="search-input"
-              value={searchQuery}
-              onChange={(e)=>handleSearchChange(e.target.value)}
-              autoFocus
-            />
-          </div>
+      <div className="search-header-container">
+        <button className="search-back-btn" onClick={()=>{setShowSearch(false);setSearchQuery('');setSearchResults([]);setActiveSearchFilter('Tudo')}}>
+          <i className="fas fa-arrow-left"></i>
+        </button>
+        <div className="search-bar-full">
+          <i className="fas fa-search search-icon-full"></i>
+          <input 
+            type="text" 
+            placeholder="O que está procurando?"
+            className="search-input-full"
+            value={searchQuery}
+            onChange={(e)=>handleSearchChange(e.target.value)}
+            autoFocus
+          />
         </div>
-      </section>
+      </div>
 
       {searchQuery.trim()?(
-        <section className="section">
-          <h2 className="section-title" style={{fontSize:'clamp(20px,4vw,28px)'}}>Resultados</h2>
-          {searchLoading?(
-            <div className="empty-favorites">
-              <div className="loading-spinner"></div>
-            </div>
-          ):searchResults.length>0?(
-            <div className="vertical-scroll">
-              {searchResults.map(item=>(
-                <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-              ))}
-            </div>
-          ):(
-            <div className="empty-favorites">
-              <i className="fas fa-search" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i>
-              <p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum resultado encontrado</p>
-            </div>
-          )}
-        </section>
+        <>
+          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,26px)',marginLeft:'clamp(20px,4vw,34px)'}}>
+            {SEARCH_FILTERS.map(filter=>(
+              <button 
+                key={filter}
+                className={`filter-btn ${activeSearchFilter===filter?'active':''}`}
+                onClick={()=>setActiveSearchFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+
+          <div className="search-results-list">
+            {searchLoading?(
+              <div className="empty-favorites">
+                <div className="loading-spinner"></div>
+              </div>
+            ):searchResults.length>0?(
+              searchResults.map((item,index)=>(
+                <div key={`${item.media_type}-${item.id}`}>
+                  <SearchResultItem item={item} onClick={handlePlay}/>
+                  {index<searchResults.length-1&&<div className="search-divider"></div>}
+                </div>
+              ))
+            ):(
+              <div className="empty-favorites">
+                <i className="fas fa-search" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i>
+                <p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum resultado encontrado</p>
+              </div>
+            )}
+          </div>
+        </>
       ):(
         <>
-          <section className="section">
-            <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>
-              {FILTERS.map(filter=>(
-                <button 
-                  key={filter}
-                  className={`filter-btn ${activeFilter===filter?'active':''}`}
-                  onClick={()=>setActiveFilter(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </section>
+          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>
+            {FILTERS.map(filter=>(
+              <button 
+                key={filter}
+                className={`filter-btn ${activeFilter===filter?'active':''}`}
+                onClick={()=>setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
 
           <section className="section">
             <h2 className="section-title" style={{fontSize:'clamp(24px,5vw,38px)',fontWeight:'800'}}>Categorias</h2>
@@ -673,7 +760,7 @@ export default function Home(){
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
           html{scroll-behavior:smooth}
-          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#050505;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
+          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
           a{color:inherit;text-decoration:none}
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
           img{max-width:100%;height:auto;display:block}
@@ -709,7 +796,7 @@ export default function Home(){
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px)}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px}
           .episode-img{width:100%;height:100%;object-fit:cover}
-          .episode-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.65);border-radius:12px;padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);font-size:clamp(11px,1.5vw,14px);font-weight:600;color:#ffffff}
+          .episode-badge{position:absolute;top:10px;left:10px;border-radius:12px;padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);font-size:clamp(11px,1.5vw,14px);font-weight:600;color:#ffffff}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .episode-info{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
 
@@ -752,25 +839,35 @@ export default function Home(){
           .filters-container::-webkit-scrollbar{display:none}
           .filter-btn{height:clamp(36px,6vw,56px);padding:0 clamp(16px,3vw,32px);border-radius:clamp(18px,3vw,28px);font-size:clamp(13px,2vw,18px);font-weight:700;white-space:nowrap;transition:all 0.2s}
           .filter-btn.active{background:#ffffff;color:#000000}
-          .filter-btn:not(.active){background:transparent;color:#A9A9A9}
+          .filter-btn:not(.active){background:transparent;color:#A0A0A0}
 
           .favorites-list{padding:0 clamp(12px,2.5vw,20px);margin-top:clamp(16px,3vw,24px)}
-          .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(12px,2.5vw,20px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);gap:clamp(12px,2vw,18px)}
+          .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(12px,2.5vw,20px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
           .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0}
           .favorite-content{flex:1;min-width:0}
           .favorite-title{font-size:clamp(14px,2vw,18px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
           .favorite-year{font-size:clamp(12px,1.8vw,16px);color:#A5A5A5;margin-bottom:4px}
           .favorite-episodes{font-size:clamp(11px,1.6vw,15px);color:#A5A5A5;margin-bottom:clamp(8px,1.5vw,12px)}
-          .favorite-badge{display:inline-block;padding:clamp(3px,0.6vw,6px) clamp(10px,2vw,16px);background:#4A4AA8;border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.6vw,15px);font-weight:600}
+          .favorite-badge{display:inline-block;padding:clamp(3px,0.6vw,6px) clamp(10px,2vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.6vw,15px);font-weight:600;color:#ffffff}
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
-          .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,16px);padding:clamp(8px,1.5vw,12px) clamp(16px,4vw,34px);margin-top:clamp(8px,1.5vw,12px)}
-          .search-back-btn{color:#ffffff;font-size:clamp(24px,4vw,36px);width:clamp(24px,4vw,36px);height:clamp(24px,4vw,36px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-          .search-bar{flex:1;height:clamp(50px,8vw,74px);background:#111111;border-radius:clamp(25px,4vw,37px);display:flex;align-items:center;padding:0 clamp(16px,3vw,24px);gap:clamp(8px,1.5vw,12px)}
-          .search-icon{color:#9F9F9F;font-size:clamp(18px,3vw,26px);flex-shrink:0}
-          .search-input{flex:1;background:transparent;border:none;color:#ffffff;font-size:clamp(14px,2.5vw,18px);outline:none;min-width:0}
-          .search-input::placeholder{color:#888888}
+          .search-header-container{display:flex;align-items:center;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.5vw,24px) clamp(16px,4vw,34px);padding-top:clamp(24px,4vw,40px)}
+          .search-back-btn{color:#ffffff;font-size:clamp(32px,5vw,38px);width:clamp(32px,5vw,38px);height:clamp(32px,5vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0;stroke-width:3}
+          .search-bar-full{flex:1;height:clamp(56px,8vw,74px);background:#121212;border-radius:clamp(28px,4vw,38px);display:flex;align-items:center;padding:0 clamp(20px,3vw,24px);gap:clamp(10px,1.5vw,12px)}
+          .search-icon-full{color:#A5A5A5;font-size:clamp(18px,2.5vw,22px);flex-shrink:0}
+          .search-input-full{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(16px,2.5vw,20px);font-weight:500;outline:none;min-width:0}
+          .search-input-full::placeholder{color:#888888}
+
+          .search-results-list{padding:0 clamp(12px,2.5vw,24px);margin-top:clamp(24px,3.5vw,30px)}
+          .search-result-item{display:flex;padding:clamp(12px,2vw,18px) 0;cursor:pointer;gap:clamp(14px,2vw,18px)}
+          .search-result-poster{width:clamp(110px,20vw,165px);height:clamp(150px,28vw,220px);border-radius:clamp(14px,2vw,18px);object-fit:cover;flex-shrink:0}
+          .search-result-content{flex:1;min-width:0;display:flex;flex-direction:column}
+          .search-result-title{font-size:clamp(16px,2.2vw,19px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(6px,1vw,8px)}
+          .search-result-year{font-size:clamp(13px,1.8vw,16px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(6px,1vw,8px)}
+          .search-result-episodes{font-size:clamp(13px,1.8vw,16px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(10px,1.5vw,12px)}
+          .search-result-badge{display:inline-block;padding:clamp(4px,0.6vw,6px) clamp(12px,2vw,16px);border-radius:clamp(8px,1vw,10px);font-size:clamp(13px,1.8vw,15px);font-weight:600;color:#ffffff;align-self:flex-start}
+          .search-divider{height:1px;background:rgba(255,255,255,0.05)}
 
           .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,2vw,20px);padding:0 clamp(16px,3vw,24px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
@@ -807,7 +904,7 @@ export default function Home(){
         <>
           {!showSearch&&<Header onSearchClick={()=>setShowSearch(true)}/>}
 
-          <main className="container">
+          <main className="container" style={showSearch?{paddingTop:'0'}:{}}>
             {showSearch?renderSearchPage():
               activeSection==='home'?renderHomePage():
               activeSection==='animes'?renderAnimesPage():
@@ -817,12 +914,13 @@ export default function Home(){
             }
           </main>
 
-          <BottomNav activeSection={activeSection} setActiveSection={(section)=>{
+          {!showSearch&&<BottomNav activeSection={activeSection} setActiveSection={(section)=>{
             setShowSearch(false)
             setSearchQuery('')
             setSearchResults([])
+            setActiveSearchFilter('Tudo')
             setActiveSection(section)
-          }}/>
+          }}/>}
         </>
       )}
     </>
