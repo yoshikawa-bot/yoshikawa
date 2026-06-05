@@ -64,22 +64,48 @@ export const LoadingScreen = ({ onComplete }) => {
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
-export const VideoModal = ({ onClose }) => (
-  <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-    <button onClick={onClose} style={{ position: 'absolute', top: 32, left: 32, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, background: 'rgba(0,0,0,0.5)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', zIndex: 10 }}>
-      <i className="fas fa-arrow-left" />
-    </button>
-    <video
-      src="https://yoshikawa-bot.github.io/cache/images/842945df.m4v"
-      autoPlay
-      loop
-      muted
-      playsInline
-      style={{ maxWidth: '90%', maxHeight: '70vh', borderRadius: 16, boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}
-    />
-    <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginTop: 16, letterSpacing: '0.5px' }}>Oii curioso</p>
-  </div>
-)
+export const VideoModal = ({ onClose }) => {
+  const videoRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(true)
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return
+    if (videoRef.current.paused) {
+      videoRef.current.play()
+      setIsPlaying(true)
+    } else {
+      videoRef.current.pause()
+      setIsPlaying(false)
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: '#101010', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <button onClick={onClose} style={{ position: 'absolute', top: 32, left: 32, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', zIndex: 10 }}>
+        <i className="fas fa-arrow-left" />
+      </button>
+
+      <div style={{ position: 'relative' }}>
+        <video
+          ref={videoRef}
+          src="https://yoshikawa-bot.github.io/cache/images/842945df.m4v"
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ maxWidth: '90vw', maxHeight: '70vh', borderRadius: 0, display: 'block' }}
+        />
+        <button
+          onClick={togglePlayPause}
+          style={{ position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'} />
+        </button>
+      </div>
+      <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginTop: 16, letterSpacing: '0.5px' }}>Oii curioso</p>
+    </div>
+  )
+}
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
   const avatarSize = 'clamp(40px,6vw,60px)'
@@ -531,7 +557,7 @@ export default function Home() {
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -568,7 +594,7 @@ export default function Home() {
           .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
           .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);background:radial-gradient(circle at bottom left, rgba(0,0,0,0.7) 0%, transparent 80%);z-index:2}
-          .trending-title-text{font-family:'UnifrakturMaguntia','Gothic',serif;font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8);display:inline-block}
+          .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
@@ -740,4 +766,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+}
