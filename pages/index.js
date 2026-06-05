@@ -3,7 +3,7 @@ import Head from'next/head'
 
 const TMDB_API_KEY='66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER='https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
-const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/a9a3ec25.png'
+const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/06486359.png'
 
 const PROFILE_COLORS=['#E04E4E','#4D4BAF','#4A8B4A','#E97820','#9D95C8','#3F6D89','#C43708','#43A45D','#E38CA8','#72615F']
 
@@ -99,7 +99,18 @@ export const HorizontalCard=({item,onPlay})=>{
 
 export const EpisodeCard=({item,onPlay})=>{
   const year=getItemYear(item)
-  return(<div className="episode-card" onClick={()=>onPlay?.(item)}><div className="episode-thumbnail"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/></div><h4 className="episode-title">{item.name||item.title}</h4><p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||year||'N/A'}</p></div>)
+  const episodeTitle=item.name||item.title
+  const episodeNumber=item.episode_number||1
+  const airDate=item.air_date||(item.first_air_date?new Date(item.first_air_date).toISOString().slice(0,10):null)
+  return(
+    <div className="episode-card" onClick={()=>onPlay?.(item)}>
+      <div className="episode-thumbnail">
+        <img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={episodeTitle} className="episode-img"/>
+      </div>
+      <h4 className="episode-title">{episodeTitle}</h4>
+      <p className="episode-info">Episódio {episodeNumber} • {airDate||year||'N/A'}</p>
+    </div>
+  )
 }
 
 export const FeaturedCard=({item,onPlay,onInfo})=>{
@@ -262,7 +273,6 @@ export default function Home(){
   const[recentlyAdded,setRecentlyAdded]=useState([])
   const[weeklies,setWeeklies]=useState([])
   const[featured,setFeatured]=useState(null)
-  const[dubbed,setDubbed]=useState([])
   const[adventure,setAdventure]=useState([])
   const[comedy,setComedy]=useState([])
   const[romance,setRomance]=useState([])
@@ -295,13 +305,12 @@ export default function Home(){
   const loadAllContent=async()=>{
     setContentLoading(true)
     try{
-      const[trendingMovies,nowPlaying,onAir,upcoming,popular,dubbedShows,adventureShows,comedyShows,romanceShows,topRated,animeMovies,animeTV]=await Promise.all([
+      const[trendingMovies,nowPlaying,onAir,upcoming,popular,adventureShows,comedyShows,romanceShows,topRated,animeMovies,animeTV]=await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_original_language=pt&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749&region=BR`),
@@ -311,11 +320,16 @@ export default function Home(){
       ])
       const filterQuality=(items)=>items.filter(i=>i.poster_path&&i.vote_count>50&&i.popularity>10)
       setTrending(filterQuality(trendingMovies).slice(0,10))
-      setNewEpisodes(onAir.filter(i=>i.poster_path).slice(0,10))
+      
+      // Novos episódios: apenas séries e animes no ar, ordenados pela data de estreia mais recente
+      const nowAiring=onAir.filter(i=>i.poster_path&&i.media_type==='tv')
+        .sort((a,b)=>new Date(b.first_air_date||b.release_date)-new Date(a.first_air_date||a.release_date))
+        .slice(0,10)
+      setNewEpisodes(nowAiring)
+      
       setRecentlyAdded(nowPlaying.filter(i=>i.poster_path).slice(0,10))
       setWeeklies(upcoming.filter(i=>i.poster_path).slice(0,10))
       setFeatured(filterQuality(trendingMovies)[0]||null)
-      setDubbed(dubbedShows.filter(i=>i.poster_path).slice(0,10))
       setAdventure(adventureShows.filter(i=>i.poster_path).slice(0,10))
       setComedy(comedyShows.filter(i=>i.poster_path).slice(0,10))
       setRomance(romanceShows.filter(i=>i.poster_path).slice(0,10))
@@ -377,8 +391,8 @@ export default function Home(){
     setShowProfileView(false)
   }
 
-  const handlePlay=(item)=>window.location.href=`/${item.media_type}/${item.id}`
-  const handleInfo=(item)=>window.location.href=`/${item.media_type}/${item.id}`
+  const handlePlay=(item)=>window.location.href=`/${item.media_type||getMediaType(item)}/${item.id}`
+  const handleInfo=(item)=>window.location.href=`/${item.media_type||getMediaType(item)}/${item.id}`
 
   const handleCreateProfile=(profile)=>{
     const newProfile={...profile,createdAt:new Date().toISOString(),favoritesCount:0}
@@ -445,7 +459,6 @@ export default function Home(){
         <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Semanais</h2><div className="vertical-scroll">{weeklies.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Lançamento</h2>{featured&&<FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>}</section>
-        <section className="section"><h2 className="section-title">Com dublagem</h2><div className="vertical-scroll">{dubbed.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Romance</h2><div className="vertical-scroll">{romance.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
@@ -509,7 +522,12 @@ export default function Home(){
   const renderMenuPage=()=>(
     <section className="section" style={{paddingTop:'clamp(40px,8vw,80px)'}}>
       {!userProfile&&(
-        <div className="menu-banner-container"><div className="verify-banner"><span>Crie seu perfil para salvar favoritos e personalizar sua experiência!</span><i className="fas fa-chevron-right"></i></div></div>
+        <div className="menu-banner-container">
+          <div className="verify-banner" onClick={()=>setShowProfileCreation(true)} style={{cursor:'pointer'}}>
+            <span>Crie seu perfil para salvar favoritos e personalizar sua experiência!</span>
+            <i className="fas fa-chevron-right"></i>
+          </div>
+        </div>
       )}
       <div className="user-card" onClick={()=>!userProfile?setShowProfileCreation(true):setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile?{background:userProfile.color}:{}}>
