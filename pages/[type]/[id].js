@@ -4,21 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
+const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
+const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
 
-export const Header = ({ 
-  label, scrolled, 
-  showInfo, toggleInfo, infoClosing, 
-  showTech, toggleTech, techClosing,
-  navHidden
-}) => {
+export const Header = ({ label, scrolled, showInfo, toggleInfo, infoClosing, showTech, toggleTech, techClosing, navHidden }) => {
   const handleRightClick = (e) => {
     e.stopPropagation()
-    if (scrolled) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      toggleInfo()
-    }
+    if (scrolled) window.scrollTo({ top: 0, behavior: 'smooth' })
+    else toggleInfo()
   }
 
   return (
@@ -34,23 +27,14 @@ export const Header = ({
           <span key={label} className="bar-label">{label}</span>
         </div>
 
-        <button 
-          className="round-btn glass-panel" 
-          title={scrolled ? "Voltar ao topo" : "Informações"}
-          onClick={handleRightClick}
-        >
+        <button className="round-btn glass-panel" title={scrolled ? "Voltar ao topo" : "Informações"} onClick={handleRightClick}>
           <i className={scrolled ? "fas fa-chevron-up" : "fas fa-info-circle"} style={{ fontSize: '14px' }}></i>
         </button>
       </header>
 
       {showInfo && (
-        <div 
-          className={`standard-popup glass-panel ${infoClosing ? 'closing' : ''}`} 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="popup-icon-wrapper info">
-            <i className="fas fa-shield-halved"></i>
-          </div>
+        <div className={`standard-popup glass-panel ${infoClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className="popup-icon-wrapper info"><i className="fas fa-shield-halved"></i></div>
           <div className="popup-content">
             <p className="popup-title">Proteção Recomendada</p>
             <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
@@ -59,13 +43,8 @@ export const Header = ({
       )}
 
       {showTech && (
-        <div 
-          className={`standard-popup glass-panel ${techClosing ? 'closing' : ''}`} 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="popup-icon-wrapper tech">
-            <i className="fas fa-microchip"></i>
-          </div>
+        <div className={`standard-popup glass-panel ${techClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className="popup-icon-wrapper tech"><i className="fas fa-microchip"></i></div>
           <div className="popup-content">
             <p className="popup-title">Informações Técnicas</p>
             <p className="popup-text">v2.8.0 • React 18 • TMDB API • EmbedMovies API</p>
@@ -81,8 +60,7 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } 
-      catch (err) {}
+      try { await navigator.share({ title: 'Yoshikawa Player', url: window.location.href }) } catch (err) {}
     } else { alert('Compartilhar não suportado') }
   }
 
@@ -102,21 +80,16 @@ export const BottomNav = ({ isFavorite, onToggleFavorite, onToggleSynopsis, onTo
         <button className="nav-btn" onClick={onToggleData} title="Dados do Título">
           <i className="fas fa-film"></i>
         </button>
-
         <button className="nav-btn hide-toggle-pill-btn" onClick={onToggleNav} title={navHidden ? "Mostrar Menu" : "Ocultar Menu"}>
           <i className="fas fa-minus" style={{ fontSize: '18px', WebkitTextStroke: '1px currentColor' }}></i>
         </button>
-
         <button className="nav-btn" onClick={onToggleSynopsis} title="Sinopse">
           <i className="fas fa-align-left"></i>
         </button>
       </div>
 
       <button className={`round-btn glass-panel ${navHidden ? 'hidden-fav' : ''}`} onClick={handleFavClick} title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-        <i 
-          className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`}
-          style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}
-        ></i>
+        <i className={`${isFavorite ? 'fas fa-heart' : 'far fa-heart'} ${animating ? 'heart-pulse' : ''}`} style={{ color: isFavorite ? '#ff3b30' : '#ffffff', fontSize: '15px' }}></i>
       </button>
     </div>
   )
@@ -154,13 +127,9 @@ const LoadingScreen = ({ visible }) => {
 export default function WatchPage() {
   const router = useRouter()
   const { type, id } = router.query
-  const carouselRef = useRef(null)
-  const contentLoaded = useRef(false)
-  const initialProgressSet = useRef(false)
-  
+
   const [isLoading, setIsLoading] = useState(true)
   const [navHidden, setNavHidden] = useState(false)
-
   const [scrolled, setScrolled] = useState(false)
   const [showInfoPopup, setShowInfoPopup] = useState(false)
   const [infoClosing, setInfoClosing] = useState(false)
@@ -170,28 +139,24 @@ export default function WatchPage() {
   const [synopsisClosing, setSynopsisClosing] = useState(false)
   const [showDataPopup, setShowDataPopup] = useState(false)
   const [dataClosing, setDataClosing] = useState(false)
-  
   const [currentToast, setCurrentToast] = useState(null)
   const [toastQueue, setToastQueue] = useState([])
-  
   const [content, setContent] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
   const [seasonData, setSeasonData] = useState(null)
   const [watchedEps, setWatchedEps] = useState(new Set())
   const [allSeasonsData, setAllSeasonsData] = useState({})
-  
-  const [indicatorLeft, setIndicatorLeft] = useState(null)
-  const [scrollProgress, setScrollProgress] = useState(0)
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false)
+  const [episodeOrder, setEpisodeOrder] = useState('asc')
 
   const toastTimerRef = useRef(null)
+  const contentLoaded = useRef(false)
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
-    
     const savedWatched = localStorage.getItem(`yoshikawaWatched_${id}`)
     if (savedWatched) {
       try {
@@ -201,17 +166,14 @@ export default function WatchPage() {
             const [s, e] = key.split('-').map(Number)
             return { season: s, episode: e }
           })
-          
           allWatched.sort((a, b) => {
             if (a.season !== b.season) return b.season - a.season
             return b.episode - a.episode
           })
-          
           return allWatched[0]
         }
       } catch (e) {}
     }
-    
     try {
       const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
       if (saved) {
@@ -219,7 +181,6 @@ export default function WatchPage() {
         return { season: p.season || 1, episode: p.episode || 1 }
       }
     } catch (e) {}
-    
     return { season: 1, episode: 1 }
   }, [id, type])
 
@@ -236,15 +197,12 @@ export default function WatchPage() {
         if (type === 'tv') {
           try {
             const w = localStorage.getItem(`yoshikawaWatched_${id}`)
-            if (w) {
-              setWatchedEps(new Set(JSON.parse(w)))
-            }
+            if (w) setWatchedEps(new Set(JSON.parse(w)))
           } catch (e) {}
 
           const lastWatched = getLastWatchedEpisode()
           setSeason(lastWatched.season)
           setEpisode(lastWatched.episode)
-          initialProgressSet.current = true
           await fetchSeasonData(id, lastWatched.season)
         }
 
@@ -255,7 +213,6 @@ export default function WatchPage() {
         setIsLoading(false)
       }
     }
-    
     loadContent()
   }, [id, type, getLastWatchedEpisode])
 
@@ -268,7 +225,6 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (type !== 'tv' || !id || !contentLoaded.current) return
-    if (!initialProgressSet.current) return
     try {
       localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
     } catch (e) {}
@@ -285,20 +241,6 @@ export default function WatchPage() {
     })
   }, [season, episode, isPlaying, id, type])
 
-  useEffect(() => {
-    const carousel = carouselRef.current
-    if (!carousel) return
-
-    const handleScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = carousel
-      const progress = scrollLeft / (scrollWidth - clientWidth)
-      setScrollProgress(progress || 0)
-    }
-
-    carousel.addEventListener('scroll', handleScroll, { passive: true })
-    return () => carousel.removeEventListener('scroll', handleScroll)
-  }, [])
-
   const fetchSeasonData = async (tvId, seasonNum) => {
     try {
       if (allSeasonsData[seasonNum]) {
@@ -306,7 +248,6 @@ export default function WatchPage() {
         setSeason(seasonNum)
         return
       }
-      
       const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}&language=pt-BR`)
       const data = await res.json()
       setAllSeasonsData(prev => ({ ...prev, [seasonNum]: data }))
@@ -318,14 +259,10 @@ export default function WatchPage() {
   }
 
   const showToast = (message, type = 'info') => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) {
-      closeAllPopups()
-    }
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || showDataPopup) closeAllPopups()
     if (currentToast && !currentToast.closing) {
       setCurrentToast(prev => ({ ...prev, closing: true }))
-      setTimeout(() => {
-        setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
-      }, 300)
+      setTimeout(() => setToastQueue(prev => [...prev, { message, type, id: Date.now() }]), 300)
     } else {
       setToastQueue(prev => [...prev, { message, type, id: Date.now() }])
     }
@@ -396,73 +333,35 @@ export default function WatchPage() {
   }
 
   const closeAllPopups = useCallback(() => {
-    if (showInfoPopup && !infoClosing) {
-      setInfoClosing(true)
-      setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
-    }
-    if (showTechPopup && !techClosing) {
-      setTechClosing(true)
-      setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
-    }
-    if (showSynopsisPopup && !synopsisClosing) {
-      setSynopsisClosing(true)
-      setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
-    }
-    if (showDataPopup && !dataClosing) {
-      setDataClosing(true)
-      setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
-    }
-    if (currentToast && !currentToast.closing) {
-      setCurrentToast(prev => ({ ...prev, closing: true }))
-    }
+    if (showInfoPopup && !infoClosing) { setInfoClosing(true); setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400) }
+    if (showTechPopup && !techClosing) { setTechClosing(true); setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400) }
+    if (showSynopsisPopup && !synopsisClosing) { setSynopsisClosing(true); setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400) }
+    if (showDataPopup && !dataClosing) { setDataClosing(true); setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400) }
+    if (currentToast && !currentToast.closing) setCurrentToast(prev => ({ ...prev, closing: true }))
   }, [showInfoPopup, infoClosing, showTechPopup, techClosing, showSynopsisPopup, synopsisClosing, showDataPopup, dataClosing, currentToast])
 
   const toggleInfoPopup = () => {
-    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) {
-      closeAllPopups()
-      setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 300)
-    } else {
-      if (showInfoPopup) {
-        setInfoClosing(true)
-        setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400)
-      } else { setShowInfoPopup(true) }
-    }
+    if (showTechPopup || showSynopsisPopup || showDataPopup || currentToast) { closeAllPopups(); setTimeout(() => { if (!showInfoPopup) setShowInfoPopup(true) }, 300) }
+    else if (showInfoPopup) { setInfoClosing(true); setTimeout(() => { setShowInfoPopup(false); setInfoClosing(false) }, 400) }
+    else setShowInfoPopup(true)
   }
 
   const toggleTechPopup = () => {
-    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) {
-      closeAllPopups()
-      setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 300)
-    } else {
-      if (showTechPopup) {
-        setTechClosing(true)
-        setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400)
-      } else { setShowTechPopup(true) }
-    }
+    if (showInfoPopup || showSynopsisPopup || showDataPopup || currentToast) { closeAllPopups(); setTimeout(() => { if (!showTechPopup) setShowTechPopup(true) }, 300) }
+    else if (showTechPopup) { setTechClosing(true); setTimeout(() => { setShowTechPopup(false); setTechClosing(false) }, 400) }
+    else setShowTechPopup(true)
   }
 
   const toggleDataPopup = () => {
-    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) {
-      closeAllPopups()
-      setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 300)
-    } else {
-      if (showDataPopup) {
-        setDataClosing(true)
-        setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400)
-      } else { setShowDataPopup(true) }
-    }
+    if (showInfoPopup || showTechPopup || showSynopsisPopup || currentToast) { closeAllPopups(); setTimeout(() => { if (!showDataPopup) setShowDataPopup(true) }, 300) }
+    else if (showDataPopup) { setDataClosing(true); setTimeout(() => { setShowDataPopup(false); setDataClosing(false) }, 400) }
+    else setShowDataPopup(true)
   }
 
   const toggleSynopsisPopup = () => {
-    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) {
-      closeAllPopups()
-      setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 300)
-    } else {
-      if (showSynopsisPopup) {
-        setSynopsisClosing(true)
-        setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400)
-      } else { setShowSynopsisPopup(true) }
-    }
+    if (showInfoPopup || showTechPopup || showDataPopup || currentToast) { closeAllPopups(); setTimeout(() => { if (!showSynopsisPopup) setShowSynopsisPopup(true) }, 300) }
+    else if (showSynopsisPopup) { setSynopsisClosing(true); setTimeout(() => { setShowSynopsisPopup(false); setSynopsisClosing(false) }, 400) }
+    else setShowSynopsisPopup(true)
   }
 
   const toggleNavVisibility = () => {
@@ -488,42 +387,6 @@ export default function WatchPage() {
     }
   }, [closeAllPopups])
 
-  useEffect(() => {
-    if (!carouselRef.current || !seasonData) return
-    const activeCard = carouselRef.current.querySelector('.ep-card.active')
-    if (!activeCard) return
-
-    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-    const cardCenter = activeCard.offsetLeft + activeCard.offsetWidth / 2
-    setIndicatorLeft(cardCenter)
-  }, [episode, seasonData])
-
-  const handleNextEp = () => {
-    const nextEp = episode + 1
-    if (seasonData?.episodes && nextEp <= seasonData.episodes.length) {
-      setEpisode(nextEp)
-    } else {
-      showToast('Fim da temporada', 'info')
-    }
-  }
-
-  const handlePrevEp = () => {
-    if (episode > 1) setEpisode(episode - 1)
-  }
-
-  const getEmbedUrl = () => {
-    if (!content) return ''
-    if (type === 'movie') {
-      const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      if (!imdbId) {
-        showToast('ID IMDB não encontrado', 'error')
-        return ''
-      }
-      return `https://superflixapi.best/filme/${imdbId}`
-    }
-    return `https://superflixapi.best/serie/${id}/${season}/${episode}`
-  }
-
   const handleNativeSeasonChange = (e) => {
     const newSeason = parseInt(e.target.value)
     const savedEp = getLastWatchedEpisodeForSeason(newSeason)
@@ -536,13 +399,8 @@ export default function WatchPage() {
       const w = localStorage.getItem(`yoshikawaWatched_${id}`)
       if (w) {
         const watchedArray = JSON.parse(w)
-        const seasonEps = watchedArray
-          .filter(key => key.startsWith(`${seasonNum}-`))
-          .map(key => parseInt(key.split('-')[1]))
-        
-        if (seasonEps.length > 0) {
-          return Math.max(...seasonEps)
-        }
+        const seasonEps = watchedArray.filter(key => key.startsWith(`${seasonNum}-`)).map(key => parseInt(key.split('-')[1]))
+        if (seasonEps.length > 0) return Math.max(...seasonEps)
       }
     } catch (e) {}
     return 1
@@ -550,14 +408,27 @@ export default function WatchPage() {
 
   const handleEpisodeClick = (epNumber) => {
     setEpisode(epNumber)
+    setIsPlaying(true)
   }
 
-  const handleScrollbarChange = (e) => {
-    const carousel = carouselRef.current
-    if (!carousel) return
-    const newProgress = parseFloat(e.target.value)
-    const maxScroll = carousel.scrollWidth - carousel.clientWidth
-    carousel.scrollLeft = newProgress * maxScroll
+  const getEmbedUrl = () => {
+    if (!content) return ''
+    if (type === 'movie') {
+      const imdbId = content.external_ids?.imdb_id || content.imdb_id
+      if (!imdbId) { showToast('ID IMDB não encontrado', 'error'); return '' }
+      return `https://superflixapi.best/filme/${imdbId}`
+    }
+    return `https://superflixapi.best/serie/${id}/${season}/${episode}`
+  }
+
+  const handleNextEp = () => {
+    const nextEp = episode + 1
+    if (seasonData?.episodes && nextEp <= seasonData.episodes.length) setEpisode(nextEp)
+    else showToast('Fim da temporada', 'info')
+  }
+
+  const handlePrevEp = () => {
+    if (episode > 1) setEpisode(episode - 1)
   }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
@@ -565,102 +436,65 @@ export default function WatchPage() {
   const genres = content?.genres ? content.genres.map(g => g.name).join(', ') : 'Gênero desconhecido'
   const currentEpisodeData = seasonData?.episodes?.find(e => e.episode_number === episode)
 
+  const getOrderedEpisodes = () => {
+    if (!seasonData?.episodes) return []
+    return episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()
+  }
+
+  const getRatingClass = (adult) => adult ? 'rating-18' : 'rating-L'
+
   return (
     <>
       <Head>
         <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           html { scroll-behavior: smooth; }
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #050505;
+            background: #101010;
             color: #f5f5f7;
             line-height: 1.6;
             font-size: 16px;
             min-height: 100vh;
-            min-height: 100dvh;
             overflow-y: auto;
             overflow-x: hidden;
           }
 
-          .site-wrapper {
-            width: 100%;
-            min-height: 100vh;
-            min-height: 100dvh;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            position: relative;
-            transition: background-image 0.6s ease-out;
-          }
-
-          .site-wrapper::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(5, 5, 5, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            pointer-events: none;
-            z-index: 0;
-          }
-
-          .site-wrapper > * { position: relative; z-index: 1; }
-
           .loading-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            height: 100dvh;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: #101010;
           }
-
-          .loading-overlay.fade-out {
-            display: none;
-          }
-
+          .loading-overlay.fade-out { display: none; }
           .loading-spinner {
-            width: 48px;
-            height: 48px;
-            position: relative;
+            width: 48px; height: 48px; position: relative;
           }
-
           .loading-spinner span {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 3px;
-            height: 11px;
-            margin-left: -1.5px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.15);
+            position: absolute; top: 0; left: 50%;
+            width: 3px; height: 11px; margin-left: -1.5px;
+            border-radius: 999px; background: rgba(255,255,255,0.15);
             transform-origin: center 24px;
             animation: spinnerTick 1s linear infinite;
           }
-
-          .loading-spinner span:nth-child(1)  { transform: rotate(0deg);   animation-delay: -0.917s; }
-          .loading-spinner span:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.833s; }
-          .loading-spinner span:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.750s; }
-          .loading-spinner span:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.583s; }
-          .loading-spinner span:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.500s; }
-          .loading-spinner span:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.417s; }
-          .loading-spinner span:nth-child(8)  { transform: rotate(210deg); animation-delay: -0.333s; }
-          .loading-spinner span:nth-child(9)  { transform: rotate(240deg); animation-delay: -0.250s; }
+          .loading-spinner span:nth-child(1) { transform: rotate(0deg); animation-delay: -0.917s; }
+          .loading-spinner span:nth-child(2) { transform: rotate(30deg); animation-delay: -0.833s; }
+          .loading-spinner span:nth-child(3) { transform: rotate(60deg); animation-delay: -0.750s; }
+          .loading-spinner span:nth-child(4) { transform: rotate(90deg); animation-delay: -0.750s; }
+          .loading-spinner span:nth-child(5) { transform: rotate(120deg); animation-delay: -0.583s; }
+          .loading-spinner span:nth-child(6) { transform: rotate(150deg); animation-delay: -0.500s; }
+          .loading-spinner span:nth-child(7) { transform: rotate(180deg); animation-delay: -0.417s; }
+          .loading-spinner span:nth-child(8) { transform: rotate(210deg); animation-delay: -0.333s; }
+          .loading-spinner span:nth-child(9) { transform: rotate(240deg); animation-delay: -0.250s; }
           .loading-spinner span:nth-child(10) { transform: rotate(270deg); animation-delay: -0.167s; }
           .loading-spinner span:nth-child(11) { transform: rotate(300deg); animation-delay: -0.083s; }
-          .loading-spinner span:nth-child(12) { transform: rotate(330deg); animation-delay: 0s;      }
+          .loading-spinner span:nth-child(12) { transform: rotate(330deg); animation-delay: 0s; }
 
           @keyframes spinnerTick {
-            0%   { background: rgba(255,255,255,0.85); }
+            0% { background: rgba(255,255,255,0.85); }
             100% { background: rgba(255,255,255,0.10); }
           }
 
@@ -672,11 +506,8 @@ export default function WatchPage() {
             --pill-height: 44px;
             --pill-radius: 50px;
             --pill-max-width: 520px;
-            --ios-blue: #0A84FF;
             --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
             --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --ease-fluid: cubic-bezier(0.4, 0.0, 0.2, 1);
-            --shadow-standard: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
           }
 
           .glass-panel {
@@ -688,753 +519,290 @@ export default function WatchPage() {
             border-radius: inherit;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            transition: transform 0.3s var(--ease-elastic), background 0.3s ease, border-color 0.3s ease;
           }
 
           .bar-container {
-            position: fixed; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 1000;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            width: 90%; 
-            max-width: var(--pill-max-width);
+            position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            width: 90%; max-width: var(--pill-max-width);
             transition: all 0.6s var(--ease-smooth);
           }
-
-          .top-bar { 
-            top: max(20px, env(safe-area-inset-top, 20px));
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .bottom-bar { 
-            bottom: max(20px, env(safe-area-inset-bottom, 20px));
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .top-bar.nav-hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transform: translateX(-50%) translateY(-100px);
-          }
-
-          .bottom-bar.nav-hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transform: translateX(-50%) translateY(100px);
-          }
-
-          .show-nav-btn {
-            position: fixed;
-            bottom: max(20px, env(safe-area-inset-bottom, 20px));
-            left: 50%;
-            z-index: 999;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255, 255, 255, 0.9);
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .show-nav-btn:not(.visible) {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transform: translateX(-50%) translateY(100px);
-          }
-
-          .show-nav-btn.visible {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
-          }
-
-          .show-nav-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.3);
-          }
-
-          .show-nav-btn:active {
-            transform: translateX(-50%) scale(0.95);
-          }
-
-          .top-bar.scrolled-state { 
-            transform: translateX(-50%) translateY(-5px); 
-          }
-
+          .top-bar { top: max(20px, env(safe-area-inset-top, 20px)); }
+          .bottom-bar { bottom: max(20px, env(safe-area-inset-bottom, 20px)); }
+          .top-bar.nav-hidden, .bottom-bar.nav-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
           .round-btn {
-            width: var(--pill-height); 
-            height: var(--pill-height); 
-            border-radius: 50%;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: rgba(255, 255, 255, 0.9);
-            flex-shrink: 0; 
-            transition: all 0.5s var(--ease-smooth);
+            width: var(--pill-height); height: var(--pill-height); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255, 255, 255, 0.9); flex-shrink: 0;
           }
-
-          .round-btn:hover { 
-            transform: scale(1.08); 
-            background: rgba(255, 255, 255, 0.12); 
-            border-color: rgba(255, 255, 255, 0.2); 
-          }
-
-          .round-btn:active { transform: scale(0.92); }
-
           .pill-container {
-            height: var(--pill-height); 
-            flex: 1; 
-            border-radius: var(--pill-radius);
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative;
-            transition: all 0.6s var(--ease-fluid);
+            height: var(--pill-height); flex: 1; border-radius: var(--pill-radius);
+            display: flex; align-items: center; justify-content: center;
           }
-
-          .nav-btn { 
-            flex: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100%; 
-            color: rgba(255,255,255,0.4); 
-            transition: all 0.3s ease;
-            position: relative; 
-            z-index: 5;
-          }
-
-          .hide-toggle-pill-btn {
-            color: rgba(255, 255, 255, 0.6);
-            transition: all 0.6s var(--ease-smooth);
-          }
-
-          .hide-toggle-pill-btn i {
-            font-size: 18px;
-            transition: all 0.3s var(--ease-smooth);
-          }
-
-          .hide-toggle-pill-btn:hover i {
-            transform: scale(1.2);
-            color: rgba(255, 255, 255, 0.9);
-          }
-
-          .nav-btn i { 
-            font-size: 18px; 
-            transition: all 0.4s var(--ease-elastic); 
-          }
-
-          .nav-btn:hover i { 
-            transform: scale(1.2); 
-            color: rgba(255,255,255,0.8); 
-          }
-
-          .nav-btn:active i { transform: scale(0.9); }
-
-          .bar-label { 
-            font-size: 0.9rem; 
-            font-weight: 600; 
-            color: #fff; 
-            white-space: nowrap;
-            letter-spacing: -0.01em;
-            position: relative; 
-            z-index: 5;
-          }
-
-          .heart-pulse { animation: heartZoom 0.6s var(--ease-elastic); }
-
-          @keyframes heartZoom { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.6); } 
-            100% { transform: scale(1); } 
-          }
+          .nav-btn { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.4); }
+          .bar-label { font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap; letter-spacing: -0.01em; }
 
           .standard-popup, .toast {
             position: fixed;
-            top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px); 
-            left: 50%;
-            z-index: 960;
-            width: auto;
-            min-width: 280px;
-            max-width: min(360px, calc(100vw - 32px));
-            display: flex; 
-            align-items: center; 
-            gap: 14px;
-            padding: 14px 16px; 
-            border-radius: 22px;
+            top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px);
+            left: 50%; z-index: 960;
+            min-width: 280px; max-width: min(360px, calc(100vw - 32px));
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 16px; border-radius: 22px;
             transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1);
-            transform-origin: top center;
-            opacity: 0;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            perspective: 1000px;
-            -webkit-perspective: 1000px;
+            transform-origin: top center; opacity: 0;
             animation: popupZoomIn 0.5s var(--ease-elastic) forwards;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            contain: layout style paint;
           }
-          
-          .standard-popup { z-index: 950; pointer-events: none; }
-          .toast { z-index: 960; pointer-events: auto; }
-
-          .standard-popup.closing, .toast.closing { 
-            animation: popupZoomOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; 
-          }
-
+          .standard-popup.closing, .toast.closing { animation: popupZoomOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards; }
           @keyframes popupZoomIn {
-            0%   { opacity: 0; transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1); }
+            0% { opacity: 0; transform: translate3d(-50%, -50%, 0) scale3d(0.3, 0.3, 1); }
             100% { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); pointer-events: auto; }
           }
-
           @keyframes popupZoomOut {
-            0%   { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); }
+            0% { opacity: 1; transform: translate3d(-50%, 0, 0) scale3d(1, 1, 1); }
             100% { opacity: 0; transform: translate3d(-50%, -30%, 0) scale3d(0.5, 0.5, 1); pointer-events: none; }
           }
-          
-          .popup-icon-wrapper, .toast-icon-wrapper { 
-            width: 38px; height: 38px; min-width: 38px; 
-            border-radius: 12px; 
+          .popup-icon-wrapper, .toast-icon-wrapper {
+            width: 38px; height: 38px; min-width: 38px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transform: translate3d(0, 0, 0);
-            animation: iconPop 0.6s var(--ease-elastic) 0.1s backwards; 
-            contain: layout style paint;
           }
-          
-          .popup-icon-wrapper.info { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
-          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
-          .popup-icon-wrapper.synopsis { background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3); }
-          .popup-icon-wrapper.data { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3); }
-
+          .popup-icon-wrapper.info { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); }
+          .popup-icon-wrapper.tech { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); }
+          .popup-icon-wrapper.synopsis { background: linear-gradient(135deg, #ff9500 0%, #ff8c00 100%); }
+          .popup-icon-wrapper.data { background: linear-gradient(135deg, #bf5af2 0%, #a448e0 100%); }
           .toast-icon-wrapper { border-radius: 50%; }
-          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3); }
-          .toast.info    .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff 0%, #007aff 100%); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
-          .toast.error   .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a 0%, #ff3b30 100%); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3); }
+          .toast.success .toast-icon-wrapper { background: linear-gradient(135deg, #34c759, #30d158); }
+          .toast.info .toast-icon-wrapper { background: linear-gradient(135deg, #0a84ff, #007aff); }
+          .toast.error .toast-icon-wrapper { background: linear-gradient(135deg, #ff453a, #ff3b30); }
+          .popup-icon-wrapper i, .toast-icon-wrapper i { font-size: 18px; color: #fff; }
+          .popup-content, .toast-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+          .popup-title, .toast-title { font-size: 0.88rem; font-weight: 600; color: #fff; }
+          .popup-text, .toast-msg { font-size: 0.75rem; color: rgba(255,255,255,0.7); }
+          .toast-wrap { position: fixed; top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px); left: 50%; z-index: 960; pointer-events: none; }
 
-          .popup-icon-wrapper i, .toast-icon-wrapper i { 
-            font-size: 18px; color: #fff;
-            will-change: transform;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transform: translate3d(0, 0, 0);
-          }
-
-          .popup-content, .toast-content { 
-            flex: 1; display: flex; flex-direction: column; gap: 4px; 
-            max-height: 60vh; overflow-y: auto;
-            opacity: 0;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            animation: contentFade 0.4s ease 0.2s forwards; 
-            contain: layout style;
-          }
-
-          @keyframes contentFade { 
-            from { opacity: 0; transform: translate3d(10px, 0, 0); } 
-            to   { opacity: 1; transform: translate3d(0, 0, 0); } 
-          }
-          
-          .popup-title, .toast-title { font-size: 0.88rem; font-weight: 600; color: #fff; margin: 0; line-height: 1.3; }
-          .popup-text,  .toast-msg   { font-size: 0.75rem; color: rgba(255, 255, 255, 0.7); margin: 0; line-height: 1.4; }
-
-          @keyframes iconPop { 
-            from { transform: scale3d(0, 0, 1); opacity: 0; } 
-            to   { transform: scale3d(1, 1, 1); opacity: 1; } 
-          }
-
-          .toast-wrap { 
-            position: fixed; 
-            top: calc(max(20px, env(safe-area-inset-top, 20px)) + var(--pill-height) + 16px); 
-            left: 50%; 
-            z-index: 960; 
-            pointer-events: none; 
-          }
-
-          .container {
-            max-width: 1280px; 
-            margin: 0 auto;
-            padding-top: 6.5rem; 
-            padding-bottom: 7rem;
-            padding-left: 2rem; 
-            padding-right: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-          }
-
-          .player-banner-container {
-            width: 100%; aspect-ratio: 16/9; 
-            border-radius: 24px; overflow: hidden;
-            position: relative; background-color: #1a1a1a; 
-            border: none;
-            cursor: pointer;
-            box-shadow: var(--shadow-standard);
-            transition: background-image 0.5s var(--ease-smooth);
-          }
-
-          .player-banner-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.3);
-            pointer-events: none;
-            z-index: 1;
-          }
-
-          .banner-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-elastic); }
-          .player-banner-container:hover .banner-image { transform: scale(1.05); }
-
-          .play-button-static {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 64px; height: 64px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            border: 1px solid rgba(255,255,255,0.3); z-index: 3;
-          }
-
-          .play-button-static i { color: #fff; font-size: 24px; margin-left: 4px; }
-
-          .details-container {
-            border-radius: 24px; padding: 18px; 
-            display: flex; flex-direction: column; gap: 16px;
-            border: none;
-            box-shadow: var(--shadow-standard);
-            background: rgba(255, 255, 255, 0.03);
-          }
-
-          .media-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
-
-          .season-controls { display: flex; align-items: center; margin-top: 8px; }
-
-          .native-season-select {
-            appearance: none; -webkit-appearance: none;
-            background: rgba(255,255,255,0.1) url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 8px center;
-            padding: 4px 28px 4px 10px; border-radius: 12px;
-            font-size: 0.8rem; color: #fff; border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; font-family: inherit; outline: none; transition: background 0.2s;
-          }
-
-          .native-season-select:hover { background-color: rgba(255,255,255,0.15); }
-          .native-season-select option { background: #1a1a1a; color: #fff; }
-
-          .episodes-wrapper {
+          .hero-section {
             position: relative;
+            width: 100%;
+            height: clamp(500px, 60vw, 620px);
+            overflow: hidden;
           }
-
-          .episodes-carousel { 
-            display: flex; gap: 10px; overflow-x: auto; 
-            padding: 10px 14px 28px 14px; 
-            scrollbar-width: none; 
-            margin: 0 -14px;
-            position: relative;
-          }
-
-          .episodes-carousel::-webkit-scrollbar { display: none; }
-          
-          .ep-card {
-            min-width: 110px; height: 65px; 
-            background-size: cover; background-position: center;
-            border-radius: 10px; padding: 0; 
-            border: none;
-            cursor: pointer; transition: all 0.4s var(--ease-smooth); 
-            position: relative; overflow: hidden; 
-            background-color: #1a1a1a;
-            flex-shrink: 0;
-          }
-
-          .ep-card.active {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
-          }
-
-          .ep-card:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 8px 25px -5px rgba(0,0,0,0.5);
-          }
-
-          .ep-card.active:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
-          }
-
-          .ep-card.unwatched .ep-blur-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 2;
-            transition: all 0.4s var(--ease-smooth);
-            border-radius: 10px;
-          }
-
-          .ep-card.unwatched.active .ep-blur-overlay {
-            opacity: 0;
-          }
-          
-          .ep-card-info {
-            position: relative; z-index: 3;
+          .hero-backdrop {
+            position: absolute; inset: 0;
             width: 100%; height: 100%;
-            padding: 6px 8px;
-            display: flex; align-items: flex-start; justify-content: flex-start;
+            object-fit: cover;
+          }
+          .hero-gradient {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.95) 100%);
+          }
+          .hero-content {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: clamp(20px, 4vw, 32px);
+            display: flex; flex-direction: column; gap: clamp(12px, 2vw, 20px);
+          }
+          .hero-continue-btn {
+            display: flex; align-items: center; gap: 10px;
+            padding: clamp(10px, 2vw, 14px) clamp(20px, 4vw, 28px);
+            background: #DA7757; border-radius: 28px;
+            color: #ffffff; font-size: clamp(14px, 2vw, 16px); font-weight: 700;
+            cursor: pointer; transition: transform 0.2s, opacity 0.2s;
+            width: fit-content;
+          }
+          .hero-continue-btn:hover { transform: scale(1.05); }
+          .hero-continue-btn:active { transform: scale(0.95); }
+          .hero-continue-btn i { font-size: clamp(16px, 2.5vw, 22px); }
+          .hero-title {
+            font-size: clamp(24px, 5vw, 30px); font-weight: 800;
+            color: #ffffff; line-height: 1.1;
+          }
+          .hero-meta {
+            display: flex; align-items: center; gap: clamp(8px, 1.5vw, 12px);
+            flex-wrap: wrap; font-size: clamp(13px, 2vw, 15px);
+            color: #AFAFAF;
+          }
+          .hero-rating-badge {
+            padding: clamp(2px, 0.4vw, 4px) clamp(6px, 1vw, 10px);
+            border-radius: 8px; font-size: clamp(12px, 1.5vw, 14px);
+            font-weight: 700; color: #fff;
+          }
+          .rating-L { background: #4CAF50; }
+          .rating-18 { background: #f44336; }
+
+          .social-section {
+            display: flex; justify-content: space-around; align-items: center;
+            padding: clamp(16px, 3vw, 24px) clamp(16px, 4vw, 32px);
+          }
+          .social-action {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            color: rgba(255,255,255,0.7); font-size: clamp(12px, 1.8vw, 15px);
+            cursor: pointer; transition: color 0.2s;
+          }
+          .social-action:hover { color: #ffffff; }
+          .social-action i { font-size: clamp(20px, 3vw, 24px); }
+          .social-action.active i { color: #FF5B5B; }
+
+          .synopsis-section {
+            padding: 0 clamp(16px, 4vw, 32px); margin-bottom: clamp(12px, 2vw, 20px);
+          }
+          .synopsis-text {
+            font-size: clamp(14px, 2vw, 17px); font-weight: 500;
+            line-height: 1.45; color: #ffffff;
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+            overflow: hidden; transition: all 0.3s ease;
+          }
+          .synopsis-text.expanded { -webkit-line-clamp: unset; }
+          .synopsis-expand-btn {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            margin: 12px auto 0; color: rgba(255,255,255,0.6);
+            font-size: clamp(12px, 1.8vw, 14px); cursor: pointer;
+            transition: color 0.2s;
+          }
+          .synopsis-expand-btn:hover { color: #ffffff; }
+
+          .episodes-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 clamp(16px, 4vw, 32px); margin-bottom: clamp(16px, 3vw, 24px);
+            gap: 12px;
+          }
+          .toolbar-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: clamp(8px, 1.5vw, 12px) clamp(14px, 2.5vw, 20px);
+            background: #1B1B1B; border-radius: 12px;
+            color: #ffffff; font-size: clamp(13px, 2vw, 15px);
+            font-weight: 600; cursor: pointer; transition: background 0.2s;
+          }
+          .toolbar-btn:hover { background: #2a2a2a; }
+          .toolbar-select {
+            appearance: none; -webkit-appearance: none;
+            background: #1B1B1B url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 8px center;
+            padding: clamp(8px, 1.5vw, 12px) 32px clamp(8px, 1.5vw, 12px) clamp(14px, 2.5vw, 20px);
+            border-radius: 12px; border: none;
+            color: #ffffff; font-size: clamp(13px, 2vw, 15px);
+            font-weight: 600; cursor: pointer; font-family: inherit;
           }
 
-          .ep-watched-icon {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            z-index: 5;
-            font-size: 14px;
-            color: #fff;
-            pointer-events: none;
-            transition: all 0.3s var(--ease-smooth);
+          .episodes-list {
+            padding: 0 clamp(12px, 2.5vw, 24px);
+            display: flex; flex-direction: column;
+            gap: clamp(8px, 1.5vw, 12px);
+            margin-bottom: 100px;
           }
-
-          .ep-card-num { 
-            font-size: 0.8rem; font-weight: 700; color: #fff; 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            padding: 2px 6px; border-radius: 4px;
-            position: relative;
-            z-index: 3;
-          }
-
-          .indicator-arrow {
-            position: absolute;
-            bottom: 4px;
-            pointer-events: none;
-            z-index: 10;
-            transform: translateX(-50%);
-            transition: left 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease;
-            font-size: 13px;
-            color: rgba(255,255,255,0.75);
-            line-height: 1;
-          }
-
-          .scrollbar-wrapper {
-            display: none;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: var(--shadow-standard);
-            padding: 10px 16px;
-            display: flex;
+          .episode-card {
+            display: flex; gap: clamp(10px, 2vw, 14px);
+            padding: clamp(10px, 2vw, 14px);
+            background: #1B1B1B; border-radius: 16px;
+            cursor: pointer; transition: background 0.2s, transform 0.2s;
             align-items: center;
           }
-
-          .custom-scrollbar {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            outline: none;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            margin: 0;
+          .episode-card:hover { background: #252525; transform: translateY(-2px); }
+          .episode-card.active { border: 1px solid rgba(255,255,255,0.2); }
+          .episode-thumb {
+            width: clamp(120px, 25vw, 170px); height: clamp(65px, 14vw, 95px);
+            border-radius: 12px; overflow: hidden; flex-shrink: 0;
+            background: #2a2a2a;
           }
-
-          .custom-scrollbar:hover {
-            background: rgba(255, 255, 255, 0.18);
+          .episode-thumb img {
+            width: 100%; height: 100%; object-fit: cover;
           }
-
-          .custom-scrollbar::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-          }
-
-          .custom-scrollbar::-webkit-slider-thumb:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.6);
-          }
-
-          .custom-scrollbar::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-          }
-
-          .no-image-placeholder {
-            position: absolute; inset: 0;
+          .episode-thumb-placeholder {
+            width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
-            background: #111; color: rgba(255,255,255,0.2); font-size: 20px;
-            z-index: 1;
+            color: rgba(255,255,255,0.2); font-size: 20px;
+          }
+          .episode-info {
+            flex: 1; min-width: 0;
+            display: flex; flex-direction: column; gap: clamp(2px, 0.5vw, 4px);
+          }
+          .episode-title {
+            font-size: clamp(14px, 2vw, 17px); font-weight: 700;
+            line-height: 1.3; color: #ffffff;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+          .episode-duration {
+            font-size: clamp(12px, 1.8vw, 15px); font-weight: 500;
+            color: #9A9A9A;
+          }
+          .episode-watched-badge {
+            flex-shrink: 0;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            color: #4CAF50; font-size: 14px;
           }
 
           .player-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            z-index: 2000; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center;
-            animation: overlayFadeIn 0.4s var(--ease-smooth);
-            padding: 16px;
-            overflow-y: auto;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95); backdrop-filter: blur(20px);
+            z-index: 2000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 16px; animation: overlayFadeIn 0.4s ease;
           }
-
           @keyframes overlayFadeIn {
-            from { opacity: 0; backdrop-filter: blur(0px); }
-            to   { opacity: 1; backdrop-filter: blur(20px); }
-          }
-
-          .player-wrapper-vertical {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 90vw;
-            animation: playerSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-
-          @keyframes playerSlideUp {
-            from { opacity: 0; transform: translateY(60px) scale(0.9); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-          }
-
-          .player-popup-container {
-            position: relative; 
-            background: #000; 
-            border-radius: 20px; 
-            overflow: hidden;
-            box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 20px 60px rgba(10, 132, 255, 0.15);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.4s var(--ease-elastic); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            animation: playerContainerPop 0.6s var(--ease-elastic) 0.1s backwards;
-            width: 100%;
-            aspect-ratio: 1/1;
-          }
-
-          @keyframes playerContainerPop {
-            from { opacity: 0; transform: scale(0.8); }
-            to   { opacity: 1; transform: scale(1); }
-          }
-
-          .player-embed { 
-            width: 100%; height: 100%; border: none;
-            animation: embedFadeIn 0.5s ease 0.2s backwards;
-          }
-
-          @keyframes embedFadeIn {
             from { opacity: 0; }
-            to   { opacity: 1; }
+            to { opacity: 1; }
           }
-          
-          .player-header-controls {
-            width: 100%; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            margin-bottom: 16px; 
-            animation: controlsFadeIn 0.5s ease 0.15s backwards;
-            flex-shrink: 0;
-            padding: 0 4px;
+          .player-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 90vw;
           }
-
-          @keyframes controlsFadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to   { opacity: 1; transform: translateY(0); }
+          .player-container {
+            position: relative; background: #000; border-radius: 20px;
+            overflow: hidden; box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            width: 100%; aspect-ratio: 16/9;
           }
-          
-          .ep-indicator { 
-            font-size: 1rem; 
-            font-weight: 700; 
-            color: #fff; 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.4); 
-            padding: 10px 20px; 
-            border-radius: 12px;
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.15);
-            transition: all 0.3s var(--ease-smooth);
-            flex-shrink: 0;
+          .player-embed { width: 100%; height: 100%; border: none; }
+          .player-controls {
+            width: 100%; display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 12px;
           }
-
-          .ep-indicator:hover {
-            background: rgba(0,0,0,0.5);
-            border-color: rgba(255,255,255,0.25);
-            transform: scale(1.05);
+          .ep-indicator {
+            font-size: clamp(0.8rem, 2vw, 1rem); font-weight: 700;
+            color: #fff; background: rgba(0,0,0,0.4);
+            padding: 8px 16px; border-radius: 12px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
           }
-
-          .right-controls { 
-            display: flex; 
-            gap: 12px; 
-            flex-shrink: 0;
+          .close-btn {
+            width: 44px; height: 44px; background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer; transition: transform 0.2s;
           }
-
-          .control-btn {
-            width: 48px; 
-            height: 48px; 
-            background: rgba(255,255,255,0.08); 
-            backdrop-filter: blur(10px);
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: rgba(255,255,255,0.9); 
-            transition: all 0.3s var(--ease-smooth); 
-            border: 1px solid rgba(255,255,255,0.15); 
-            cursor: pointer; 
-            position: relative; 
-            overflow: hidden;
-            flex-shrink: 0;
+          .close-btn:hover { transform: scale(1.1); }
+          .nav-ep-btns {
+            display: flex; justify-content: center; gap: 12px; margin-top: 12px;
           }
-
-          .control-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
-          .control-btn:active { transform: scale(0.95); }
-          .control-btn i { font-size: 18px; transition: all 0.3s var(--ease-smooth); }
-          .control-btn:hover i { transform: scale(1.15); }
-          
-          .player-bottom-controls {
-            display: flex; 
-            justify-content: center; 
-            gap: 16px;
-            margin-top: 16px;
-            animation: controlsFadeIn 0.5s ease 0.25s backwards;
-            flex-shrink: 0;
-            width: 100%;
-          }
-
           .nav-ep-btn {
-            background: rgba(255,255,255,0.08); 
-            padding: 12px 24px; 
-            border-radius: 50px;
-            color: rgba(255,255,255,0.9); 
-            font-weight: 600; 
-            font-size: 0.95rem;
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            transition: all 0.3s var(--ease-smooth); 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.15); 
-            cursor: pointer; 
-            position: relative; 
-            overflow: hidden;
-            white-space: nowrap;
-            flex-shrink: 0;
+            padding: 10px 20px; border-radius: 50px;
+            background: rgba(255,255,255,0.08); color: #fff;
+            font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer; transition: transform 0.2s;
           }
-
-          .nav-ep-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.08); border-color: rgba(255,255,255,0.3); }
-          .nav-ep-btn:active { transform: scale(0.95); }
-          .nav-ep-btn i { transition: all 0.3s var(--ease-smooth); }
-          .nav-ep-btn:hover i { transform: scale(1.2); }
-
+          .nav-ep-btn:hover { transform: scale(1.05); }
           .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-          .nav-ep-btn:disabled:hover { transform: scale(1); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+
+          .show-nav-btn {
+            position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 20px));
+            left: 50%; z-index: 999;
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.9);
+            transition: all 0.6s var(--ease-smooth);
+            transform: translateX(-50%);
+          }
+          .show-nav-btn:not(.visible) { opacity: 0; visibility: hidden; pointer-events: none; }
+          .show-nav-btn.visible { opacity: 1; visibility: visible; pointer-events: auto; }
 
           @media (min-width: 769px) {
-            .ep-card {
-              min-width: 160px;
-              height: 90px;
-            }
-
-            .scrollbar-wrapper {
-              display: flex;
-            }
-            
-            .player-wrapper-vertical {
-              max-width: 700px;
-            }
+            .player-wrapper { max-width: 800px; }
           }
 
           @media (max-width: 768px) {
-            .container { 
-              padding-left: 1rem; 
-              padding-right: 1rem; 
-              gap: 24px;
-            }
-            .bar-container { width: 94%; }
-            .player-banner-container { border-radius: 16px; }
-            .details-container { padding: 14px; }
-            .media-title { font-size: 1rem; }
-            .player-wrapper-vertical {
-              max-width: 100%;
-            }
-            .player-popup-container {
-              width: 100%;
-            }
-            .player-header-controls {
-              margin-bottom: 12px;
-            }
-            .ep-indicator { font-size: 0.85rem; padding: 6px 12px; }
-            .control-btn { width: 38px; height: 38px; }
-            .nav-ep-btn { padding: 10px 18px; font-size: 0.85rem; }
-            .player-bottom-controls {
-              margin-top: 12px;
-              gap: 12px;
-            }
-          }
-
-          @media (max-height: 500px) {
-            .player-overlay {
-              padding: 8px;
-              justify-content: flex-start;
-              padding-top: 60px;
-            }
-            .player-wrapper-vertical {
-              max-width: 100%;
-            }
-            .player-popup-container {
-              width: min(60vh, 90vw);
-              aspect-ratio: 1/1;
-            }
-            .player-header-controls {
-              margin-bottom: 8px;
-            }
-            .player-bottom-controls {
-              margin-top: 8px;
-            }
-            .ep-indicator { 
-              font-size: 0.75rem; 
-              padding: 4px 10px; 
-            }
-            .control-btn { 
-              width: 32px; 
-              height: 32px; 
-            }
-            .control-btn i { font-size: 14px; }
-            .nav-ep-btn { 
-              padding: 6px 14px; 
-              font-size: 0.75rem; 
-            }
+            .hero-section { height: clamp(400px, 80vw, 500px); }
+            .episode-card { padding: 10px; }
           }
         `}</style>
       </Head>
@@ -1442,16 +810,113 @@ export default function WatchPage() {
       <LoadingScreen visible={isLoading} />
 
       {content && (
-        <div 
-          className="site-wrapper"
-          style={{
-            backgroundImage: content?.backdrop_path 
-              ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
-              : `url(${DEFAULT_BACKDROP})`,
-          }}
-        >
+        <>
+          <div className="hero-section">
+            <img
+              className="hero-backdrop"
+              src={content?.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP}
+              alt={content.title || content.name}
+            />
+            <div className="hero-gradient"></div>
+            <div className="hero-content">
+              {type === 'tv' ? (
+                <button className="hero-continue-btn" onClick={() => setIsPlaying(true)}>
+                  <i className="fas fa-play"></i> Continuar S{season}:E{episode}
+                </button>
+              ) : (
+                <button className="hero-continue-btn" onClick={() => setIsPlaying(true)}>
+                  <i className="fas fa-play"></i> Assistir
+                </button>
+              )}
+              <h1 className="hero-title">{content.title || content.name}</h1>
+              <div className="hero-meta">
+                <span className={`hero-rating-badge ${getRatingClass(content.adult)}`}>{content.adult ? '18+' : 'L'}</span>
+                <span>{genres}</span>
+                <span>• {new Date(releaseDate).getFullYear() || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="social-section">
+            <div className="social-action">
+              <i className="fas fa-comment"></i>
+              <span>Comentários</span>
+            </div>
+            <div className="social-action">
+              <i className="fas fa-thumbs-up"></i>
+              <span>{Math.round(content.popularity || 0)}</span>
+            </div>
+            <div className={`social-action ${isFavorite ? 'active' : ''}`} onClick={toggleFavorite}>
+              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+              <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
+            </div>
+            <div className="social-action" onClick={() => {
+              if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href })
+            }}>
+              <i className="fas fa-share-alt"></i>
+              <span>Compartilhar</span>
+            </div>
+          </div>
+
+          <div className="synopsis-section">
+            <p className={`synopsis-text ${synopsisExpanded ? 'expanded' : ''}`}>
+              {content?.overview || 'Sinopse indisponível.'}
+            </p>
+            {content?.overview && content.overview.length > 200 && (
+              <button className="synopsis-expand-btn" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
+                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`}></i>
+              </button>
+            )}
+          </div>
+
+          {type === 'tv' && (
+            <>
+              <div className="episodes-toolbar">
+                <select className="toolbar-select" value={season} onChange={handleNativeSeasonChange}>
+                  {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>Temporada {num}</option>
+                  ))}
+                </select>
+                <button className="toolbar-btn" onClick={() => setEpisodeOrder(episodeOrder === 'asc' ? 'desc' : 'asc')}>
+                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort"></i>
+                </button>
+              </div>
+
+              <div className="episodes-list">
+                {getOrderedEpisodes().map(ep => {
+                  const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
+                  const isCurrent = ep.episode_number === episode
+                  return (
+                    <div
+                      key={ep.id}
+                      className={`episode-card ${isCurrent ? 'active' : ''}`}
+                      onClick={() => handleEpisodeClick(ep.episode_number)}
+                    >
+                      <div className="episode-thumb">
+                        {ep.still_path ? (
+                          <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt={`Episódio ${ep.episode_number}`} />
+                        ) : (
+                          <div className="episode-thumb-placeholder"><i className="fas fa-image"></i></div>
+                        )}
+                      </div>
+                      <div className="episode-info">
+                        <h4 className="episode-title">{ep.episode_number}. {ep.name || 'Sem título'}</h4>
+                        <p className="episode-duration">{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</p>
+                      </div>
+                      {isWatched && (
+                        <div className="episode-watched-badge">
+                          <i className="fas fa-check-circle"></i>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
           <Header
-            label={scrolled ? "Reproduzindo" : "Yoshikawa"}
+            label={scrolled ? (content.title || content.name) : "Yoshikawa"}
             scrolled={scrolled}
             showInfo={showInfoPopup}
             toggleInfo={toggleInfoPopup}
@@ -1465,32 +930,18 @@ export default function WatchPage() {
           <ToastContainer toast={currentToast} closeToast={manualCloseToast} />
 
           {showSynopsisPopup && (
-            <div 
-              className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} 
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="popup-icon-wrapper synopsis">
-                <i className="fas fa-align-left"></i>
-              </div>
+            <div className={`standard-popup glass-panel ${synopsisClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+              <div className="popup-icon-wrapper synopsis"><i className="fas fa-align-left"></i></div>
               <div className="popup-content">
                 <p className="popup-title">Sinopse</p>
-                <p className="popup-text">
-                  {type === 'tv' && currentEpisodeData?.overview 
-                    ? currentEpisodeData.overview 
-                    : content?.overview || "Sinopse indisponível."}
-                </p>
+                <p className="popup-text">{content?.overview || "Sinopse indisponível."}</p>
               </div>
             </div>
           )}
 
           {showDataPopup && (
-            <div 
-              className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} 
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="popup-icon-wrapper data">
-                <i className="fas fa-film"></i>
-              </div>
+            <div className={`standard-popup glass-panel ${dataClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+              <div className="popup-icon-wrapper data"><i className="fas fa-film"></i></div>
               <div className="popup-content">
                 <p className="popup-title">Ficha Técnica</p>
                 <div className="popup-text">
@@ -1502,166 +953,52 @@ export default function WatchPage() {
             </div>
           )}
 
-          <main className="container">
-            <div 
-              className="player-banner-container" 
-              onClick={() => setIsPlaying(true)}
-              style={{
-                backgroundImage: currentEpisodeData?.still_path 
-                  ? `url(https://image.tmdb.org/t/p/original${currentEpisodeData.still_path})`
-                  : content.backdrop_path 
-                    ? `url(https://image.tmdb.org/t/p/original${content.backdrop_path})`
-                    : `url(${DEFAULT_BACKDROP})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            >
-              <div className="play-button-static">
-                <i className="fas fa-play"></i>
-              </div>
-            </div>
-
-            <div className="glass-panel details-container">
-              <div className="text-left">
-                <h2 className="media-title">{content.title || content.name}</h2>
-              </div>
-
-              {type === 'tv' && (
-                <>
-                  <div className="season-controls">
-                    <select 
-                      className="native-season-select"
-                      value={season}
-                      onChange={handleNativeSeasonChange}
-                    >
-                      {Array.from({ length: content?.number_of_seasons || 1 }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>Temporada {num}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="episodes-wrapper">
-                    <div className="episodes-carousel" ref={carouselRef}>
-                      {indicatorLeft !== null && (
-                        <i 
-                          className="indicator-arrow fas fa-chevron-up"
-                          style={{ left: indicatorLeft, opacity: 1 }}
-                        />
-                      )}
-
-                      {seasonData?.episodes ? seasonData.episodes.map(ep => {
-                        const isWatched = watchedEps.has(`${season}-${ep.episode_number}`)
-                        return (
-                          <div 
-                            key={ep.id} 
-                            className={`ep-card ${ep.episode_number === episode ? 'active' : ''} ${!isWatched ? 'unwatched' : ''}`}
-                            onClick={() => handleEpisodeClick(ep.episode_number)}
-                            style={{
-                              backgroundImage: ep.still_path 
-                                ? `url(https://image.tmdb.org/t/p/w300${ep.still_path})`
-                                : 'none'
-                            }}
-                          >
-                            {!ep.still_path && (
-                              <div className="no-image-placeholder">
-                                <i className="fas fa-image"></i>
-                              </div>
-                            )}
-                            {!isWatched && (
-                              <div className="ep-blur-overlay"></div>
-                            )}
-                            <div className="ep-card-info">
-                              <span className="ep-card-num">Ep {ep.episode_number}</span>
-                            </div>
-                            {isWatched && (
-                              <div className="ep-watched-icon">
-                                <i className="fas fa-eye"></i>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      }) : (
-                        <div style={{color:'#666', fontSize:'0.8rem', paddingLeft: '8px'}}>Carregando...</div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {type === 'tv' && (
-              <div className="scrollbar-wrapper">
-                <input 
-                  type="range" 
-                  className="custom-scrollbar"
-                  min="0" 
-                  max="1" 
-                  step="0.001"
-                  value={scrollProgress}
-                  onChange={handleScrollbarChange}
-                />
-              </div>
-            )}
-          </main>
-
-          <BottomNav 
-            isFavorite={isFavorite} 
-            onToggleFavorite={toggleFavorite} 
-            onToggleSynopsis={toggleSynopsisPopup} 
+          <BottomNav
+            isFavorite={isFavorite}
+            onToggleFavorite={toggleFavorite}
+            onToggleSynopsis={toggleSynopsisPopup}
             onToggleData={toggleDataPopup}
             onToggleNav={toggleNavVisibility}
             navHidden={navHidden}
           />
 
-          <button 
+          <button
             className={`show-nav-btn glass-panel ${navHidden ? 'visible' : ''}`}
             onClick={toggleNavVisibility}
             title={navHidden ? "Mostrar Navegação" : "Ocultar Navegação"}
           >
             <i className={navHidden ? "fas fa-chevron-up" : "fas fa-chevron-down"}></i>
           </button>
-        </div>
-      )}
 
-      {isPlaying && (
-        <div className="player-overlay">
-          <div className="player-wrapper-vertical">
-            <div className="player-header-controls">
-              <span className="ep-indicator">
-                {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
-              </span>
-              <div className="right-controls">
-                <button className="control-btn" onClick={() => setIsPlaying(false)} title="Fechar">
-                  <i className="fas fa-xmark"></i>
-                </button>
+          {isPlaying && (
+            <div className="player-overlay">
+              <div className="player-wrapper">
+                <div className="player-controls">
+                  <span className="ep-indicator">
+                    {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+                  </span>
+                  <button className="close-btn" onClick={() => setIsPlaying(false)}>
+                    <i className="fas fa-xmark"></i>
+                  </button>
+                </div>
+                <div className="player-container">
+                  <iframe src={getEmbedUrl()} className="player-embed" frameBorder="0" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" title="Player"></iframe>
+                </div>
+                {type === 'tv' && (
+                  <div className="nav-ep-btns">
+                    <button className="nav-ep-btn" onClick={handlePrevEp} disabled={episode === 1}>
+                      <i className="fas fa-backward-step"></i> Ant
+                    </button>
+                    <button className="nav-ep-btn" onClick={handleNextEp}>
+                      Prox <i className="fas fa-forward-step"></i>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="player-popup-container">
-              <iframe 
-                src={getEmbedUrl()} 
-                className="player-embed" 
-                frameBorder="0"
-                allowFullScreen 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                referrerPolicy="origin"
-                title="Player"
-              ></iframe>
-            </div>
-
-            {type === 'tv' && (
-              <div className="player-bottom-controls">
-                <button className="nav-ep-btn glass-panel" onClick={handlePrevEp} disabled={episode === 1}>
-                  <i className="fas fa-backward-step"></i> Ant
-                </button>
-                <button className="nav-ep-btn glass-panel" onClick={handleNextEp}>
-                  Prox <i className="fas fa-forward-step"></i>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+          )}
+        </>
       )}
     </>
   )
-            }
+  }
