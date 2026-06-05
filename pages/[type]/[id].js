@@ -6,7 +6,6 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 
-// Componente de Loading mantido para carregamento inicial
 const LoadingScreen = ({ visible }) => (
   <div className={`loading-overlay${!visible ? ' fade-out' : ''}`}>
     <div className="loading-spinner">
@@ -41,9 +40,16 @@ export default function WatchPage() {
         const arr = JSON.parse(w)
         if (arr.length > 0) {
           const all = arr.map(key => key.split('-').map(Number))
-          all.sort((a, b) => a[0] === b[0] ? b[1] - a[1] : b[0] - a[0])
+          all.sort((a, b) => b[0] - a[0] || b[1] - a[1])
           return { season: all[0][0], episode: all[0][1] }
         }
+      }
+    } catch (e) {}
+    try {
+      const saved = localStorage.getItem(`yoshikawaProgress_${id}`)
+      if (saved) {
+        const p = JSON.parse(saved)
+        if (p.season && p.episode) return { season: p.season, episode: p.episode }
       }
     } catch (e) {}
     return { season: 1, episode: 1 }
@@ -67,13 +73,14 @@ export default function WatchPage() {
           await fetchSeasonData(id, last.season)
         }
         checkFavorite(data)
-        // Like baseado em localstorage
         try {
           const liked = localStorage.getItem(`yoshikawaLiked_${id}`)
           setIsLiked(liked === 'true')
         } catch (e) {}
         contentLoaded.current = true
-      } catch { /* silencioso */ }
+      } catch (error) {
+        console.error('Erro ao carregar conteúdo:', error)
+      }
       setIsLoading(false)
     }
     load()
@@ -87,7 +94,9 @@ export default function WatchPage() {
       setAllSeasonsData(prev => ({ ...prev, [sn]: data }))
       setSeasonData(data)
       setSeason(sn)
-    } catch { /* silencioso */ }
+    } catch (e) {
+      console.error('Erro ao carregar temporada:', e)
+    }
   }
 
   const checkFavorite = (item) => {
@@ -108,7 +117,9 @@ export default function WatchPage() {
       else favs.push({ id: content.id, media_type: type, title: content.title || content.name, poster_path: content.poster_path })
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favs))
       setIsFavorite(!exists)
-    } catch { /* silencioso */ }
+    } catch (e) {
+      console.error('Erro ao favoritar:', e)
+    }
   }
 
   const toggleLike = () => {
@@ -133,24 +144,35 @@ export default function WatchPage() {
     setEpisode(savedEp)
   }
 
-  const handleEpisodeClick = (epNum) => { setEpisode(epNum); setIsPlaying(true) }
+  const handleEpisodeClick = (epNum) => {
+    setEpisode(epNum)
+    setIsPlaying(true)
+    markWatched(season, epNum)
+  }
 
-  const markWatched = () => {
+  const markWatched = useCallback((s, ep) => {
     if (type !== 'tv' || !id) return
-    const key = `${season}-${episode}`
+    const key = `${s}-${ep}`
     setWatchedEps(prev => {
       if (prev.has(key)) return prev
       const next = new Set([...prev, key])
       try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch (e) {}
       return next
     })
+    try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season: s, episode: ep })) } catch (e) {}
+  }, [id, type])
+
+  const handleContinue = () => {
+    if (type === 'tv') markWatched(season, episode)
+    setIsPlaying(true)
   }
 
   const getEmbedUrl = () => {
     if (!content) return ''
     if (type === 'movie') {
-      const imdb = content.external_ids?.imdb_id || content.imdb_id
-      return imdb ? `https://superflixapi.best/filme/${imdb}` : ''
+      const imdbId = content.external_ids?.imdb_id || content.imdb_id
+      if (imdbId) return `https://superflixapi.best/filme/${imdbId}`
+      return `https://superflixapi.best/filme/${id}`
     }
     return `https://superflixapi.best/serie/${id}/${season}/${episode}`
   }
@@ -176,7 +198,6 @@ export default function WatchPage() {
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body { font-family: 'Inter', sans-serif; background: #050505; color: #fff; line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 
-          /* Loading */
           .loading-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #050505; }
           .loading-overlay.fade-out { display: none; }
           .loading-spinner { width: 48px; height: 48px; position: relative; }
@@ -195,37 +216,33 @@ export default function WatchPage() {
           .loading-spinner span:nth-child(12) { transform: rotate(330deg); animation-delay: 0s; }
           @keyframes spinTick { 0% { background: rgba(255,255,255,0.85); } 100% { background: rgba(255,255,255,0.10); } }
 
-          /* Hero */
           .hero { position: relative; width: 100%; height: clamp(450px, 60vw, 620px); overflow: hidden; }
           .hero-bg { width: 100%; height: 100%; object-fit: cover; }
           .hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 50%, #050505 100%); }
           .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: clamp(20px,4vw,32px); display: flex; flex-direction: column; gap: 12px; }
 
-          .top-bar { position: absolute; top: max(20px, env(safe-area-inset-top, 20px)); left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 clamp(16px,4vw,24px); z-index: 10; }
+          .top-bar { position: absolute; top: max(20px, env(safe-area-inset-top, 20px)); left: 0; padding: 0 clamp(16px,4vw,24px); z-index: 10; }
           .top-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: background 0.2s; text-decoration: none; }
           .top-btn:hover { background: rgba(255,255,255,0.15); }
 
-          .continue-btn { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #F05454; border-radius: 28px; color: #fff; font-weight: 700; font-size: clamp(14px,2vw,16px); cursor: pointer; border: none; width: fit-content; transition: transform 0.2s; }
+          .continue-btn { display: flex; align-items: center; gap: 5px; padding: 5px 14px; background: #F05454; border-radius: 28px; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; border: none; width: fit-content; transition: transform 0.2s; }
           .continue-btn:hover { transform: scale(1.03); }
           .hero-title { font-size: clamp(24px,5vw,30px); font-weight: 800; line-height: 1.1; }
           .hero-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: clamp(13px,2vw,15px); color: #AFAFAF; }
           .hero-rating { padding: 2px 8px; border-radius: 8px; font-weight: 700; font-size: 12px; color: #fff; }
           .rating-L { background: #4CAF50; } .rating-18 { background: #f44336; }
 
-          /* Social */
           .social-bar { display: flex; justify-content: space-around; padding: 20px 16px; }
           .social-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 13px; transition: color 0.2s; background: none; border: none; font-family: inherit; }
           .social-item i { font-size: 22px; }
           .social-item.liked i { color: #2196F3; }
           .social-item.favorited i { color: #FF5B5B; }
 
-          /* Synopsis */
           .synopsis { padding: 0 16px 20px; }
           .synopsis p { font-size: 15px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
           .synopsis p.expanded { -webkit-line-clamp: unset; }
           .synopsis-toggle { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 12px; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 13px; background: none; border: none; font-family: inherit; width: 100%; }
 
-          /* Episodes */
           .episodes-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 0 16px 16px; gap: 10px; }
           .episodes-toolbar select, .episodes-toolbar button { background: #121212; border: none; color: #fff; padding: 10px 16px; border-radius: 12px; font-family: inherit; font-size: 14px; cursor: pointer; }
           .episodes-toolbar select { appearance: none; padding-right: 30px; background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 8px center; }
@@ -241,13 +258,12 @@ export default function WatchPage() {
           .ep-info span { font-size: 13px; color: #9A9A9A; }
           .ep-card.active h4 { color: #F05454; }
 
-          /* Player Overlay */
           .player-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; padding: 16px; }
-          .player-box { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 12px; }
-          .player-frame { background: #000; border-radius: 20px; overflow: hidden; aspect-ratio: 16/9; }
+          .player-box { width: 100%; max-width: min(90vw, 90vh); display: flex; flex-direction: column; gap: 12px; }
+          .player-frame { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 20px; overflow: hidden; }
           .player-frame iframe { width: 100%; height: 100%; border: none; }
           .player-controls { display: flex; justify-content: space-between; align-items: center; }
-          .player-controls span { font-weight: 700; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px; }
+          .player-controls span { font-weight: 700; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px; font-size: 14px; }
           .player-controls button { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
           .nav-ep-btn { display: flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; font-family: inherit; }
           .nav-ep-btn:hover { background: rgba(255,255,255,0.2); }
@@ -255,7 +271,6 @@ export default function WatchPage() {
 
           @media (min-width: 768px) {
             .ep-thumb { width: 170px; height: 95px; }
-            .player-box { max-width: 800px; }
           }
         `}</style>
       </Head>
@@ -271,12 +286,9 @@ export default function WatchPage() {
               <Link href="/" className="top-btn">
                 <i className="fas fa-arrow-left"></i>
               </Link>
-              <button className="top-btn" onClick={handleShare} title="Compartilhar">
-                <i className="fas fa-share-alt"></i>
-              </button>
             </div>
             <div className="hero-content">
-              <button className="continue-btn" onClick={() => { setIsPlaying(true); markWatched(); }}>
+              <button className="continue-btn" onClick={handleContinue}>
                 <i className="fas fa-play"></i> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
               </button>
               <h1 className="hero-title">{content.title || content.name}</h1>
@@ -347,6 +359,8 @@ export default function WatchPage() {
               </div>
             </>
           )}
+
+          {type !== 'tv' && <div style={{ height: 100 }} />}
         </>
       )}
 
@@ -355,18 +369,33 @@ export default function WatchPage() {
           <div className="player-box">
             <div className="player-controls">
               <span>{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
-              <button onClick={() => setIsPlaying(false)}><i className="fas fa-times"></i></button>
+              <button onClick={() => {
+                setIsPlaying(false)
+                if (type === 'tv') {
+                  try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode })) } catch (e) {}
+                }
+              }}><i className="fas fa-times"></i></button>
             </div>
             <div className="player-frame">
               <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
             </div>
             {type === 'tv' && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                <button className="nav-ep-btn" onClick={() => setEpisode(e => Math.max(1, e - 1))} disabled={episode === 1}>
+                <button className="nav-ep-btn" onClick={() => {
+                  if (episode > 1) {
+                    const prevEp = episode - 1
+                    setEpisode(prevEp)
+                    markWatched(season, prevEp)
+                  }
+                }} disabled={episode === 1}>
                   <i className="fas fa-backward"></i> Anterior
                 </button>
                 <button className="nav-ep-btn" onClick={() => {
-                  if (seasonData && episode < seasonData.episodes.length) setEpisode(e => e + 1)
+                  if (seasonData && episode < seasonData.episodes.length) {
+                    const nextEp = episode + 1
+                    setEpisode(nextEp)
+                    markWatched(season, nextEp)
+                  }
                 }}>
                   Próximo <i className="fas fa-forward"></i>
                 </button>
@@ -377,4 +406,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+        }
