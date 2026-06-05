@@ -211,8 +211,7 @@ export default function WatchPage() {
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
-          .player-indicator{padding:8px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:12px;font-weight:700;font-size:14px;color:#fff;border:1px solid rgba(255,255,255,0.2);white-space:nowrap}
-          .glass-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap;text-decoration:none}
           .glass-btn:hover{background:rgba(255,255,255,0.25);transform:scale(1.02)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);padding:0;border-radius:50%;justify-content:center}
@@ -304,7 +303,9 @@ export default function WatchPage() {
         <div className="player-overlay">
           <div className="player-box">
             <div className="player-controls">
-              <span className="player-indicator">{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
+              <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
+                {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+              </div>
               <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
             </div>
             <div className="player-frame">
@@ -325,4 +326,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+                                     }
