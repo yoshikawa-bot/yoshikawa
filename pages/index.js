@@ -99,16 +99,14 @@ export const HorizontalCard=({item,onPlay})=>{
 
 export const EpisodeCard=({item,onPlay})=>{
   const year=getItemYear(item)
-  const episodeTitle=item.name||item.title
-  const episodeNumber=item.episode_number||1
-  const airDate=item.air_date||(item.first_air_date?new Date(item.first_air_date).toISOString().slice(0,10):null)
+  // Para séries em exibição, exibimos o nome e o ano de estreia
   return(
     <div className="episode-card" onClick={()=>onPlay?.(item)}>
       <div className="episode-thumbnail">
-        <img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={episodeTitle} className="episode-img"/>
+        <img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/>
       </div>
-      <h4 className="episode-title">{episodeTitle}</h4>
-      <p className="episode-info">Episódio {episodeNumber} • {airDate||year||'N/A'}</p>
+      <h4 className="episode-title">{item.name||item.title}</h4>
+      <p className="episode-info">Em exibição • {year||'N/A'}</p>
     </div>
   )
 }
@@ -271,7 +269,6 @@ export default function Home(){
   const[trending,setTrending]=useState([])
   const[newEpisodes,setNewEpisodes]=useState([])
   const[recentlyAdded,setRecentlyAdded]=useState([])
-  const[weeklies,setWeeklies]=useState([])
   const[featured,setFeatured]=useState(null)
   const[adventure,setAdventure]=useState([])
   const[comedy,setComedy]=useState([])
@@ -305,10 +302,23 @@ export default function Home(){
   const loadAllContent=async()=>{
     setContentLoading(true)
     try{
-      const[trendingMovies,nowPlaying,onAir,upcoming,popular,adventureShows,comedyShows,romanceShows,topRated,animeMovies,animeTV]=await Promise.all([
+      const[
+        trendingMovies,
+        nowPlaying,
+        onAir,
+        upcoming,
+        popular,
+        adventureShows,
+        comedyShows,
+        romanceShows,
+        topRated,
+        animeMovies,
+        animeTV
+      ]=await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
+        // Corrigido: usar fetchTMDBPages para obter duas páginas de séries em exibição e mapear media_type
+        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12&region=BR`),
@@ -318,25 +328,31 @@ export default function Home(){
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`)
       ])
+
       const filterQuality=(items)=>items.filter(i=>i.poster_path&&i.vote_count>50&&i.popularity>10)
       setTrending(filterQuality(trendingMovies).slice(0,10))
-      
-      // Novos episódios: apenas séries e animes no ar, ordenados pela data de estreia mais recente
-      const nowAiring=onAir.filter(i=>i.poster_path&&i.media_type==='tv')
+
+      // Mapear séries em exibição com media_type e ordenar por data de estreia
+      const seriesOnAir = onAir
+        .filter(i=>i.poster_path)
+        .map(i=>({...i,media_type:'tv'}))
         .sort((a,b)=>new Date(b.first_air_date||b.release_date)-new Date(a.first_air_date||a.release_date))
         .slice(0,10)
-      setNewEpisodes(nowAiring)
-      
+      setNewEpisodes(seriesOnAir)
+
       setRecentlyAdded(nowPlaying.filter(i=>i.poster_path).slice(0,10))
-      setWeeklies(upcoming.filter(i=>i.poster_path).slice(0,10))
       setFeatured(filterQuality(trendingMovies)[0]||null)
       setAdventure(adventureShows.filter(i=>i.poster_path).slice(0,10))
       setComedy(comedyShows.filter(i=>i.poster_path).slice(0,10))
       setRomance(romanceShows.filter(i=>i.poster_path).slice(0,10))
       setRecommended(topRated.filter(i=>i.poster_path).slice(0,10))
-      const combined=[...animeMovies.map(i=>({...i,media_type:'movie'})),...animeTV.map(i=>({...i,media_type:'tv'}))]
-        .filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,20)
-      setAnimes(combined)
+
+      const combinedAnimes=[
+        ...animeMovies.map(i=>({...i,media_type:'movie'})),
+        ...animeTV.map(i=>({...i,media_type:'tv'}))
+      ].filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,20)
+      setAnimes(combinedAnimes)
+
       loadFavorites()
     }catch(e){console.error(e)}
     setContentLoading(false)
@@ -457,7 +473,6 @@ export default function Home(){
         <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
         <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
         <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-        <section className="section"><h2 className="section-title">Semanais</h2><div className="vertical-scroll">{weeklies.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Lançamento</h2>{featured&&<FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>}</section>
         <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
         <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
