@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
-const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
+const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/da78fc7d.png'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
@@ -64,15 +64,33 @@ export const LoadingScreen = ({ onComplete }) => {
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
-export const Header = ({ onSearchClick, userProfile, onProfileClick }) => {
+export const VideoModal = ({ onClose }) => (
+  <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <button onClick={onClose} style={{ position: 'absolute', top: 32, left: 32, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, background: 'rgba(0,0,0,0.5)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', zIndex: 10 }}>
+      <i className="fas fa-arrow-left" />
+    </button>
+    <video
+      src="https://yoshikawa-bot.github.io/cache/images/842945df.m4v"
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{ maxWidth: '90%', maxHeight: '70vh', borderRadius: 16, boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}
+    />
+    <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginTop: 16, letterSpacing: '0.5px' }}>Oii curioso</p>
+  </div>
+)
+
+export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
   const avatarSize = 'clamp(40px,6vw,60px)'
+  const logoSize = 'clamp(42px,6.3vw,63px)'
   return (
     <header className="header">
-      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{ width: avatarSize, height: avatarSize }} />
+      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{ width: logoSize, height: logoSize, cursor: 'pointer' }} onClick={onLogoClick} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }} onClick={onProfileClick}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(20px,3.5vw,30px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </button>
       </div>
     </header>
@@ -93,6 +111,9 @@ export const TrendingCard = ({ item, onPlay }) => {
   return (
     <div className="trending-card" onClick={() => onPlay?.(item)}>
       <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
+      <div className="trending-title">
+        <span className="trending-title-text">{item.title || item.name}</span>
+      </div>
     </div>
   )
 }
@@ -296,6 +317,7 @@ export default function Home() {
   const [showProfileCreation, setShowProfileCreation] = useState(false)
   const [showProfileView, setShowProfileView] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
+  const [showVideo, setShowVideo] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
   const [newEpisodes, setNewEpisodes] = useState([])
@@ -483,7 +505,7 @@ export default function Home() {
       )}
       <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(24px,4vw,36px)', color: '#fff', lineHeight: 1 }} />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(20px,3.5vw,30px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
@@ -509,7 +531,7 @@ export default function Home() {
       <Head>
         <title>Yoshikawa Player</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -532,19 +554,21 @@ export default function Home() {
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;overflow:hidden;cursor:pointer}
+          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
-          .section-title{font-size:clamp(18px,3.6vw,28px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(16px,3vw,24px)}
+          .section-title{font-size:clamp(18px,3.6vw,28px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(8px,1.5vw,12px)}
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
 
           .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
+          .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);background:radial-gradient(circle at bottom left, rgba(0,0,0,0.7) 0%, transparent 80%);z-index:2}
+          .trending-title-text{font-family:'UnifrakturMaguntia','Gothic',serif;font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8);display:inline-block}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
@@ -626,7 +650,7 @@ export default function Home() {
           .verify-banner span{flex:1;min-width:0}
           .verify-banner i{flex-shrink:0;font-size:clamp(16px,2.5vw,22px)}
           .user-card{display:flex;align-items:center;padding:clamp(16px,3vw,24px);margin:clamp(16px,3vw,28px);background:#1B1B1B;border-radius:clamp(16px,2.5vw,22px);position:relative;gap:clamp(12px,2vw,16px);cursor:pointer}
-          .user-avatar{width:clamp(56px,9vw,80px);height:clamp(56px,9vw,80px);border-radius:50%;overflow:hidden}
+          .user-avatar{width:clamp(56px,9vw,80px);height:clamp(56px,9vw,80px);border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center}
           .user-info{flex:1;min-width:0}
           .user-name{font-size:clamp(18px,3vw,24px);font-weight:700}
           .user-email{font-size:clamp(12px,2vw,15px);color:#A0A0A0;margin-top:clamp(2px,0.5vw,4px)}
@@ -689,7 +713,7 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && <Header onSearchClick={() => setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick} />}
+          {!showSearch && <Header onSearchClick={() => setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={() => setShowVideo(true)} />}
 
           <main className="container" style={showSearch ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
@@ -711,8 +735,9 @@ export default function Home() {
           {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => setShowProfileCreation(false)} />}
           {showProfileView && userProfile && <ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={() => setShowProfileView(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+          {showVideo && <VideoModal onClose={() => setShowVideo(false)} />}
         </>
       )}
     </>
   )
-  }
+    }
