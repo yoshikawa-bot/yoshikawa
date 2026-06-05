@@ -99,7 +99,6 @@ export const HorizontalCard=({item,onPlay})=>{
 
 export const EpisodeCard=({item,onPlay})=>{
   const year=getItemYear(item)
-  // Para séries em exibição, exibimos o nome e o ano de estreia
   return(
     <div className="episode-card" onClick={()=>onPlay?.(item)}>
       <div className="episode-thumbnail">
@@ -113,7 +112,8 @@ export const EpisodeCard=({item,onPlay})=>{
 
 export const FeaturedCard=({item,onPlay,onInfo})=>{
   const year=getItemYear(item)
-  return(<div className="featured-card"><div className="featured-poster"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="featured-img"/></div><div className="featured-details"><div className="featured-text"><h2 className="featured-title">{item.title||item.name}</h2><div className="featured-meta"><span className="featured-rating">{item.adult?'18+':'L'}</span><span className="featured-genre">{item.genre||'Ação'}</span>{year&&<span className="featured-year">{year}</span>}</div><p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p></div><div className="featured-actions"><button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play"></i></button><button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info"></i></button></div></div></div>)
+  const ratingClass=item.adult?'rating-18':'rating-L'
+  return(<div className="featured-card"><div className="featured-poster"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="featured-img"/></div><div className="featured-details"><div className="featured-text"><h2 className="featured-title">{item.title||item.name}</h2><div className="featured-meta"><span className={`featured-rating ${ratingClass}`}>{item.adult?'18+':'L'}</span><span className="featured-genre">{item.genre||'Ação'}</span>{year&&<span className="featured-year">{year}</span>}</div><p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p></div><div className="featured-actions"><button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play"></i></button><button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info"></i></button></div></div></div>)
 }
 
 export const MovieCard=({item,isFavorite,toggleFavorite,userProfile})=>{
@@ -166,8 +166,10 @@ export const SettingsItem=({icon,title,description,onClick})=>(
 export const LogoutConfirm=({onConfirm,onCancel})=>(
   <div className="profile-creation-overlay" onClick={onCancel}>
     <div className="logout-confirm-modal" onClick={e=>e.stopPropagation()}>
-      <button className="profile-close-btn" onClick={onCancel}><i className="fas fa-times"></i></button>
-      <h3 className="logout-confirm-title">Sair do perfil</h3>
+      <div className="modal-header">
+        <h3 className="logout-confirm-title">Sair do perfil</h3>
+        <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times"></i></button>
+      </div>
       <p className="logout-confirm-text">Ao sair, todos os seus favoritos serão perdidos permanentemente. Deseja continuar?</p>
       <div className="logout-confirm-actions">
         <button className="logout-cancel-btn" onClick={onCancel}>Cancelar</button>
@@ -190,8 +192,10 @@ export const ProfileCreation=({onCreate,onClose})=>{
   return(
     <div className="profile-creation-overlay">
       <div className="profile-creation-card">
-        <button className="profile-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
-        <h2 className="profile-creation-title">Criar Perfil</h2>
+        <div className="modal-header">
+          <h2 className="profile-creation-title">Criar Perfil</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
+        </div>
         <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
         <div className="profile-avatar-preview" style={{background:selectedColor}}>
           {name.trim()?<img src={getAvatarUrl(name.trim(),selectedColor)} alt="" className="profile-avatar-img"/>:<i className="fas fa-user"></i>}
@@ -213,12 +217,12 @@ export const ProfileView=({userProfile,onLogout,onClose})=>{
   return(
     <div className="profile-creation-overlay" onClick={onClose}>
       <div className="profile-view-modal" onClick={e=>e.stopPropagation()}>
-        <button className="profile-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
-        <div className="profile-view-header">
-          <div className="profile-view-avatar" style={{background:userProfile.color}}>
-            <img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>
-          </div>
+        <div className="modal-header">
           <h2 className="profile-view-name">{userProfile.name}</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
+        </div>
+        <div className="profile-view-avatar" style={{background:userProfile.color, margin:'0 auto 24px'}}>
+          <img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>
         </div>
         <div className="profile-view-stats">
           <div className="profile-stat">
@@ -242,8 +246,10 @@ export const ProfileView=({userProfile,onLogout,onClose})=>{
 export const AboutModal=({onClose})=>(
   <div className="profile-creation-overlay" onClick={onClose}>
     <div className="about-modal" onClick={e=>e.stopPropagation()}>
-      <button className="profile-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
-      <h2 className="about-title">Yoshikawa Player</h2>
+      <div className="modal-header">
+        <h2 className="about-title">Yoshikawa Player</h2>
+        <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
+      </div>
       <div className="about-content">
         <p><strong>Créditos</strong></p>
         <p>Desenvolvido por <strong>@kawalyansky</strong></p>
@@ -317,7 +323,6 @@ export default function Home(){
       ]=await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        // Corrigido: usar fetchTMDBPages para obter duas páginas de séries em exibição e mapear media_type
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
@@ -332,7 +337,6 @@ export default function Home(){
       const filterQuality=(items)=>items.filter(i=>i.poster_path&&i.vote_count>50&&i.popularity>10)
       setTrending(filterQuality(trendingMovies).slice(0,10))
 
-      // Mapear séries em exibição com media_type e ordenar por data de estreia
       const seriesOnAir = onAir
         .filter(i=>i.poster_path)
         .map(i=>({...i,media_type:'tv'}))
@@ -636,7 +640,12 @@ export default function Home(){
           .featured-text{flex:1}
           .featured-title{font-size:clamp(16px,3vw,24px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
           .featured-meta{display:flex;gap:clamp(8px,2vw,16px);margin-bottom:clamp(12px,2vw,16px);align-items:center;flex-wrap:wrap}
-          .featured-rating{background:#333;color:#fff;padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(12px,1.8vw,14px);font-weight:600}
+          .featured-rating{padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(12px,1.8vw,14px);font-weight:600;color:#fff}
+          .rating-L{background:#4CAF50}
+          .rating-12{background:#FF9800}
+          .rating-14{background:#FF9800}
+          .rating-16{background:#f44336}
+          .rating-18{background:#f44336}
           .featured-genre{color:#B5B5B5;font-size:clamp(12px,1.8vw,14px);font-weight:500}
           .featured-year{color:#B5B5B5;font-size:clamp(12px,1.8vw,14px);font-weight:500}
           .featured-synopsis{color:#808080;font-size:clamp(12px,1.8vw,14px);line-height:1.6}
@@ -714,10 +723,11 @@ export default function Home(){
           .version-info p{font-size:clamp(13px,2.2vw,18px);font-weight:500;color:#E0E0E0}
 
           .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;align-items:center;justify-content:center;padding:20px}
-          .profile-creation-card{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px);position:relative}
-          .profile-close-btn{position:absolute;top:16px;right:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:20px;background:transparent;border:none;cursor:pointer}
-          .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff}
-          .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center}
+          .profile-creation-card{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px)}
+          .modal-header{display:flex;justify-content:space-between;align-items:center;width:100%}
+          .modal-close-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:20px;background:transparent;border:none;cursor:pointer;flex-shrink:0}
+          .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin:0}
+          .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center;width:100%}
           .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700;overflow:hidden}
           .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
           .profile-error{color:#E04E4E;font-size:13px}
@@ -729,10 +739,9 @@ export default function Home(){
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
           .profile-create-btn:hover{opacity:0.9}
 
-          .profile-view-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;position:relative}
-          .profile-view-header{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:24px}
+          .profile-view-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
+          .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff;margin:0}
           .profile-view-avatar{width:clamp(72px,12vw,96px);height:clamp(72px,12vw,96px);border-radius:50%;overflow:hidden}
-          .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff}
           .profile-view-stats{display:flex;justify-content:space-around;margin-bottom:24px;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
           .profile-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
           .profile-stat-value{font-size:clamp(16px,2.5vw,20px);font-weight:700;color:#ffffff}
@@ -740,15 +749,15 @@ export default function Home(){
           .profile-logout-btn{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#E04E4E;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s}
           .profile-logout-btn:hover{background:rgba(224,78,78,0.1)}
 
-          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;position:relative}
-          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin-bottom:12px}
+          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
+          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin:0}
           .logout-confirm-text{font-size:clamp(13px,2vw,15px);color:#888;line-height:1.5;margin-bottom:24px}
           .logout-confirm-actions{display:flex;gap:12px}
           .logout-cancel-btn{flex:1;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
           .logout-confirm-btn{flex:1;padding:12px;border-radius:12px;background:#E04E4E;color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
 
-          .about-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative}
-          .about-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin-bottom:20px}
+          .about-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:500px;max-height:80vh;overflow-y:auto}
+          .about-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin:0}
           .about-content{color:#ccc;font-size:clamp(13px,2vw,15px);line-height:1.6}
           .about-content p{margin-bottom:12px}
           .about-content strong{color:#fff}
@@ -786,4 +795,4 @@ export default function Home(){
       )}
     </>
   )
-  }
+            }
