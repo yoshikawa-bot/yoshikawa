@@ -7,30 +7,14 @@ const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 
 const LoginRequiredModal = ({ onClose, onGoToMenu }) => (
-  <div style={{
-    position: 'fixed', inset: 0, zIndex: 10000, background: '#101010',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
-  }}>
-    <div style={{
-      background: '#1B1B1B', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20
-    }}>
+  <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: '#101010', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ background: '#1B1B1B', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Login</h2>
-        <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}>
-          <i className="fas fa-times" />
-        </button>
+        <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}><i className="fas fa-times" /></button>
       </div>
-      <p style={{ color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 1.5 }}>
-        Para adicionar conteúdo aos favoritos, você precisa estar logado.<br />
-        Volte para a página inicial e crie seu perfil no menu.
-      </p>
-      <button onClick={onGoToMenu} style={{
-        width: '100%', padding: 14, borderRadius: 14, background: '#fff', color: '#000',
-        fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer'
-      }}>
-        Ir para o Menu
-      </button>
+      <p style={{ color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 1.5 }}>Para adicionar conteúdo aos favoritos, você precisa estar logado.<br />Volte para a página inicial e crie seu perfil no menu.</p>
+      <button onClick={onGoToMenu} style={{ width: '100%', padding: 14, borderRadius: 14, background: '#fff', color: '#000', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer' }}>Ir para o Menu</button>
     </div>
   </div>
 )
@@ -63,6 +47,11 @@ export default function WatchPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
 
   const contentLoaded = useRef(false)
+  const currentSeasonRef = useRef(season) // ref para evitar closure stale
+  const currentEpisodeRef = useRef(episode)
+
+  useEffect(() => { currentSeasonRef.current = season }, [season])
+  useEffect(() => { currentEpisodeRef.current = episode }, [episode])
 
   useEffect(() => {
     try {
@@ -93,6 +82,15 @@ export default function WatchPage() {
     } catch (e) {}
     return { season: 1, episode: 1 }
   }, [id, type])
+
+  // Efeito para salvar progresso sempre que season/episode mudarem
+  useEffect(() => {
+    if (type === 'tv' && id && content) {
+      try {
+        localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode }))
+      } catch (e) {}
+    }
+  }, [season, episode, id, type, content])
 
   useEffect(() => {
     if (!id || !type) return
@@ -128,7 +126,7 @@ export default function WatchPage() {
           setIsLiked(liked === 'true')
         } catch (e) {}
         contentLoaded.current = true
-        setIsLoading(false) // tudo pronto
+        setIsLoading(false)
       } catch (error) {
         console.error('Erro ao carregar conteúdo:', error)
         setHasError(true)
@@ -173,9 +171,7 @@ export default function WatchPage() {
       else favs.push({ id: content.id, media_type: type, title: content.title || content.name, poster_path: content.poster_path })
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favs))
       setIsFavorite(!exists)
-    } catch (e) {
-      console.error('Erro ao favoritar:', e)
-    }
+    } catch (e) { console.error('Erro ao favoritar:', e) }
   }
 
   const toggleLike = () => {
@@ -203,7 +199,7 @@ export default function WatchPage() {
   const handleEpisodeClick = (epNum) => {
     setEpisode(epNum)
     setIsPlaying(true)
-    markWatched(season, epNum)
+    markWatched(currentSeasonRef.current, epNum) // usa ref para garantir valor atual
   }
 
   const markWatched = useCallback((s, ep) => {
@@ -215,11 +211,12 @@ export default function WatchPage() {
       try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch (e) {}
       return next
     })
-    try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season: s, episode: ep })) } catch (e) {}
   }, [id, type])
 
   const handleContinue = () => {
-    if (type === 'tv') markWatched(season, episode)
+    if (type === 'tv') {
+      markWatched(currentSeasonRef.current, currentEpisodeRef.current)
+    }
     setIsPlaying(true)
   }
 
@@ -229,7 +226,7 @@ export default function WatchPage() {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
       return imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
     }
-    return `https://superflixapi.best/serie/${id}/${season}/${episode}`
+    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
   }
 
   const handleShare = () => {
@@ -308,19 +305,15 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      {/* Overlay de carregamento */}
       {isLoading && <ContentLoader />}
 
-      {/* Conteúdo da página (já começa a ser montado, mesmo que incompleto) */}
       {showContent ? (
         <>
           <div className="hero">
             <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
             <div className="hero-gradient" />
             <div className="top-bar">
-              <Link href="/" className="top-btn">
-                <i className="fas fa-arrow-left" />
-              </Link>
+              <Link href="/" className="top-btn"><i className="fas fa-arrow-left" /></Link>
             </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}>
@@ -337,16 +330,13 @@ export default function WatchPage() {
 
           <div className="social-bar">
             <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
-              <i className="fas fa-thumbs-up" />
-              <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
+              <i className="fas fa-thumbs-up" /><span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
             </button>
             <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
-              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
-              <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
+              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} /><span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
             </button>
             <button className="social-item" onClick={handleShare}>
-              <i className="fas fa-share-alt" />
-              <span>Compartilhar</span>
+              <i className="fas fa-share-alt" /><span>Compartilhar</span>
             </button>
           </div>
 
@@ -414,7 +404,6 @@ export default function WatchPage() {
           <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
         </div>
       ) : (
-        /* Placeholder silencioso enquanto carrega (hero vazio) */
         <div className="hero" />
       )}
 
@@ -433,11 +422,8 @@ export default function WatchPage() {
       )}
 
       {showLoginModal && (
-        <LoginRequiredModal
-          onClose={() => setShowLoginModal(false)}
-          onGoToMenu={() => router.push('/?section=menu')}
-        />
+        <LoginRequiredModal onClose={() => setShowLoginModal(false)} onGoToMenu={() => router.push('/?section=menu')} />
       )}
     </>
   )
-}
+    }
