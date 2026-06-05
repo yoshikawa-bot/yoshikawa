@@ -1,22 +1,23 @@
 import{useState,useEffect,useRef,useCallback}from'react'
 import Head from'next/head'
-import Link from'next/link'
 
 const TMDB_API_KEY='66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER='https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
 const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/fec8bb6d.png'
 
+const PROFILE_COLORS=['#E04E4E','#4D4BAF','#4A8B4A','#E97820','#9D95C8','#3F6D89','#C43708','#43A45D','#E38CA8','#72615F']
+
 const CATEGORIES=[
-  {name:'Aventura',color:'#7FA8D8',genre:12},
-  {name:'Ação',color:'#3F6D89',genre:28},
-  {name:'Comédia',color:'#C43708',genre:35},
-  {name:'Dublado',color:'#43A45D',genre:16},
-  {name:'Drama',color:'#2C3F59',genre:18},
-  {name:'Escolar',color:'#72615F',genre:10751},
-  {name:'Fantasia',color:'#E97820',genre:14},
-  {name:'Romance',color:'#A8A8B6',genre:10749},
-  {name:'Slice of Life',color:'#E38CA8',genre:35},
-  {name:'Sobrenatural',color:'#9D95C8',genre:27}
+  {name:'Aventura',color:'#7FA8D8',genre:12,image:'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg'},
+  {name:'Ação',color:'#3F6D89',genre:28,image:'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg'},
+  {name:'Comédia',color:'#C43708',genre:35,image:'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'},
+  {name:'Dublado',color:'#43A45D',genre:16,image:'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg'},
+  {name:'Drama',color:'#2C3F59',genre:18,image:'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg'},
+  {name:'Escolar',color:'#72615F',genre:10751,image:'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg'},
+  {name:'Fantasia',color:'#E97820',genre:14,image:'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg'},
+  {name:'Romance',color:'#A8A8B6',genre:10749,image:'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg'},
+  {name:'Slice of Life',color:'#E38CA8',genre:35,image:'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg'},
+  {name:'Sobrenatural',color:'#9D95C8',genre:27,image:'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg'}
 ]
 
 const FILTERS=['Tudo','Filmes','Séries','Animes']
@@ -31,21 +32,16 @@ const useDebounce=(callback,delay)=>{
 }
 
 const getMediaType=(item)=>{
-  if(item.genre_ids?.includes(16))return'anime'
-  if(item.original_language==='ja'&&(item.genre_ids?.includes(16)||item.genre_ids?.includes(14)||item.genre_ids?.includes(27)))return'anime'
-  return item.media_type||'movie'
+  if(!item)return'movie'
+  const hasAnimeGenre=item.genre_ids?.includes(16)
+  const isJapanese=item.original_language==='ja'
+  if(hasAnimeGenre&&isJapanese)return'anime'
+  if(item.media_type)return item.media_type
+  return'movie'
 }
 
-const getBadgeColor=(type)=>{
-  if(type==='anime')return'#4D4BAF'
-  if(type==='tv')return'#4A8B4A'
-  return'#8B4A4A'
-}
-
-const getBadgeText=(type)=>{
-  if(type==='anime')return'Anime'
-  if(type==='tv')return'Série'
-  return'Filme'
+const getItemYear=(item)=>{
+  return new Date(item.release_date||item.first_air_date).getFullYear()||null
 }
 
 export const LoadingScreen=({onComplete})=>{
@@ -53,19 +49,13 @@ export const LoadingScreen=({onComplete})=>{
   const[mounted,setMounted]=useState(true)
 
   useEffect(()=>{
-    const timer=setTimeout(()=>{
-      setClosing(true)
-    },2000)
-
+    const timer=setTimeout(()=>{setClosing(true)},2000)
     return()=>clearTimeout(timer)
   },[])
 
   useEffect(()=>{
     if(closing){
-      const timer=setTimeout(()=>{
-        setMounted(false)
-        onComplete()
-      },800)
+      const timer=setTimeout(()=>{setMounted(false);onComplete()},800)
       return()=>clearTimeout(timer)
     }
   },[closing,onComplete])
@@ -82,7 +72,7 @@ export const LoadingScreen=({onComplete})=>{
   )
 }
 
-export const Header=({onSearchClick})=>{
+export const Header=({onSearchClick,userProfile})=>{
   return(
     <header className="header">
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo"/>
@@ -90,8 +80,8 @@ export const Header=({onSearchClick})=>{
         <button className="header-btn" onClick={onSearchClick}>
           <i className="fas fa-search"></i>
         </button>
-        <button className="header-btn profile-btn">
-          <i className="fas fa-user"></i>
+        <button className="header-btn profile-btn" style={userProfile?{background:userProfile.color}:{}}>
+          {userProfile?<span style={{color:'#fff',fontSize:'clamp(18px,3vw,24px)',fontWeight:'700'}}>{userProfile.name[0]?.toUpperCase()}</span>:<i className="fas fa-user"></i>}
         </button>
       </div>
     </header>
@@ -101,65 +91,50 @@ export const Header=({onSearchClick})=>{
 export const BottomNav=({activeSection,setActiveSection})=>{
   return(
     <nav className="bottom-nav">
-      <button 
-        className={`nav-item ${activeSection==='home'?'active':''}`}
-        onClick={()=>setActiveSection('home')}
-      >
-        <i className="fas fa-home"></i>
-        <span>Início</span>
+      <button className={`nav-item ${activeSection==='home'?'active':''}`} onClick={()=>setActiveSection('home')}>
+        <i className="fas fa-home"></i><span>Início</span>
       </button>
-      <button 
-        className={`nav-item ${activeSection==='animes'?'active':''}`}
-        onClick={()=>setActiveSection('animes')}
-      >
-        <i className="fas fa-play"></i>
-        <span>Animes</span>
+      <button className={`nav-item ${activeSection==='animes'?'active':''}`} onClick={()=>setActiveSection('animes')}>
+        <i className="fas fa-play"></i><span>Animes</span>
       </button>
-      <button 
-        className={`nav-item ${activeSection==='favorites'?'active':''}`}
-        onClick={()=>setActiveSection('favorites')}
-      >
-        <i className="fas fa-heart"></i>
-        <span>Favoritos</span>
+      <button className={`nav-item ${activeSection==='favorites'?'active':''}`} onClick={()=>setActiveSection('favorites')}>
+        <i className="fas fa-heart"></i><span>Favoritos</span>
       </button>
-      <button 
-        className={`nav-item ${activeSection==='menu'?'active':''}`}
-        onClick={()=>setActiveSection('menu')}
-      >
-        <i className="fas fa-bars"></i>
-        <span>Menu</span>
+      <button className={`nav-item ${activeSection==='menu'?'active':''}`} onClick={()=>setActiveSection('menu')}>
+        <i className="fas fa-bars"></i><span>Menu</span>
       </button>
     </nav>
   )
 }
 
 export const HorizontalCard=({item,onPlay})=>{
+  const year=getItemYear(item)
   return(
     <div className="horizontal-card" onClick={()=>onPlay?.(item)}>
       <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="horizontal-card-img"/>
       <div className="horizontal-card-info">
         <h3 className="horizontal-card-title">{item.title||item.name}</h3>
-        <p className="horizontal-card-subtitle">{getBadgeText(getMediaType(item))} • {new Date(item.release_date||item.first_air_date).getFullYear()||'N/A'}</p>
+        <p className="horizontal-card-subtitle">{item.media_type==='tv'?'Série':'Filme'}{year?` • ${year}`:''}</p>
       </div>
     </div>
   )
 }
 
-export const EpisodeCard=({item})=>{
-  const mediaType=getMediaType(item)
+export const EpisodeCard=({item,onPlay})=>{
+  const year=getItemYear(item)
   return(
-    <div className="episode-card">
+    <div className="episode-card" onClick={()=>onPlay?.(item)}>
       <div className="episode-thumbnail">
         <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/>
-        <div className="episode-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
       </div>
       <h4 className="episode-title">{item.name||item.title}</h4>
-      <p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||'N/A'}</p>
+      <p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||year||'N/A'}</p>
     </div>
   )
 }
 
 export const FeaturedCard=({item,onPlay,onInfo})=>{
+  const year=getItemYear(item)
   return(
     <div className="featured-card">
       <div className="featured-poster">
@@ -171,34 +146,31 @@ export const FeaturedCard=({item,onPlay,onInfo})=>{
           <div className="featured-meta">
             <span className="featured-rating">{item.adult?'18+':'L'}</span>
             <span className="featured-genre">{item.genre||'Ação'}</span>
-            <span className="featured-year">{new Date(item.release_date||item.first_air_date).getFullYear()||'2025'}</span>
+            {year&&<span className="featured-year">{year}</span>}
           </div>
           <p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p>
         </div>
         <div className="featured-actions">
-          <button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}>
-            <i className="fas fa-play"></i>
-          </button>
-          <button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}>
-            <i className="fas fa-info"></i>
-          </button>
+          <button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play"></i></button>
+          <button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info"></i></button>
         </div>
       </div>
     </div>
   )
 }
 
-export const MovieCard=({item,isFavorite,toggleFavorite})=>{
+export const MovieCard=({item,isFavorite,toggleFavorite,userProfile})=>{
   const[animating,setAnimating]=useState(false)
   const handleFavClick=(e)=>{
     e.preventDefault();e.stopPropagation()
+    if(!userProfile)return
     setAnimating(true);toggleFavorite(item);setTimeout(()=>setAnimating(false),400)
   }
   return(
     <div className="card-wrapper" onClick={()=>window.location.href=`/${item.media_type}/${item.id}`}>
       <div className="card-poster-frame">
         <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="content-poster" loading="lazy"/>
-        <button className="fav-btn" onClick={handleFavClick}>
+        <button className={`fav-btn ${!userProfile?'fav-locked':''}`} onClick={handleFavClick} title={!userProfile?'Crie um perfil para favoritar':''}>
           <i className={`${isFavorite?'fas fa-heart':'far fa-heart'} ${animating?'heart-pulse':''}`} style={{color:isFavorite?'#ff3b30':'#ffffff'}}></i>
         </button>
       </div>
@@ -208,69 +180,50 @@ export const MovieCard=({item,isFavorite,toggleFavorite})=>{
 
 export const FavoriteItem=({item,onRemove,onClick})=>{
   const mediaType=getMediaType(item)
+  const year=getItemYear(item)
   return(
     <div className="favorite-item" onClick={()=>onClick?.(item)}>
       <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/>
       <div className="favorite-content">
         <h3 className="favorite-title">{item.title}</h3>
-        <p className="favorite-year">{item.year||'2025'}</p>
+        {year&&<p className="favorite-year">{year}</p>}
         <p className="favorite-episodes">{item.episodes||'12 Episódios'}</p>
-        <div className="favorite-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
+        <div className="favorite-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div>
       </div>
-      <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}>
-        <i className="fas fa-times"></i>
-      </button>
+      <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times"></i></button>
     </div>
   )
 }
 
 export const SearchResultItem=({item,onClick})=>{
   const mediaType=getMediaType(item)
-  const year=new Date(item.release_date||item.first_air_date).getFullYear()
+  const year=getItemYear(item)
   return(
     <div className="search-result-item" onClick={()=>onClick?.(item)}>
       <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster"/>
       <div className="search-result-content">
         <h3 className="search-result-title">{item.title||item.name}</h3>
-        <p className="search-result-year">{year||'N/A'}</p>
+        {year&&<p className="search-result-year">{year}</p>}
         <p className="search-result-episodes">{item.popularity?`${Math.round(item.popularity)} Popularidade`:'12 Episódios'}</p>
-        <div className="search-result-badge" style={{background:getBadgeColor(mediaType)}}>{getBadgeText(mediaType)}</div>
+        <div className="search-result-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div>
       </div>
     </div>
   )
 }
 
 export const CategoryCard=({category})=>{
-  const getImageForCategory=()=>{
-    const images={
-      'Aventura':'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
-      'Ação':'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg',
-      'Comédia':'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-      'Dublado':'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg',
-      'Drama':'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
-      'Escolar':'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg',
-      'Fantasia':'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg',
-      'Romance':'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg',
-      'Slice of Life':'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg',
-      'Sobrenatural':'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg'
-    }
-    return images[category.name]||DEFAULT_POSTER
-  }
-
   return(
     <div className="category-card" style={{background:category.color}}>
       <h3 className="category-title">{category.name}</h3>
-      <img src={getImageForCategory()} className="category-thumbnail" alt={category.name}/>
+      <img src={category.image} className="category-thumbnail" alt={category.name}/>
     </div>
   )
 }
 
-export const SettingsItem=({icon,title,description})=>{
+export const SettingsItem=({icon,title,description,onClick})=>{
   return(
-    <div className="settings-item">
-      <div className="settings-icon">
-        <i className={`fas fa-${icon}`}></i>
-      </div>
+    <div className="settings-item" onClick={onClick}>
+      <div className="settings-icon"><i className={`fas fa-${icon}`}></i></div>
       <div className="settings-content">
         <h4 className="settings-title">{title}</h4>
         <p className="settings-desc">{description}</p>
@@ -279,9 +232,44 @@ export const SettingsItem=({icon,title,description})=>{
   )
 }
 
+export const ProfileCreation=({onCreate})=>{
+  const[name,setName]=useState('')
+  const[selectedColor,setSelectedColor]=useState(PROFILE_COLORS[0])
+  const[error,setError]=useState('')
+
+  const handleSubmit=()=>{
+    const trimmed=name.trim()
+    if(!trimmed||trimmed.length<2){setError('Nome deve ter pelo menos 2 caracteres');return}
+    if(trimmed.length>20){setError('Nome deve ter no máximo 20 caracteres');return}
+    onCreate({name:trimmed,color:selectedColor})
+  }
+
+  return(
+    <div className="profile-creation-overlay">
+      <div className="profile-creation-card">
+        <h2 className="profile-creation-title">Criar Perfil</h2>
+        <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
+        <div className="profile-avatar-preview" style={{background:selectedColor}}>
+          {name.trim()?<span>{name.trim()[0].toUpperCase()}</span>:<i className="fas fa-user"></i>}
+        </div>
+        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e=>{setName(e.target.value);setError('')}} maxLength={20} autoFocus/>
+        {error&&<p className="profile-error">{error}</p>}
+        <div className="profile-colors">
+          {PROFILE_COLORS.map(color=>(
+            <button key={color} className={`profile-color-btn ${selectedColor===color?'selected':''}`} style={{background:color}} onClick={()=>setSelectedColor(color)}/>
+          ))}
+        </div>
+        <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
+      </div>
+    </div>
+  )
+}
+
 export default function Home(){
   const[welcomed,setWelcomed]=useState(false)
   const[loadingComplete,setLoadingComplete]=useState(false)
+  const[userProfile,setUserProfile]=useState(null)
+  const[showProfileCreation,setShowProfileCreation]=useState(false)
   const[trending,setTrending]=useState([])
   const[newEpisodes,setNewEpisodes]=useState([])
   const[recentlyAdded,setRecentlyAdded]=useState([])
@@ -301,9 +289,11 @@ export default function Home(){
   const[activeSearchFilter,setActiveSearchFilter]=useState('Tudo')
   const[showSearch,setShowSearch]=useState(false)
   const[searchLoading,setSearchLoading]=useState(false)
+  const[pendingFavorite,setPendingFavorite]=useState(null)
 
   useEffect(()=>{
     try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}else{setWelcomed(false)}}catch{setWelcomed(false)}
+    try{const saved=localStorage.getItem('yoshikawaProfile');if(saved)setUserProfile(JSON.parse(saved))}catch{}
   },[])
 
   const handleLoadingComplete=()=>{
@@ -312,11 +302,7 @@ export default function Home(){
     setLoadingComplete(true)
   }
 
-  useEffect(()=>{
-    loadAllContent()
-    loadFavorites()
-    loadAnimes()
-  },[])
+  useEffect(()=>{loadAllContent();loadFavorites();loadAnimes()},[])
 
   const fetchTMDB=async(url)=>{
     try{const r=await fetch(url);if(!r.ok)throw new Error();const d=await r.json();return d.results||[]}
@@ -342,7 +328,6 @@ export default function Home(){
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
-
       setTrending(trendingMovies.filter(i=>i.poster_path).slice(0,10))
       setNewEpisodes(onAir.filter(i=>i.poster_path).slice(0,10))
       setRecentlyAdded(nowPlaying.filter(i=>i.poster_path).slice(0,10))
@@ -375,6 +360,11 @@ export default function Home(){
   const isFavorite=(item)=>favorites.some(f=>f.id===item.id&&f.media_type===item.media_type)
 
   const toggleFavorite=(item)=>{
+    if(!userProfile){
+      setPendingFavorite(item)
+      setShowProfileCreation(true)
+      return
+    }
     setFavorites(prev=>{
       const exists=prev.some(f=>f.id===item.id&&f.media_type===item.media_type)
       let updated
@@ -401,30 +391,41 @@ export default function Home(){
     window.location.href=`/${item.media_type}/${item.id}`
   }
 
+  const handleCreateProfile=(profile)=>{
+    setUserProfile(profile)
+    try{localStorage.setItem('yoshikawaProfile',JSON.stringify(profile))}catch{}
+    setShowProfileCreation(false)
+    if(pendingFavorite){
+      toggleFavorite(pendingFavorite)
+      setPendingFavorite(null)
+    }
+  }
+
   const fetchSearchResults=async(query)=>{
     if(!query.trim()){setSearchResults([]);setSearchLoading(false);return}
     setSearchLoading(true)
     try{
       let results=[]
-      const mediaType=item=>{
-        if(item.genre_ids?.includes(16))return'anime'
-        if(item.original_language==='ja')return'anime'
-        return item.media_type||'movie'
+      const isAnimeFilter=activeSearchFilter==='Animes'
+      const isMovieFilter=activeSearchFilter==='Filmes'
+      const isTVFilter=activeSearchFilter==='Séries'
+
+      if(isAnimeFilter||activeSearchFilter==='Tudo'){
+        const[movies,tv]=await Promise.all([
+          fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
+          fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
+        ])
+        results=[...movies.map(i=>({...i,media_type:'movie'})),...tv.map(i=>({...i,media_type:'tv'}))]
+      }else if(isMovieFilter){
+        results=await fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
+        results=results.map(i=>({...i,media_type:'movie'}))
+      }else if(isTVFilter){
+        results=await fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
+        results=results.map(i=>({...i,media_type:'tv'}))
       }
 
-      const[movies,tv]=await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-      ])
-
-      results=[...movies.map(i=>({...i,media_type:'movie'})),...tv.map(i=>({...i,media_type:'tv'}))]
-
-      if(activeSearchFilter==='Animes'){
-        results=results.filter(i=>mediaType(i)==='anime')
-      }else if(activeSearchFilter==='Filmes'){
-        results=results.filter(i=>mediaType(i)==='movie')
-      }else if(activeSearchFilter==='Séries'){
-        results=results.filter(i=>mediaType(i)==='tv')
+      if(isAnimeFilter){
+        results=results.filter(i=>i.genre_ids?.includes(16))
       }
 
       results=results.filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,30)
@@ -443,311 +444,102 @@ export default function Home(){
   }
 
   useEffect(()=>{
-    if(searchQuery.trim()){
-      fetchSearchResults(searchQuery)
-    }
+    if(searchQuery.trim())fetchSearchResults(searchQuery)
   },[activeSearchFilter])
 
   const filteredFavorites=activeFilter==='Tudo'?favorites:
     activeFilter==='Filmes'?favorites.filter(f=>f.media_type==='movie'):
     activeFilter==='Séries'?favorites.filter(f=>f.media_type==='tv'):
+    activeFilter==='Animes'?favorites.filter(f=>getMediaType(f)==='anime'):
     favorites
 
   const renderHomePage=()=>(
     <>
-      <section className="section">
-        <h2 className="section-title">Em alta</h2>
-        <div className="horizontal-scroll">
-          {trending.map(item=>(
-            <HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Novos episódios</h2>
-        <div className="horizontal-scroll">
-          {newEpisodes.map(item=>(
-            <EpisodeCard key={`${item.media_type}-${item.id}`} item={item}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Recém adicionados</h2>
-        <div className="vertical-scroll">
-          {recentlyAdded.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Semanais</h2>
-        <div className="vertical-scroll">
-          {weeklies.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Lançamento</h2>
-        {featured&&(
-          <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>
-        )}
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Com dublagem</h2>
-        <div className="vertical-scroll">
-          {dubbed.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Aventura</h2>
-        <div className="vertical-scroll">
-          {adventure.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Comédia</h2>
-        <div className="vertical-scroll">
-          {comedy.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Romance</h2>
-        <div className="vertical-scroll">
-          {romance.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Talvez você goste</h2>
-        <div className="vertical-scroll">
-          {recommended.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
+      <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Semanais</h2><div className="vertical-scroll">{weeklies.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Lançamento</h2>{featured&&<FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>}</section>
+      <section className="section"><h2 className="section-title">Com dublagem</h2><div className="vertical-scroll">{dubbed.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Romance</h2><div className="vertical-scroll">{romance.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Talvez você goste</h2><div className="vertical-scroll">{recommended.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
     </>
   )
 
   const renderAnimesPage=()=>(
     <>
-      <section className="section">
-        <h2 className="section-title">Animes em destaque</h2>
-        <div className="horizontal-scroll">
-          {animes.slice(0,5).map(item=>(
-            <HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Todos os Animes</h2>
-        <div className="vertical-scroll">
-          {animes.map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Animes populares</h2>
-        <div className="horizontal-scroll">
-          {animes.slice(5,10).map(item=>(
-            <EpisodeCard key={`${item.media_type}-${item.id}`} item={item}/>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">Recomendados para você</h2>
-        <div className="vertical-scroll">
-          {animes.slice(10,20).map(item=>(
-            <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
-          ))}
-        </div>
-      </section>
+      <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0,5).map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5,10).map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+      <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10,20).map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
     </>
   )
 
   const renderFavoritesPage=()=>(
-    <>
-      <section className="section">
-        <h2 className="section-title" style={{fontSize:'clamp(24px,5vw,34px)',fontWeight:'800'}}>Favoritos</h2>
-        <div className="filters-container">
-          {FILTERS.map(filter=>(
-            <button 
-              key={filter}
-              className={`filter-btn ${activeFilter===filter?'active':''}`}
-              onClick={()=>setActiveFilter(filter)}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-        <div className="favorites-list">
-          {filteredFavorites.length===0?(
-            <div className="empty-favorites">
-              <i className="far fa-heart" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i>
-              <p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum favorito encontrado</p>
-            </div>
-          ):(
-            filteredFavorites.map(item=>(
-              <FavoriteItem 
-                key={`${item.media_type}-${item.id}`} 
-                item={item} 
-                onRemove={removeFavorite}
-                onClick={handlePlay}
-              />
-            ))
-          )}
-        </div>
-      </section>
-    </>
+    <section className="section">
+      <h2 className="section-title" style={{fontSize:'clamp(24px,5vw,34px)',fontWeight:'800'}}>Favoritos</h2>
+      <div className="filters-container">{FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
+      <div className="favorites-list">
+        {filteredFavorites.length===0?(
+          <div className="empty-favorites"><i className="far fa-heart" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i><p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum favorito encontrado</p></div>
+        ):filteredFavorites.map(item=><FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay}/>)}
+      </div>
+    </section>
   )
 
   const renderSearchPage=()=>(
     <>
-      <div className="search-header-container">
-        <button className="search-back-btn" onClick={()=>{setShowSearch(false);setSearchQuery('');setSearchResults([]);setActiveSearchFilter('Tudo')}}>
-          <i className="fas fa-arrow-left"></i>
-        </button>
-        <div className="search-bar-full">
-          <i className="fas fa-search search-icon-full"></i>
-          <input 
-            type="text" 
-            placeholder="O que está procurando?"
-            className="search-input-full"
-            value={searchQuery}
-            onChange={(e)=>handleSearchChange(e.target.value)}
-            autoFocus
-          />
+      <div className="search-container">
+        <button className="search-back-btn" onClick={()=>{setShowSearch(false);setSearchQuery('');setSearchResults([]);setActiveSearchFilter('Tudo')}}><i className="fas fa-arrow-left"></i></button>
+        <div className="search-bar">
+          <i className="fas fa-search search-icon"></i>
+          <input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e=>handleSearchChange(e.target.value)} autoFocus/>
         </div>
       </div>
-
       {searchQuery.trim()?(
         <>
           <div className="filters-container" style={{marginTop:'clamp(20px,3vw,26px)',marginLeft:'clamp(20px,4vw,34px)'}}>
-            {SEARCH_FILTERS.map(filter=>(
-              <button 
-                key={filter}
-                className={`filter-btn ${activeSearchFilter===filter?'active':''}`}
-                onClick={()=>setActiveSearchFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
+            {SEARCH_FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeSearchFilter===filter?'active':''}`} onClick={()=>setActiveSearchFilter(filter)}>{filter}</button>)}
           </div>
-
           <div className="search-results-list">
-            {searchLoading?(
-              <div className="empty-favorites">
-                <div className="loading-spinner"></div>
-              </div>
-            ):searchResults.length>0?(
-              searchResults.map((item,index)=>(
-                <div key={`${item.media_type}-${item.id}`}>
-                  <SearchResultItem item={item} onClick={handlePlay}/>
-                  {index<searchResults.length-1&&<div className="search-divider"></div>}
-                </div>
-              ))
-            ):(
-              <div className="empty-favorites">
-                <i className="fas fa-search" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i>
-                <p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum resultado encontrado</p>
-              </div>
-            )}
+            {searchLoading?<div className="empty-favorites"><div className="loading-spinner"></div></div>:
+             searchResults.length>0?searchResults.map((item,index)=><div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay}/>{index<searchResults.length-1&&<div className="search-divider"></div>}</div>):
+             <div className="empty-favorites"><i className="fas fa-search" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i><p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum resultado encontrado</p></div>}
           </div>
         </>
       ):(
         <>
-          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>
-            {FILTERS.map(filter=>(
-              <button 
-                key={filter}
-                className={`filter-btn ${activeFilter===filter?'active':''}`}
-                onClick={()=>setActiveFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-
-          <section className="section">
-            <h2 className="section-title" style={{fontSize:'clamp(24px,5vw,38px)',fontWeight:'800'}}>Categorias</h2>
-            <div className="categories-grid">
-              {CATEGORIES.map((category,index)=>(
-                <CategoryCard key={index} category={category}/>
-              ))}
-            </div>
-          </section>
+          <div className="filters-container" style={{marginTop:'clamp(20px,3vw,30px)'}}>{FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeFilter===filter?'active':''}`} onClick={()=>setActiveFilter(filter)}>{filter}</button>)}</div>
+          <section className="section"><h2 className="section-title" style={{fontSize:'clamp(24px,5vw,38px)',fontWeight:'800'}}>Categorias</h2><div className="categories-grid">{CATEGORIES.map((category,index)=><CategoryCard key={index} category={category}/>)}</div></section>
         </>
       )}
     </>
   )
 
   const renderMenuPage=()=>(
-    <>
-      <section className="section" style={{paddingTop:'clamp(40px,8vw,80px)'}}>
-        <div className="menu-banner-container">
-          <div className="verify-banner">
-            <span>Verifique sua conta para personalização e comentários!</span>
-            <i className="fas fa-chevron-right"></i>
-          </div>
-        </div>
-
-        <div className="user-card">
-          <div className="user-avatar">
-            <i className="fas fa-user" style={{fontSize:'clamp(28px,4vw,40px)',color:'#666'}}></i>
-          </div>
-          <div className="user-info">
-            <h3 className="user-name">lyansky</h3>
-            <p className="user-email">usuario@email.com</p>
-          </div>
-          <button className="logout-btn">
-            <i className="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-
-        <div className="settings-card">
-          <SettingsItem icon="cog" title="Configurações" description="Ajustes do aplicativo"/>
-          <SettingsItem icon="shield-alt" title="Privacidade" description="Gerenciar dados"/>
-          <SettingsItem icon="question-circle" title="Ajuda" description="Central de suporte"/>
-          <SettingsItem icon="info-circle" title="Sobre" description="Versão do app"/>
-        </div>
-
-        <div className="social-links">
-          <button className="social-btn">
-            <i className="fas fa-link"></i>
-          </button>
-          <button className="social-btn">
-            <i className="fab fa-tiktok"></i>
-          </button>
-          <button className="social-btn">
-            <i className="fab fa-twitter"></i>
-          </button>
-        </div>
-
-        <div className="version-info">
-          <p>RELEASE BUILD - 1.4.3.R1.0</p>
-        </div>
-      </section>
-    </>
+    <section className="section" style={{paddingTop:'clamp(40px,8vw,80px)'}}>
+      <div className="menu-banner-container"><div className="verify-banner"><span>Verifique sua conta para personalização e comentários!</span><i className="fas fa-chevron-right"></i></div></div>
+      <div className="user-card">
+        <div className="user-avatar" style={userProfile?{background:userProfile.color}:{}}>{userProfile?<span style={{fontSize:'clamp(28px,4vw,40px)',color:'#fff',fontWeight:'700'}}>{userProfile.name[0].toUpperCase()}</span>:<i className="fas fa-user" style={{fontSize:'clamp(28px,4vw,40px)',color:'#666'}}></i>}</div>
+        <div className="user-info"><h3 className="user-name">{userProfile?userProfile.name:'lyansky'}</h3><p className="user-email">{userProfile?`Perfil personalizado`:'usuario@email.com'}</p></div>
+        <button className="logout-btn" onClick={()=>{if(userProfile){setUserProfile(null);try{localStorage.removeItem('yoshikawaProfile')}catch{}}}}><i className="fas fa-sign-out-alt"></i></button>
+      </div>
+      <div className="settings-card">
+        <SettingsItem icon="user-edit" title="Editar Perfil" description={userProfile?'Alterar nome e cor':'Criar um perfil'} onClick={()=>setShowProfileCreation(true)}/>
+        <SettingsItem icon="cog" title="Configurações" description="Ajustes do aplicativo"/>
+        <SettingsItem icon="shield-alt" title="Privacidade" description="Gerenciar dados"/>
+        <SettingsItem icon="question-circle" title="Ajuda" description="Central de suporte"/>
+        <SettingsItem icon="info-circle" title="Sobre" description="Versão do app"/>
+      </div>
+      <div className="social-links">
+        <button className="social-btn"><i className="fas fa-link"></i></button>
+        <button className="social-btn"><i className="fab fa-tiktok"></i></button>
+        <button className="social-btn"><i className="fab fa-twitter"></i></button>
+      </div>
+      <div className="version-info"><p>RELEASE BUILD - 1.4.3.R1.0</p></div>
+    </section>
   )
 
   return(
@@ -777,7 +569,7 @@ export default function Home(){
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;background:#2a2a2a;color:#666;font-size:clamp(20px,3vw,28px)}
+          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;background:#2a2a2a;color:#666;font-size:clamp(20px,3vw,28px);overflow:hidden}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
@@ -786,29 +578,27 @@ export default function Home(){
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
-
           .horizontal-card{flex-shrink:0;width:clamp(260px,40vw,560px);height:clamp(140px,20vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .horizontal-card-img{width:100%;height:100%;object-fit:cover}
           .horizontal-card-info{position:absolute;bottom:0;left:0;right:0;padding:clamp(12px,2vw,20px);background:linear-gradient(to top,rgba(0,0,0,0.85),rgba(0,0,0,0))}
           .horizontal-card-title{font-size:clamp(14px,2vw,18px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .horizontal-card-subtitle{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
 
-          .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px)}
+          .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px}
           .episode-img{width:100%;height:100%;object-fit:cover}
-          .episode-badge{position:absolute;top:10px;left:10px;border-radius:12px;padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);font-size:clamp(11px,1.5vw,14px);font-weight:600;color:#ffffff}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .episode-info{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
-
           .card-wrapper{flex-shrink:0;width:clamp(110px,18vw,140px);cursor:pointer}
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1a1a1a}
           .content-poster{width:100%;height:100%;object-fit:cover}
           .fav-btn{position:absolute;top:clamp(4px,1vw,8px);right:clamp(4px,1vw,8px);width:clamp(26px,4vw,32px);height:clamp(26px,4vw,32px);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;background:rgba(0,0,0,0.4);font-size:clamp(12px,2vw,14px)}
           .card-poster-frame:hover .fav-btn{opacity:1}
           @media(hover:none){.fav-btn{opacity:1}}
+          .fav-locked{opacity:0.5;cursor:not-allowed}
           .heart-pulse{animation:heartZoom 0.5s ease}
           @keyframes heartZoom{0%{transform:scale(1)}50%{transform:scale(1.6)}100%{transform:scale(1)}}
 
@@ -852,12 +642,12 @@ export default function Home(){
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
-          .search-header-container{display:flex;align-items:center;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.5vw,24px) clamp(16px,4vw,34px);padding-top:clamp(24px,4vw,40px)}
-          .search-back-btn{color:#ffffff;font-size:clamp(32px,5vw,38px);width:clamp(32px,5vw,38px);height:clamp(32px,5vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0;stroke-width:3}
-          .search-bar-full{flex:1;height:clamp(56px,8vw,74px);background:#121212;border-radius:clamp(28px,4vw,38px);display:flex;align-items:center;padding:0 clamp(20px,3vw,24px);gap:clamp(10px,1.5vw,12px)}
-          .search-icon-full{color:#A5A5A5;font-size:clamp(18px,2.5vw,22px);flex-shrink:0}
-          .search-input-full{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(16px,2.5vw,20px);font-weight:500;outline:none;min-width:0}
-          .search-input-full::placeholder{color:#888888}
+          .search-container{display:flex;align-items:center;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.5vw,24px) clamp(16px,4vw,34px);padding-top:clamp(24px,4vw,40px)}
+          .search-back-btn{color:#ffffff;font-size:clamp(32px,5vw,38px);width:clamp(32px,5vw,38px);height:clamp(32px,5vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+          .search-bar{flex:1;height:clamp(56px,8vw,74px);background:#121212;border-radius:clamp(28px,4vw,38px);display:flex;align-items:center;padding:0 clamp(20px,3vw,24px);gap:clamp(10px,1.5vw,12px)}
+          .search-icon{color:#A5A5A5;font-size:clamp(18px,2.5vw,22px);flex-shrink:0}
+          .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(16px,2.5vw,20px);font-weight:500;outline:none;min-width:0}
+          .search-input::placeholder{color:#888888}
 
           .search-results-list{padding:0 clamp(12px,2.5vw,24px);margin-top:clamp(24px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(12px,2vw,18px) 0;cursor:pointer;gap:clamp(14px,2vw,18px)}
@@ -885,7 +675,7 @@ export default function Home(){
           .user-email{font-size:clamp(12px,2vw,15px);color:#A0A0A0;margin-top:clamp(2px,0.5vw,4px)}
           .logout-btn{color:#D0D0D0;font-size:clamp(28px,4.5vw,42px);width:clamp(28px,4.5vw,42px);height:clamp(28px,4.5vw,42px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
           .settings-card{background:#121212;border-radius:clamp(16px,2.5vw,22px);padding:clamp(16px,3vw,28px);margin:clamp(16px,3vw,28px)}
-          .settings-item{display:flex;align-items:center;gap:clamp(10px,2vw,16px);padding:clamp(10px,1.8vw,16px) 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+          .settings-item{display:flex;align-items:center;gap:clamp(10px,2vw,16px);padding:clamp(10px,1.8vw,16px) 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
           .settings-item:last-child{border-bottom:none}
           .settings-icon{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);flex-shrink:0}
           .settings-content{flex:1;min-width:0}
@@ -895,6 +685,19 @@ export default function Home(){
           .social-btn{width:clamp(52px,8vw,72px);height:clamp(52px,8vw,72px);border-radius:50%;background:#ffffff;display:flex;align-items:center;justify-content:center;font-size:clamp(24px,4vw,34px);color:#000000}
           .version-info{text-align:center;margin-top:clamp(16px,3vw,24px);padding:clamp(12px,2vw,20px)}
           .version-info p{font-size:clamp(13px,2.2vw,18px);font-weight:500;color:#E0E0E0}
+
+          .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;padding:20px}
+          .profile-creation-card{background:#1a1a1a;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px)}
+          .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff}
+          .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center}
+          .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700}
+          .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
+          .profile-error{color:#E04E4E;font-size:13px}
+          .profile-colors{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+          .profile-color-btn{width:clamp(32px,5vw,40px);height:clamp(32px,5vw,40px);border-radius:50%;border:3px solid transparent;transition:border-color 0.2s}
+          .profile-color-btn.selected{border-color:#ffffff}
+          .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
+          .profile-create-btn:hover{opacity:0.9}
         `}</style>
       </Head>
 
@@ -902,7 +705,7 @@ export default function Home(){
 
       {loadingComplete&&(
         <>
-          {!showSearch&&<Header onSearchClick={()=>setShowSearch(true)}/>}
+          {!showSearch&&<Header onSearchClick={()=>setShowSearch(true)} userProfile={userProfile}/>}
 
           <main className="container" style={showSearch?{paddingTop:'0'}:{}}>
             {showSearch?renderSearchPage():
@@ -921,8 +724,10 @@ export default function Home(){
             setActiveSearchFilter('Tudo')
             setActiveSection(section)
           }}/>}
+
+          {showProfileCreation&&<ProfileCreation onCreate={handleCreateProfile}/>}
         </>
       )}
     </>
   )
-}
+  }
