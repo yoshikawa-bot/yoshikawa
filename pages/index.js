@@ -8,6 +8,8 @@ const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
+const PASTEL_COLORS = ['#FFD1DC', '#C1E1C1', '#CFBAF0', '#A7C7E7', '#F7DC6F', '#D7BDE2', '#A3E4D7', '#FAD7A0', '#D5F5E3', '#F9E79F']
+
 const CATEGORIES = [
   { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
   { name: 'Ação', color: '#3F6D89', image: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg' },
@@ -115,14 +117,19 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   </nav>
 )
 
-export const HorizontalCard = ({ item, onPlay }) => {
-  const year = getItemYear(item)
+export const TrendingCard = ({ item, onPlay, index }) => {
+  const color = PASTEL_COLORS[index % PASTEL_COLORS.length]
   return (
-    <div className="horizontal-card" onClick={() => onPlay?.(item)}>
-      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="horizontal-card-img" />
-      <div className="horizontal-card-info">
-        <h3 className="horizontal-card-title">{item.title || item.name}</h3>
-        <p className="horizontal-card-subtitle">{item.media_type === 'tv' ? 'Série' : 'Filme'}{year ? ` • ${year}` : ''}</p>
+    <div className="trending-card" onClick={() => onPlay?.(item)}>
+      <div className="trending-left" style={{ background: color }}>
+        <h3 className="trending-title">{item.title || item.name}</h3>
+      </div>
+      <div className="trending-right">
+        <img
+          src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER}
+          alt={item.title || item.name}
+          className="trending-img"
+        />
       </div>
     </div>
   )
@@ -514,7 +521,12 @@ export default function Home() {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item => <HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
+        <section className="section">
+          <h2 className="section-title">Em alta</h2>
+          <div className="horizontal-scroll">
+            {trending.map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} index={index} />)}
+          </div>
+        </section>
         <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
         <section className="section"><h2 className="section-title">Lançamento</h2>{featured && <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo} />}</section>
@@ -530,7 +542,7 @@ export default function Home() {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0, 5).map(item => <HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
+        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0, 5).map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} index={index} />)}</div></section>
         <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
         <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5, 10).map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10, 20).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
@@ -590,7 +602,7 @@ export default function Home() {
       {!userProfile && (
         <div className="menu-banner-container">
           <div className="verify-banner" onClick={() => setShowProfileCreation(true)} style={{ cursor: 'pointer' }}>
-            <span>Crie seu perfil para salvar favoritos e personalizar sua experiência!</span>
+            <span>Crie seu perfil para personalizar sua experiência!</span>
             <i className="fas fa-chevron-right" />
           </div>
         </div>
@@ -656,11 +668,13 @@ export default function Home() {
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
-          .horizontal-card{flex-shrink:0;width:clamp(260px,40vw,560px);height:clamp(140px,20vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer;background:#1B1B1B}
-          .horizontal-card-img{width:100%;height:100%;object-fit:cover}
-          .horizontal-card-info{position:absolute;bottom:0;left:0;right:0;padding:clamp(12px,2vw,20px);background:linear-gradient(to top,rgba(0,0,0,0.85),rgba(0,0,0,0))}
-          .horizontal-card-title{font-size:clamp(14px,2vw,18px);font-weight:700;color:#ffffff;margin-bottom:4px}
-          .horizontal-card-subtitle{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
+
+          /* Trending Card Redesign */
+          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;cursor:pointer;display:flex}
+          .trending-left{flex:1;display:flex;align-items:center;justify-content:center;padding:clamp(12px,2vw,20px)}
+          .trending-title{font-size:clamp(18px,3vw,28px);font-weight:900;color:#1a1a1a;text-align:center;line-height:1.2;word-break:break-word}
+          .trending-right{flex:1;position:relative;overflow:hidden}
+          .trending-img{width:100%;height:100%;object-fit:cover;-webkit-mask-image:linear-gradient(to left,black 50%,transparent 100%);mask-image:linear-gradient(to left,black 50%,transparent 100%)}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
@@ -692,7 +706,7 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(73px,10.4vw,104px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
+          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(60px,8.5vw,85px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
@@ -831,4 +845,4 @@ export default function Home() {
       )}
     </>
   )
-            }
+  }
