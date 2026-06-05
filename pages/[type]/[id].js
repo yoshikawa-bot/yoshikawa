@@ -206,19 +206,20 @@ export default function WatchPage() {
           .ep-info{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center}
           .ep-info h4{font-size:15px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:13px;color:#9A9A9A}
-          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
-          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:12px;max-height:100vh}
-          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden;max-height:70vh}
+          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
+          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:12px;max-height:100%;margin:auto}
+          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
-          .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-          .player-controls span{font-weight:700;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:8px;font-size:14px}
-          .player-close-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);cursor:pointer;border:none;transition:transform 0.2s}
-          .player-close-btn:hover{transform:scale(1.1)}
+          .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
+          .player-indicator{padding:8px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:12px;font-weight:700;font-size:14px;color:#fff;border:1px solid rgba(255,255,255,0.2);white-space:nowrap}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap}
+          .glass-btn:hover{background:rgba(255,255,255,0.25);transform:scale(1.02)}
+          .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+          .glass-btn.circle{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
-          .nav-ep-btn{display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;color:#000;border-radius:50px;font-weight:600;font-size:14px;cursor:pointer;border:none;transition:transform 0.2s;white-space:nowrap}
-          .nav-ep-btn:hover{transform:scale(1.05)}
-          .nav-ep-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-          @media(min-width:768px){.ep-thumb{width:170px;height:95px}}
+          @media(min-width:768px){.ep-thumb{width:170px;height:95px}.player-frame{max-height:70vh}}
+          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}}
+          @media(max-width:400px){.glass-btn{padding:8px 14px;font-size:13px;gap:4px}}
         `}</style>
       </Head>
 
@@ -303,18 +304,18 @@ export default function WatchPage() {
         <div className="player-overlay">
           <div className="player-box">
             <div className="player-controls">
-              <span>{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
-              <button className="player-close-btn" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+              <span className="player-indicator">{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
+              <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
             </div>
             <div className="player-frame">
               <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
             </div>
             {type === 'tv' && (
               <div className="nav-ep-btns">
-                <button className="nav-ep-btn" onClick={() => { if (episode > 1) { const prevEp = episode - 1; setEpisode(prevEp); markWatched(season, prevEp) } }} disabled={episode === 1}>
+                <button className="glass-btn" onClick={() => { if (episode > 1) { const prevEp = episode - 1; setEpisode(prevEp); markWatched(season, prevEp) } }} disabled={episode === 1}>
                   <i className="fas fa-backward" /> Anterior
                 </button>
-                <button className="nav-ep-btn" onClick={() => { if (seasonData && episode < seasonData.episodes.length) { const nextEp = episode + 1; setEpisode(nextEp); markWatched(season, nextEp) } }}>
+                <button className="glass-btn" onClick={() => { if (seasonData && episode < seasonData.episodes.length) { const nextEp = episode + 1; setEpisode(nextEp); markWatched(season, nextEp) } }}>
                   Próximo <i className="fas fa-forward" />
                 </button>
               </div>
@@ -324,4 +325,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
