@@ -91,7 +91,6 @@ export const VideoModal = ({ onClose }) => {
           src="https://yoshikawa-bot.github.io/cache/images/842945df.m4v"
           autoPlay
           loop
-          muted
           playsInline
           style={{ maxWidth: '90vw', maxHeight: '70vh', borderRadius: 0, display: 'block' }}
         />
@@ -593,7 +592,7 @@ export default function Home() {
 
           .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
-          .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);background:radial-gradient(circle at bottom left, rgba(0,0,0,0.7) 0%, transparent 80%);z-index:2}
+          .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);z-index:2}
           .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
@@ -766,4 +765,4 @@ export default function Home() {
       )}
     </>
   )
-}
+            }
