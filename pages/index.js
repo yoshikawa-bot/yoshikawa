@@ -41,8 +41,16 @@ const getMediaType=(item)=>{
 }
 
 const getItemYear=(item)=>{
+  if(!item)return null
   return new Date(item.release_date||item.first_air_date).getFullYear()||null
 }
+
+const getAvatarUrl=(name,color)=>{
+  const bg=color?.replace('#','')||'4D4BAF'
+  return`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&bold=true&format=svg`
+}
+
+const POSTER_SIZE='w780'
 
 export const LoadingScreen=({onComplete})=>{
   const[closing,setClosing]=useState(false)
@@ -58,17 +66,22 @@ export const LoadingScreen=({onComplete})=>{
   return(<div className={`loading-overlay ${closing?'closing':''}`}><div className="loading-content"><img src={LOGO_URL} alt="Yoshikawa" className="loading-logo"/><div className="loading-spinner"></div></div></div>)
 }
 
-export const Header=({onSearchClick,userProfile})=>(
-  <header className="header">
-    <img src={LOGO_URL} alt="Yoshikawa" className="header-logo"/>
-    <div className="header-actions">
-      <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search"></i></button>
-      <button className="header-btn profile-btn" style={userProfile?{background:userProfile.color}:{}}>
-        {userProfile?<span style={{color:'#fff',fontSize:'clamp(18px,3vw,24px)',fontWeight:'700'}}>{userProfile.name[0]?.toUpperCase()}</span>:<i className="fas fa-user"></i>}
-      </button>
-    </div>
-  </header>
-)
+export const ContentLoader=()=>(<div className="content-loader"><div className="loading-spinner"></div></div>)
+
+export const Header=({onSearchClick,userProfile})=>{
+  const avatarSize='clamp(40px,6vw,60px)'
+  return(
+    <header className="header">
+      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{width:avatarSize,height:avatarSize}}/>
+      <div className="header-actions">
+        <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search"></i></button>
+        <button className="header-btn profile-btn" style={userProfile?{background:userProfile.color}:{}}>
+          {userProfile?<img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>:<i className="fas fa-user"></i>}
+        </button>
+      </div>
+    </header>
+  )
+}
 
 export const BottomNav=({activeSection,setActiveSection})=>(
   <nav className="bottom-nav">
@@ -81,17 +94,17 @@ export const BottomNav=({activeSection,setActiveSection})=>(
 
 export const HorizontalCard=({item,onPlay})=>{
   const year=getItemYear(item)
-  return(<div className="horizontal-card" onClick={()=>onPlay?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="horizontal-card-img"/><div className="horizontal-card-info"><h3 className="horizontal-card-title">{item.title||item.name}</h3><p className="horizontal-card-subtitle">{item.media_type==='tv'?'Série':'Filme'}{year?` • ${year}`:''}</p></div></div>)
+  return(<div className="horizontal-card" onClick={()=>onPlay?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="horizontal-card-img"/><div className="horizontal-card-info"><h3 className="horizontal-card-title">{item.title||item.name}</h3><p className="horizontal-card-subtitle">{item.media_type==='tv'?'Série':'Filme'}{year?` • ${year}`:''}</p></div></div>)
 }
 
 export const EpisodeCard=({item,onPlay})=>{
   const year=getItemYear(item)
-  return(<div className="episode-card" onClick={()=>onPlay?.(item)}><div className="episode-thumbnail"><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/></div><h4 className="episode-title">{item.name||item.title}</h4><p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||year||'N/A'}</p></div>)
+  return(<div className="episode-card" onClick={()=>onPlay?.(item)}><div className="episode-thumbnail"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/></div><h4 className="episode-title">{item.name||item.title}</h4><p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||year||'N/A'}</p></div>)
 }
 
 export const FeaturedCard=({item,onPlay,onInfo})=>{
   const year=getItemYear(item)
-  return(<div className="featured-card"><div className="featured-poster"><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="featured-img"/></div><div className="featured-details"><div className="featured-text"><h2 className="featured-title">{item.title||item.name}</h2><div className="featured-meta"><span className="featured-rating">{item.adult?'18+':'L'}</span><span className="featured-genre">{item.genre||'Ação'}</span>{year&&<span className="featured-year">{year}</span>}</div><p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p></div><div className="featured-actions"><button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play"></i></button><button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info"></i></button></div></div></div>)
+  return(<div className="featured-card"><div className="featured-poster"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="featured-img"/></div><div className="featured-details"><div className="featured-text"><h2 className="featured-title">{item.title||item.name}</h2><div className="featured-meta"><span className="featured-rating">{item.adult?'18+':'L'}</span><span className="featured-genre">{item.genre||'Ação'}</span>{year&&<span className="featured-year">{year}</span>}</div><p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p></div><div className="featured-actions"><button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}><i className="fas fa-play"></i></button><button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}><i className="fas fa-info"></i></button></div></div></div>)
 }
 
 export const MovieCard=({item,isFavorite,toggleFavorite,userProfile})=>{
@@ -101,25 +114,25 @@ export const MovieCard=({item,isFavorite,toggleFavorite,userProfile})=>{
     if(!userProfile)return toggleFavorite(item)
     setAnimating(true);toggleFavorite(item);setTimeout(()=>setAnimating(false),400)
   }
-  return(<div className="card-wrapper" onClick={()=>window.location.href=`/${item.media_type}/${item.id}`}><div className="card-poster-frame"><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="content-poster" loading="lazy"/><button className={`fav-btn ${!userProfile?'fav-locked':''}`} onClick={handleFavClick} title={!userProfile?'Crie um perfil para favoritar':''}><i className={`${isFavorite?'fas fa-heart':'far fa-heart'} ${animating?'heart-pulse':''}`} style={{color:isFavorite?'#ff3b30':'#ffffff'}}></i></button></div></div>)
+  return(<div className="card-wrapper" onClick={()=>window.location.href=`/${item.media_type}/${item.id}`}><div className="card-poster-frame"><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="content-poster" loading="lazy"/><button className={`fav-btn ${!userProfile?'fav-locked':''}`} onClick={handleFavClick} title={!userProfile?'Crie um perfil para favoritar':''}><i className={`${isFavorite?'fas fa-heart':'far fa-heart'} ${animating?'heart-pulse':''}`} style={{color:isFavorite?'#ff3b30':'#ffffff'}}></i></button></div></div>)
 }
 
 export const FavoriteItem=({item,onRemove,onClick})=>{
-  const mediaType=item.media_type||getMediaType(item)
+  const mediaType=item.media_type||'movie'
   const year=getItemYear(item)
-  return(<div className="favorite-item" onClick={()=>onClick?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/><div className="favorite-content"><h3 className="favorite-title">{item.title}</h3>{year&&<p className="favorite-year">{year}</p>}<p className="favorite-episodes">{item.episodes||'12 Episódios'}</p><div className="favorite-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div></div><button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times"></i></button></div>)
+  return(<div className="favorite-item" onClick={()=>onClick?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title} className="favorite-poster"/><div className="favorite-content"><h3 className="favorite-title">{item.title}</h3>{year&&<p className="favorite-year">{year}</p>}<p className="favorite-episodes">{item.episodes||'12 Episódios'}</p><div className="favorite-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div></div><button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times"></i></button></div>)
 }
 
 export const SearchResultItem=({item,onClick})=>{
   const mediaType=getMediaType(item)
   const year=getItemYear(item)
-  return(<div className="search-result-item" onClick={()=>onClick?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster"/><div className="search-result-content"><h3 className="search-result-title">{item.title||item.name}</h3>{year&&<p className="search-result-year">{year}</p>}<p className="search-result-episodes">{item.popularity?`${Math.round(item.popularity)} Popularidade`:'12 Episódios'}</p><div className="search-result-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div></div></div>)
+  return(<div className="search-result-item" onClick={()=>onClick?.(item)}><img src={item.poster_path?`https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster"/><div className="search-result-content"><h3 className="search-result-title">{item.title||item.name}</h3>{year&&<p className="search-result-year">{year}</p>}<p className="search-result-episodes">{item.popularity?`${Math.round(item.popularity)} Popularidade`:'12 Episódios'}</p><div className="search-result-badge" style={{background:mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>{mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}</div></div></div>)
 }
 
 export const CategoryCard=({category})=>(
   <div className="category-card" style={{background:category.color}}>
     <h3 className="category-title">{category.name}</h3>
-    <img src={category.image||DEFAULT_POSTER} className="category-thumbnail" alt={category.name}/>
+    <img src={category.image||DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e=>{e.target.src=DEFAULT_POSTER}}/>
   </div>
 )
 
@@ -146,7 +159,9 @@ export const ProfileCreation=({onCreate,onClose})=>{
         <button className="profile-close-btn" onClick={onClose}><i className="fas fa-times"></i></button>
         <h2 className="profile-creation-title">Criar Perfil</h2>
         <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
-        <div className="profile-avatar-preview" style={{background:selectedColor}}>{name.trim()?<span>{name.trim()[0].toUpperCase()}</span>:<i className="fas fa-user"></i>}</div>
+        <div className="profile-avatar-preview" style={{background:selectedColor}}>
+          {name.trim()?<img src={getAvatarUrl(name.trim(),selectedColor)} alt="" className="profile-avatar-img"/>:<i className="fas fa-user"></i>}
+        </div>
         <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e=>{setName(e.target.value);setError('')}} maxLength={20} autoFocus/>
         {error&&<p className="profile-error">{error}</p>}
         <div className="profile-colors">
@@ -184,6 +199,7 @@ export default function Home(){
   const[userProfile,setUserProfile]=useState(null)
   const[showProfileCreation,setShowProfileCreation]=useState(false)
   const[showAbout,setShowAbout]=useState(false)
+  const[contentLoading,setContentLoading]=useState(true)
   const[trending,setTrending]=useState([])
   const[newEpisodes,setNewEpisodes]=useState([])
   const[recentlyAdded,setRecentlyAdded]=useState([])
@@ -215,21 +231,14 @@ export default function Home(){
     setLoadingComplete(true)
   }
 
-  useEffect(()=>{loadAllContent();loadFavorites();loadAnimes()},[])
-
-  const fetchTMDB=async(url)=>{
-    try{const r=await fetch(url);if(!r.ok)throw new Error();const d=await r.json();return d.results||[]}
-    catch{return[]}
-  }
-
-  const fetchTMDBPages=async(endpoint)=>{
-    try{const[r1,r2]=await Promise.all([fetchTMDB(`${endpoint}&page=1`),fetchTMDB(`${endpoint}&page=2`)]);return[...r1,...r2]}
-    catch{return[]}
-  }
+  useEffect(()=>{
+    if(loadingComplete)loadAllContent()
+  },[loadingComplete])
 
   const loadAllContent=async()=>{
+    setContentLoading(true)
     try{
-      const[trendingMovies,nowPlaying,onAir,upcoming,popular,dubbedShows,adventureShows,comedyShows,romanceShows,topRated]=await Promise.all([
+      const[trendingMovies,nowPlaying,onAir,upcoming,popular,dubbedShows,adventureShows,comedyShows,romanceShows,topRated,animeMovies,animeTV]=await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
@@ -239,7 +248,9 @@ export default function Home(){
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749`),
-        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`)
       ])
       setTrending(trendingMovies.filter(i=>i.poster_path).slice(0,10))
       setNewEpisodes(onAir.filter(i=>i.poster_path).slice(0,10))
@@ -251,23 +262,26 @@ export default function Home(){
       setComedy(comedyShows.filter(i=>i.poster_path).slice(0,10))
       setRomance(romanceShows.filter(i=>i.poster_path).slice(0,10))
       setRecommended(topRated.filter(i=>i.poster_path).slice(0,10))
-    }catch(e){console.error(e)}
-  }
-
-  const loadAnimes=async()=>{
-    try{
-      const[animeMovies,animeTV]=await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja`)
-      ])
       const combined=[...animeMovies.map(i=>({...i,media_type:'movie'})),...animeTV.map(i=>({...i,media_type:'tv'}))]
         .filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,20)
       setAnimes(combined)
+      loadFavorites()
     }catch(e){console.error(e)}
+    setContentLoading(false)
+  }
+
+  const fetchTMDB=async(url)=>{
+    try{const r=await fetch(url);if(!r.ok)throw new Error();const d=await r.json();return d.results||[]}
+    catch{return[]}
+  }
+
+  const fetchTMDBPages=async(endpoint)=>{
+    try{const[r1,r2]=await Promise.all([fetchTMDB(`${endpoint}&page=1`),fetchTMDB(`${endpoint}&page=2`)]);return[...r1,...r2]}
+    catch{return[]}
   }
 
   const loadFavorites=()=>{
-    try{const s=localStorage.getItem('yoshikawaFavorites');setFavorites(s?JSON.parse(s):[])}catch{setFavorites([])}
+    try{const s=localStorage.getItem('yoshikawaFavorites');if(s)setFavorites(JSON.parse(s))}catch{setFavorites([])}
   }
 
   const isFavorite=(item)=>favorites.some(f=>f.id===item.id&&f.media_type===item.media_type)
@@ -293,6 +307,15 @@ export default function Home(){
       try{localStorage.setItem('yoshikawaFavorites',JSON.stringify(updated))}catch{}
       return updated
     })
+  }
+
+  const handleLogout=()=>{
+    setUserProfile(null)
+    setFavorites([])
+    try{
+      localStorage.removeItem('yoshikawaProfile')
+      localStorage.removeItem('yoshikawaFavorites')
+    }catch{}
   }
 
   const handlePlay=(item)=>window.location.href=`/${item.media_type}/${item.id}`
@@ -346,29 +369,35 @@ export default function Home(){
     activeFilter==='Animes'?favorites.filter(f=>f.media_type==='anime'):
     favorites
 
-  const renderHomePage=()=>(
-    <>
-      <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Semanais</h2><div className="vertical-scroll">{weeklies.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Lançamento</h2>{featured&&<FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>}</section>
-      <section className="section"><h2 className="section-title">Com dublagem</h2><div className="vertical-scroll">{dubbed.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Romance</h2><div className="vertical-scroll">{romance.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Talvez você goste</h2><div className="vertical-scroll">{recommended.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-    </>
-  )
+  const renderHomePage=()=>{
+    if(contentLoading)return<ContentLoader/>
+    return(
+      <>
+        <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Semanais</h2><div className="vertical-scroll">{weeklies.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Lançamento</h2>{featured&&<FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>}</section>
+        <section className="section"><h2 className="section-title">Com dublagem</h2><div className="vertical-scroll">{dubbed.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Romance</h2><div className="vertical-scroll">{romance.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Talvez você goste</h2><div className="vertical-scroll">{recommended.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      </>
+    )
+  }
 
-  const renderAnimesPage=()=>(
-    <>
-      <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0,5).map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5,10).map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
-      <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10,20).map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
-    </>
-  )
+  const renderAnimesPage=()=>{
+    if(contentLoading)return<ContentLoader/>
+    return(
+      <>
+        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0,5).map(item=><HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5,10).map(item=><EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>)}</div></section>
+        <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10,20).map(item=><MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite} userProfile={userProfile}/>)}</div></section>
+      </>
+    )
+  }
 
   const renderFavoritesPage=()=>(
     <section className="section">
@@ -396,7 +425,7 @@ export default function Home(){
             {SEARCH_FILTERS.map(filter=><button key={filter} className={`filter-btn ${activeSearchFilter===filter?'active':''}`} onClick={()=>setActiveSearchFilter(filter)}>{filter}</button>)}
           </div>
           <div className="search-results-list">
-            {searchLoading?<div className="empty-favorites"><div className="loading-spinner"></div></div>:
+            {searchLoading?<ContentLoader/>:
              searchResults.length>0?searchResults.map((item,index)=><div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay}/>{index<searchResults.length-1&&<div className="search-divider"></div>}</div>):
              <div className="empty-favorites"><i className="fas fa-search" style={{fontSize:'clamp(32px,5vw,48px)',color:'#333',marginBottom:'clamp(12px,2vw,16px)'}}></i><p style={{color:'#666',fontSize:'clamp(14px,2.5vw,18px)'}}>Nenhum resultado encontrado</p></div>}
           </div>
@@ -414,9 +443,11 @@ export default function Home(){
     <section className="section" style={{paddingTop:'clamp(40px,8vw,80px)'}}>
       <div className="menu-banner-container"><div className="verify-banner"><span>Verifique sua conta para personalização e comentários!</span><i className="fas fa-chevron-right"></i></div></div>
       <div className="user-card" onClick={()=>!userProfile&&setShowProfileCreation(true)}>
-        <div className="user-avatar" style={userProfile?{background:userProfile.color}:{}}>{userProfile?<span style={{fontSize:'clamp(28px,4vw,40px)',color:'#fff',fontWeight:'700'}}>{userProfile.name[0].toUpperCase()}</span>:<i className="fas fa-user" style={{fontSize:'clamp(28px,4vw,40px)',color:'#666'}}></i>}</div>
+        <div className="user-avatar" style={userProfile?{background:userProfile.color}:{}}>
+          {userProfile?<img src={getAvatarUrl(userProfile.name,userProfile.color)} alt={userProfile.name} className="profile-avatar-img"/>:<i className="fas fa-user" style={{fontSize:'clamp(28px,4vw,40px)',color:'#666'}}></i>}
+        </div>
         <div className="user-info"><h3 className="user-name">{userProfile?userProfile.name:'@user'}</h3>{!userProfile&&<p className="user-email">Criar perfil</p>}</div>
-        {userProfile&&<button className="logout-btn" onClick={(e)=>{e.stopPropagation();setUserProfile(null);try{localStorage.removeItem('yoshikawaProfile')}catch{}}}><i className="fas fa-sign-out-alt"></i></button>}
+        {userProfile&&<button className="logout-btn" onClick={(e)=>{e.stopPropagation();handleLogout()}}><i className="fas fa-sign-out-alt"></i></button>}
       </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile?'Editar Perfil':'Criar Perfil'} description={userProfile?'Alterar nome e cor':'Personalize sua experiência'} onClick={()=>setShowProfileCreation(true)}/>
@@ -449,19 +480,21 @@ export default function Home(){
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
           img{max-width:100%;height:auto;display:block}
 
-          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#000000;transition:opacity 0.8s ease}
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#101010;transition:opacity 0.8s ease}
           .loading-overlay.closing{opacity:0;pointer-events:none}
           .loading-content{display:flex;flex-direction:column;align-items:center;gap:clamp(24px,4vw,32px)}
           .loading-logo{width:clamp(120px,20vw,180px);height:clamp(120px,20vw,180px);object-fit:contain}
           .loading-spinner{width:clamp(32px,5vw,40px);height:clamp(32px,5vw,40px);border:3px solid rgba(255,255,255,0.1);border-top-color:#ffffff;border-radius:50%;animation:spin 0.8s linear infinite}
+          .content-loader{display:flex;align-items:center;justify-content:center;padding:clamp(60px,10vw,100px) 0}
           @keyframes spin{to{transform:rotate(360deg)}}
 
           .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
-          .header-logo{width:clamp(36px,5vw,48px);height:clamp(36px,5vw,48px);object-fit:contain}
+          .header-logo{object-fit:contain}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
           .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;background:#2a2a2a;color:#666;font-size:clamp(20px,3vw,28px);overflow:hidden}
+          .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
@@ -470,14 +503,14 @@ export default function Home(){
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
-          .horizontal-card{flex-shrink:0;width:clamp(260px,40vw,560px);height:clamp(140px,20vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
+          .horizontal-card{flex-shrink:0;width:clamp(260px,40vw,560px);height:clamp(140px,20vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer;background:#1B1B1B}
           .horizontal-card-img{width:100%;height:100%;object-fit:cover}
           .horizontal-card-info{position:absolute;bottom:0;left:0;right:0;padding:clamp(12px,2vw,20px);background:linear-gradient(to top,rgba(0,0,0,0.85),rgba(0,0,0,0))}
           .horizontal-card-title{font-size:clamp(14px,2vw,18px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .horizontal-card-subtitle{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
-          .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px}
+          .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-img{width:100%;height:100%;object-fit:cover}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .episode-info{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
@@ -485,7 +518,7 @@ export default function Home(){
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
           .card-wrapper{flex-shrink:0;width:clamp(110px,18vw,140px);cursor:pointer}
-          .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1a1a1a}
+          .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
           .fav-btn{position:absolute;top:clamp(4px,1vw,8px);right:clamp(4px,1vw,8px);width:clamp(26px,4vw,32px);height:clamp(26px,4vw,32px);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;background:rgba(0,0,0,0.4);font-size:clamp(12px,2vw,14px)}
           .card-poster-frame:hover .fav-btn{opacity:1}
@@ -494,10 +527,10 @@ export default function Home(){
           .heart-pulse{animation:heartZoom 0.5s ease}
           @keyframes heartZoom{0%{transform:scale(1)}50%{transform:scale(1.6)}100%{transform:scale(1)}}
 
-          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(16px,4vw,34px);background:#121212}
+          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(16px,4vw,34px);background:#1B1B1B}
           .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
           .featured-img{width:100%;height:100%;object-fit:cover}
-          .featured-details{padding:clamp(16px,3vw,24px);background:#121212;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
+          .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
           .featured-text{flex:1}
           .featured-title{font-size:clamp(16px,3vw,24px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
           .featured-meta{display:flex;gap:clamp(8px,2vw,16px);margin-bottom:clamp(12px,2vw,16px);align-items:center;flex-wrap:wrap}
@@ -525,7 +558,7 @@ export default function Home(){
 
           .favorites-list{padding:0 clamp(12px,2.5vw,20px);margin-top:clamp(16px,3vw,24px)}
           .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(12px,2.5vw,20px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
-          .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0}
+          .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .favorite-content{flex:1;min-width:0}
           .favorite-title{font-size:clamp(14px,2vw,18px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
           .favorite-year{font-size:clamp(12px,1.8vw,16px);color:#A5A5A5;margin-bottom:4px}
@@ -536,14 +569,14 @@ export default function Home(){
 
           .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,18px);padding:clamp(12px,2vw,24px) clamp(16px,4vw,34px);padding-top:clamp(20px,3vw,40px)}
           .search-back-btn{color:#ffffff;font-size:clamp(24px,4vw,38px);width:clamp(24px,4vw,38px);height:clamp(24px,4vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-          .search-bar{flex:1;height:clamp(48px,7vw,74px);background:#121212;border-radius:clamp(24px,4vw,38px);display:flex;align-items:center;padding:0 clamp(16px,2.5vw,24px);gap:clamp(8px,1.5vw,12px)}
+          .search-bar{flex:1;height:clamp(48px,7vw,74px);background:#1B1B1B;border-radius:clamp(24px,4vw,38px);display:flex;align-items:center;padding:0 clamp(16px,2.5vw,24px);gap:clamp(8px,1.5vw,12px)}
           .search-icon{color:#A5A5A5;font-size:clamp(16px,2.5vw,22px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,20px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
 
           .search-results-list{padding:0 clamp(12px,2.5vw,24px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
-          .search-result-poster{width:clamp(90px,16vw,165px);height:clamp(120px,22vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0}
+          .search-result-poster{width:clamp(90px,16vw,165px);height:clamp(120px,22vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .search-result-content{flex:1;min-width:0;display:flex;flex-direction:column}
           .search-result-title{font-size:clamp(14px,2vw,19px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px)}
           .search-result-year{font-size:clamp(12px,1.5vw,16px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px)}
@@ -554,19 +587,19 @@ export default function Home(){
           .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,2vw,20px);padding:0 clamp(16px,3vw,24px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
           .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1}
-          .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover}
+          .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover;background:#1B1B1B}
 
           .menu-banner-container{padding:0 clamp(16px,3vw,28px);margin-top:clamp(16px,3vw,24px)}
           .verify-banner{height:clamp(48px,7vw,62px);background:#E04E4E;border-radius:clamp(14px,2vw,20px);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,2.5vw,20px);color:#ffffff;font-size:clamp(13px,2.2vw,18px);font-weight:700;gap:clamp(8px,1.5vw,12px)}
           .verify-banner span{flex:1;min-width:0}
           .verify-banner i{flex-shrink:0;font-size:clamp(16px,2.5vw,22px)}
-          .user-card{display:flex;align-items:center;padding:clamp(16px,3vw,24px);margin:clamp(16px,3vw,28px);background:#121212;border-radius:clamp(16px,2.5vw,22px);position:relative;gap:clamp(12px,2vw,16px);cursor:pointer}
-          .user-avatar{width:clamp(56px,9vw,80px);height:clamp(56px,9vw,80px);border-radius:50%;background:#2A2A2A;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+          .user-card{display:flex;align-items:center;padding:clamp(16px,3vw,24px);margin:clamp(16px,3vw,28px);background:#1B1B1B;border-radius:clamp(16px,2.5vw,22px);position:relative;gap:clamp(12px,2vw,16px);cursor:pointer}
+          .user-avatar{width:clamp(56px,9vw,80px);height:clamp(56px,9vw,80px);border-radius:50%;background:#2A2A2A;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
           .user-info{flex:1;min-width:0}
           .user-name{font-size:clamp(18px,3vw,24px);font-weight:700}
           .user-email{font-size:clamp(12px,2vw,15px);color:#A0A0A0;margin-top:clamp(2px,0.5vw,4px)}
           .logout-btn{color:#D0D0D0;font-size:clamp(28px,4.5vw,42px);width:clamp(28px,4.5vw,42px);height:clamp(28px,4.5vw,42px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-          .settings-card{background:#121212;border-radius:clamp(16px,2.5vw,22px);padding:clamp(16px,3vw,28px);margin:clamp(16px,3vw,28px)}
+          .settings-card{background:#1B1B1B;border-radius:clamp(16px,2.5vw,22px);padding:clamp(16px,3vw,28px);margin:clamp(16px,3vw,28px)}
           .settings-item{display:flex;align-items:center;gap:clamp(10px,2vw,16px);padding:clamp(10px,1.8vw,16px) 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
           .settings-item:last-child{border-bottom:none}
           .settings-icon{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);flex-shrink:0}
@@ -578,12 +611,12 @@ export default function Home(){
           .version-info{text-align:center;margin-top:clamp(16px,3vw,24px);padding:clamp(12px,2vw,20px)}
           .version-info p{font-size:clamp(13px,2.2vw,18px);font-weight:500;color:#E0E0E0}
 
-          .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:#000000;display:flex;align-items:center;justify-content:center;padding:20px}
-          .profile-creation-card{background:#1a1a1a;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px);position:relative}
+          .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;align-items:center;justify-content:center;padding:20px}
+          .profile-creation-card{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px);position:relative}
           .profile-close-btn{position:absolute;top:16px;right:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:20px;background:transparent;border:none;cursor:pointer}
           .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff}
           .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center}
-          .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700}
+          .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700;overflow:hidden}
           .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
           .profile-error{color:#E04E4E;font-size:13px}
           .profile-colors{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
@@ -594,7 +627,7 @@ export default function Home(){
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
           .profile-create-btn:hover{opacity:0.9}
 
-          .about-modal{background:#1a1a1a;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative}
+          .about-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:500px;max-height:80vh;overflow-y:auto;position:relative}
           .about-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin-bottom:20px}
           .about-content{color:#ccc;font-size:clamp(13px,2vw,15px);line-height:1.6}
           .about-content p{margin-bottom:12px}
