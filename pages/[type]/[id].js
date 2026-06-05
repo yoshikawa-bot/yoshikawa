@@ -16,7 +16,7 @@ const LoginRequiredModal = ({ onClose, onGoToMenu }) => (
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Login necessário</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Login</h2>
         <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}>
           <i className="fas fa-times" />
         </button>
@@ -36,7 +36,7 @@ const LoginRequiredModal = ({ onClose, onGoToMenu }) => (
 )
 
 const ContentLoader = () => (
-  <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', zIndex: 9999 }}>
+  <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505' }}>
     <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
   </div>
@@ -128,11 +128,12 @@ export default function WatchPage() {
           setIsLiked(liked === 'true')
         } catch (e) {}
         contentLoaded.current = true
+        setIsLoading(false) // tudo pronto
       } catch (error) {
         console.error('Erro ao carregar conteúdo:', error)
         setHasError(true)
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
     load()
   }, [id, type])
@@ -241,17 +242,7 @@ export default function WatchPage() {
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const hasLongSynopsis = content?.overview && content.overview.length > 200
 
-  if (isLoading) return <ContentLoader />
-
-  if (hasError || !content) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', flexDirection: 'column', gap: 16, padding: 20 }}>
-        <i className="fas fa-exclamation-triangle" style={{ fontSize: 48, color: '#F05454' }} />
-        <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
-        <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
-      </div>
-    )
-  }
+  const showContent = content && !hasError
 
   return (
     <>
@@ -264,7 +255,7 @@ export default function WatchPage() {
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body { font-family: 'Inter', sans-serif; background: #050505; color: #fff; line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 
-          .hero { position: relative; width: 100%; height: clamp(450px, 60vw, 620px); overflow: hidden; }
+          .hero { position: relative; width: 100%; height: clamp(450px, 60vw, 620px); overflow: hidden; background: #0a0a0a; }
           .hero-bg { width: 100%; height: 100%; object-fit: cover; }
           .hero-gradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 50%, #050505 100%); }
           .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: clamp(20px,4vw,32px); display: flex; flex-direction: column; gap: 12px; }
@@ -317,97 +308,114 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      <div className="hero">
-        <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
-        <div className="hero-gradient" />
-        <div className="top-bar">
-          <Link href="/" className="top-btn">
-            <i className="fas fa-arrow-left" />
-          </Link>
-        </div>
-        <div className="hero-content">
-          <button className="continue-btn" onClick={handleContinue}>
-            <i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
-          </button>
-          <h1 className="hero-title">{content.title || content.name}</h1>
-          <div className="hero-meta">
-            <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
-            <span>{genres}</span>
-            <span>• {new Date(releaseDate).getFullYear()}</span>
-          </div>
-        </div>
-      </div>
+      {/* Overlay de carregamento */}
+      {isLoading && <ContentLoader />}
 
-      <div className="social-bar">
-        <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
-          <i className="fas fa-thumbs-up" />
-          <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
-        </button>
-        <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
-          <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
-          <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
-        </button>
-        <button className="social-item" onClick={handleShare}>
-          <i className="fas fa-share-alt" />
-          <span>Compartilhar</span>
-        </button>
-      </div>
-
-      <div className="synopsis">
-        <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
-        {hasLongSynopsis && (
-          <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
-            {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
-          </button>
-        )}
-      </div>
-
-      {type === 'tv' ? (
+      {/* Conteúdo da página (já começa a ser montado, mesmo que incompleto) */}
+      {showContent ? (
         <>
-          <div className="episodes-toolbar">
-            <select value={season} onChange={handleSeasonChange}>
-              {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => (
-                <option key={n} value={n}>Temporada {n}</option>
-              ))}
-            </select>
-            <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
-              {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" />
+          <div className="hero">
+            <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
+            <div className="hero-gradient" />
+            <div className="top-bar">
+              <Link href="/" className="top-btn">
+                <i className="fas fa-arrow-left" />
+              </Link>
+            </div>
+            <div className="hero-content">
+              <button className="continue-btn" onClick={handleContinue}>
+                <i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
+              </button>
+              <h1 className="hero-title">{content.title || content.name}</h1>
+              <div className="hero-meta">
+                <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
+                <span>{genres}</span>
+                <span>• {new Date(releaseDate).getFullYear()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="social-bar">
+            <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
+              <i className="fas fa-thumbs-up" />
+              <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
+            </button>
+            <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
+              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
+              <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
+            </button>
+            <button className="social-item" onClick={handleShare}>
+              <i className="fas fa-share-alt" />
+              <span>Compartilhar</span>
             </button>
           </div>
 
-          <div className="episodes-list">
-            {orderedEps.map(ep => {
-              const watched = watchedEps.has(`${season}-${ep.episode_number}`)
-              const isCurrent = ep.episode_number === episode
-              return (
-                <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
-                  <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
-                    {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
-                      <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
-                    )}
-                    {watched && <div className="watched-label">Assistido</div>}
-                  </div>
-                  <div className="ep-info">
-                    <h4>{ep.episode_number}. {ep.name || 'Sem título'}</h4>
-                    <span>{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</span>
-                  </div>
+          <div className="synopsis">
+            <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
+            {hasLongSynopsis && (
+              <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
+                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
+              </button>
+            )}
+          </div>
+
+          {type === 'tv' ? (
+            <>
+              <div className="episodes-toolbar">
+                <select value={season} onChange={handleSeasonChange}>
+                  {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>Temporada {n}</option>
+                  ))}
+                </select>
+                <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
+                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" />
+                </button>
+              </div>
+
+              <div className="episodes-list">
+                {orderedEps.map(ep => {
+                  const watched = watchedEps.has(`${season}-${ep.episode_number}`)
+                  const isCurrent = ep.episode_number === episode
+                  return (
+                    <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
+                      <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
+                        {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
+                          <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
+                        )}
+                        {watched && <div className="watched-label">Assistido</div>}
+                      </div>
+                      <div className="ep-info">
+                        <h4>{ep.episode_number}. {ep.name || 'Sem título'}</h4>
+                        <span>{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="episodes-list">
+              <div className="ep-card" onClick={handleContinue}>
+                <div className="ep-thumb">
+                  <img src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" />
                 </div>
-              )
-            })}
-          </div>
+                <div className="ep-info">
+                  <h4>{content.title || content.name}</h4>
+                  <span>{content.runtime ? `${content.runtime} min` : 'Duração indisponível'}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </>
-      ) : (
-        <div className="episodes-list">
-          <div className="ep-card" onClick={handleContinue}>
-            <div className="ep-thumb">
-              <img src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" />
-            </div>
-            <div className="ep-info">
-              <h4>{content.title || content.name}</h4>
-              <span>{content.runtime ? `${content.runtime} min` : 'Duração indisponível'}</span>
-            </div>
-          </div>
+      ) : hasError ? (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', flexDirection: 'column', gap: 16, padding: 20 }}>
+          <i className="fas fa-exclamation-triangle" style={{ fontSize: 48, color: '#F05454' }} />
+          <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
+          <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
         </div>
+      ) : (
+        /* Placeholder silencioso enquanto carrega (hero vazio) */
+        <div className="hero" />
       )}
 
       {isPlaying && (
@@ -432,4 +440,4 @@ export default function WatchPage() {
       )}
     </>
   )
-         }
+}
