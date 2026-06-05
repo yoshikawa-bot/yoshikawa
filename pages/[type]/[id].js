@@ -5,7 +5,6 @@ import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
-const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
 const getAvatarUrl = (name, color) => {
@@ -14,7 +13,7 @@ const getAvatarUrl = (name, color) => {
 }
 
 const ContentLoader = () => (
-  <div className="content-loader">
+  <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', zIndex: 9999 }}>
     <div className="loading-spinner" />
   </div>
 )
@@ -61,6 +60,7 @@ export default function WatchPage() {
   const { type, id } = router.query
 
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
   const [content, setContent] = useState(null)
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
@@ -108,18 +108,19 @@ export default function WatchPage() {
   }, [id, type])
 
   useEffect(() => {
+    if (!router.isReady) return
+    if (!id || !type) return
+
     contentLoaded.current = false
     setContent(null)
     setIsLoading(true)
+    setHasError(false)
     setSeason(1)
     setEpisode(1)
     setSeasonData(null)
     setAllSeasonsData({})
     setWatchedEps(new Set())
-  }, [id, type])
 
-  useEffect(() => {
-    if (!id || !type || contentLoaded.current) return
     const load = async () => {
       try {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
@@ -144,11 +145,12 @@ export default function WatchPage() {
         contentLoaded.current = true
       } catch (error) {
         console.error('Erro ao carregar conteúdo:', error)
+        setHasError(true)
       }
       setIsLoading(false)
     }
     load()
-  }, [id, type, getLastWatchedEpisode])
+  }, [id, type, router.isReady])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -261,6 +263,18 @@ export default function WatchPage() {
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const hasLongSynopsis = content?.overview && content.overview.length > 200
 
+  if (isLoading) return <ContentLoader />
+
+  if (hasError || !content) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', flexDirection: 'column', gap: 16, padding: 20 }}>
+        <i className="fas fa-exclamation-triangle" style={{ fontSize: 48, color: '#F05454' }} />
+        <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
+        <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
+      </div>
+    )
+  }
+
   return (
     <>
       <Head>
@@ -318,6 +332,23 @@ export default function WatchPage() {
           .ep-info span { font-size: 13px; color: #9A9A9A; }
           .ep-card.active h4 { color: #F05454; }
 
+          .movie-info-section {
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .movie-info-item {
+            display: flex;
+            gap: 8px;
+            font-size: 14px;
+            color: #AFAFAF;
+          }
+          .movie-info-item strong {
+            color: #fff;
+            min-width: 80px;
+          }
+
           .player-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; padding: 16px; }
           .player-box { width: 100%; max-width: min(90vw, 90vh); display: flex; flex-direction: column; gap: 12px; }
           .player-frame { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 20px; overflow: hidden; }
@@ -325,9 +356,6 @@ export default function WatchPage() {
           .player-controls { display: flex; justify-content: space-between; align-items: center; }
           .player-controls span { font-weight: 700; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px; font-size: 14px; }
           .player-controls button { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
-          .nav-ep-btn { display: flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; font-family: inherit; }
-          .nav-ep-btn:hover { background: rgba(255,255,255,0.2); }
-          .nav-ep-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
           .profile-overlay { position: fixed; inset: 0; z-index: 10000; background: #101010; display: flex; align-items: center; justify-content: center; padding: 20px; }
           .profile-card { background: #1B1B1B; border-radius: 24px; padding: clamp(24px,4vw,40px); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: clamp(16px,2.5vw,24px); }
@@ -353,93 +381,101 @@ export default function WatchPage() {
         `}</style>
       </Head>
 
-      {isLoading && <ContentLoader />}
+      <div className="hero">
+        <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
+        <div className="hero-gradient" />
+        <div className="top-bar">
+          <Link href="/" className="top-btn">
+            <i className="fas fa-arrow-left" />
+          </Link>
+        </div>
+        <div className="hero-content">
+          <button className="continue-btn" onClick={handleContinue}>
+            <i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
+          </button>
+          <h1 className="hero-title">{content.title || content.name}</h1>
+          <div className="hero-meta">
+            <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
+            <span>{genres}</span>
+            <span>• {new Date(releaseDate).getFullYear()}</span>
+          </div>
+        </div>
+      </div>
 
-      {content && (
+      <div className="social-bar">
+        <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
+          <i className="fas fa-thumbs-up" />
+          <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
+        </button>
+        <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
+          <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
+          <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
+        </button>
+        <button className="social-item" onClick={handleShare}>
+          <i className="fas fa-share-alt" />
+          <span>Compartilhar</span>
+        </button>
+      </div>
+
+      <div className="synopsis">
+        <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
+        {hasLongSynopsis && (
+          <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
+            {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
+          </button>
+        )}
+      </div>
+
+      {type === 'tv' ? (
         <>
-          <div className="hero">
-            <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
-            <div className="hero-gradient" />
-            <div className="top-bar">
-              <Link href="/" className="top-btn">
-                <i className="fas fa-arrow-left" />
-              </Link>
-            </div>
-            <div className="hero-content">
-              <button className="continue-btn" onClick={handleContinue}>
-                <i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}
-              </button>
-              <h1 className="hero-title">{content.title || content.name}</h1>
-              <div className="hero-meta">
-                <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
-                <span>{genres}</span>
-                <span>• {new Date(releaseDate).getFullYear()}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="social-bar">
-            <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
-              <i className="fas fa-thumbs-up" />
-              <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
-            </button>
-            <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
-              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} />
-              <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
-            </button>
-            <button className="social-item" onClick={handleShare}>
-              <i className="fas fa-share-alt" />
-              <span>Compartilhar</span>
+          <div className="episodes-toolbar">
+            <select value={season} onChange={handleSeasonChange}>
+              {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => (
+                <option key={n} value={n}>Temporada {n}</option>
+              ))}
+            </select>
+            <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
+              {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" />
             </button>
           </div>
 
-          <div className="synopsis">
-            <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
-            {hasLongSynopsis && (
-              <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
-                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
-              </button>
-            )}
+          <div className="episodes-list">
+            {orderedEps.map(ep => {
+              const watched = watchedEps.has(`${season}-${ep.episode_number}`)
+              const isCurrent = ep.episode_number === episode
+              return (
+                <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
+                  <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
+                    {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
+                      <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
+                    )}
+                    {watched && <div className="watched-label">Assistido</div>}
+                  </div>
+                  <div className="ep-info">
+                    <h4>{ep.episode_number}. {ep.name || 'Sem título'}</h4>
+                    <span>{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
-
-          {type === 'tv' && (
-            <>
-              <div className="episodes-toolbar">
-                <select value={season} onChange={handleSeasonChange}>
-                  {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => (
-                    <option key={n} value={n}>Temporada {n}</option>
-                  ))}
-                </select>
-                <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
-                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" />
-                </button>
-              </div>
-
-              <div className="episodes-list">
-                {orderedEps.map(ep => {
-                  const watched = watchedEps.has(`${season}-${ep.episode_number}`)
-                  const isCurrent = ep.episode_number === episode
-                  return (
-                    <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
-                      <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
-                        {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
-                          <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
-                        )}
-                        {watched && <div className="watched-label">Assistido</div>}
-                      </div>
-                      <div className="ep-info">
-                        <h4>{ep.episode_number}. {ep.name || 'Sem título'}</h4>
-                        <span>{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-
-          {type !== 'tv' && <div style={{ height: 100 }} />}
         </>
+      ) : (
+        <div className="movie-info-section">
+          <div className="movie-info-item">
+            <strong>Duração:</strong> {content.runtime ? `${content.runtime} min` : 'Não informada'}
+          </div>
+          <div className="movie-info-item">
+            <strong>Orçamento:</strong> {content.budget ? `$${(content.budget / 1000000).toFixed(1)}M` : 'Não informado'}
+          </div>
+          <div className="movie-info-item">
+            <strong>Receita:</strong> {content.revenue ? `$${(content.revenue / 1000000).toFixed(1)}M` : 'Não informada'}
+          </div>
+          <div className="movie-info-item">
+            <strong>Status:</strong> {content.status === 'Released' ? 'Lançado' : content.status || 'Não informado'}
+          </div>
+          <div style={{ height: 80 }} />
+        </div>
       )}
 
       {isPlaying && (
@@ -447,38 +483,11 @@ export default function WatchPage() {
           <div className="player-box">
             <div className="player-controls">
               <span>{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
-              <button onClick={() => {
-                setIsPlaying(false)
-                if (type === 'tv') {
-                  try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode })) } catch (e) {}
-                }
-              }}><i className="fas fa-times" /></button>
+              <button onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
             </div>
             <div className="player-frame">
               <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
             </div>
-            {type === 'tv' && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                <button className="nav-ep-btn" onClick={() => {
-                  if (episode > 1) {
-                    const prevEp = episode - 1
-                    setEpisode(prevEp)
-                    markWatched(season, prevEp)
-                  }
-                }} disabled={episode === 1}>
-                  <i className="fas fa-backward" /> Anterior
-                </button>
-                <button className="nav-ep-btn" onClick={() => {
-                  if (seasonData && episode < seasonData.episodes.length) {
-                    const nextEp = episode + 1
-                    setEpisode(nextEp)
-                    markWatched(season, nextEp)
-                  }
-                }}>
-                  Próximo <i className="fas fa-forward" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -491,4 +500,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+                              }
