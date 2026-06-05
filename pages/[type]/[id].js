@@ -5,55 +5,42 @@ import { useRouter } from 'next/router'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
-const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
-const getAvatarUrl = (name, color) => {
-  const bg = color?.replace('#', '') || '4D4BAF'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&bold=true&format=svg`
-}
-
-const ContentLoader = () => (
-  <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', zIndex: 9999 }}>
-    <div className="loading-spinner" />
+const LoginRequiredModal = ({ onClose, onGoToMenu }) => (
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 10000, background: '#101010',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+  }}>
+    <div style={{
+      background: '#1B1B1B', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Login necessário</h2>
+        <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <i className="fas fa-times" />
+        </button>
+      </div>
+      <p style={{ color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 1.5 }}>
+        Para adicionar conteúdo aos favoritos, você precisa estar logado.<br />
+        Volte para a página inicial e crie seu perfil no menu.
+      </p>
+      <button onClick={onGoToMenu} style={{
+        width: '100%', padding: 14, borderRadius: 14, background: '#fff', color: '#000',
+        fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer'
+      }}>
+        Ir para o Menu
+      </button>
+    </div>
   </div>
 )
 
-const ProfileCreation = ({ onCreate, onClose }) => {
-  const [name, setName] = useState('')
-  const [selectedColor, setSelectedColor] = useState(PROFILE_COLORS[0])
-  const [error, setError] = useState('')
-
-  const handleSubmit = () => {
-    const trimmed = name.trim()
-    if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
-    if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
-    onCreate({ name: trimmed, color: selectedColor })
-  }
-
-  return (
-    <div className="profile-creation-overlay">
-      <div className="profile-creation-card">
-        <div className="modal-header">
-          <h2 className="profile-creation-title">Criar Perfil</h2>
-          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
-        </div>
-        <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
-        <div className="profile-avatar-preview" style={{ background: selectedColor }}>
-          {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
-        </div>
-        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
-        {error && <p className="profile-error">{error}</p>}
-        <div className="profile-colors">
-          {PROFILE_COLORS.map(color => (
-            <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />
-          ))}
-        </div>
-        <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
-        <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
-      </div>
-    </div>
-  )
-}
+const ContentLoader = () => (
+  <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', zIndex: 9999 }}>
+    <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+)
 
 export default function WatchPage() {
   const router = useRouter()
@@ -73,7 +60,7 @@ export default function WatchPage() {
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
   const [userProfile, setUserProfile] = useState(null)
-  const [showProfileCreation, setShowProfileCreation] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const contentLoaded = useRef(false)
 
@@ -174,7 +161,7 @@ export default function WatchPage() {
   const toggleFavorite = () => {
     if (!content) return
     if (!userProfile) {
-      setShowProfileCreation(true)
+      setShowLoginModal(true)
       return
     }
     try {
@@ -248,13 +235,6 @@ export default function WatchPage() {
     if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href })
   }
 
-  const handleCreateProfile = (profile) => {
-    const newProfile = { ...profile, createdAt: new Date().toISOString(), favoritesCount: 0 }
-    setUserProfile(newProfile)
-    try { localStorage.setItem('yoshikawaProfile', JSON.stringify(newProfile)) } catch (e) {}
-    setShowProfileCreation(false)
-  }
-
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
   const genres = content?.genres?.map(g => g.name).join(', ') || 'Gênero desconhecido'
   const ratingClass = content?.adult ? 'rating-18' : 'rating-L'
@@ -283,10 +263,6 @@ export default function WatchPage() {
         <style>{`
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body { font-family: 'Inter', sans-serif; background: #050505; color: #fff; line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-
-          .content-loader { display: flex; align-items: center; justify-content: center; padding: clamp(60px,10vw,100px) 0; }
-          .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #ffffff; border-radius: 50%; animation: spin 0.8s linear infinite; }
-          @keyframes spin { to { transform: rotate(360deg); } }
 
           .hero { position: relative; width: 100%; height: clamp(450px, 60vw, 620px); overflow: hidden; }
           .hero-bg { width: 100%; height: 100%; object-fit: cover; }
@@ -334,24 +310,6 @@ export default function WatchPage() {
           .player-controls { display: flex; justify-content: space-between; align-items: center; }
           .player-controls span { font-weight: 700; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px; font-size: 14px; }
           .player-controls button { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
-
-          .profile-creation-overlay { position: fixed; inset: 0; z-index: 10000; background: #101010; display: flex; align-items: center; justify-content: center; padding: 20px; }
-          .profile-creation-card { background: #1B1B1B; border-radius: 24px; padding: clamp(24px,4vw,40px); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: clamp(16px,2.5vw,24px); }
-          .modal-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-          .modal-close-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; background: none; border: none; cursor: pointer; flex-shrink: 0; }
-          .profile-creation-title { font-size: 28px; font-weight: 800; color: #fff; margin: 0; }
-          .profile-creation-subtitle { font-size: 16px; color: #888; text-align: center; width: 100%; }
-          .profile-avatar-preview { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 40px; font-weight: 700; overflow: hidden; }
-          .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-          .profile-name-input { width: 100%; padding: 12px 16px; border-radius: 12px; background: #2a2a2a; border: 1px solid #333; color: #fff; font-size: 16px; outline: none; text-align: center; }
-          .profile-error { color: #E04E4E; font-size: 13px; }
-          .profile-colors { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-          .profile-color-btn { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; transition: border-color 0.2s; }
-          .profile-color-btn.selected { border-color: #fff; }
-          .profile-terms { font-size: 13px; color: #888; text-align: center; padding: 0 10px; }
-          .profile-terms strong { color: #ddd; }
-          .profile-create-btn { width: 100%; padding: 14px; border-radius: 14px; background: #fff; color: #000; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
-          .profile-create-btn:hover { opacity: 0.9; }
 
           @media (min-width: 768px) {
             .ep-thumb { width: 170px; height: 95px; }
@@ -466,12 +424,12 @@ export default function WatchPage() {
         </div>
       )}
 
-      {showProfileCreation && (
-        <ProfileCreation
-          onCreate={handleCreateProfile}
-          onClose={() => setShowProfileCreation(false)}
+      {showLoginModal && (
+        <LoginRequiredModal
+          onClose={() => setShowLoginModal(false)}
+          onGoToMenu={() => router.push('/?section=menu')}
         />
       )}
     </>
   )
-                                                }
+         }
