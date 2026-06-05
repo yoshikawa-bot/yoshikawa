@@ -206,18 +206,18 @@ export default function WatchPage() {
           .ep-info{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center}
           .ep-info h4{font-size:15px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:13px;color:#9A9A9A}
-          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:16px}
-          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:12px}
-          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden}
+          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:12px;max-height:100vh}
+          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden;max-height:70vh}
           .player-frame iframe{width:100%;height:100%;border:none}
-          .player-controls{display:flex;justify-content:space-between;align-items:center}
+          .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
           .player-controls span{font-weight:700;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:8px;font-size:14px}
           .player-close-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);cursor:pointer;border:none;transition:transform 0.2s}
           .player-close-btn:hover{transform:scale(1.1)}
-          .nav-ep-btns{display:flex;justify-content:center;gap:12px;margin-top:8px}
-          .nav-ep-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);cursor:pointer;border:none;transition:transform 0.2s}
-          .nav-ep-btn:hover{transform:scale(1.1)}
-          .nav-ep-btn:disabled{opacity:0.4;cursor:not-allowed}
+          .nav-ep-btns{display:flex;justify-content:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
+          .nav-ep-btn{display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;color:#000;border-radius:50px;font-weight:600;font-size:14px;cursor:pointer;border:none;transition:transform 0.2s;white-space:nowrap}
+          .nav-ep-btn:hover{transform:scale(1.05)}
+          .nav-ep-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           @media(min-width:768px){.ep-thumb{width:170px;height:95px}}
         `}</style>
       </Head>
@@ -312,10 +312,10 @@ export default function WatchPage() {
             {type === 'tv' && (
               <div className="nav-ep-btns">
                 <button className="nav-ep-btn" onClick={() => { if (episode > 1) { const prevEp = episode - 1; setEpisode(prevEp); markWatched(season, prevEp) } }} disabled={episode === 1}>
-                  <i className="fas fa-backward" />
+                  <i className="fas fa-backward" /> Anterior
                 </button>
                 <button className="nav-ep-btn" onClick={() => { if (seasonData && episode < seasonData.episodes.length) { const nextEp = episode + 1; setEpisode(nextEp); markWatched(season, nextEp) } }}>
-                  <i className="fas fa-forward" />
+                  Próximo <i className="fas fa-forward" />
                 </button>
               </div>
             )}
@@ -324,4 +324,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+    }
