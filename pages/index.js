@@ -81,7 +81,7 @@ export const VideoModal = ({ onClose }) => {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: '#101010', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <button onClick={onClose} style={{ position: 'absolute', top: 32, left: 32, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 24, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', zIndex: 10 }}>
+      <button onClick={onClose} className="featured-btn play-btn" style={{ position: 'absolute', top: 32, left: 32 }}>
         <i className="fas fa-arrow-left" />
       </button>
 
@@ -96,7 +96,8 @@ export const VideoModal = ({ onClose }) => {
         />
         <button
           onClick={togglePlayPause}
-          style={{ position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          className="featured-btn play-btn"
+          style={{ position: 'absolute', bottom: 16, right: 16 }}
         >
           <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'} />
         </button>
@@ -107,7 +108,7 @@ export const VideoModal = ({ onClose }) => {
 }
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
-  const avatarSize = 'clamp(40px,6vw,60px)'
+  const avatarSize = 'clamp(36px,5.4vw,54px)'
   const logoSize = 'clamp(42px,6.3vw,63px)'
   return (
     <header className="header">
@@ -115,7 +116,7 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }} onClick={onProfileClick}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(20px,3.5vw,30px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </button>
       </div>
     </header>
@@ -530,7 +531,7 @@ export default function Home() {
       )}
       <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(20px,3.5vw,30px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
@@ -579,7 +580,7 @@ export default function Home() {
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(40px,6vw,60px);height:clamp(40px,6vw,60px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
+          .profile-btn{width:clamp(36px,5.4vw,54px);height:clamp(36px,5.4vw,54px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
@@ -765,4 +766,4 @@ export default function Home() {
       )}
     </>
   )
-            }
+}
