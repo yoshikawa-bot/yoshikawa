@@ -1,3 +1,4 @@
+// pages/index.js
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -7,8 +8,6 @@ const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.we
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
-
-const PASTEL_COLORS = ['#FFD1DC', '#C1E1C1', '#CFBAF0', '#A7C7E7', '#F7DC6F', '#D7BDE2', '#A3E4D7', '#FAD7A0', '#D5F5E3', '#F9E79F']
 
 const CATEGORIES = [
   { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
@@ -55,35 +54,88 @@ const getAvatarUrl = (name, color) => {
 
 const POSTER_SIZE = 'w780'
 
+const getColorFromImage = (src) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = img.width
+      canvas.height = img.height
+      ctx.drawImage(img, 0, 0)
+      const sampleSize = 50
+      const startX = Math.max(0, Math.floor((img.width - sampleSize) / 2))
+      const startY = Math.max(0, Math.floor((img.height - sampleSize) / 2))
+      const imageData = ctx.getImageData(startX, startY, sampleSize, sampleSize).data
+      let r = 0, g = 0, b = 0, count = 0
+      for (let i = 0; i < imageData.length; i += 4) {
+        r += imageData[i]
+        g += imageData[i + 1]
+        b += imageData[i + 2]
+        count++
+      }
+      r = Math.floor(r / count)
+      g = Math.floor(g / count)
+      b = Math.floor(b / count)
+      const hsl = rgbToHsl(r, g, b)
+      hsl[2] = Math.max(0.08, hsl[2] * 0.35)
+      const darkened = hslToRgb(hsl[0], hsl[1], hsl[2])
+      resolve(`rgb(${darkened[0]},${darkened[1]},${darkened[2]})`)
+    }
+    img.onerror = () => resolve('#1a1a1a')
+    img.src = src
+  })
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  let h, s, l = (max + min) / 2
+  if (max === min) h = s = 0
+  else {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
+      case g: h = ((b - r) / d + 2) / 6; break
+      case b: h = ((r - g) / d + 4) / 6; break
+    }
+  }
+  return [h, s, l]
+}
+
+function hslToRgb(h, s, l) {
+  let r, g, b
+  if (s === 0) r = g = b = l
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1/6) return p + (q - p) * 6 * t
+      if (t < 1/2) return q
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+      return p
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    r = hue2rgb(p, q, h + 1/3)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1/3)
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)]
+}
+
 export const LoadingScreen = ({ onComplete }) => {
   const [closing, setClosing] = useState(false)
   const [mounted, setMounted] = useState(true)
-  useEffect(() => {
-    const timer = setTimeout(() => setClosing(true), 2000)
-    return () => clearTimeout(timer)
-  }, [])
-  useEffect(() => {
-    if (closing) {
-      const t = setTimeout(() => { setMounted(false); onComplete() }, 800)
-      return () => clearTimeout(t)
-    }
-  }, [closing, onComplete])
+  useEffect(() => { const t = setTimeout(() => setClosing(true), 2000); return () => clearTimeout(t) }, [])
+  useEffect(() => { if (closing) { const t = setTimeout(() => { setMounted(false); onComplete() }, 800); return () => clearTimeout(t) } }, [closing, onComplete])
   if (!mounted) return null
-  return (
-    <div className={`loading-overlay ${closing ? 'closing' : ''}`}>
-      <div className="loading-content">
-        <img src={LOGO_URL} alt="Yoshikawa" className="loading-logo" />
-        <div className="loading-spinner" />
-      </div>
-    </div>
-  )
+  return <div className={`loading-overlay ${closing ? 'closing' : ''}`}><div className="loading-content"><img src={LOGO_URL} alt="Yoshikawa" className="loading-logo" /><div className="loading-spinner" /></div></div>
 }
 
-export const ContentLoader = () => (
-  <div className="content-loader">
-    <div className="loading-spinner" />
-  </div>
-)
+export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick }) => {
   const avatarSize = 'clamp(40px,6vw,60px)'
@@ -92,16 +144,8 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick }) => {
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{ width: avatarSize, height: avatarSize }} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
-        <button
-          className="header-btn profile-btn"
-          style={userProfile ? { background: userProfile.color } : { background: '#E04E4E' }}
-          onClick={onProfileClick}
-        >
-          {userProfile ? (
-            <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" />
-          ) : (
-            <i className="fas fa-user" />
-          )}
+        <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: '#E04E4E' }} onClick={onProfileClick}>
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" />}
         </button>
       </div>
     </header>
@@ -117,19 +161,19 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   </nav>
 )
 
-export const TrendingCard = ({ item, onPlay, index }) => {
-  const color = PASTEL_COLORS[index % PASTEL_COLORS.length]
+export const TrendingCard = ({ item, onPlay }) => {
+  const [bgColor, setBgColor] = useState('#1a1a1a')
+  const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : DEFAULT_POSTER
+
+  useEffect(() => {
+    getColorFromImage(posterUrl).then(color => setBgColor(color))
+  }, [posterUrl])
+
   return (
     <div className="trending-card" onClick={() => onPlay?.(item)}>
-      <div className="trending-left" style={{ background: color }}>
-        <h3 className="trending-title">{item.title || item.name}</h3>
-      </div>
-      <div className="trending-right">
-        <img
-          src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER}
-          alt={item.title || item.name}
-          className="trending-img"
-        />
+      <div className="trending-bg" style={{ background: bgColor }}>
+        <div className="trending-title">{item.title || item.name}</div>
+        <img src={posterUrl} alt={item.title || item.name} className="trending-img" />
       </div>
     </div>
   )
@@ -139,9 +183,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
     <div className="episode-card" onClick={() => onPlay?.(item)}>
-      <div className="episode-thumbnail">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" />
-      </div>
+      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
       <h4 className="episode-title">{item.name || item.title}</h4>
       <p className="episode-info">Em exibição • {year || 'N/A'}</p>
     </div>
@@ -153,9 +195,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const ratingClass = item.adult ? 'rating-18' : 'rating-L'
   return (
     <div className="featured-card">
-      <div className="featured-poster">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="featured-img" />
-      </div>
+      <div className="featured-poster"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="featured-img" /></div>
       <div className="featured-details">
         <div className="featured-text">
           <h2 className="featured-title">{item.title || item.name}</h2>
@@ -181,12 +221,7 @@ export const MovieCard = ({ item }) => {
   return (
     <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
       <div className="card-poster-frame">
-        <img
-          src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER}
-          alt={item.title || item.name}
-          className="content-poster"
-          loading="lazy"
-        />
+        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
       </div>
     </div>
   )
@@ -206,9 +241,7 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
           {mediaType === 'anime' ? 'Anime' : mediaType === 'tv' ? 'Série' : 'Filme'}
         </div>
       </div>
-      <button className="favorite-remove" onClick={(e) => { e.stopPropagation(); onRemove?.(item) }}>
-        <i className="fas fa-times" />
-      </button>
+      <button className="favorite-remove" onClick={(e) => { e.stopPropagation(); onRemove?.(item) }}><i className="fas fa-times" /></button>
     </div>
   )
 }
@@ -284,11 +317,7 @@ export const ProfileCreation = ({ onCreate, onClose }) => {
         </div>
         <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
         {error && <p className="profile-error">{error}</p>}
-        <div className="profile-colors">
-          {PROFILE_COLORS.map(color => (
-            <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />
-          ))}
-        </div>
+        <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />)}</div>
         <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
         <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
       </div>
@@ -309,18 +338,10 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
           <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" />
         </div>
         <div className="profile-view-stats">
-          <div className="profile-stat">
-            <span className="profile-stat-value">{userProfile.favoritesCount || 0}</span>
-            <span className="profile-stat-label">Favoritos</span>
-          </div>
-          <div className="profile-stat">
-            <span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span>
-            <span className="profile-stat-label">Membro desde</span>
-          </div>
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.favoritesCount || 0}</span><span className="profile-stat-label">Favoritos</span></div>
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span><span className="profile-stat-label">Membro desde</span></div>
         </div>
-        <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}>
-          <i className="fas fa-sign-out-alt" /> Sair da conta
-        </button>
+        <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}><i className="fas fa-sign-out-alt" /> Sair da conta</button>
       </div>
       {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </div>
@@ -378,9 +399,7 @@ export default function Home() {
   useEffect(() => {
     try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
-    if (router.query.section) {
-      setActiveSection(router.query.section)
-    }
+    if (router.query.section) setActiveSection(router.query.section)
   }, [router.query.section])
 
   const handleLoadingComplete = () => {
@@ -389,18 +408,12 @@ export default function Home() {
     setLoadingComplete(true)
   }
 
-  useEffect(() => {
-    if (loadingComplete) loadAllContent()
-  }, [loadingComplete])
+  useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
 
   const loadAllContent = async () => {
     setContentLoading(true)
     try {
-      const [
-        trendingMovies, nowPlaying, onAir, upcoming, popular,
-        adventureShows, comedyShows, romanceShows, topRated,
-        animeMovies, animeTV
-      ] = await Promise.all([
+      const [trendingMovies, nowPlaying, onAir, upcoming, popular, adventureShows, comedyShows, romanceShows, topRated, animeMovies, animeTV] = await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
@@ -413,46 +426,26 @@ export default function Home() {
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`)
       ])
-
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
       setTrending(filterQuality(trendingMovies).slice(0, 10))
-
-      const seriesOnAir = onAir
-        .filter(i => i.poster_path)
-        .map(i => ({ ...i, media_type: 'tv' }))
-        .sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date))
-        .slice(0, 10)
+      const seriesOnAir = onAir.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date)).slice(0, 10)
       setNewEpisodes(seriesOnAir)
-
       setRecentlyAdded(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
       setFeatured(filterQuality(trendingMovies)[0] || null)
       setAdventure(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
       setComedy(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
       setRomance(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
       setRecommended(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-
-      const combinedAnimes = [
-        ...animeMovies.map(i => ({ ...i, media_type: 'movie' })),
-        ...animeTV.map(i => ({ ...i, media_type: 'tv' }))
-      ].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 20)
+      const combinedAnimes = [...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 20)
       setAnimes(combinedAnimes)
-
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
   }
 
-  const fetchTMDB = async (url) => {
-    try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] }
-  }
-
-  const fetchTMDBPages = async (endpoint) => {
-    try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] }
-  }
-
-  const loadFavorites = () => {
-    try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) }
-  }
+  const fetchTMDB = async (url) => { try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] } }
+  const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
+  const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
 
   const handlePlay = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
   const handleInfo = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
@@ -481,52 +474,29 @@ export default function Home() {
     setSearchLoading(true)
     try {
       let results = []
-      if (activeSearchFilter === 'Filmes') {
-        results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-        results = results.map(i => ({ ...i, media_type: 'movie' }))
-      } else if (activeSearchFilter === 'Séries') {
-        results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-        results = results.map(i => ({ ...i, media_type: 'tv' }))
-      } else {
-        const [movies, tv] = await Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
-          fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-        ])
+      if (activeSearchFilter === 'Filmes') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'movie' })) }
+      else if (activeSearchFilter === 'Séries') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'tv' })) }
+      else {
+        const [movies, tv] = await Promise.all([fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`), fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)])
         results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
       }
       if (activeSearchFilter === 'Animes') results = results.filter(i => i.genre_ids?.includes(16))
       results = results.filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 30)
       setSearchResults(results)
-    } catch { setSearchResults([]) }
-    finally { setSearchLoading(false) }
+    } catch { setSearchResults([]) } finally { setSearchLoading(false) }
   }
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
-
-  const handleSearchChange = (q) => {
-    setSearchQuery(q)
-    if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }
-    setSearchLoading(true)
-    debouncedSearch(q)
-  }
-
+  const handleSearchChange = (q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }
   useEffect(() => { if (searchQuery.trim()) fetchSearchResults(searchQuery) }, [activeSearchFilter])
 
-  const filteredFavorites = activeFilter === 'Tudo' ? favorites
-    : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie')
-    : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv')
-    : favorites
+  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
   const renderHomePage = () => {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section">
-          <h2 className="section-title">Em alta</h2>
-          <div className="horizontal-scroll">
-            {trending.map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} index={index} />)}
-          </div>
-        </section>
+        <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
         <section className="section"><h2 className="section-title">Lançamento</h2>{featured && <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo} />}</section>
@@ -542,7 +512,7 @@ export default function Home() {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0, 5).map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} index={index} />)}</div></section>
+        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0, 5).map((item, index) => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
         <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5, 10).map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
         <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10, 20).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
@@ -555,15 +525,7 @@ export default function Home() {
       <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>Favoritos</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
-        {filteredFavorites.length === 0 ? (
-          <div className="empty-favorites"><i className="far fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div>
-        ) : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => {
-          setFavorites(prev => {
-            const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type))
-            try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
-            return updated
-          })
-        }} onClick={handlePlay} />)}
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="far fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => { setFavorites(prev => { const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type)); try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}; return updated }) }} onClick={handlePlay} />)}
       </div>
     </section>
   )
@@ -572,20 +534,13 @@ export default function Home() {
     <>
       <div className="search-container">
         <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo') }}><i className="fas fa-arrow-left" /></button>
-        <div className="search-bar">
-          <i className="fas fa-search search-icon" />
-          <input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus />
-        </div>
+        <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
       {searchQuery.trim() ? (
         <>
-          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(20px,4vw,34px)' }}>
-            {SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}
-          </div>
+          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(20px,4vw,34px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
           <div className="search-results-list">
-            {searchLoading ? <ContentLoader /> :
-              searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) :
-                <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
+            {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
           </div>
         </>
       ) : (
@@ -664,17 +619,15 @@ export default function Home() {
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
-          .section-title{font-size:clamp(20px,4vw,32px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(16px,3vw,24px)}
+          .section-title{font-size:clamp(18px,3.6vw,28px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(16px,3vw,24px)}
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
 
-          /* Trending Card Redesign */
-          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;cursor:pointer;display:flex}
-          .trending-left{flex:1;display:flex;align-items:center;justify-content:center;padding:clamp(12px,2vw,20px)}
-          .trending-title{font-size:clamp(18px,3vw,28px);font-weight:900;color:#1a1a1a;text-align:center;line-height:1.2;word-break:break-word}
-          .trending-right{flex:1;position:relative;overflow:hidden}
-          .trending-img{width:100%;height:100%;object-fit:cover;-webkit-mask-image:linear-gradient(to left,black 50%,transparent 100%);mask-image:linear-gradient(to left,black 50%,transparent 100%)}
+          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;cursor:pointer}
+          .trending-bg{width:100%;height:100%;position:relative;display:flex;align-items:center}
+          .trending-title{position:absolute;left:clamp(16px,3vw,24px);right:50%;font-size:clamp(18px,3vw,28px);font-weight:900;color:#ffffff;line-height:1.2;word-break:break-word;z-index:2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+          .trending-img{position:absolute;right:0;top:0;width:50%;height:100%;object-fit:cover;-webkit-mask-image:linear-gradient(to left,black 40%,transparent 100%);mask-image:linear-gradient(to left,black 40%,transparent 100%)}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
@@ -706,7 +659,7 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(60px,8.5vw,85px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
+          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
@@ -845,4 +798,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+    }
