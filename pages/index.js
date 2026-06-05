@@ -1,4 +1,4 @@
-// pages/index.js completo
+// pages/index.js
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -9,18 +9,60 @@ const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/06486359.png'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 
-const CATEGORIES = [ /* ... igual ... */ ]
+const CATEGORIES = [
+  { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
+  { name: 'Ação', color: '#3F6D89', image: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg' },
+  { name: 'Comédia', color: '#C43708', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
+  { name: 'Dublado', color: '#43A45D', image: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg' },
+  { name: 'Drama', color: '#2C3F59', image: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg' },
+  { name: 'Escolar', color: '#72615F', image: 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg' },
+  { name: 'Fantasia', color: '#E97820', image: 'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg' },
+  { name: 'Romance', color: '#A8A8B6', image: 'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg' },
+  { name: 'Slice of Life', color: '#E38CA8', image: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg' },
+  { name: 'Sobrenatural', color: '#9D95C8', image: 'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg' }
+]
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
-const useDebounce = (callback, delay) => { /* ... */ }
-const getMediaType = (item) => { /* ... */ }
-const getItemYear = (item) => { /* ... */ }
-const getAvatarUrl = (name, color) => { /* ... */ }
+const useDebounce = (callback, delay) => {
+  const timeoutRef = useRef(null)
+  return useCallback((...args) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => callback(...args), delay)
+  }, [callback, delay])
+}
+
+const getMediaType = (item) => {
+  if (!item) return 'movie'
+  if (item.media_type) return item.media_type
+  const hasAnimeGenre = item.genre_ids?.includes(16)
+  const isJapanese = item.original_language === 'ja'
+  if (hasAnimeGenre && isJapanese) return 'anime'
+  return 'movie'
+}
+
+const getItemYear = (item) => {
+  if (!item) return null
+  return new Date(item.release_date || item.first_air_date).getFullYear() || null
+}
+
+const getAvatarUrl = (name, color) => {
+  const bg = color?.replace('#', '') || '4D4BAF'
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&bold=true&format=svg`
+}
+
 const POSTER_SIZE = 'w780'
 
-export const LoadingScreen = ({ onComplete }) => { /* ... */ }
+export const LoadingScreen = ({ onComplete }) => {
+  const [closing, setClosing] = useState(false)
+  const [mounted, setMounted] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setClosing(true), 2000); return () => clearTimeout(t) }, [])
+  useEffect(() => { if (closing) { const t = setTimeout(() => { setMounted(false); onComplete() }, 800); return () => clearTimeout(t) } }, [closing, onComplete])
+  if (!mounted) return null
+  return <div className={`loading-overlay ${closing ? 'closing' : ''}`}><div className="loading-content"><img src={LOGO_URL} alt="Yoshikawa" className="loading-logo" /><div className="loading-spinner" /></div></div>
+}
+
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick }) => {
@@ -52,8 +94,6 @@ export const TrendingCard = ({ item, onPlay }) => {
   return (
     <div className="trending-card" onClick={() => onPlay?.(item)}>
       <img src={backdropUrl} alt={item.title||item.name} className="trending-bg-img" />
-      <div className="trending-overlay" />
-      <h3 className="trending-title">{item.title||item.name}</h3>
     </div>
   )
 }
@@ -106,14 +146,147 @@ export const MovieCard = ({ item }) => {
   )
 }
 
-export const FavoriteItem = ({ item, onRemove, onClick }) => { /* ... igual */ }
-export const SearchResultItem = ({ item, onClick }) => { /* ... igual */ }
-export const CategoryCard = ({ category }) => { /* ... igual */ }
-export const SettingsItem = ({ icon, title, description, onClick }) => { /* ... igual */ }
-export const LogoutConfirm = ({ onConfirm, onCancel }) => { /* ... igual */ }
-export const ProfileCreation = ({ onCreate, onClose }) => { /* ... igual */ }
-export const ProfileView = ({ userProfile, onLogout, onClose }) => { /* ... igual */ }
-export const AboutModal = ({ onClose }) => { /* ... igual */ }
+export const FavoriteItem = ({ item, onRemove, onClick }) => {
+  const mediaType = item.media_type || 'movie'
+  const year = getItemYear(item)
+  return (
+    <div className="favorite-item" onClick={() => onClick?.(item)}>
+      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title} className="favorite-poster" />
+      <div className="favorite-content">
+        <h3 className="favorite-title">{item.title}</h3>
+        {year && <p className="favorite-year">{year}</p>}
+        <p className="favorite-episodes">{item.episodes||'12 Episódios'}</p>
+        <div className="favorite-badge" style={{background: mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>
+          {mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}
+        </div>
+      </div>
+      <button className="favorite-remove" onClick={(e)=>{e.stopPropagation();onRemove?.(item)}}><i className="fas fa-times" /></button>
+    </div>
+  )
+}
+
+export const SearchResultItem = ({ item, onClick }) => {
+  const mediaType = getMediaType(item)
+  const year = getItemYear(item)
+  return (
+    <div className="search-result-item" onClick={() => onClick?.(item)}>
+      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title||item.name} className="search-result-poster" />
+      <div className="search-result-content">
+        <h3 className="search-result-title">{item.title||item.name}</h3>
+        {year && <p className="search-result-year">{year}</p>}
+        <p className="search-result-episodes">{item.popularity ? `${Math.round(item.popularity)} Popularidade` : '12 Episódios'}</p>
+        <div className="search-result-badge" style={{background: mediaType==='anime'?'#4D4BAF':mediaType==='tv'?'#4A8B4A':'#8B4A4A'}}>
+          {mediaType==='anime'?'Anime':mediaType==='tv'?'Série':'Filme'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const CategoryCard = ({ category }) => (
+  <div className="category-card" style={{background: category.color}}>
+    <h3 className="category-title">{category.name}</h3>
+    <img src={category.image||DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e=>{e.target.src=DEFAULT_POSTER}} />
+  </div>
+)
+
+export const SettingsItem = ({ icon, title, description, onClick }) => (
+  <div className="settings-item" onClick={onClick}>
+    <div className="settings-icon"><i className={`fas fa-${icon}`} /></div>
+    <div className="settings-content"><h4 className="settings-title">{title}</h4><p className="settings-desc">{description}</p></div>
+  </div>
+)
+
+export const LogoutConfirm = ({ onConfirm, onCancel }) => (
+  <div className="profile-creation-overlay" onClick={onCancel}>
+    <div className="logout-confirm-modal" onClick={e=>e.stopPropagation()}>
+      <div className="modal-header">
+        <h3 className="logout-confirm-title">Sair do perfil</h3>
+        <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times" /></button>
+      </div>
+      <p className="logout-confirm-text">Ao sair, todos os seus favoritos serão perdidos permanentemente. Deseja continuar?</p>
+      <div className="logout-confirm-actions">
+        <button className="logout-cancel-btn" onClick={onCancel}>Cancelar</button>
+        <button className="logout-confirm-btn" onClick={onConfirm}>Sair e limpar dados</button>
+      </div>
+    </div>
+  </div>
+)
+
+export const ProfileCreation = ({ onCreate, onClose }) => {
+  const [name, setName] = useState('')
+  const [selectedColor, setSelectedColor] = useState(PROFILE_COLORS[0])
+  const [error, setError] = useState('')
+  const handleSubmit = () => {
+    const trimmed = name.trim()
+    if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
+    if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
+    onCreate({ name: trimmed, color: selectedColor })
+  }
+  return (
+    <div className="profile-creation-overlay">
+      <div className="profile-creation-card">
+        <div className="modal-header">
+          <h2 className="profile-creation-title">Criar Perfil</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
+        <div className="profile-avatar-preview" style={{background: selectedColor}}>
+          {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
+        </div>
+        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e=>{setName(e.target.value);setError('')}} maxLength={20} autoFocus />
+        {error && <p className="profile-error">{error}</p>}
+        <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor===color?'selected':''}`} style={{background:color}} onClick={()=>setSelectedColor(color)} />)}</div>
+        <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
+        <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
+      </div>
+    </div>
+  )
+}
+
+export const ProfileView = ({ userProfile, onLogout, onClose }) => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  return (
+    <div className="profile-creation-overlay" onClick={onClose}>
+      <div className="profile-view-modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="profile-view-name">{userProfile.name}</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <div className="profile-view-avatar" style={{background: userProfile.color, margin: '0 auto 24px'}}>
+          <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" />
+        </div>
+        <div className="profile-view-stats">
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.favoritesCount||0}</span><span className="profile-stat-label">Favoritos</span></div>
+          <div className="profile-stat"><span className="profile-stat-value">{userProfile.createdAt?new Date(userProfile.createdAt).toLocaleDateString():'Hoje'}</span><span className="profile-stat-label">Membro desde</span></div>
+        </div>
+        <button className="profile-logout-btn" onClick={()=>setShowLogoutConfirm(true)}><i className="fas fa-sign-out-alt" /> Sair da conta</button>
+      </div>
+      {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={()=>setShowLogoutConfirm(false)} />}
+    </div>
+  )
+}
+
+export const AboutModal = ({ onClose }) => (
+  <div className="profile-creation-overlay" onClick={onClose}>
+    <div className="about-modal" onClick={e=>e.stopPropagation()}>
+      <div className="modal-header">
+        <h2 className="about-title">Yoshikawa Player</h2>
+        <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+      </div>
+      <div className="about-content">
+        <p><strong>Créditos</strong></p>
+        <p>Desenvolvido por <strong>@kawalyansky</strong></p>
+        <p>Design e implementação por Yoshikawa Systems</p>
+        <p><strong>Direitos Autorais</strong></p>
+        <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
+        <p><strong>Isenção de Responsabilidade</strong></p>
+        <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
+        <p><strong>Versão:</strong> 1.4.3.R1.0</p>
+      </div>
+    </div>
+  </div>
+)
 
 export default function Home() {
   const router = useRouter()
@@ -215,7 +388,23 @@ export default function Home() {
     else setShowProfileCreation(true)
   }
 
-  const fetchSearchResults = async (query) => { /* ... igual */ }
+  const fetchSearchResults = async (query) => {
+    if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
+    setSearchLoading(true)
+    try {
+      let results = []
+      if (activeSearchFilter === 'Filmes') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'movie' })) }
+      else if (activeSearchFilter === 'Séries') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'tv' })) }
+      else {
+        const [movies, tv] = await Promise.all([fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`), fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)])
+        results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
+      }
+      if (activeSearchFilter === 'Animes') results = results.filter(i => i.genre_ids?.includes(16))
+      results = results.filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 30)
+      setSearchResults(results)
+    } catch { setSearchResults([]) } finally { setSearchLoading(false) }
+  }
+
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
   const handleSearchChange = (q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }
   useEffect(() => { if (searchQuery.trim()) fetchSearchResults(searchQuery) }, [activeSearchFilter])
@@ -250,9 +439,70 @@ export default function Home() {
     )
   }
 
-  const renderFavoritesPage = () => { /* ... igual */ }
-  const renderSearchPage = () => { /* ... igual */ }
-  const renderMenuPage = () => { /* ... igual */ }
+  const renderFavoritesPage = () => (
+    <section className="section">
+      <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>Favoritos</h2>
+      <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
+      <div className="favorites-list">
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="far fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => { setFavorites(prev => { const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type)); try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}; return updated }) }} onClick={handlePlay} />)}
+      </div>
+    </section>
+  )
+
+  const renderSearchPage = () => (
+    <>
+      <div className="search-container">
+        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo') }}><i className="fas fa-arrow-left" /></button>
+        <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
+      </div>
+      {searchQuery.trim() ? (
+        <>
+          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(20px,4vw,34px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
+          <div className="search-results-list">
+            {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,30px)' }}>{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
+          <section className="section"><h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2><div className="categories-grid">{CATEGORIES.map((category, index) => <CategoryCard key={index} category={category} />)}</div></section>
+        </>
+      )}
+    </>
+  )
+
+  const renderMenuPage = () => (
+    <section className="section" style={{ paddingTop: 'clamp(40px,8vw,80px)' }}>
+      {!userProfile && (
+        <div className="menu-banner-container">
+          <div className="verify-banner" onClick={() => setShowProfileCreation(true)} style={{ cursor: 'pointer' }}>
+            <span>Crie seu perfil para personalizar sua experiência!</span>
+            <i className="fas fa-chevron-right" />
+          </div>
+        </div>
+      )}
+      <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
+        <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }}>
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(28px,4vw,40px)', color: '#fff' }} />}
+        </div>
+        <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
+        {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
+      </div>
+      <div className="settings-card">
+        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => setShowProfileCreation(true)} />
+        <SettingsItem icon="cog" title="Configurações" description="Ajustes do aplicativo" />
+        <SettingsItem icon="shield-alt" title="Privacidade" description="Gerenciar dados" />
+        <SettingsItem icon="question-circle" title="Ajuda" description="Central de suporte" />
+        <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
+      </div>
+      <div className="social-links">
+        <button className="social-btn"><i className="fas fa-link" /></button>
+        <button className="social-btn"><i className="fab fa-tiktok" /></button>
+        <button className="social-btn"><i className="fab fa-twitter" /></button>
+      </div>
+      <div className="version-info"><p>RELEASE BUILD - 1.4.3.R1.0</p></div>
+    </section>
+  )
 
   return (
     <>
@@ -295,8 +545,6 @@ export default function Home() {
 
           .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
-          .trending-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.2) 50%,rgba(0,0,0,0.1) 100%);pointer-events:none}
-          .trending-title{position:absolute;bottom:clamp(12px,2vw,20px);left:clamp(12px,2vw,20px);right:clamp(12px,2vw,20px);font-size:clamp(18px,3vw,28px);font-weight:900;color:#fff;line-height:1.2;word-break:break-word;text-shadow:0 2px 8px rgba(0,0,0,0.8);z-index:2}
 
           .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
