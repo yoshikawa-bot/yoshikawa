@@ -7,18 +7,32 @@ const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jp
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
+const DEFAULT_PROFILE_BG = '#505050'
+
+const GENRE_IMAGES = {
+  12: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
+  28: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg',
+  35: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+  18: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
+  14: 'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg',
+  10749: 'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg',
+  16: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg',
+  27: 'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg',
+  53: 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg',
+  878: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg'
+}
 
 const CATEGORIES = [
-  { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
-  { name: 'Ação', color: '#3F6D89', image: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg' },
-  { name: 'Comédia', color: '#C43708', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
-  { name: 'Dublado', color: '#43A45D', image: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg' },
-  { name: 'Drama', color: '#2C3F59', image: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg' },
-  { name: 'Escolar', color: '#72615F', image: 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg' },
-  { name: 'Fantasia', color: '#E97820', image: 'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg' },
-  { name: 'Romance', color: '#A8A8B6', image: 'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg' },
-  { name: 'Slice of Life', color: '#E38CA8', image: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg' },
-  { name: 'Sobrenatural', color: '#9D95C8', image: 'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg' }
+  { name: 'Aventura', color: '#7FA8D8', image: GENRE_IMAGES[12] },
+  { name: 'Ação', color: '#3F6D89', image: GENRE_IMAGES[28] },
+  { name: 'Comédia', color: '#C43708', image: GENRE_IMAGES[35] },
+  { name: 'Dublado', color: '#43A45D', image: GENRE_IMAGES[878] },
+  { name: 'Drama', color: '#2C3F59', image: GENRE_IMAGES[18] },
+  { name: 'Escolar', color: '#72615F', image: GENRE_IMAGES[53] },
+  { name: 'Fantasia', color: '#E97820', image: GENRE_IMAGES[14] },
+  { name: 'Romance', color: '#A8A8B6', image: GENRE_IMAGES[10749] },
+  { name: 'Slice of Life', color: '#E38CA8', image: GENRE_IMAGES[16] },
+  { name: 'Sobrenatural', color: '#9D95C8', image: GENRE_IMAGES[27] }
 ]
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
@@ -53,6 +67,43 @@ const getAvatarUrl = (name, color) => {
 
 const POSTER_SIZE = 'w780'
 
+const useFadeOnScroll = () => {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(entry.isIntersecting)
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return [ref, visible]
+}
+
+const FadeWrapper = ({ children, className = '' }) => {
+  const [ref, visible] = useFadeOnScroll()
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(16px)',
+        transition: 'opacity 0.5s ease, transform 0.5s ease'
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 export const LoadingScreen = ({ onComplete }) => {
   const [closing, setClosing] = useState(false)
   const [mounted, setMounted] = useState(true)
@@ -84,7 +135,6 @@ export const VideoModal = ({ onClose }) => {
       <button onClick={onClose} className="featured-btn play-btn" style={{ position: 'absolute', top: 32, left: 32 }}>
         <i className="fas fa-arrow-left" />
       </button>
-
       <div style={{ position: 'relative' }}>
         <video
           ref={videoRef}
@@ -115,8 +165,8 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{ width: logoSize, height: logoSize, cursor: 'pointer' }} onClick={onLogoClick} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
-        <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }} onClick={onProfileClick}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
+        <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }} onClick={onProfileClick}>
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
         </button>
       </div>
     </header>
@@ -132,26 +182,94 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   </nav>
 )
 
+const fetchLogoPath = async (item) => {
+  if (!item || !item.id) return null
+  const mediaType = item.media_type || getMediaType(item)
+  const type = mediaType === 'tv' ? 'tv' : 'movie'
+  try {
+    const res = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/images?api_key=${TMDB_API_KEY}&include_image_language=pt,en,null`)
+    const data = await res.json()
+    if (data.logos && data.logos.length > 0) {
+      return data.logos[0].file_path
+    }
+  } catch {}
+  return null
+}
+
+export const HighlightBanner = ({ item, onPlay }) => {
+  const [logoPath, setLogoPath] = useState(null)
+  const [logoLoaded, setLogoLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchLogoPath(item).then(path => {
+      if (!cancelled) setLogoPath(path)
+    })
+    return () => { cancelled = true }
+  }, [item])
+
+  const posterUrl = item.poster_path
+    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+    : DEFAULT_POSTER
+  const backdropUrl = item.backdrop_path
+    ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+    : posterUrl
+  const logoFullUrl = logoPath
+    ? `https://image.tmdb.org/t/p/w500${logoPath}`
+    : null
+
+  return (
+    <div className="highlight-banner" onClick={() => onPlay?.(item)}>
+      <div className="highlight-poster-half">
+        <img src={posterUrl} alt={item.title || item.name} className="highlight-poster-img" />
+      </div>
+      <div className="highlight-backdrop-half">
+        <div className="highlight-blur-bg">
+          <img src={backdropUrl} alt="" className="highlight-blur-img" />
+        </div>
+        <div className="highlight-logo-container">
+          {logoFullUrl ? (
+            <img
+              src={logoFullUrl}
+              alt={item.title || item.name}
+              className="highlight-logo-img"
+              style={{ opacity: logoLoaded ? 1 : 0, transition: 'opacity 0.3s' }}
+              onLoad={() => setLogoLoaded(true)}
+              onError={() => setLogoLoaded(false)}
+            />
+          ) : (
+            <span className="highlight-fallback-title">{item.title || item.name}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
-    <div className="trending-card" onClick={() => onPlay?.(item)}>
-      <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
-      <div className="trending-title">
-        <span className="trending-title-text">{item.title || item.name}</span>
+    <FadeWrapper className="trending-card-wrapper">
+      <div className="trending-card" onClick={() => onPlay?.(item)}>
+        <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
+        <div className="trending-title">
+          <span className="trending-title-text">{item.title || item.name}</span>
+        </div>
       </div>
-    </div>
+    </FadeWrapper>
   )
 }
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
-    <div className="episode-card" onClick={() => onPlay?.(item)}>
-      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
-      <h4 className="episode-title">{item.name || item.title}</h4>
-      <p className="episode-info">Em exibição • {year || 'N/A'}</p>
-    </div>
+    <FadeWrapper className="episode-card-wrapper">
+      <div className="episode-card" onClick={() => onPlay?.(item)}>
+        <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
+        <h4 className="episode-title">{item.name || item.title}</h4>
+        <p className="episode-info">Em exibição • {year || 'N/A'}</p>
+      </div>
+    </FadeWrapper>
   )
 }
 
@@ -160,24 +278,26 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const ratingClass = item.adult ? 'rating-18' : 'rating-L'
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
   return (
-    <div className="featured-card">
-      <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
-      <div className="featured-details">
-        <div className="featured-text">
-          <h2 className="featured-title">{item.title || item.name}</h2>
-          <div className="featured-meta">
-            <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
-            <span className="featured-genre">{item.genre || 'Ação'}</span>
-            {year && <span className="featured-year">{year}</span>}
+    <FadeWrapper>
+      <div className="featured-card">
+        <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
+        <div className="featured-details">
+          <div className="featured-text">
+            <h2 className="featured-title">{item.title || item.name}</h2>
+            <div className="featured-meta">
+              <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
+              <span className="featured-genre">{item.genre || 'Ação'}</span>
+              {year && <span className="featured-year">{year}</span>}
+            </div>
+            <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
           </div>
-          <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
-        </div>
-        <div className="featured-actions">
-          <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
-          <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
+          <div className="featured-actions">
+            <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
+            <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
+          </div>
         </div>
       </div>
-    </div>
+    </FadeWrapper>
   )
 }
 
@@ -185,11 +305,13 @@ export const MovieCard = ({ item }) => {
   const router = useRouter()
   const mediaType = item.media_type || getMediaType(item)
   return (
-    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
-      <div className="card-poster-frame">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+    <FadeWrapper className="card-wrapper-fade">
+      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+        <div className="card-poster-frame">
+          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+        </div>
       </div>
-    </div>
+    </FadeWrapper>
   )
 }
 
@@ -212,12 +334,26 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
   )
 }
 
+const getGenreFallbackImage = (genreIds) => {
+  if (!genreIds || genreIds.length === 0) return DEFAULT_POSTER
+  for (const id of genreIds) {
+    if (GENRE_IMAGES[id]) return GENRE_IMAGES[id]
+  }
+  return DEFAULT_POSTER
+}
+
 export const SearchResultItem = ({ item, onClick }) => {
   const mediaType = getMediaType(item)
   const year = getItemYear(item)
+  const imageSrc = item.poster_path
+    ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`
+    : (item.backdrop_path
+      ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.backdrop_path}`
+      : getGenreFallbackImage(item.genre_ids))
+
   return (
     <div className="search-result-item" onClick={() => onClick?.(item)}>
-      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="search-result-poster" />
+      <img src={imageSrc} alt={item.title || item.name} className="search-result-poster" loading="lazy" />
       <div className="search-result-content">
         <h3 className="search-result-title">{item.title || item.name}</h3>
         {year && <p className="search-result-year">{year}</p>}
@@ -329,7 +465,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.4.3.R1.0</p>
+        <p><strong>Versão:</strong> 1.5.0.R1.0</p>
       </div>
     </div>
   </div>
@@ -377,34 +513,70 @@ export default function Home() {
 
   useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
 
+  const deduplicateById = (items) => {
+    const seen = new Set()
+    return items.filter(item => {
+      const key = `${item.media_type || getMediaType(item)}-${item.id}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }
+
   const loadAllContent = async () => {
     setContentLoading(true)
     try {
-      const [trendingMovies, nowPlaying, onAir, upcoming, popular, adventureShows, comedyShows, romanceShows, topRated, animeMovies, animeTV] = await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=16&with_original_language=ja&region=BR`)
+      const baseParams = `api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`
+      const watchParams = `watch_region=BR&with_watch_monetization_types=flatrate|free|ads`
+
+      const [
+        trendingMovies,
+        nowPlaying,
+        onAirSeries,
+        upcoming,
+        popular,
+        adventureShows,
+        comedyShows,
+        romanceShows,
+        topRated,
+        animeMovies,
+        animeTV
+      ] = await Promise.all([
+        fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?${baseParams}`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?${baseParams}`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?${baseParams}`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/discover/movie?${baseParams}&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?${baseParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=16&with_original_language=ja&${watchParams}`)
       ])
+
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
-      setTrending(filterQuality(trendingMovies).slice(0, 10))
-      const seriesOnAir = onAir.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date)).slice(0, 10)
+
+      const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
+      setTrending(trendingClean)
+
+      const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date))).slice(0, 10)
       setNewEpisodes(seriesOnAir)
-      setRecentlyAdded(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-      setFeatured(filterQuality(trendingMovies)[0] || null)
-      setAdventure(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-      setComedy(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-      setRomance(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-      setRecommended(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
-      const combinedAnimes = [...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 20)
+
+      const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10)
+      setRecentlyAdded(nowPlayingClean)
+
+      const featuredItem = trendingClean[0] || null
+      setFeatured(featuredItem)
+
+      setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setRomance(deduplicateById(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setRecommended(deduplicateById(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+
+      const combinedAnimes = deduplicateById([...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity)).slice(0, 20)
       setAnimes(combinedAnimes)
+
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
@@ -441,14 +613,27 @@ export default function Home() {
     setSearchLoading(true)
     try {
       let results = []
-      if (activeSearchFilter === 'Filmes') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'movie' })) }
-      else if (activeSearchFilter === 'Séries') { results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`); results = results.map(i => ({ ...i, media_type: 'tv' })) }
-      else {
-        const [movies, tv] = await Promise.all([fetchTMDB(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`), fetchTMDB(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)])
+      const baseSearch = `api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&region=BR`
+
+      if (activeSearchFilter === 'Filmes') {
+        results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
+        results = results.map(i => ({ ...i, media_type: 'movie' }))
+      } else if (activeSearchFilter === 'Séries') {
+        results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
+        results = results.map(i => ({ ...i, media_type: 'tv' }))
+      } else {
+        const [movies, tv] = await Promise.all([
+          fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`),
+          fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
+        ])
         results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
       }
-      if (activeSearchFilter === 'Animes') results = results.filter(i => i.genre_ids?.includes(16))
-      results = results.filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity).slice(0, 30)
+
+      if (activeSearchFilter === 'Animes') {
+        results = results.filter(i => i.genre_ids?.includes(16))
+      }
+
+      results = results.sort((a, b) => b.popularity - a.popularity).slice(0, 30)
       setSearchResults(results)
     } catch { setSearchResults([]) } finally { setSearchLoading(false) }
   }
@@ -463,14 +648,54 @@ export default function Home() {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section"><h2 className="section-title">Em alta</h2><div className="horizontal-scroll">{trending.map(item => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
-        <section className="section"><h2 className="section-title">Novos episódios</h2><div className="horizontal-scroll">{newEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
-        <section className="section"><h2 className="section-title">Recém adicionados</h2><div className="vertical-scroll">{recentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
-        <section className="section"><h2 className="section-title">Lançamento</h2>{featured && <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo} />}</section>
-        <section className="section"><h2 className="section-title">Aventura</h2><div className="vertical-scroll">{adventure.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
-        <section className="section"><h2 className="section-title">Comédia</h2><div className="vertical-scroll">{comedy.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
-        <section className="section"><h2 className="section-title">Romance</h2><div className="vertical-scroll">{romance.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
-        <section className="section"><h2 className="section-title">Talvez você goste</h2><div className="vertical-scroll">{recommended.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
+        <section className="section">
+          <h2 className="section-title">Em alta</h2>
+          <div className="horizontal-scroll">
+            {trending.slice(0, 5).map(item => (
+              <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} />
+            ))}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Novos episódios</h2>
+          <div className="horizontal-scroll">
+            {newEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Recém adicionados</h2>
+          <div className="vertical-scroll">
+            {recentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Lançamento</h2>
+          {featured && <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo} />}
+        </section>
+        <section className="section">
+          <h2 className="section-title">Aventura</h2>
+          <div className="vertical-scroll">
+            {adventure.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Comédia</h2>
+          <div className="vertical-scroll">
+            {comedy.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Romance</h2>
+          <div className="vertical-scroll">
+            {romance.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Talvez você goste</h2>
+          <div className="vertical-scroll">
+            {recommended.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
       </>
     )
   }
@@ -479,10 +704,32 @@ export default function Home() {
     if (contentLoading) return <ContentLoader />
     return (
       <>
-        <section className="section"><h2 className="section-title">Animes em destaque</h2><div className="horizontal-scroll">{animes.slice(0, 5).map(item => <TrendingCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
-        <section className="section"><h2 className="section-title">Todos os Animes</h2><div className="vertical-scroll">{animes.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
-        <section className="section"><h2 className="section-title">Animes populares</h2><div className="horizontal-scroll">{animes.slice(5, 10).map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}</div></section>
-        <section className="section"><h2 className="section-title">Recomendados para você</h2><div className="vertical-scroll">{animes.slice(10, 20).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}</div></section>
+        <section className="section">
+          <h2 className="section-title">Animes em destaque</h2>
+          <div className="horizontal-scroll">
+            {animes.slice(0, 5).map(item => (
+              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />
+            ))}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Todos os Animes</h2>
+          <div className="vertical-scroll">
+            {animes.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Animes populares</h2>
+          <div className="horizontal-scroll">
+            {animes.slice(5, 10).map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Recomendados para você</h2>
+          <div className="vertical-scroll">
+            {animes.slice(10, 20).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
       </>
     )
   }
@@ -507,7 +754,7 @@ export default function Home() {
         <>
           <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(20px,4vw,34px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
           <div className="search-results-list">
-            {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
+            {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
           </div>
         </>
       ) : (
@@ -530,8 +777,8 @@ export default function Home() {
         </div>
       )}
       <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
-        <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: '#4D4BAF' }}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
+        <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }}>
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
@@ -548,7 +795,7 @@ export default function Home() {
         <button className="social-btn"><i className="fab fa-tiktok" /></button>
         <button className="social-btn"><i className="fab fa-twitter" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.4.3.R1.0</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.5.0.R1.0</p></div>
     </section>
   )
 
@@ -591,12 +838,24 @@ export default function Home() {
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
 
-          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
+          .trending-card-wrapper{flex-shrink:0}
+          .trending-card{width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
           .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);z-index:2}
           .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
 
-          .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
+          .highlight-banner{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;display:flex;cursor:pointer}
+          .highlight-poster-half{width:40%;height:100%;overflow:hidden;flex-shrink:0}
+          .highlight-poster-img{width:100%;height:100%;object-fit:cover}
+          .highlight-backdrop-half{flex:1;height:100%;position:relative;overflow:hidden}
+          .highlight-blur-bg{position:absolute;inset:0;filter:blur(12px);transform:scale(1.15)}
+          .highlight-blur-img{width:100%;height:100%;object-fit:cover}
+          .highlight-logo-container{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
+          .highlight-logo-img{max-width:80%;max-height:60%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.7))}
+          .highlight-fallback-title{font-size:clamp(12px,2vw,16px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
+
+          .episode-card-wrapper{flex-shrink:0}
+          .episode-card{width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-img{width:100%;height:100%;object-fit:cover}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
@@ -604,7 +863,8 @@ export default function Home() {
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
-          .card-wrapper{flex-shrink:0;width:clamp(110px,18vw,140px);cursor:pointer}
+          .card-wrapper-fade{flex-shrink:0}
+          .card-wrapper{width:clamp(110px,18vw,140px);cursor:pointer}
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
@@ -766,4 +1026,4 @@ export default function Home() {
       )}
     </>
   )
-}
+  }
