@@ -4,15 +4,7 @@ import Link from'next/link'
 
 const TMDB_API_KEY='66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER='https://yoshikawa-bot.github.io/cache/images/14c34900.jpg'
-
-const SECTION_TITLES={releases:'Lançamentos',recommendations:'Populares',favorites:'Favoritos'}
-
-const SECTION_HERO={
-  releases:<><em>Filmes</em> e <em>séries</em> atualmente em cartaz, ordenados pelos lançamentos mais recentes. Conteúdo atualizado em tempo real via <em>TMDB</em>.</>,
-  recommendations:<>Os títulos mais <em>populares</em> do momento entre filmes e séries, classificados pelo índice de popularidade do <em>TMDB</em>.</>,
-  favorites:<>Sua lista <em>pessoal</em> de favoritos, salva localmente no seu dispositivo — sem conta, sem servidor, sempre <em>disponível</em>.</>,
-  search:<><em>Resultados</em> da sua busca em filmes e séries, ordenados por <em>popularidade</em>.</>
-}
+const LOGO_URL='https://yoshikawa-bot.github.io/cache/images/fec8bb6d.png'
 
 const useDebounce=(callback,delay)=>{
   const timeoutRef=useRef(null)
@@ -22,90 +14,24 @@ const useDebounce=(callback,delay)=>{
   },[callback,delay])
 }
 
-const getItemKey=(item)=>`${item.media_type}-${item.id}`
-
 export const LoadingScreen=({onComplete})=>{
-  const canvasRef=useRef(null)
-  const animFrameRef=useRef(null)
-  const timeRef=useRef(0)
   const[closing,setClosing]=useState(false)
   const[mounted,setMounted]=useState(true)
 
   useEffect(()=>{
-    const canvas=canvasRef.current
-    if(!canvas)return
-    const ctx=canvas.getContext('2d')
-    const W=canvas.width=280
-    const H=canvas.height=280
-    const cx=W/2
-    const cy=H/2
+    const timer=setTimeout(()=>{
+      setClosing(true)
+    },2000)
 
-    const drawModulatedRing=(t,baseR,amplitude,freq,phase,alpha,lineW)=>{
-      ctx.beginPath()
-      const steps=280
-      for(let i=0;i<=steps;i++){
-        const angle=(i/steps)*Math.PI*2
-        const mod=Math.sin(freq*angle+phase+t*0.75)+Math.sin(freq*2.4*angle+phase*1.6+t*1.05)*0.45+Math.sin(freq*0.35*angle-phase*0.7+t*0.55)*0.55
-        const r=baseR+amplitude*mod
-        const x=cx+r*Math.cos(angle)
-        const y=cy+r*Math.sin(angle)
-        if(i===0)ctx.moveTo(x,y)
-        else ctx.lineTo(x,y)
-      }
-      ctx.closePath()
-      ctx.strokeStyle=`rgba(218,119,87,${alpha})`
-      ctx.lineWidth=lineW
-      ctx.stroke()
-    }
-
-    const drawDot=(x,y,r,alpha)=>{
-      ctx.beginPath()
-      ctx.arc(x,y,r,0,Math.PI*2)
-      ctx.fillStyle=`rgba(218,119,87,${alpha})`
-      ctx.fill()
-    }
-
-    const animate=()=>{
-      ctx.clearRect(0,0,W,H)
-      timeRef.current+=0.016
-
-      drawModulatedRing(timeRef.current,76,20,5.2,0.0,0.50,1.8)
-      drawModulatedRing(timeRef.current,88,13,7.3,2.3,0.32,1.2)
-      drawModulatedRing(timeRef.current,58,9,3.1,4.8,0.42,1.0)
-      drawModulatedRing(timeRef.current,45,5.5,1.9,1.6,0.24,0.7)
-
-      const numParticles=3
-      for(let i=0;i<numParticles;i++){
-        const orbitR=42+i*20
-        const speed=0.65+i*0.28
-        const angle=timeRef.current*speed+i*(Math.PI*2/numParticles)
-        const px=cx+orbitR*Math.cos(angle)
-        const py=cy+orbitR*Math.sin(angle)
-        const dotR=2.6-i*0.45
-        drawDot(px,py,dotR,0.68-i*0.14)
-      }
-
-      animFrameRef.current=requestAnimationFrame(animate)
-    }
-
-    animate()
-
-    return()=>{
-      if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
-    }
+    return()=>clearTimeout(timer)
   },[])
-
-  const handleEnter=()=>{
-    setClosing(true)
-  }
 
   useEffect(()=>{
     if(closing){
       const timer=setTimeout(()=>{
-        if(animFrameRef.current)cancelAnimationFrame(animFrameRef.current)
         setMounted(false)
         onComplete()
-      },400)
+      },800)
       return()=>clearTimeout(timer)
     }
   },[closing,onComplete])
@@ -114,118 +40,55 @@ export const LoadingScreen=({onComplete})=>{
 
   return(
     <div className={`loading-overlay ${closing?'closing':''}`}>
-      <div className="loading-visual-container">
-        <canvas ref={canvasRef} width="280" height="280"></canvas>
+      <div className="loading-content">
+        <img src={LOGO_URL} alt="Yoshikawa" className="loading-logo"/>
+        <div className="loading-spinner"></div>
       </div>
-      <button className="loading-enter-btn" onClick={handleEnter}>
-        <span>Entrar</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 74 74"
-          height="28"
-          width="28"
-        >
-          <circle stroke-width="3" stroke="white" r="35.5" cy="37" cx="37"></circle>
-          <path
-            fill="white"
-            d="M25 35.5C24.1716 35.5 23.5 36.1716 23.5 37C23.5 37.8284 24.1716 38.5 25 38.5V35.5ZM49.0607 38.0607C49.6464 37.4749 49.6464 36.5251 49.0607 35.9393L39.5147 26.3934C38.9289 25.8076 37.9792 25.8076 37.3934 26.3934C36.8076 26.9792 36.8076 27.9289 37.3934 28.5147L45.8787 37L37.3934 45.4853C36.8076 46.0711 36.8076 47.0208 37.3934 47.6066C37.9792 48.1924 38.9289 48.1924 39.5147 47.6066L49.0607 38.0607ZM25 38.5L48 38.5V35.5L25 35.5V38.5Z"
-          ></path>
-        </svg>
-      </button>
-      <div className="loading-brand-text">YOSHIKAWA ESM</div>
-      <div className="loading-scanlines"></div>
-      <div className="loading-vignette"></div>
-      <div className="loading-noise"></div>
     </div>
   )
 }
 
-export const Header=({label,scrolled,showInfo,toggleInfo,infoClosing,showTech,toggleTech,techClosing})=>{
-  const handleRightClick=(e)=>{
-    e.stopPropagation()
-    if(scrolled){window.scrollTo({top:0,behavior:'smooth'})}else{toggleInfo()}
-  }
+export const Header=()=>{
   return(
-    <>
-      <header className={`bar-container top-bar ${scrolled?'scrolled-state':''}`}>
-        <button className="round-btn glass-panel" onClick={(e)=>{e.stopPropagation();toggleTech()}} title="Info Técnica">
-          <i className="fas fa-microchip" style={{fontSize:'14px'}}></i>
+    <header className="header">
+      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo"/>
+      <div className="header-actions">
+        <button className="header-btn">
+          <i className="fas fa-search"></i>
         </button>
-        <div className="pill-container glass-panel">
-          <span key={label} className="bar-label">{label}</span>
-        </div>
-        <button className="round-btn glass-panel" title={scrolled?"Voltar ao topo":"Informações"} onClick={handleRightClick}>
-          <i className={scrolled?"fas fa-chevron-up":"fas fa-info-circle"} style={{fontSize:'14px'}}></i>
+        <button className="header-btn profile-btn">
+          <i className="fas fa-user"></i>
         </button>
-      </header>
-      {showInfo&&(
-        <div className={`info-popup glass-panel ${infoClosing?'closing':''}`} onClick={(e)=>e.stopPropagation()}>
-          <div className="popup-icon-wrapper"><i className="fas fa-shield-halved"></i></div>
-          <div className="popup-content">
-            <p className="popup-title">Proteção Recomendada</p>
-            <p className="popup-text">Use <strong>Brave</strong> ou <strong>AdBlock</strong> para melhor experiência</p>
-          </div>
-        </div>
-      )}
-      {showTech&&(
-        <div className={`info-popup glass-panel ${techClosing?'closing':''}`} onClick={(e)=>e.stopPropagation()}>
-          <div className="popup-icon-wrapper tech"><i className="fas fa-microchip"></i></div>
-          <div className="popup-content">
-            <p className="popup-title">Informações Técnicas</p>
-            <p className="popup-text">v2.6.0 Slim • React 18 • TMDB API</p>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </header>
   )
 }
 
-export const BottomNav=({activeSection,setActiveSection,searchActive,setSearchActive,searchQuery,setSearchQuery,onSearchSubmit,inputRef})=>{
-  const handleShare=async()=>{
-    if(navigator.share){
-      try{await navigator.share({title:'Yoshikawa Player',url:window.location.href})}catch(err){}
-    }else{alert('Compartilhar não suportado neste navegador')}
-  }
+export const BottomNav=({activeSection,setActiveSection})=>{
   return(
-    <div className="bar-container bottom-bar">
-      <button className="round-btn glass-panel" onClick={handleShare} title="Compartilhar">
-        <i className="fas fa-arrow-up-from-bracket" style={{fontSize:'15px',transform:'translateY(-1px)'}}></i>
+    <nav className="bottom-nav">
+      <button 
+        className={`nav-item ${activeSection==='home'?'active':''}`}
+        onClick={()=>setActiveSection('home')}
+      >
+        <i className="fas fa-home"></i>
+        <span>Início</span>
       </button>
-      <div className={`pill-container glass-panel ${searchActive?'search-mode':''}`}>
-        {searchActive?(
-          <div className="search-wrap">
-            <input ref={inputRef} type="text" placeholder="Buscar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>e.key==='Enter'&&onSearchSubmit(searchQuery)}/>
-          </div>
-        ):(
-          <>
-            <button className={`nav-btn ${activeSection==='releases'?'active':''}`} onClick={()=>setActiveSection('releases')}><i className="fas fa-film"></i></button>
-            <button className={`nav-btn ${activeSection==='recommendations'?'active':''}`} onClick={()=>setActiveSection('recommendations')}><i className="fas fa-fire-flame-curved"></i></button>
-            <button className={`nav-btn ${activeSection==='favorites'?'active':''}`} onClick={()=>setActiveSection('favorites')}><i className="fas fa-heart"></i></button>
-          </>
-        )}
-      </div>
-      <button className="round-btn glass-panel" onClick={()=>setSearchActive(s=>!s)}>
-        <i className={searchActive?'fas fa-xmark':'fas fa-magnifying-glass'} style={{fontSize:searchActive?'17px':'15px'}}></i>
+      <button 
+        className={`nav-item ${activeSection==='favorites'?'active':''}`}
+        onClick={()=>setActiveSection('favorites')}
+      >
+        <i className="fas fa-heart"></i>
+        <span>Favoritos</span>
       </button>
-    </div>
-  )
-}
-
-export const ToastContainer=({toast,closeToast})=>{
-  if(!toast)return null
-  return(
-    <div className="toast-wrap">
-      <div className={`toast glass-panel ${toast.type} ${toast.closing?'closing':''}`} onClick={closeToast}>
-        <div className="toast-icon-wrapper">
-          <i className={`fas ${toast.type==='success'?'fa-check-circle':toast.type==='error'?'fa-exclamation-circle':'fa-info-circle'}`}></i>
-        </div>
-        <div className="toast-content">
-          <div className="toast-title">{toast.type==='success'?'Sucesso':toast.type==='error'?'Erro':'Info'}</div>
-          <div className="toast-msg">{toast.message}</div>
-        </div>
-      </div>
-    </div>
+      <button 
+        className={`nav-item ${activeSection==='menu'?'active':''}`}
+        onClick={()=>setActiveSection('menu')}
+      >
+        <i className="fas fa-bars"></i>
+        <span>Menu</span>
+      </button>
+    </nav>
   )
 }
 
@@ -239,7 +102,7 @@ export const MovieCard=({item,isFavorite,toggleFavorite})=>{
     <Link href={`/${item.media_type}/${item.id}`} className="card-wrapper">
       <div className="card-poster-frame">
         <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="content-poster" loading="lazy"/>
-        <button className="fav-btn glass-panel" onClick={handleFavClick}>
+        <button className="fav-btn" onClick={handleFavClick}>
           <i className={`${isFavorite?'fas fa-heart':'far fa-heart'} ${animating?'heart-pulse':''}`} style={{color:isFavorite?'#ff3b30':'#ffffff'}}></i>
         </button>
       </div>
@@ -247,36 +110,75 @@ export const MovieCard=({item,isFavorite,toggleFavorite})=>{
   )
 }
 
-export const Footer=()=>(
-  <footer className="footer-credits">
-    <p className="footer-main">Yoshikawa Systems &copy; {new Date().getFullYear()}</p>
-    <p className="footer-author">Desenvolvido por @kawalyansky</p>
-    <p className="footer-tech">React 18 • TMDB API • v2.6.0</p>
-  </footer>
-)
+export const HorizontalCard=({item,onPlay})=>{
+  return(
+    <div className="horizontal-card" onClick={()=>onPlay?.(item)}>
+      <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="horizontal-card-img"/>
+      <div className="horizontal-card-info">
+        <h3 className="horizontal-card-title">{item.title||item.name}</h3>
+        <p className="horizontal-card-subtitle">{item.media_type==='tv'?'Série':'Filme'} • {new Date(item.release_date||item.first_air_date).getFullYear()||'N/A'}</p>
+      </div>
+    </div>
+  )
+}
+
+export const EpisodeCard=({item})=>{
+  return(
+    <div className="episode-card">
+      <div className="episode-thumbnail">
+        <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.name||item.title} className="episode-img"/>
+        <div className="episode-badge">Dublado</div>
+      </div>
+      <h4 className="episode-title">{item.name||item.title}</h4>
+      <p className="episode-info">Episódio {(item.episode_number||1)} • {item.air_date||'N/A'}</p>
+    </div>
+  )
+}
+
+export const FeaturedCard=({item,onPlay,onInfo})=>{
+  return(
+    <div className="featured-card">
+      <div className="featured-poster">
+        <img src={item.poster_path?`https://image.tmdb.org/t/p/w500${item.poster_path}`:DEFAULT_POSTER} alt={item.title||item.name} className="featured-img"/>
+      </div>
+      <div className="featured-details">
+        <div className="featured-text">
+          <h2 className="featured-title">{item.title||item.name}</h2>
+          <div className="featured-meta">
+            <span className="featured-rating">{item.adult?'18+':'L'}</span>
+            <span className="featured-genre">{item.genre||'Ação'}</span>
+            <span className="featured-year">{new Date(item.release_date||item.first_air_date).getFullYear()||'2025'}</span>
+          </div>
+          <p className="featured-synopsis">{item.overview||'Sinopse não disponível.'}</p>
+        </div>
+        <div className="featured-actions">
+          <button className="featured-btn play-btn" onClick={()=>onPlay?.(item)}>
+            <i className="fas fa-play"></i>
+          </button>
+          <button className="featured-btn info-btn" onClick={()=>onInfo?.(item)}>
+            <i className="fas fa-info"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Home(){
-  const[welcomed,setWelcomed]=useState(true)
+  const[welcomed,setWelcomed]=useState(false)
   const[loadingComplete,setLoadingComplete]=useState(false)
-  const[releases,setReleases]=useState([])
-  const[recommendations,setRecommendations]=useState([])
+  const[trending,setTrending]=useState([])
+  const[newEpisodes,setNewEpisodes]=useState([])
+  const[recentlyAdded,setRecentlyAdded]=useState([])
+  const[weeklies,setWeeklies]=useState([])
+  const[featured,setFeatured]=useState(null)
+  const[dubbed,setDubbed]=useState([])
+  const[adventure,setAdventure]=useState([])
+  const[comedy,setComedy]=useState([])
+  const[romance,setRomance]=useState([])
+  const[recommended,setRecommended]=useState([])
   const[favorites,setFavorites]=useState([])
-  const[searchResults,setSearchResults]=useState([])
-  const[loading,setLoading]=useState(false)
-  const[searchQuery,setSearchQuery]=useState('')
-  const[activeSection,setActiveSection]=useState('releases')
-  const[searchActive,setSearchActive]=useState(false)
-  const[currentToast,setCurrentToast]=useState(null)
-  const[toastQueue,setToastQueue]=useState([])
-  const[scrolled,setScrolled]=useState(false)
-  const[showInfoPopup,setShowInfoPopup]=useState(false)
-  const[infoClosing,setInfoClosing]=useState(false)
-  const[showTechPopup,setShowTechPopup]=useState(false)
-  const[techClosing,setTechClosing]=useState(false)
-  const[heroOpen,setHeroOpen]=useState(false)
-  const[heroClosing,setHeroClosing]=useState(false)
-  const searchInputRef=useRef(null)
-  const toastTimerRef=useRef(null)
+  const[activeSection,setActiveSection]=useState('home')
 
   useEffect(()=>{
     try{const seen=sessionStorage.getItem('yoshikawaWelcomed');if(seen){setWelcomed(true);setLoadingComplete(true)}else{setWelcomed(false)}}catch{setWelcomed(false)}
@@ -288,81 +190,10 @@ export default function Home(){
     setLoadingComplete(true)
   }
 
-  const toggleHero=()=>{
-    if(heroOpen){
-      setHeroClosing(true)
-      setTimeout(()=>{setHeroOpen(false);setHeroClosing(false)},350)
-    }else{setHeroOpen(true)}
-  }
-
   useEffect(()=>{
-    if(!heroOpen)return
-    setHeroClosing(true)
-    const t=setTimeout(()=>{setHeroOpen(false);setHeroClosing(false)},350)
-    return()=>clearTimeout(t)
-  },[activeSection,searchActive])
-
-  const showToast=(message,type='info')=>{
-    if(showInfoPopup||showTechPopup)closeAllPopups()
-    if(currentToast&&!currentToast.closing){
-      setCurrentToast(prev=>({...prev,closing:true}))
-      setTimeout(()=>setToastQueue(prev=>[...prev,{message,type,id:Date.now()}]),200)
-    }else{setToastQueue(prev=>[...prev,{message,type,id:Date.now()}])}
-  }
-
-  useEffect(()=>{
-    if(toastQueue.length>0){
-      if(currentToast&&!currentToast.closing){
-        if(toastTimerRef.current)clearTimeout(toastTimerRef.current)
-        setCurrentToast(prev=>({...prev,closing:true}))
-      }else if(!currentToast){
-        const next=toastQueue[0]
-        setToastQueue(prev=>prev.slice(1))
-        setCurrentToast({...next,closing:false})
-        if(toastTimerRef.current)clearTimeout(toastTimerRef.current)
-        toastTimerRef.current=setTimeout(()=>setCurrentToast(t=>(t&&t.id===next.id?{...t,closing:true}:t)),2500)
-      }
-    }
-  },[toastQueue,currentToast])
-
-  useEffect(()=>{
-    if(currentToast?.closing){const t=setTimeout(()=>setCurrentToast(null),400);return()=>clearTimeout(t)}
-  },[currentToast])
-
-  const manualCloseToast=()=>{if(currentToast)setCurrentToast({...currentToast,closing:true})}
-
-  const closeAllPopups=useCallback(()=>{
-    if(showInfoPopup&&!infoClosing){setInfoClosing(true);setTimeout(()=>{setShowInfoPopup(false);setInfoClosing(false)},400)}
-    if(showTechPopup&&!techClosing){setTechClosing(true);setTimeout(()=>{setShowTechPopup(false);setTechClosing(false)},400)}
-    if(currentToast&&!currentToast.closing)setCurrentToast(prev=>({...prev,closing:true}))
-  },[showInfoPopup,infoClosing,showTechPopup,techClosing,currentToast])
-
-  const toggleInfoPopup=()=>{
-    if(showTechPopup||currentToast){closeAllPopups();setTimeout(()=>{if(!showInfoPopup)setShowInfoPopup(true)},200)}
-    else{if(showInfoPopup){setInfoClosing(true);setTimeout(()=>{setShowInfoPopup(false);setInfoClosing(false)},400)}else{setShowInfoPopup(true)}}
-  }
-
-  const toggleTechPopup=()=>{
-    if(showInfoPopup||currentToast){closeAllPopups();setTimeout(()=>{if(!showTechPopup)setShowTechPopup(true)},200)}
-    else{if(showTechPopup){setTechClosing(true);setTimeout(()=>{setShowTechPopup(false);setTechClosing(false)},400)}else{setShowTechPopup(true)}}
-  }
-
-  useEffect(()=>{
-    const onScroll=()=>{if(window.scrollY>10)closeAllPopups();setScrolled(window.scrollY>60)}
-    window.addEventListener('scroll',onScroll,{passive:true})
-    const onClick=(e)=>{
-      if(!e.target.closest('.info-popup')&&!e.target.closest('.toast')&&!e.target.closest('.round-btn')&&!e.target.closest('.pill-container'))closeAllPopups()
-    }
-    window.addEventListener('click',onClick)
-    return()=>{window.removeEventListener('scroll',onScroll);window.removeEventListener('click',onClick)}
-  },[closeAllPopups])
-
-  useEffect(()=>{loadHomeContent();loadFavorites()},[])
-
-  useEffect(()=>{
-    if(searchActive&&searchInputRef.current)searchInputRef.current.focus()
-    if(!searchActive){setSearchResults([]);setSearchQuery('')}
-  },[searchActive])
+    loadAllContent()
+    loadFavorites()
+  },[])
 
   const fetchTMDB=async(url)=>{
     try{const r=await fetch(url);if(!r.ok)throw new Error();const d=await r.json();return d.results||[]}
@@ -374,41 +205,32 @@ export default function Home(){
     catch{return[]}
   }
 
-  const fetchSearchResults=async(query)=>{
-    if(!query.trim()){setSearchResults([]);setLoading(false);return}
-    setLoading(true)
+  const loadAllContent=async()=>{
     try{
-      const[movies,tv]=await Promise.all([
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR`)
-      ])
-      const combined=[...movies.map(i=>({...i,media_type:'movie'})),...tv.map(i=>({...i,media_type:'tv'}))]
-        .filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,40)
-      setSearchResults(combined)
-    }catch{showToast('Erro na busca','error');setSearchResults([])}
-    finally{setLoading(false)}
-  }
-
-  const debouncedSearch=useDebounce(fetchSearchResults,300)
-
-  const handleSearchChange=(q)=>{
-    setSearchQuery(q)
-    if(!q.trim()){setSearchResults([]);setLoading(false);return}
-    setLoading(true);debouncedSearch(q)
-  }
-
-  const loadHomeContent=async()=>{
-    try{
-      const[moviesNow,tvNow,moviesPopular,tvPopular]=await Promise.all([
+      const[trendingMovies,trendingTV,nowPlaying,onAir,upcoming,popular,dubbedShows,adventureShows,comedyShows,romanceShows,topRated]=await Promise.all([
+        fetchTMDB(`https://api.themoviedb.org/3/trending/all/day?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/tv/on_the_air?api_key=${TMDB_API_KEY}&language=pt-BR`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=pt-BR`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=pt-BR`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=pt-BR&with_original_language=pt`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=12`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=35`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=pt-BR&with_genres=10749`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=pt-BR`)
       ])
-      setReleases([...moviesNow.map(i=>({...i,media_type:'movie'})),...tvNow.map(i=>({...i,media_type:'tv'}))]
-        .filter(i=>i.poster_path).sort((a,b)=>new Date(b.release_date||b.first_air_date)-new Date(a.release_date||a.first_air_date)).slice(0,36))
-      setRecommendations([...moviesPopular.map(i=>({...i,media_type:'movie'})),...tvPopular.map(i=>({...i,media_type:'tv'}))]
-        .filter(i=>i.poster_path).sort((a,b)=>b.popularity-a.popularity).slice(0,36))
+
+      setTrending(trendingMovies.filter(i=>i.poster_path).slice(0,10))
+      setNewEpisodes(onAir.filter(i=>i.poster_path).slice(0,10))
+      setRecentlyAdded(nowPlaying.filter(i=>i.poster_path).slice(0,10))
+      setWeeklies(upcoming.filter(i=>i.poster_path).slice(0,10))
+      setFeatured(trendingMovies.filter(i=>i.poster_path)[0]||null)
+      setDubbed(dubbedShows.filter(i=>i.poster_path).slice(0,10))
+      setAdventure(adventureShows.filter(i=>i.poster_path).slice(0,10))
+      setComedy(comedyShows.filter(i=>i.poster_path).slice(0,10))
+      setRomance(romanceShows.filter(i=>i.poster_path).slice(0,10))
+      setRecommended(topRated.filter(i=>i.poster_path).slice(0,10))
     }catch(e){console.error(e)}
   }
 
@@ -422,16 +244,20 @@ export default function Home(){
     setFavorites(prev=>{
       const exists=prev.some(f=>f.id===item.id&&f.media_type===item.media_type)
       let updated
-      if(exists){updated=prev.filter(f=>!(f.id===item.id&&f.media_type===item.media_type));showToast('Removido dos favoritos','info')}
-      else{updated=[...prev,{id:item.id,media_type:item.media_type,title:item.title||item.name,poster_path:item.poster_path}];showToast('Adicionado aos favoritos','success')}
-      try{localStorage.setItem('yoshikawaFavorites',JSON.stringify(updated))}catch{showToast('Erro ao salvar favoritos','error')}
+      if(exists){updated=prev.filter(f=>!(f.id===item.id&&f.media_type===item.media_type))}
+      else{updated=[...prev,{id:item.id,media_type:item.media_type,title:item.title||item.name,poster_path:item.poster_path}]}
+      try{localStorage.setItem('yoshikawaFavorites',JSON.stringify(updated))}catch{}
       return updated
     })
   }
 
-  const activeList=searchActive?searchResults:(activeSection==='releases'?releases:(activeSection==='recommendations'?recommendations:favorites))
-  const pageTitle=searchActive?'Resultados':(SECTION_TITLES[activeSection]||'Conteúdo')
-  const headerLabel=scrolled?(searchActive?'Resultados':SECTION_TITLES[activeSection]||'Conteúdo'):'Yoshikawa'
+  const handlePlay=(item)=>{
+    window.location.href=`/${item.media_type}/${item.id}`
+  }
+
+  const handleInfo=(item)=>{
+    window.location.href=`/${item.media_type}/${item.id}`
+  }
 
   return(
     <>
@@ -443,131 +269,96 @@ export default function Home(){
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
           html{scroll-behavior:smooth}
-          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#050505;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden;background-image:radial-gradient(circle at 50% 0%,#1a1a1a,#050505 80%);background-attachment:fixed}
+          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
           a{color:inherit;text-decoration:none}
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
           img{max-width:100%;height:auto;display:block}
-          :root{--pill-height:44px;--pill-radius:50px;--pill-max-width:520px;--ios-blue:#0A84FF;--ease-elastic:cubic-bezier(0.34,1.56,0.64,1);--ease-smooth:cubic-bezier(0.25,0.46,0.45,0.94)}
-          .glass-panel{position:relative;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:inherit;box-shadow:0 8px 32px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.3s var(--ease-elastic),background 0.3s ease,border-color 0.3s ease}
 
-          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000000;animation:loadingSlideRight 0.35s cubic-bezier(0.55,0.055,0.675,0.19) forwards;animation-play-state:paused}
-          .loading-overlay.closing{animation-play-state:running}
-          @keyframes loadingSlideRight{from{transform:translateX(0)}to{transform:translateX(100%)}}
-          .loading-visual-container{position:relative;width:280px;height:280px;margin-bottom:20px;display:flex;align-items:center;justify-content:center}
-          .loading-visual-container canvas{display:block;position:relative;z-index:2}
-          .loading-enter-btn{cursor:pointer;font-weight:700;transition:all 0.2s;padding:8px 18px;border-radius:100px;background:#DA7757;border:1px solid transparent;display:flex;align-items:center;font-size:14px;color:#ffffff;z-index:13;position:relative;margin-bottom:32px}
-          .loading-enter-btn:hover{background:#c96a4d}
-          .loading-enter-btn>svg{width:28px;margin-left:8px;transition:transform 0.3s ease-in-out}
-          .loading-enter-btn:hover svg{transform:translateX(4px)}
-          .loading-enter-btn:active{transform:scale(0.95)}
-          .loading-brand-text{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:12;font-family:'Inter','Inter Black','Helvetica Neue','Arial Black',sans-serif;font-weight:900;color:#ffffff;font-size:1.25rem;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap}
-          .loading-scanlines{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.09) 2px,rgba(0,0,0,0.09) 4px)}
-          .loading-vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.7) 100%)}
-          .loading-noise{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:11;opacity:0.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;background-size:200px 200px}
-
-          .bar-container{position:fixed;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;justify-content:center;gap:12px;width:90%;max-width:var(--pill-max-width);transition:all 0.4s var(--ease-smooth)}
-          .top-bar{top:20px}
-          .bottom-bar{bottom:20px}
-          .top-bar.scrolled-state{transform:translateX(-50%) translateY(-5px)}
-          .round-btn{width:var(--pill-height);height:var(--pill-height);border-radius:50%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.9);flex-shrink:0;transition:all 0.3s var(--ease-elastic)}
-          .round-btn:hover{transform:scale(1.08);background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2)}
-          .round-btn:active{transform:scale(0.92)}
-          .pill-container{height:var(--pill-height);flex:1;border-radius:var(--pill-radius);display:flex;align-items:center;justify-content:center;position:relative;transition:all 0.4s var(--ease-elastic)}
-          .bar-label{font-size:0.9rem;font-weight:600;color:#fff;white-space:nowrap;letter-spacing:-0.01em;animation:labelFadeIn 0.4s var(--ease-elastic) forwards;position:relative;z-index:5}
-          @keyframes labelFadeIn{from{opacity:0;transform:translateY(12px) scale(0.9)}to{opacity:1;transform:translateY(0) scale(1)}}
-          .info-popup,.toast{position:fixed;top:calc(20px + var(--pill-height) + 16px);left:50%;z-index:960;min-width:320px;max-width:90%;display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:22px;transform:translate3d(-50%,-50%,0) scale3d(0.3,0.3,1);transform-origin:top center;opacity:0;will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden;perspective:1000px;-webkit-perspective:1000px;animation:popupZoomIn 0.5s var(--ease-elastic) forwards;box-shadow:0 20px 60px rgba(0,0,0,0.6);contain:layout style paint}
-          .info-popup{z-index:950;pointer-events:none}
-          .toast{z-index:960;pointer-events:auto;align-items:center}
-          .info-popup.closing,.toast.closing{animation:popupZoomOut 0.4s cubic-bezier(0.55,0.055,0.675,0.19) forwards}
-          @keyframes popupZoomIn{0%{opacity:0;transform:translate3d(-50%,-50%,0) scale3d(0.3,0.3,1)}100%{opacity:1;transform:translate3d(-50%,0,0) scale3d(1,1,1);pointer-events:auto}}
-          @keyframes popupZoomOut{0%{opacity:1;transform:translate3d(-50%,0,0) scale3d(1,1,1)}100%{opacity:0;transform:translate3d(-50%,-30%,0) scale3d(0.5,0.5,1);pointer-events:none}}
-          .popup-icon-wrapper,.toast-icon-wrapper{width:42px;height:42px;min-width:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translate3d(0,0,0);animation:iconPop 0.6s var(--ease-elastic) 0.1s backwards;contain:layout style paint}
-          .popup-icon-wrapper{background:linear-gradient(135deg,#34c759 0%,#30d158 100%);box-shadow:0 4px 12px rgba(52,199,89,0.3)}
-          .toast-icon-wrapper{border-radius:50%}
-          @keyframes iconPop{from{transform:scale3d(0,0,1);opacity:0}to{transform:scale3d(1,1,1);opacity:1}}
-          .popup-icon-wrapper.tech{background:linear-gradient(135deg,#0a84ff 0%,#007aff 100%);box-shadow:0 4px 12px rgba(10,132,255,0.3)}
-          .toast.success .toast-icon-wrapper{background:linear-gradient(135deg,#34c759 0%,#30d158 100%);box-shadow:0 4px 12px rgba(52,199,89,0.3)}
-          .toast.info .toast-icon-wrapper{background:linear-gradient(135deg,#0a84ff 0%,#007aff 100%);box-shadow:0 4px 12px rgba(10,132,255,0.3)}
-          .toast.error .toast-icon-wrapper{background:linear-gradient(135deg,#ff453a 0%,#ff3b30 100%);box-shadow:0 4px 12px rgba(255,69,58,0.3)}
-          .popup-icon-wrapper i,.toast-icon-wrapper i{font-size:20px;color:#fff;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translate3d(0,0,0)}
-          .popup-content,.toast-content{flex:1;display:flex;flex-direction:column;gap:4px;opacity:0;will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden;animation:contentFade 0.4s ease 0.2s forwards;contain:layout style}
-          @keyframes contentFade{from{opacity:0;transform:translate3d(10px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
-          .popup-title,.toast-title{font-size:0.95rem;font-weight:600;color:#fff;margin:0;line-height:1.3}
-          .popup-text,.toast-msg{font-size:0.8rem;color:rgba(255,255,255,0.7);margin:0;line-height:1.4}
-          .container{max-width:1280px;margin:0 auto;padding-top:6.5rem;padding-bottom:7rem;padding-left:2rem;padding-right:2rem}
-          .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;animation:headerFadeIn 0.8s var(--ease-elastic) forwards}
-          @keyframes headerFadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-          .page-title{font-size:1.5rem;font-weight:700;margin:0;color:#fff;letter-spacing:-0.03em;text-shadow:0 4px 20px rgba(0,0,0,0.5)}
-          .title-row{display:flex;align-items:center;gap:10px}
-          .hero-toggle{display:flex;align-items:center;justify-content:center;color:#fff;background:none;border:none;padding:0;flex-shrink:0;opacity:0.85}
-          .hero-toggle:hover{opacity:1}
-          .hero-toggle:active{opacity:0.6}
-          .hero-toggle i{font-size:13px;transition:transform 0.45s cubic-bezier(0.34,1.56,0.64,1)}
-          .hero-toggle.open i{transform:rotate(180deg)}
-          .section-hero{border-radius:16px;padding:16px 20px;margin-bottom:1.5rem;font-family:Georgia,'Times New Roman',serif;font-size:0.88rem;color:rgba(255,255,255,0.58);line-height:1.8;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);animation:heroIn 0.35s var(--ease-elastic) forwards}
-          .section-hero.closing{animation:heroOut 0.3s ease forwards}
-          .section-hero em{color:rgba(255,255,255,0.9);font-style:italic}
-          @keyframes heroIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-          @keyframes heroOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
-          .status-dots{display:flex;align-items:center;gap:8px}
-          .dot{width:10px;height:10px;border-radius:50%}
-          .dot.red{background:linear-gradient(135deg,#ff453a,#ff3b30)}
-          .dot.yellow{background:linear-gradient(135deg,#ffd60a,#ffcc00)}
-          .dot.green{background:linear-gradient(135deg,#34c759,#30d158)}
-          .content-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:24px 12px;width:100%}
-          .card-wrapper{display:flex;flex-direction:column;width:100%;position:relative;animation:cardEntrance 0.7s var(--ease-elastic) backwards;transition:transform 0.2s ease}
-          .card-wrapper:active{transform:scale(0.95)}
-          @keyframes cardEntrance{from{opacity:0;transform:translateY(40px) scale(0.9)}to{opacity:1;transform:translateY(0) scale(1)}}
-          .card-wrapper:nth-child(1){animation-delay:30ms}.card-wrapper:nth-child(2){animation-delay:60ms}.card-wrapper:nth-child(3){animation-delay:90ms}.card-wrapper:nth-child(4){animation-delay:120ms}.card-wrapper:nth-child(5){animation-delay:150ms}.card-wrapper:nth-child(6){animation-delay:180ms}.card-wrapper:nth-child(7){animation-delay:210ms}.card-wrapper:nth-child(8){animation-delay:240ms}.card-wrapper:nth-child(9){animation-delay:270ms}.card-wrapper:nth-child(10){animation-delay:300ms}.card-wrapper:nth-child(11){animation-delay:330ms}.card-wrapper:nth-child(12){animation-delay:360ms}.card-wrapper:nth-child(13){animation-delay:390ms}.card-wrapper:nth-child(14){animation-delay:420ms}.card-wrapper:nth-child(15){animation-delay:450ms}.card-wrapper:nth-child(16){animation-delay:480ms}.card-wrapper:nth-child(17){animation-delay:510ms}.card-wrapper:nth-child(18){animation-delay:540ms}.card-wrapper:nth-child(19){animation-delay:570ms}.card-wrapper:nth-child(20){animation-delay:600ms}
-          .card-poster-frame{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:2/3;background:#1a1a1a;border:1px solid rgba(255,255,255,0.18);transition:all 0.5s var(--ease-elastic)}
-          .card-wrapper:hover .card-poster-frame{transform:translateY(-8px);box-shadow:0 20px 40px rgba(0,0,0,0.6);border-color:rgba(255,255,255,0.4)}
-          .content-poster{width:100%;height:100%;object-fit:cover;transition:transform 0.8s var(--ease-elastic)}
-          .card-wrapper:hover .content-poster{transform:scale(1.12)}
-          .fav-btn{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.8);transition:all 0.4s var(--ease-elastic);border:none;z-index:20;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)}
-          .card-poster-frame:hover .fav-btn,.fav-btn:active{opacity:1;transform:scale(1)}
-          .fav-btn:hover{background:rgba(255,255,255,0.2);transform:scale(1.1)}
-          .fav-btn:active{transform:scale(0.9)}
-          @media(hover:none){.fav-btn{opacity:1;transform:scale(1)}}
-          .heart-pulse{animation:heartZoom 0.5s var(--ease-elastic)}
-          @keyframes heartZoom{0%{transform:scale(1)}50%{transform:scale(1.6)}100%{transform:scale(1)}}
-          .nav-btn{flex:1;display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.4);transition:all 0.3s ease;position:relative;z-index:5}
-          .nav-btn i{font-size:18px;transition:all 0.4s var(--ease-elastic);transform-origin:center}
-          .nav-btn:hover i{transform:scale(1.2);color:rgba(255,255,255,0.8)}
-          .nav-btn:active i{transform:scale(0.9)}
-          .nav-btn.active{color:#fff}
-          .nav-btn.active i{transform:scale(1.15)}
-          .search-wrap{width:100%;padding:0 16px;position:relative;z-index:5;animation:searchExpand 0.4s var(--ease-elastic)}
-          @keyframes searchExpand{from{opacity:0;transform:scaleX(0.9)}to{opacity:1;transform:scaleX(1)}}
-          .search-wrap input{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit}
-          .toast-wrap{position:fixed;top:calc(20px + var(--pill-height) + 16px);left:50%;z-index:960;pointer-events:none}
-          .footer-credits{margin-top:3rem;padding:2rem;text-align:center;color:rgba(255,255,255,0.3);font-size:0.75rem;border-top:1px solid rgba(255,255,255,0.05);animation:footerFadeIn 0.8s ease forwards;display:flex;flex-direction:column;gap:6px}
-          .footer-main{font-size:0.8rem;font-weight:500;color:rgba(255,255,255,0.4)}
-          .footer-author{font-size:0.7rem;color:rgba(255,255,255,0.25);font-style:italic}
-          .footer-tech{font-size:0.65rem;color:rgba(255,255,255,0.2);font-family:'Courier New',monospace}
-          @keyframes footerFadeIn{from{opacity:0}to{opacity:1}}
-          .spinner{width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite}
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#000000;transition:opacity 0.8s ease}
+          .loading-overlay.closing{opacity:0;pointer-events:none}
+          .loading-content{display:flex;flex-direction:column;align-items:center;gap:32px}
+          .loading-logo{width:180px;height:180px;object-fit:contain;animation:logoPulse 2s ease-in-out infinite}
+          @keyframes logoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+          .loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#ffffff;border-radius:50%;animation:spin 0.8s linear infinite}
           @keyframes spin{to{transform:rotate(360deg)}}
-          .empty-state{display:flex;flex-direction:column;align-items:center;color:#555;margin-top:3rem;gap:12px;animation:emptyStateFadeIn 0.6s var(--ease-elastic) forwards}
-          .empty-state i{font-size:2rem;opacity:0.5;margin-bottom:8px;animation:floatIcon 3s ease-in-out infinite}
-          @keyframes floatIcon{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-          @keyframes emptyStateFadeIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+          .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:24px 32px;display:flex;justify-content:space-between;align-items:center;height:100px}
+          .header-logo{width:64px;height:64px;object-fit:contain}
+          .header-actions{display:flex;align-items:center;gap:28px}
+          .header-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:24px;transition:opacity 0.2s}
+          .header-btn:hover{opacity:0.8}
+          .profile-btn{width:60px;height:60px;border-radius:50%;background:#2a2a2a;color:#666;font-size:28px}
+
+          .container{padding-top:100px;padding-bottom:100px}
+
+          .section{margin-top:24px}
+          .section-title{font-size:32px;font-weight:700;color:#ffffff;margin-left:34px;margin-bottom:24px}
+
+          .horizontal-scroll{display:flex;overflow-x:auto;gap:18px;padding-left:34px;padding-right:34px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .horizontal-scroll::-webkit-scrollbar{display:none}
+
+          .horizontal-card{flex-shrink:0;width:560px;height:255px;border-radius:28px;overflow:hidden;position:relative;cursor:pointer}
+          .horizontal-card-img{width:100%;height:100%;object-fit:cover}
+          .horizontal-card-info{position:absolute;bottom:0;left:0;right:0;padding:20px;background:linear-gradient(to top,rgba(0,0,0,0.85),rgba(0,0,0,0))}
+          .horizontal-card-title{font-size:18px;font-weight:700;color:#ffffff;margin-bottom:4px}
+          .horizontal-card-subtitle{font-size:12px;font-weight:500;color:#c8c8c8}
+
+          .episode-card{flex-shrink:0;width:330px}
+          .episode-thumbnail{position:relative;height:185px;border-radius:20px;overflow:hidden;margin-bottom:8px}
+          .episode-img{width:100%;height:100%;object-fit:cover}
+          .episode-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.65);border-radius:12px;padding:4px 12px;font-size:14px;font-weight:600;color:#ffffff}
+          .episode-title{font-size:17px;font-weight:700;color:#ffffff;margin-bottom:4px}
+          .episode-info{font-size:12px;font-weight:500;color:#c8c8c8}
+
+          .vertical-scroll{display:flex;overflow-x:auto;gap:18px;padding-left:34px;padding-right:34px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .vertical-scroll::-webkit-scrollbar{display:none}
+
+          .card-wrapper{flex-shrink:0;width:140px;cursor:pointer}
+          .card-poster-frame{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:2/3;background:#1a1a1a}
+          .content-poster{width:100%;height:100%;object-fit:cover}
+          .fav-btn{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;background:rgba(0,0,0,0.4)}
+          .card-poster-frame:hover .fav-btn{opacity:1}
+          @media(hover:none){.fav-btn{opacity:1}}
+          .heart-pulse{animation:heartZoom 0.5s ease}
+          @keyframes heartZoom{0%{transform:scale(1)}50%{transform:scale(1.6)}100%{transform:scale(1)}}
+
+          .featured-card{border-radius:20px;overflow:hidden;margin:24px 34px;background:#1a1a1a}
+          .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
+          .featured-img{width:100%;height:100%;object-fit:cover}
+          .featured-details{position:relative;padding:24px;background:#1a1a1a}
+          .featured-text{margin-bottom:16px}
+          .featured-title{font-size:24px;font-weight:700;color:#ffffff;margin-bottom:12px}
+          .featured-meta{display:flex;gap:16px;margin-bottom:16px;align-items:center}
+          .featured-rating{background:#333;color:#fff;padding:4px 12px;border-radius:8px;font-size:14px;font-weight:600}
+          .featured-genre{color:#c8c8c8;font-size:14px;font-weight:500}
+          .featured-year{color:#c8c8c8;font-size:14px;font-weight:500}
+          .featured-synopsis{color:#999;font-size:14px;line-height:1.6}
+          .featured-actions{position:absolute;top:24px;right:24px;display:flex;gap:12px}
+          .featured-btn{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;transition:transform 0.2s}
+          .featured-btn:hover{transform:scale(1.1)}
+          .play-btn{background:#ffffff;color:#000000}
+          .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
+
+          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:100px;display:flex;justify-content:space-around;align-items:center}
+          .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#5B5B5B;font-size:14px;font-weight:600;transition:color 0.2s}
+          .nav-item i{font-size:34px}
+          .nav-item.active{color:#ffffff}
+          .nav-item.active i{color:#ffffff}
+
           @media(max-width:768px){
-            .container{padding-left:1rem;padding-right:1rem}
-            .content-grid{grid-template-columns:repeat(2,1fr)!important;gap:16px 10px}
-            .bar-container{width:94%;gap:8px}
-            .card-poster-frame{border-radius:14px}
-            .info-popup,.toast{min-width:280px;padding:14px 16px}
-            .popup-icon-wrapper,.toast-icon-wrapper{width:38px;height:38px;min-width:38px}
-            .popup-icon-wrapper i,.toast-icon-wrapper i{font-size:18px}
-            .popup-title,.toast-title{font-size:0.88rem}
-            .popup-text,.toast-msg{font-size:0.75rem}
-            .page-title{font-size:1.3rem}
-            .dot{width:8px;height:8px}
-            .status-dots{gap:6px}
-            .loading-visual-container{width:220px;height:220px;margin-bottom:16px}
-            .loading-visual-container canvas{width:220px;height:220px}
-            .loading-enter-btn{margin-bottom:24px}
-            .loading-brand-text{font-size:1rem;bottom:24px}
+            .header{padding:16px 20px;height:80px}
+            .header-logo{width:48px;height:48px}
+            .header-btn{font-size:20px}
+            .profile-btn{width:48px;height:48px;font-size:22px}
+            .section-title{font-size:24px;margin-left:20px;margin-bottom:16px}
+            .horizontal-card{width:280px;height:160px;border-radius:20px}
+            .episode-card{width:240px}
+            .episode-thumbnail{height:135px}
+            .featured-card{margin:24px 20px}
+            .featured-title{font-size:18px}
+            .featured-synopsis{font-size:12px}
+            .featured-actions{position:relative;top:0;right:0;margin-top:16px}
+            .horizontal-scroll,.vertical-scroll{padding-left:20px;padding-right:20px}
           }
         `}</style>
       </Head>
@@ -576,57 +367,101 @@ export default function Home(){
 
       {loadingComplete&&(
         <>
-          <Header label={headerLabel} scrolled={scrolled} showInfo={showInfoPopup} toggleInfo={toggleInfoPopup} infoClosing={infoClosing} showTech={showTechPopup} toggleTech={toggleTechPopup} techClosing={techClosing}/>
-
-          <ToastContainer toast={currentToast} closeToast={manualCloseToast}/>
+          <Header/>
 
           <main className="container">
-            <div className="page-header">
-              <div className="title-row">
-                <h1 className="page-title">{pageTitle}</h1>
-                <button className={`hero-toggle ${heroOpen?'open':''}`} onClick={toggleHero}>
-                  <i className="fas fa-chevron-down"></i>
-                </button>
-              </div>
-              <div className="status-dots">
-                <span className="dot red"></span>
-                <span className="dot yellow"></span>
-                <span className="dot green"></span>
-              </div>
-            </div>
-
-            {heroOpen&&(
-              <div className={`section-hero ${heroClosing?'closing':''}`}>
-                {SECTION_HERO[searchActive?'search':activeSection]}
-              </div>
-            )}
-
-            {loading&&(searchActive||releases.length===0)&&(
-              <div className="empty-state"><div className="spinner"></div></div>
-            )}
-
-            {searchActive&&!loading&&searchResults.length===0&&searchQuery.trim()&&(
-              <div className="empty-state"><i className="fas fa-ghost"></i><p>Nada encontrado</p></div>
-            )}
-
-            {activeList.length>0&&!loading&&(
-              <div className="content-grid" key={activeSection+(searchActive?'-search':'')}>
-                {activeList.map(item=>(
-                  <MovieCard key={getItemKey(item)} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+            <section className="section">
+              <h2 className="section-title">Em alta</h2>
+              <div className="horizontal-scroll">
+                {trending.map(item=>(
+                  <HorizontalCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay}/>
                 ))}
               </div>
-            )}
+            </section>
 
-            {!searchActive&&activeSection==='favorites'&&favorites.length===0&&!loading&&(
-              <div className="empty-state"><i className="far fa-folder-open"></i><p>Lista vazia</p></div>
-            )}
+            <section className="section">
+              <h2 className="section-title">Novos episódios</h2>
+              <div className="horizontal-scroll">
+                {newEpisodes.map(item=>(
+                  <EpisodeCard key={`${item.media_type}-${item.id}`} item={item}/>
+                ))}
+              </div>
+            </section>
 
-            <Footer/>
+            <section className="section">
+              <h2 className="section-title">Recém adicionados</h2>
+              <div className="vertical-scroll">
+                {recentlyAdded.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Semanais</h2>
+              <div className="vertical-scroll">
+                {weeklies.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Lançamento</h2>
+              {featured&&(
+                <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo}/>
+              )}
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Com dublagem</h2>
+              <div className="vertical-scroll">
+                {dubbed.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Aventura</h2>
+              <div className="vertical-scroll">
+                {adventure.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Comédia</h2>
+              <div className="vertical-scroll">
+                {comedy.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Romance</h2>
+              <div className="vertical-scroll">
+                {romance.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2 className="section-title">Talvez você goste</h2>
+              <div className="vertical-scroll">
+                {recommended.map(item=>(
+                  <MovieCard key={`${item.media_type}-${item.id}`} item={item} isFavorite={isFavorite(item)} toggleFavorite={toggleFavorite}/>
+                ))}
+              </div>
+            </section>
           </main>
 
-          <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} searchActive={searchActive} setSearchActive={setSearchActive} searchQuery={searchQuery} setSearchQuery={handleSearchChange} onSearchSubmit={debouncedSearch} inputRef={searchInputRef}/>
+          <BottomNav activeSection={activeSection} setActiveSection={setActiveSection}/>
         </>
       )}
     </>
   )
-    }
+  }
