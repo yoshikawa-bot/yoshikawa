@@ -170,8 +170,9 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
 
 export const MovieCard = ({ item }) => {
   const router = useRouter()
+  const mediaType = item.media_type || getMediaType(item)
   return (
-    <div className="card-wrapper" onClick={() => router.push(`/${item.media_type}/${item.id}`)}>
+    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
       <div className="card-poster-frame">
         <img
           src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER}
@@ -341,6 +342,7 @@ export const AboutModal = ({ onClose }) => (
 )
 
 export default function Home() {
+  const router = useRouter()
   const [welcomed, setWelcomed] = useState(false)
   const [loadingComplete, setLoadingComplete] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
@@ -369,7 +371,10 @@ export default function Home() {
   useEffect(() => {
     try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
-  }, [])
+    if (router.query.section) {
+      setActiveSection(router.query.section)
+    }
+  }, [router.query.section])
 
   const handleLoadingComplete = () => {
     try { sessionStorage.setItem('yoshikawaWelcomed', '1') } catch {}
@@ -412,12 +417,12 @@ export default function Home() {
         .slice(0, 10)
       setNewEpisodes(seriesOnAir)
 
-      setRecentlyAdded(nowPlaying.filter(i => i.poster_path).slice(0, 10))
+      setRecentlyAdded(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
       setFeatured(filterQuality(trendingMovies)[0] || null)
-      setAdventure(adventureShows.filter(i => i.poster_path).slice(0, 10))
-      setComedy(comedyShows.filter(i => i.poster_path).slice(0, 10))
-      setRomance(romanceShows.filter(i => i.poster_path).slice(0, 10))
-      setRecommended(topRated.filter(i => i.poster_path).slice(0, 10))
+      setAdventure(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
+      setComedy(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
+      setRomance(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
+      setRecommended(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })).slice(0, 10))
 
       const combinedAnimes = [
         ...animeMovies.map(i => ({ ...i, media_type: 'movie' })),
@@ -826,4 +831,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+            }
