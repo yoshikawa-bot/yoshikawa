@@ -176,8 +176,8 @@ export default function WatchPage() {
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#050505 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(20px,4vw,32px);display:flex;flex-direction:column;gap:12px}
           .top-bar{position:absolute;top:max(20px,env(safe-area-inset-top,20px));left:0;padding:0 clamp(16px,4vw,24px);z-index:10}
-          .top-btn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);border-radius:50%;border:1px solid rgba(255,255,255,0.2);cursor:pointer;transition:background 0.2s;text-decoration:none}
-          .top-btn:hover{background:rgba(255,255,255,0.15)}
+          .top-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(18px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
+          .top-btn:hover{transform:scale(1.1)}
           .continue-btn{display:flex;align-items:center;gap:5px;padding:5px 14px;background:#F05454;border-radius:28px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
           .continue-btn:hover{transform:scale(1.03)}
           .hero-title{font-size:clamp(24px,5vw,30px);font-weight:800;line-height:1.1}
@@ -212,7 +212,12 @@ export default function WatchPage() {
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center}
           .player-controls span{font-weight:700;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:8px;font-size:14px}
-          .player-controls button{background:rgba(255,255,255,0.1);border:none;color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px}
+          .player-close-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);cursor:pointer;border:none;transition:transform 0.2s}
+          .player-close-btn:hover{transform:scale(1.1)}
+          .nav-ep-btns{display:flex;justify-content:center;gap:12px;margin-top:8px}
+          .nav-ep-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);cursor:pointer;border:none;transition:transform 0.2s}
+          .nav-ep-btn:hover{transform:scale(1.1)}
+          .nav-ep-btn:disabled{opacity:0.4;cursor:not-allowed}
           @media(min-width:768px){.ep-thumb{width:170px;height:95px}}
         `}</style>
       </Head>
@@ -224,7 +229,9 @@ export default function WatchPage() {
           <div className="hero">
             <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
             <div className="hero-gradient" />
-            <div className="top-bar"><Link href="/" className="top-btn"><i className="fas fa-arrow-left" /></Link></div>
+            <div className="top-bar">
+              <Link href="/" className="top-btn"><i className="fas fa-arrow-left" /></Link>
+            </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}</button>
               <h1 className="hero-title">{content.title || content.name}</h1>
@@ -295,11 +302,26 @@ export default function WatchPage() {
       {isPlaying && (
         <div className="player-overlay">
           <div className="player-box">
-            <div className="player-controls"><span>{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span><button onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button></div>
-            <div className="player-frame"><iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" /></div>
+            <div className="player-controls">
+              <span>{type === 'tv' ? `S${season}:E${episode}` : 'FILME'}</span>
+              <button className="player-close-btn" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+            </div>
+            <div className="player-frame">
+              <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
+            </div>
+            {type === 'tv' && (
+              <div className="nav-ep-btns">
+                <button className="nav-ep-btn" onClick={() => { if (episode > 1) { const prevEp = episode - 1; setEpisode(prevEp); markWatched(season, prevEp) } }} disabled={episode === 1}>
+                  <i className="fas fa-backward" />
+                </button>
+                <button className="nav-ep-btn" onClick={() => { if (seasonData && episode < seasonData.episodes.length) { const nextEp = episode + 1; setEpisode(nextEp); markWatched(season, nextEp) } }}>
+                  <i className="fas fa-forward" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
     </>
   )
-                           }
+        }
