@@ -7,14 +7,30 @@ const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 
 const LoginRequiredModal = ({ onClose, onGoToMenu }) => (
-  <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: '#101010', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-    <div style={{ background: '#1B1B1B', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+  <div style={{
+    position: 'fixed', inset: 0, zIndex: 10000, background: '#101010',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+  }}>
+    <div style={{
+      background: '#1B1B1B', borderRadius: 24, padding: 32, width: '100%', maxWidth: 400,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Login</h2>
-        <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}><i className="fas fa-times" /></button>
+        <button onClick={onClose} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <i className="fas fa-times" />
+        </button>
       </div>
-      <p style={{ color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 1.5 }}>Para adicionar conteúdo aos favoritos, você precisa estar logado.<br />Volte para a página inicial e crie seu perfil no menu.</p>
-      <button onClick={onGoToMenu} style={{ width: '100%', padding: 14, borderRadius: 14, background: '#fff', color: '#000', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer' }}>Ir para o Menu</button>
+      <p style={{ color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 1.5 }}>
+        Para adicionar conteúdo aos favoritos, você precisa estar logado.<br />
+        Volte para a página inicial e crie seu perfil no menu.
+      </p>
+      <button onClick={onGoToMenu} style={{
+        width: '100%', padding: 14, borderRadius: 14, background: '#fff', color: '#000',
+        fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer'
+      }}>
+        Ir para o Menu
+      </button>
     </div>
   </div>
 )
@@ -47,7 +63,7 @@ export default function WatchPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
 
   const contentLoaded = useRef(false)
-  const currentSeasonRef = useRef(season) // ref para evitar closure stale
+  const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
 
   useEffect(() => { currentSeasonRef.current = season }, [season])
@@ -83,7 +99,7 @@ export default function WatchPage() {
     return { season: 1, episode: 1 }
   }, [id, type])
 
-  // Efeito para salvar progresso sempre que season/episode mudarem
+  // Salvar progresso sempre que season/episode mudarem
   useEffect(() => {
     if (type === 'tv' && id && content) {
       try {
@@ -171,7 +187,9 @@ export default function WatchPage() {
       else favs.push({ id: content.id, media_type: type, title: content.title || content.name, poster_path: content.poster_path })
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favs))
       setIsFavorite(!exists)
-    } catch (e) { console.error('Erro ao favoritar:', e) }
+    } catch (e) {
+      console.error('Erro ao favoritar:', e)
+    }
   }
 
   const toggleLike = () => {
@@ -199,7 +217,7 @@ export default function WatchPage() {
   const handleEpisodeClick = (epNum) => {
     setEpisode(epNum)
     setIsPlaying(true)
-    markWatched(currentSeasonRef.current, epNum) // usa ref para garantir valor atual
+    markWatched(currentSeasonRef.current, epNum)
   }
 
   const markWatched = useCallback((s, ep) => {
@@ -269,7 +287,7 @@ export default function WatchPage() {
           .rating-L { background: #4CAF50; } .rating-18 { background: #f44336; }
 
           .social-bar { display: flex; justify-content: space-around; padding: 20px 16px; }
-          .social-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 13px; transition: color 0.2s; background: none; border: none; font-family: inherit; }
+          .social-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 13px; transition: color 0.2s; background: none; border: none; fontamily: inherit; }
           .social-item i { font-size: 22px; }
           .social-item.liked i { color: #2196F3; }
           .social-item.favorited i { color: #FF5B5B; }
@@ -287,6 +305,8 @@ export default function WatchPage() {
           .ep-card:hover { background: rgba(255,255,255,0.03); }
           .ep-thumb { width: 140px; height: 80px; border-radius: 12px; overflow: hidden; background: #2a2a2a; flex-shrink: 0; position: relative; }
           .ep-thumb img { width: 100%; height: 100%; object-fit: cover; }
+          .ep-thumb.watched::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+          .watched-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600; z-index: 1; }
           .ep-info { flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
           .ep-info h4 { font-size: 15px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
           .ep-info span { font-size: 13px; color: #9A9A9A; }
@@ -369,8 +389,16 @@ export default function WatchPage() {
                   return (
                     <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
-                        {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
-                          <div style={{ color: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><i className="fas fa-image" /></div>
+                        {ep.still_path ? (
+                          <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" />
+                        ) : (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            height: '100%', background: '#1a1a1a', color: '#888',
+                            fontSize: 13, fontWeight: 500, gap: 6
+                          }}>
+                            <i className="fas fa-clock" style={{ fontSize: 14 }} /> Em breve
+                          </div>
                         )}
                         {watched && <div className="watched-label">Assistido</div>}
                       </div>
