@@ -31,13 +31,13 @@ const ProfileCreation = ({ onCreate, onClose }) => {
   }
 
   return (
-    <div className="profile-overlay">
-      <div className="profile-card">
+    <div className="profile-creation-overlay">
+      <div className="profile-creation-card">
         <div className="modal-header">
-          <h2 className="modal-title">Criar Perfil</h2>
+          <h2 className="profile-creation-title">Criar Perfil</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
-        <p className="modal-subtitle">Escolha seu nome e cor para continuar</p>
+        <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
         <div className="profile-avatar-preview" style={{ background: selectedColor }}>
           {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
         </div>
@@ -108,9 +108,7 @@ export default function WatchPage() {
   }, [id, type])
 
   useEffect(() => {
-    if (!router.isReady) return
     if (!id || !type) return
-
     contentLoaded.current = false
     setContent(null)
     setIsLoading(true)
@@ -150,7 +148,7 @@ export default function WatchPage() {
       setIsLoading(false)
     }
     load()
-  }, [id, type, router.isReady])
+  }, [id, type])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -325,29 +323,9 @@ export default function WatchPage() {
           .ep-card:hover { background: rgba(255,255,255,0.03); }
           .ep-thumb { width: 140px; height: 80px; border-radius: 12px; overflow: hidden; background: #2a2a2a; flex-shrink: 0; position: relative; }
           .ep-thumb img { width: 100%; height: 100%; object-fit: cover; }
-          .ep-thumb.watched::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
-          .ep-thumb.watched .watched-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600; z-index: 1; }
           .ep-info { flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
           .ep-info h4 { font-size: 15px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
           .ep-info span { font-size: 13px; color: #9A9A9A; }
-          .ep-card.active h4 { color: #F05454; }
-
-          .movie-info-section {
-            padding: 20px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-          }
-          .movie-info-item {
-            display: flex;
-            gap: 8px;
-            font-size: 14px;
-            color: #AFAFAF;
-          }
-          .movie-info-item strong {
-            color: #fff;
-            min-width: 80px;
-          }
 
           .player-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; padding: 16px; }
           .player-box { width: 100%; max-width: min(90vw, 90vh); display: flex; flex-direction: column; gap: 12px; }
@@ -357,12 +335,12 @@ export default function WatchPage() {
           .player-controls span { font-weight: 700; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 8px; font-size: 14px; }
           .player-controls button { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
 
-          .profile-overlay { position: fixed; inset: 0; z-index: 10000; background: #101010; display: flex; align-items: center; justify-content: center; padding: 20px; }
-          .profile-card { background: #1B1B1B; border-radius: 24px; padding: clamp(24px,4vw,40px); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: clamp(16px,2.5vw,24px); }
+          .profile-creation-overlay { position: fixed; inset: 0; z-index: 10000; background: #101010; display: flex; align-items: center; justify-content: center; padding: 20px; }
+          .profile-creation-card { background: #1B1B1B; border-radius: 24px; padding: clamp(24px,4vw,40px); width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: clamp(16px,2.5vw,24px); }
           .modal-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
           .modal-close-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; background: none; border: none; cursor: pointer; flex-shrink: 0; }
-          .modal-title { font-size: 28px; font-weight: 800; color: #fff; margin: 0; }
-          .modal-subtitle { font-size: 16px; color: #888; text-align: center; width: 100%; }
+          .profile-creation-title { font-size: 28px; font-weight: 800; color: #fff; margin: 0; }
+          .profile-creation-subtitle { font-size: 16px; color: #888; text-align: center; width: 100%; }
           .profile-avatar-preview { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 40px; font-weight: 700; overflow: hidden; }
           .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
           .profile-name-input { width: 100%; padding: 12px 16px; border-radius: 12px; background: #2a2a2a; border: 1px solid #333; color: #fff; font-size: 16px; outline: none; text-align: center; }
@@ -461,20 +439,16 @@ export default function WatchPage() {
           </div>
         </>
       ) : (
-        <div className="movie-info-section">
-          <div className="movie-info-item">
-            <strong>Duração:</strong> {content.runtime ? `${content.runtime} min` : 'Não informada'}
+        <div className="episodes-list">
+          <div className="ep-card" onClick={handleContinue}>
+            <div className="ep-thumb">
+              <img src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" />
+            </div>
+            <div className="ep-info">
+              <h4>{content.title || content.name}</h4>
+              <span>{content.runtime ? `${content.runtime} min` : 'Duração indisponível'}</span>
+            </div>
           </div>
-          <div className="movie-info-item">
-            <strong>Orçamento:</strong> {content.budget ? `$${(content.budget / 1000000).toFixed(1)}M` : 'Não informado'}
-          </div>
-          <div className="movie-info-item">
-            <strong>Receita:</strong> {content.revenue ? `$${(content.revenue / 1000000).toFixed(1)}M` : 'Não informada'}
-          </div>
-          <div className="movie-info-item">
-            <strong>Status:</strong> {content.status === 'Released' ? 'Lançado' : content.status || 'Não informado'}
-          </div>
-          <div style={{ height: 80 }} />
         </div>
       )}
 
@@ -500,4 +474,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                              }
+                                                }
