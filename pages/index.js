@@ -457,7 +457,7 @@ export const PrivacyModal = ({ onClose }) => (
         <p><strong>Política de Privacidade</strong></p>
         <p>Este aplicativo não coleta, armazena ou compartilha dados pessoais dos usuários. As informações de perfil e favoritos são armazenadas localmente no seu dispositivo e podem ser removidas a qualquer momento.</p>
         <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
-        <p>Para dúvidas, entre em contato pelo e-mail yoshikawa-bot@proton.me.</p>
+        <p>Para dúvidas, entre em contato pelo e-mail yoshikawa_bot@proton.me.</p>
       </div>
     </div>
   </div>
@@ -861,7 +861,7 @@ export default function Home() {
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => setShowProfileCreation(true)} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
-        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa-bot@proton.me'} />
+        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
       </div>
       <div className="social-links">
@@ -915,7 +915,7 @@ export default function Home() {
           .trending-card{width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
           .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);z-index:2}
-          .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+          .trending-title-text{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
 
           .highlight-banner{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;display:flex;cursor:pointer;flex-direction:row-reverse}
           .highlight-poster-half{width:50%;height:100%;overflow:hidden;flex-shrink:0}
@@ -926,14 +926,14 @@ export default function Home() {
           .highlight-blur-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4)}
           .highlight-logo-container{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
           .highlight-logo-img{max-width:80%;max-height:60%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.7))}
-          .highlight-fallback-title{font-size:clamp(12px,2vw,16px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
+          .highlight-fallback-title{font-size:clamp(10px,1.6vw,13px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
 
           .episode-card{width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-thumbnail-horizontal{aspect-ratio:16/9}
           .episode-img{width:100%;height:100%;object-fit:cover}
-          .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
-          .episode-info{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
+          .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:4px}
+          .episode-info{font-size:clamp(8px,1.2vw,10px);font-weight:500;color:#c8c8c8}
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
@@ -946,13 +946,13 @@ export default function Home() {
           .featured-img{width:100%;height:100%;object-fit:cover}
           .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
           .featured-text{flex:1}
-          .featured-title{font-size:clamp(16px,3vw,24px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
+          .featured-title{font-size:clamp(13px,2.4vw,19px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
           .featured-meta{display:flex;gap:clamp(8px,2vw,16px);margin-bottom:clamp(12px,2vw,16px);align-items:center;flex-wrap:wrap}
-          .featured-rating{padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(12px,1.8vw,14px);font-weight:600;color:#fff}
+          .featured-rating{padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(10px,1.5vw,11px);font-weight:600;color:#fff}
           .rating-L{background:#4CAF50}.rating-18{background:#f44336}
-          .featured-genre{color:#B5B5B5;font-size:clamp(12px,1.8vw,14px);font-weight:500}
-          .featured-year{color:#B5B5B5;font-size:clamp(12px,1.8vw,14px);font-weight:500}
-          .featured-synopsis{color:#808080;font-size:clamp(12px,1.8vw,14px);line-height:1.6}
+          .featured-genre{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
+          .featured-year{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
+          .featured-synopsis{color:#808080;font-size:clamp(10px,1.5vw,11px);line-height:1.6}
           .featured-actions{display:flex;gap:clamp(8px,1.5vw,12px);align-self:flex-end}
           .featured-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);transition:transform 0.2s}
           .featured-btn:hover{transform:scale(1.1)}
@@ -975,9 +975,9 @@ export default function Home() {
           .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(12px,2.5vw,20px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
           .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .favorite-content{flex:1;min-width:0;padding-right:clamp(28px,5vw,44px)}
-          .favorite-title{font-size:clamp(14px,2vw,18px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
-          .favorite-year{font-size:clamp(12px,1.8vw,16px);color:#A5A5A5;margin-bottom:4px}
-          .favorite-episodes{font-size:clamp(11px,1.6vw,15px);color:#A5A5A5;margin-bottom:clamp(8px,1.5vw,12px)}
+          .favorite-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+          .favorite-year{font-size:clamp(10px,1.5vw,13px);color:#A5A5A5;margin-bottom:4px}
+          .favorite-episodes{font-size:clamp(9px,1.3vw,12px);color:#A5A5A5;margin-bottom:clamp(8px,1.5vw,12px)}
           .favorite-badge{display:inline-block;padding:clamp(3px,0.6vw,6px) clamp(10px,2vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.6vw,15px);font-weight:600;color:#ffffff}
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
@@ -993,9 +993,9 @@ export default function Home() {
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
           .search-result-poster{width:clamp(90px,16vw,165px);height:clamp(120px,22vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .search-result-content{flex:1;min-width:0;display:flex;flex-direction:column}
-          .search-result-title{font-size:clamp(14px,2vw,19px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
-          .search-result-year{font-size:clamp(12px,1.5vw,16px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
-          .search-result-episodes{font-size:clamp(11px,1.5vw,16px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(8px,1.5vw,12px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+          .search-result-title{font-size:clamp(11px,1.6vw,15px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
+          .search-result-year{font-size:clamp(10px,1.5vw,13px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+          .search-result-episodes{font-size:clamp(9px,1.3vw,12px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(8px,1.5vw,12px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
           .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
           .search-divider{height:1px;background:rgba(255,255,255,0.05)}
 
@@ -1100,4 +1100,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+    }
