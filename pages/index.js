@@ -23,16 +23,28 @@ const GENRE_IMAGES = {
 }
 
 const CATEGORIES = [
-  { name: 'Aventura', color: '#7FA8D8', image: GENRE_IMAGES[12] },
-  { name: 'Ação', color: '#3F6D89', image: GENRE_IMAGES[28] },
-  { name: 'Comédia', color: '#C43708', image: GENRE_IMAGES[35] },
-  { name: 'Drama', color: '#2C3F59', image: GENRE_IMAGES[18] },
-  { name: 'Escolar', color: '#72615F', image: GENRE_IMAGES[53] },
-  { name: 'Fantasia', color: '#E97820', image: GENRE_IMAGES[14] },
-  { name: 'Romance', color: '#A8A8B6', image: GENRE_IMAGES[10749] },
-  { name: 'Slice of Life', color: '#E38CA8', image: GENRE_IMAGES[16] },
-  { name: 'Sobrenatural', color: '#9D95C8', image: GENRE_IMAGES[27] }
+  { name: 'Aventura', color: '#7FA8D8' },
+  { name: 'Ação', color: '#3F6D89' },
+  { name: 'Comédia', color: '#C43708' },
+  { name: 'Drama', color: '#2C3F59' },
+  { name: 'Escolar', color: '#72615F' },
+  { name: 'Fantasia', color: '#E97820' },
+  { name: 'Romance', color: '#A8A8B6' },
+  { name: 'Slice of Life', color: '#E38CA8' },
+  { name: 'Sobrenatural', color: '#9D95C8' }
 ]
+
+const CATEGORY_GENRE_MAP = {
+  'Aventura': 12,
+  'Ação': 28,
+  'Comédia': 35,
+  'Drama': 18,
+  'Escolar': 53,
+  'Fantasia': 14,
+  'Romance': 10749,
+  'Slice of Life': 16,
+  'Sobrenatural': 27
+}
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
@@ -60,8 +72,8 @@ const getItemYear = (item) => {
 }
 
 const getAvatarUrl = (name, color) => {
-  const bg = color?.replace('#', '') || '4D4BAF'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&bold=true&format=svg`
+  const bg = color?.replace('#', '') || '505050'
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
 
 const POSTER_SIZE = 'w780'
@@ -445,7 +457,7 @@ export const PrivacyModal = ({ onClose }) => (
         <p><strong>Política de Privacidade</strong></p>
         <p>Este aplicativo não coleta, armazena ou compartilha dados pessoais dos usuários. As informações de perfil e favoritos são armazenadas localmente no seu dispositivo e podem ser removidas a qualquer momento.</p>
         <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
-        <p>Para dúvidas, entre em contato pelo WhatsApp.</p>
+        <p>Para dúvidas, entre em contato pelo e-mail yoshikawa-bot@proton.me.</p>
       </div>
     </div>
   </div>
@@ -502,6 +514,7 @@ export default function Home() {
   const [activeSearchFilter, setActiveSearchFilter] = useState('Tudo')
   const [showSearch, setShowSearch] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
+  const [categoryImages, setCategoryImages] = useState({})
 
   useEffect(() => {
     try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
@@ -516,6 +529,12 @@ export default function Home() {
   }
 
   useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
+
+  useEffect(() => {
+    if (showSearch && !searchQuery.trim()) {
+      fetchCategoryImages()
+    }
+  }, [showSearch, searchQuery])
 
   const deduplicateById = (items) => {
     const seen = new Set()
@@ -606,6 +625,23 @@ export default function Home() {
   const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
   const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
 
+  const fetchCategoryImages = async () => {
+    const newImages = {}
+    await Promise.all(CATEGORIES.map(async (cat) => {
+      const genreId = CATEGORY_GENRE_MAP[cat.name]
+      if (!genreId) return
+      try {
+        const data = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&language=pt-BR&region=BR&sort_by=popularity.desc`)
+        if (data && data.length > 0) {
+          const item = data[0]
+          const img = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : (item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : null)
+          if (img) newImages[cat.name] = img
+        }
+      } catch {}
+    }))
+    setCategoryImages(newImages)
+  }
+
   const handlePlay = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
   const handleInfo = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
 
@@ -669,11 +705,7 @@ export default function Home() {
     setSearchQuery(categoryName)
     setActiveSearchFilter('Tudo')
     setSearchLoading(true)
-    fetchSearchResults(categoryName) // Força busca imediata
-  }
-
-  const openWhatsAppSupport = () => {
-    window.open('https://wa.me/554896989549', '_blank')
+    fetchSearchResults(categoryName)
   }
 
   const renderHomePage = () => {
@@ -796,7 +828,11 @@ export default function Home() {
             <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
             <div className="categories-grid">
               {CATEGORIES.map((category, index) => (
-                <CategoryCard key={index} category={category} onClick={() => handleCategoryClick(category.name)} />
+                <CategoryCard
+                  key={index}
+                  category={{ ...category, image: categoryImages[category.name] || GENRE_IMAGES[CATEGORY_GENRE_MAP[category.name]] || DEFAULT_POSTER }}
+                  onClick={() => handleCategoryClick(category.name)}
+                />
               ))}
             </div>
           </section>
@@ -825,7 +861,7 @@ export default function Home() {
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => setShowProfileCreation(true)} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
-        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={openWhatsAppSupport} />
+        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa-bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
       </div>
       <div className="social-links">
@@ -871,7 +907,7 @@ export default function Home() {
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
-          .section-title{font-size:clamp(18px,3.6vw,28px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(8px,1.5vw,12px)}
+          .section-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(16px,4vw,34px);margin-bottom:clamp(8px,1.5vw,12px)}
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
@@ -1064,4 +1100,4 @@ export default function Home() {
       )}
     </>
   )
-}
+  }
