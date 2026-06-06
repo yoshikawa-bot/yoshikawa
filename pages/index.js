@@ -14,25 +14,23 @@ const GENRE_IMAGES = {
   28: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg',
   35: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
   18: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
-  14: 'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg',
+  14: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg',
   10749: 'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg',
   16: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg',
   27: 'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg',
   53: 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg',
-  878: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg'
 }
 
 const CATEGORIES = [
-  { name: 'Aventura', color: '#7FA8D8', image: GENRE_IMAGES[12] },
-  { name: 'Ação', color: '#3F6D89', image: GENRE_IMAGES[28] },
-  { name: 'Comédia', color: '#C43708', image: GENRE_IMAGES[35] },
-  { name: 'Dublado', color: '#43A45D', image: GENRE_IMAGES[878] },
-  { name: 'Drama', color: '#2C3F59', image: GENRE_IMAGES[18] },
-  { name: 'Escolar', color: '#72615F', image: GENRE_IMAGES[53] },
-  { name: 'Fantasia', color: '#E97820', image: GENRE_IMAGES[14] },
-  { name: 'Romance', color: '#A8A8B6', image: GENRE_IMAGES[10749] },
-  { name: 'Slice of Life', color: '#E38CA8', image: GENRE_IMAGES[16] },
-  { name: 'Sobrenatural', color: '#9D95C8', image: GENRE_IMAGES[27] }
+  { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
+  { name: 'Ação', color: '#3F6D89', image: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg' },
+  { name: 'Comédia', color: '#C43708', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
+  { name: 'Drama', color: '#2C3F59', image: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg' },
+  { name: 'Escolar', color: '#72615F', image: 'https://image.tmdb.org/t/p/w500/xq1Ugd62d23K2knRUx6xxuALTZB.jpg' },
+  { name: 'Fantasia', color: '#E97820', image: 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg' },
+  { name: 'Romance', color: '#A8A8B6', image: 'https://image.tmdb.org/t/p/w500/5x5B9RkHtK3N7H0hIbuBcF0OlW.jpg' },
+  { name: 'Slice of Life', color: '#E38CA8', image: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg' },
+  { name: 'Sobrenatural', color: '#9D95C8', image: 'https://image.tmdb.org/t/p/w500/9p10J9QwFjyPZ4v4H4g4k6O6yB.jpg' }
 ]
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
@@ -79,26 +77,39 @@ const fetchLogoForItem = async (item) => {
   return null
 }
 
-const useFadeOnScroll = () => {
+const useHorizontalScrollRoot = () => {
   const ref = useRef(null)
+  const [root, setRoot] = useState(null)
+  useEffect(() => {
+    if (ref.current) {
+      let el = ref.current.parentElement
+      while (el) {
+        if (el.classList.contains('horizontal-scroll')) {
+          setRoot(el)
+          break
+        }
+        el = el.parentElement
+      }
+    }
+  }, [ref.current])
+  return [ref, root]
+}
+
+const HorizontalFade = ({ children }) => {
+  const [ref, root] = useHorizontalScrollRoot()
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     const node = ref.current
-    if (!node) return
+    if (!node || !root) return
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0, rootMargin: '0px' }
+      { threshold: 0, root }
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [])
-  return [ref, visible]
-}
-
-const FadeIn = ({ children, className = '' }) => {
-  const [ref, visible] = useFadeOnScroll()
+  }, [ref, root])
   return (
-    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+    <div ref={ref} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
       {children}
     </div>
   )
@@ -216,27 +227,27 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
 export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
-    <FadeIn className="trending-card-wrapper">
+    <HorizontalFade>
       <div className="trending-card" onClick={() => onPlay?.(item)}>
         <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
         <div className="trending-title">
           <span className="trending-title-text">{item.title || item.name}</span>
         </div>
       </div>
-    </FadeIn>
+    </HorizontalFade>
   )
 }
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
-    <FadeIn className="episode-card-wrapper">
+    <HorizontalFade>
       <div className="episode-card" onClick={() => onPlay?.(item)}>
         <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
         <h4 className="episode-title">{item.name || item.title}</h4>
         <p className="episode-info">Em exibição • {year || 'N/A'}</p>
       </div>
-    </FadeIn>
+    </HorizontalFade>
   )
 }
 
@@ -270,13 +281,11 @@ export const MovieCard = ({ item }) => {
   const router = useRouter()
   const mediaType = item.media_type || getMediaType(item)
   return (
-    <FadeIn className="card-wrapper-fade">
-      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
-        <div className="card-poster-frame">
-          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
-        </div>
+    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+      <div className="card-poster-frame">
+        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
       </div>
-    </FadeIn>
+    </div>
   )
 }
 
@@ -331,8 +340,8 @@ export const SearchResultItem = ({ item, onClick }) => {
   )
 }
 
-export const CategoryCard = ({ category }) => (
-  <div className="category-card" style={{ background: category.color }}>
+export const CategoryCard = ({ category, onClick }) => (
+  <div className="category-card" style={{ background: category.color }} onClick={onClick}>
     <h3 className="category-title">{category.name}</h3>
     <img src={category.image || DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e => { e.target.src = DEFAULT_POSTER }} />
   </div>
@@ -430,7 +439,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.5.1.R1.0</p>
+        <p><strong>Versão:</strong> 1.5.2.R1.0</p>
       </div>
     </div>
   </div>
@@ -627,6 +636,12 @@ export default function Home() {
 
   const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
+  const handleCategoryClick = (categoryName) => {
+    setShowSearch(true)
+    setSearchQuery(categoryName)
+    setActiveSearchFilter('Tudo')
+  }
+
   const renderHomePage = () => {
     if (contentLoading) return <ContentLoader />
     return (
@@ -704,7 +719,7 @@ export default function Home() {
         <section className="section">
           <h2 className="section-title">Animes populares</h2>
           <div className="horizontal-scroll">
-            {animes.slice(5, 10).map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
+            {animes.slice(5, 10).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
@@ -743,7 +758,14 @@ export default function Home() {
       ) : (
         <>
           <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,30px)' }}>{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
-          <section className="section"><h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2><div className="categories-grid">{CATEGORIES.map((category, index) => <CategoryCard key={index} category={category} />)}</div></section>
+          <section className="section">
+            <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
+            <div className="categories-grid">
+              {CATEGORIES.map((category, index) => (
+                <CategoryCard key={index} category={category} onClick={() => handleCategoryClick(category.name)} />
+              ))}
+            </div>
+          </section>
         </>
       )}
     </>
@@ -778,7 +800,7 @@ export default function Home() {
         <button className="social-btn"><i className="fab fa-tiktok" /></button>
         <button className="social-btn"><i className="fab fa-twitter" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.5.1.R1.0</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.5.2.R1.0</p></div>
     </section>
   )
 
@@ -821,7 +843,7 @@ export default function Home() {
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
 
-          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
+          .trending-card{width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
           .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);z-index:2}
           .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
@@ -832,12 +854,12 @@ export default function Home() {
           .highlight-backdrop-half{width:50%;height:100%;position:relative;overflow:hidden}
           .highlight-blur-bg{position:absolute;inset:0;filter:blur(12px);transform:scale(1.15)}
           .highlight-blur-img{width:100%;height:100%;object-fit:cover}
-          .highlight-blur-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.6)}
+          .highlight-blur-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4)}
           .highlight-logo-container{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
           .highlight-logo-img{max-width:80%;max-height:60%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.7))}
           .highlight-fallback-title{font-size:clamp(12px,2vw,16px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
 
-          .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
+          .episode-card{width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-img{width:100%;height:100%;object-fit:cover}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
@@ -901,15 +923,15 @@ export default function Home() {
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
           .search-result-poster{width:clamp(90px,16vw,165px);height:clamp(120px,22vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .search-result-content{flex:1;min-width:0;display:flex;flex-direction:column}
-          .search-result-title{font-size:clamp(14px,2vw,19px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px)}
-          .search-result-year{font-size:clamp(12px,1.5vw,16px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px)}
-          .search-result-episodes{font-size:clamp(11px,1.5vw,16px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(8px,1.5vw,12px)}
-          .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start}
+          .search-result-title{font-size:clamp(14px,2vw,19px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
+          .search-result-year{font-size:clamp(12px,1.5vw,16px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+          .search-result-episodes{font-size:clamp(11px,1.5vw,16px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(8px,1.5vw,12px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+          .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
           .search-divider{height:1px;background:rgba(255,255,255,0.05)}
 
           .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,2vw,20px);padding:0 clamp(16px,3vw,24px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
-          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1}
+          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1;text-shadow:0 2px 8px rgba(0,0,0,0.7)}
           .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover;background:#1B1B1B}
 
           .menu-banner-container{padding:0 clamp(16px,3vw,28px);margin-top:clamp(16px,3vw,24px)}
