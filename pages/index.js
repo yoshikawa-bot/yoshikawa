@@ -390,24 +390,27 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
   </div>
 )
 
-export const ProfileCreation = ({ onCreate, onClose }) => {
-  const [name, setName] = useState('')
-  const [selectedColor, setSelectedColor] = useState(PROFILE_COLORS[0])
+export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
+  const [name, setName] = useState(existingProfile?.name || '')
+  const [selectedColor, setSelectedColor] = useState(existingProfile?.color || PROFILE_COLORS[0])
   const [error, setError] = useState('')
+  const isEditing = !!existingProfile
+
   const handleSubmit = () => {
     const trimmed = name.trim()
     if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
     if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
     onCreate({ name: trimmed, color: selectedColor })
   }
+
   return (
     <div className="profile-creation-overlay">
       <div className="profile-creation-card">
         <div className="modal-header">
-          <h2 className="profile-creation-title">Criar Perfil</h2>
+          <h2 className="profile-creation-title">{isEditing ? 'Editar Perfil' : 'Criar Perfil'}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
-        <p className="profile-creation-subtitle">Escolha seu nome e cor para continuar</p>
+        <p className="profile-creation-subtitle">{isEditing ? 'Altere seu nome e cor' : 'Escolha seu nome e cor para continuar'}</p>
         <div className="profile-avatar-preview" style={{ background: selectedColor }}>
           {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
         </div>
@@ -415,7 +418,7 @@ export const ProfileCreation = ({ onCreate, onClose }) => {
         {error && <p className="profile-error">{error}</p>}
         <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />)}</div>
         <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
-        <button className="profile-create-btn" onClick={handleSubmit}>Entrar</button>
+        <button className="profile-create-btn" onClick={handleSubmit}>{isEditing ? 'Salvar' : 'Entrar'}</button>
       </div>
     </div>
   )
@@ -488,6 +491,7 @@ export default function Home() {
   const [loadingComplete, setLoadingComplete] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfileCreation, setShowProfileCreation] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(null)
   const [showProfileView, setShowProfileView] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
@@ -650,16 +654,28 @@ export default function Home() {
     setShowProfileView(false)
   }
 
-  const handleCreateProfile = (profile) => {
-    const newProfile = { ...profile, createdAt: new Date().toISOString(), favoritesCount: 0 }
-    setUserProfile(newProfile)
-    try { localStorage.setItem('yoshikawaProfile', JSON.stringify(newProfile)) } catch {}
+  const handleCreateProfile = (profileData) => {
+    if (editingProfile) {
+      const updatedProfile = { ...editingProfile, name: profileData.name, color: profileData.color }
+      setUserProfile(updatedProfile)
+      try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
+    } else {
+      const newProfile = { ...profileData, createdAt: new Date().toISOString(), favoritesCount: 0 }
+      setUserProfile(newProfile)
+      try { localStorage.setItem('yoshikawaProfile', JSON.stringify(newProfile)) } catch {}
+    }
     setShowProfileCreation(false)
+    setEditingProfile(null)
+  }
+
+  const openProfileModal = (existing = null) => {
+    setEditingProfile(existing)
+    setShowProfileCreation(true)
   }
 
   const handleProfileClick = () => {
     if (userProfile) setShowProfileView(true)
-    else setShowProfileCreation(true)
+    else openProfileModal(null)
   }
 
   const fetchSearchResults = async (query) => {
@@ -843,13 +859,13 @@ export default function Home() {
     <section className="section" style={{ paddingTop: 'clamp(40px,8vw,80px)' }}>
       {!userProfile && (
         <div className="menu-banner-container">
-          <div className="verify-banner" onClick={() => setShowProfileCreation(true)} style={{ cursor: 'pointer' }}>
+          <div className="verify-banner" onClick={() => openProfileModal(null)} style={{ cursor: 'pointer' }}>
             <span>Crie seu perfil para personalizar sua experiência!</span>
             <i className="fas fa-chevron-right" />
           </div>
         </div>
       )}
-      <div className="user-card" onClick={() => !userProfile ? setShowProfileCreation(true) : setShowProfileView(true)}>
+      <div className="user-card" onClick={() => !userProfile ? openProfileModal(null) : setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }}>
           {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
         </div>
@@ -857,7 +873,7 @@ export default function Home() {
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
-        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => setShowProfileCreation(true)} />
+        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => openProfileModal(userProfile || null)} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
         <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
@@ -1089,7 +1105,7 @@ export default function Home() {
             setActiveSection(section)
           }} />}
 
-          {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => setShowProfileCreation(false)} />}
+          {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => { setShowProfileCreation(false); setEditingProfile(null) }} existingProfile={editingProfile} />}
           {showProfileView && userProfile && <ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={() => setShowProfileView(false)} />}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
@@ -1098,4 +1114,4 @@ export default function Home() {
       )}
     </>
   )
-                }
+  }
