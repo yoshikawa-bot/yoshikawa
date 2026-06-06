@@ -158,7 +158,7 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
     <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
     <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
     <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={activeSection === 'favorites' ? { color: '#ff0000' } : {}} />
+      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={{ color: '#E04E4E' }} />
       <span>Favoritos</span>
     </button>
     <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
@@ -488,10 +488,41 @@ export default function Home() {
   const [animeRomance, setAnimeRomance] = useState([])
   const [animeRecommended, setAnimeRecommended] = useState([])
 
+  // Custom back navigation history
+  const [navHistory, setNavHistory] = useState(['home'])
+  const [navIndex, setNavIndex] = useState(0)
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = () => {
+      if (navIndex > 0) {
+        const newIndex = navIndex - 1
+        setNavIndex(newIndex)
+        setActiveSection(navHistory[newIndex])
+        setShowSearch(false)
+      } else {
+        // If at root, let browser handle normally (exit app)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [navHistory, navIndex])
+
+  const navigateTo = (section) => {
+    // Push to history stack
+    const newHistory = navHistory.slice(0, navIndex + 1)
+    newHistory.push(section)
+    setNavHistory(newHistory)
+    setNavIndex(newHistory.length - 1)
+    setActiveSection(section)
+    // Push a new history entry so the back button can be used
+    window.history.pushState(null, '', window.location.pathname)
+  }
+
   useEffect(() => {
     try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
-    if (router.query.section) setActiveSection(router.query.section)
+    if (router.query.section) navigateTo(router.query.section)
   }, [router.query.section])
 
   const handleLoadingComplete = () => {
@@ -571,11 +602,15 @@ export default function Home() {
       // General state
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
+
+      // Lançamento: pick the latest release from now_playing movies
+      const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
+      const latestRelease = nowPlayingClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
+      setFeatured(latestRelease)
+
       const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date))).slice(0, 10)
       setNewEpisodes(seriesOnAir)
-      const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10)
-      setRecentlyAdded(nowPlayingClean)
-      setFeatured(trendingClean[0] || null)
+      setRecentlyAdded(nowPlayingClean.slice(0, 10))
       setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setRomance(deduplicateById(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
@@ -604,9 +639,13 @@ export default function Home() {
       setAnimeTrending(animeTrendingClean)
       const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
       setAnimeNewEpisodes(animeOnAirClean)
-      const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10)
-      setAnimeRecentlyAdded(animeRecentClean)
-      setAnimeFeatured(animeTrendingClean[0] || null)
+
+      // Lançamento anime: latest release from animeRecentRaw
+      const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
+      const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
+      setAnimeFeatured(latestAnimeRelease)
+      setAnimeRecentlyAdded(animeRecentClean.slice(0, 10))
+
       setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
@@ -663,7 +702,7 @@ export default function Home() {
   }
 
   const handleLogoClick = () => {
-    setActiveSection('home')
+    navigateTo('home')
     setShowSearch(false)
     setSearchQuery('')
     setSearchResults([])
@@ -707,6 +746,7 @@ export default function Home() {
   const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
   const handleCategoryClick = (categoryName) => {
+    navigateTo('search')
     setShowSearch(true)
     setSearchQuery(categoryName)
     setActiveSearchFilter('Tudo')
@@ -839,7 +879,7 @@ export default function Home() {
   const renderSearchPage = () => (
     <>
       <div className="search-container">
-        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo') }}><i className="fas fa-arrow-left" /></button>
+        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
       {searchQuery.trim() ? (
@@ -995,7 +1035,6 @@ export default function Home() {
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
-          .nav-item.active i{}
 
           .filters-container{display:flex;gap:clamp(16px,3vw,36px);margin-left:clamp(16px,4vw,34px);margin-top:clamp(20px,3vw,28px);overflow-x:auto;scrollbar-width:none;padding-right:clamp(16px,4vw,34px)}
           .filters-container::-webkit-scrollbar{display:none}
@@ -1104,7 +1143,7 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && <Header onSearchClick={() => setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+          {!showSearch && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
           <main className="container" style={showSearch ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
@@ -1116,11 +1155,11 @@ export default function Home() {
           </main>
 
           {!showSearch && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+            navigateTo(section)
             setShowSearch(false)
             setSearchQuery('')
             setSearchResults([])
             setActiveSearchFilter('Tudo')
-            setActiveSection(section)
           }} />}
 
           {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => { setShowProfileCreation(false); setEditingProfile(null) }} existingProfile={editingProfile} />}
