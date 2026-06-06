@@ -182,15 +182,13 @@ export const VideoModal = ({ onClose }) => {
 }
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
-  const avatarSize = 'clamp(36px,5.4vw,54px)'
-  const logoSize = 'clamp(42px,6.3vw,63px)'
   return (
     <header className="header">
-      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" style={{ width: logoSize, height: logoSize, cursor: 'pointer' }} onClick={onLogoClick} />
+      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }} onClick={onProfileClick}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
+          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
         </button>
       </div>
     </header>
@@ -897,11 +895,11 @@ export default function Home() {
           @keyframes spin{to{transform:rotate(360deg)}}
 
           .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
-          .header-logo{object-fit:contain}
+          .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(36px,5.4vw,54px);height:clamp(36px,5.4vw,54px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
+          .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
@@ -1100,4 +1098,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+                }
