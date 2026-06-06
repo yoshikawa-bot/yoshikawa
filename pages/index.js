@@ -139,48 +139,6 @@ export const LoadingScreen = ({ onComplete }) => {
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
-export const VideoModal = ({ onClose }) => {
-  const videoRef = useRef(null)
-  const [isPlaying, setIsPlaying] = useState(true)
-
-  const togglePlayPause = () => {
-    if (!videoRef.current) return
-    if (videoRef.current.paused) {
-      videoRef.current.play()
-      setIsPlaying(true)
-    } else {
-      videoRef.current.pause()
-      setIsPlaying(false)
-    }
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: '#101010', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <button onClick={onClose} className="featured-btn play-btn" style={{ position: 'absolute', top: 32, left: 32 }}>
-        <i className="fas fa-arrow-left" />
-      </button>
-      <div style={{ position: 'relative' }}>
-        <video
-          ref={videoRef}
-          src="https://yoshikawa-bot.github.io/cache/images/842945df.m4v"
-          autoPlay
-          loop
-          playsInline
-          style={{ maxWidth: '90vw', maxHeight: '70vh', borderRadius: 0, display: 'block' }}
-        />
-        <button
-          onClick={togglePlayPause}
-          className="featured-btn play-btn"
-          style={{ position: 'absolute', bottom: 16, right: 16 }}
-        >
-          <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'} />
-        </button>
-      </div>
-      <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginTop: 16, letterSpacing: '0.5px' }}>Oii curioso</p>
-    </div>
-  )
-}
-
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
   return (
     <header className="header">
@@ -199,7 +157,10 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   <nav className="bottom-nav">
     <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
     <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
-    <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}><i className="fas fa-heart" /><span>Favoritos</span></button>
+    <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={activeSection === 'favorites' ? { color: '#ff0000' } : {}} />
+      <span>Favoritos</span>
+    </button>
     <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
   </nav>
 )
@@ -495,7 +456,6 @@ export default function Home() {
   const [showProfileView, setShowProfileView] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
-  const [showVideo, setShowVideo] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
   const [trendingLogos, setTrendingLogos] = useState({})
@@ -516,7 +476,17 @@ export default function Home() {
   const [activeSearchFilter, setActiveSearchFilter] = useState('Tudo')
   const [showSearch, setShowSearch] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
-  const [categoryImages, setCategoryImages] = useState({})
+
+  // Anime-specific content for full home replica
+  const [animeTrending, setAnimeTrending] = useState([])
+  const [animeTrendingLogos, setAnimeTrendingLogos] = useState({})
+  const [animeNewEpisodes, setAnimeNewEpisodes] = useState([])
+  const [animeRecentlyAdded, setAnimeRecentlyAdded] = useState([])
+  const [animeFeatured, setAnimeFeatured] = useState(null)
+  const [animeAdventure, setAnimeAdventure] = useState([])
+  const [animeComedy, setAnimeComedy] = useState([])
+  const [animeRomance, setAnimeRomance] = useState([])
+  const [animeRecommended, setAnimeRecommended] = useState([])
 
   useEffect(() => {
     try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
@@ -531,12 +501,6 @@ export default function Home() {
   }
 
   useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
-
-  useEffect(() => {
-    if (showSearch && !searchQuery.trim()) {
-      fetchCategoryImages()
-    }
-  }, [showSearch, searchQuery])
 
   const deduplicateById = (items) => {
     const seen = new Set()
@@ -553,7 +517,10 @@ export default function Home() {
     try {
       const baseParams = `api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`
       const watchParams = `watch_region=BR&with_watch_monetization_types=flatrate|free|ads`
+      const animeMovieParams = `&with_genres=16&with_original_language=ja`
+      const animeTVParams = animeMovieParams
 
+      // General content
       const [
         trendingMovies,
         nowPlaying,
@@ -576,29 +543,43 @@ export default function Home() {
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?${baseParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=16&with_original_language=ja&${watchParams}`)
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}`)
+      ])
+
+      // Anime-specific content for anime page
+      const [
+        animeTrendingRaw,
+        animeOnAirRaw,
+        animeRecentRaw,
+        animeAdventureRaw,
+        animeComedyRaw,
+        animeRomanceRaw,
+        animeRecommendedRaw
+      ] = await Promise.all([
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
       ])
 
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
 
+      // General state
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
-
       const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date))).slice(0, 10)
       setNewEpisodes(seriesOnAir)
-
       const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10)
       setRecentlyAdded(nowPlayingClean)
-
-      const featuredItem = trendingClean[0] || null
-      setFeatured(featuredItem)
-
+      setFeatured(trendingClean[0] || null)
       setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setRomance(deduplicateById(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setRecommended(deduplicateById(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-
       const combinedAnimes = deduplicateById([...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity)).slice(0, 20)
       setAnimes(combinedAnimes)
 
@@ -618,6 +599,26 @@ export default function Home() {
       setTrendingLogos(trendingLogosMap)
       setAnimeLogos(animeLogosMap)
 
+      // Anime page specific state
+      const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
+      setAnimeTrending(animeTrendingClean)
+      const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
+      setAnimeNewEpisodes(animeOnAirClean)
+      const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10)
+      setAnimeRecentlyAdded(animeRecentClean)
+      setAnimeFeatured(animeTrendingClean[0] || null)
+      setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeRecommended(deduplicateById(animeRecommendedRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+
+      // Fetch anime logos for highlights
+      const animeTrendingHighlights = animeTrendingClean.slice(0, 5)
+      const animeTrendingLogosArr = await Promise.all(animeTrendingHighlights.map(item => fetchLogoForItem(item)))
+      const animeTrendingLogosMap = {}
+      animeTrendingHighlights.forEach((item, idx) => { animeTrendingLogosMap[item.id] = animeTrendingLogosArr[idx] })
+      setAnimeTrendingLogos(animeTrendingLogosMap)
+
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
@@ -626,23 +627,6 @@ export default function Home() {
   const fetchTMDB = async (url) => { try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] } }
   const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
   const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
-
-  const fetchCategoryImages = async () => {
-    const newImages = {}
-    await Promise.all(CATEGORIES.map(async (cat) => {
-      const genreId = CATEGORY_GENRE_MAP[cat.name]
-      if (!genreId) return
-      try {
-        const data = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&language=pt-BR&region=BR&sort_by=popularity.desc`)
-        if (data && data.length > 0) {
-          const item = data[0]
-          const img = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : (item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : null)
-          if (img) newImages[cat.name] = img
-        }
-      } catch {}
-    }))
-    setCategoryImages(newImages)
-  }
 
   const handlePlay = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
   const handleInfo = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
@@ -676,6 +660,14 @@ export default function Home() {
   const handleProfileClick = () => {
     if (userProfile) setShowProfileView(true)
     else openProfileModal(null)
+  }
+
+  const handleLogoClick = () => {
+    setActiveSection('home')
+    setShowSearch(false)
+    setSearchQuery('')
+    setSearchResults([])
+    setActiveSearchFilter('Tudo')
   }
 
   const fetchSearchResults = async (query) => {
@@ -783,29 +775,51 @@ export default function Home() {
     return (
       <>
         <section className="section">
-          <h2 className="section-title">Animes em destaque</h2>
+          <h2 className="section-title">Em alta</h2>
           <div className="horizontal-scroll">
-            {animes.slice(0, 5).map(item => (
-              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeLogos[item.id] || null} />
+            {animeTrending.slice(0, 5).map(item => (
+              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeTrendingLogos[item.id] || null} />
             ))}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Todos os Animes</h2>
-          <div className="vertical-scroll">
-            {animes.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
-          </div>
-        </section>
-        <section className="section">
-          <h2 className="section-title">Animes populares</h2>
+          <h2 className="section-title">Novos episódios</h2>
           <div className="horizontal-scroll">
-            {animes.slice(5, 10).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+            {animeNewEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Recomendados para você</h2>
+          <h2 className="section-title">Recém adicionados</h2>
           <div className="vertical-scroll">
-            {animes.slice(10, 20).map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+            {animeRecentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Lançamento</h2>
+          {animeFeatured && <FeaturedCard item={animeFeatured} onPlay={handlePlay} onInfo={handleInfo} />}
+        </section>
+        <section className="section">
+          <h2 className="section-title">Aventura</h2>
+          <div className="vertical-scroll">
+            {animeAdventure.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Comédia</h2>
+          <div className="vertical-scroll">
+            {animeComedy.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Romance</h2>
+          <div className="vertical-scroll">
+            {animeRomance.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
+          </div>
+        </section>
+        <section className="section">
+          <h2 className="section-title">Talvez você goste</h2>
+          <div className="vertical-scroll">
+            {animeRecommended.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
       </>
@@ -841,13 +855,17 @@ export default function Home() {
           <section className="section">
             <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
             <div className="categories-grid">
-              {CATEGORIES.map((category, index) => (
-                <CategoryCard
-                  key={index}
-                  category={{ ...category, image: categoryImages[category.name] || GENRE_IMAGES[CATEGORY_GENRE_MAP[category.name]] || DEFAULT_POSTER }}
-                  onClick={() => handleCategoryClick(category.name)}
-                />
-              ))}
+              {CATEGORIES.map((category, index) => {
+                const genreId = CATEGORY_GENRE_MAP[category.name]
+                const image = GENRE_IMAGES[genreId] || DEFAULT_POSTER
+                return (
+                  <CategoryCard
+                    key={index}
+                    category={{ ...category, image }}
+                    onClick={() => handleCategoryClick(category.name)}
+                  />
+                )
+              })}
             </div>
           </section>
         </>
@@ -946,7 +964,7 @@ export default function Home() {
           .episode-thumbnail{position:relative;border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-thumbnail-horizontal{aspect-ratio:16/9}
           .episode-img{width:100%;height:100%;object-fit:cover}
-          .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:4px}
+          .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:2px}
           .episode-info{font-size:clamp(8px,1.2vw,10px);font-weight:500;color:#c8c8c8}
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -977,7 +995,7 @@ export default function Home() {
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
-          .nav-item.active i{color:#ffffff}
+          .nav-item.active i{}
 
           .filters-container{display:flex;gap:clamp(16px,3vw,36px);margin-left:clamp(16px,4vw,34px);margin-top:clamp(20px,3vw,28px);overflow-x:auto;scrollbar-width:none;padding-right:clamp(16px,4vw,34px)}
           .filters-container::-webkit-scrollbar{display:none}
@@ -1086,7 +1104,7 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && <Header onSearchClick={() => setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={() => setShowVideo(true)} />}
+          {!showSearch && <Header onSearchClick={() => setShowSearch(true)} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
           <main className="container" style={showSearch ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
@@ -1109,9 +1127,8 @@ export default function Home() {
           {showProfileView && userProfile && <ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={() => setShowProfileView(false)} />}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-          {showVideo && <VideoModal onClose={() => setShowVideo(false)} />}
         </>
       )}
     </>
   )
-  }
+    }
