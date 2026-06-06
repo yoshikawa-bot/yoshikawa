@@ -66,6 +66,11 @@ const getMediaType = (item) => {
   return 'movie'
 }
 
+const getRouteType = (item) => {
+  if (item.media_type === 'tv' || item.first_air_date) return 'tv'
+  return 'movie'
+}
+
 const getItemYear = (item) => {
   if (!item) return null
   return new Date(item.release_date || item.first_air_date).getFullYear() || null
@@ -88,6 +93,44 @@ const fetchLogoForItem = async (item) => {
     if (data.logos?.length) return data.logos[0].file_path
   } catch {}
   return null
+}
+
+const enrichSeriesWithLastEpisode = async (seriesList) => {
+  const enriched = await Promise.all(seriesList.map(async (series) => {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${series.id}?api_key=${TMDB_API_KEY}&append_to_response=last_episode_to_air`)
+      const data = await res.json()
+      const episode = data.last_episode_to_air
+      return {
+        id: series.id,
+        media_type: 'tv',
+        name: episode?.name || series.name,
+        title: series.name,
+        episode_number: episode?.episode_number,
+        still_path: episode?.still_path,
+        backdrop_path: series.backdrop_path,
+        poster_path: series.poster_path,
+        year: getItemYear(series),
+        genre_ids: series.genre_ids,
+        overview: series.overview,
+      }
+    } catch {
+      return {
+        id: series.id,
+        media_type: 'tv',
+        name: series.name,
+        title: series.name,
+        episode_number: null,
+        still_path: null,
+        backdrop_path: series.backdrop_path,
+        poster_path: series.poster_path,
+        year: getItemYear(series),
+        genre_ids: series.genre_ids,
+        overview: series.overview,
+      }
+    }
+  }))
+  return enriched
 }
 
 const useHorizontalScrollRoot = () => {
@@ -158,7 +201,7 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
     <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
     <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
     <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={{ color: '#E04E4E' }} />
+      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
       <span>Favoritos</span>
     </button>
     <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
@@ -214,9 +257,13 @@ export const TrendingCard = ({ item, onPlay }) => {
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
-  const imageUrl = item.backdrop_path
-    ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
-    : (item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER)
+  const imageUrl = item.still_path
+    ? `https://image.tmdb.org/t/p/w780${item.still_path}`
+    : (item.backdrop_path
+      ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+      : (item.poster_path
+        ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`
+        : DEFAULT_POSTER))
   return (
     <HorizontalFade>
       <div className="episode-card" onClick={() => onPlay?.(item)}>
@@ -224,7 +271,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
           <img src={imageUrl} alt={item.name || item.title} className="episode-img" />
         </div>
         <h4 className="episode-title">{item.name || item.title}</h4>
-        <p className="episode-info">Em exibição • {year || 'N/A'}</p>
+        <p className="episode-info">{item.episode_number ? `Episódio ${item.episode_number}` : `Em exibição • ${year || 'N/A'}`}</p>
       </div>
     </HorizontalFade>
   )
@@ -258,10 +305,10 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
 
 export const MovieCard = ({ item }) => {
   const router = useRouter()
-  const mediaType = item.media_type || getMediaType(item)
+  const routeType = getRouteType(item)
   return (
     <HorizontalFade>
-      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+      <div className="card-wrapper" onClick={() => router.push(`/${routeType}/${item.id}`)}>
         <div className="card-poster-frame">
           <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
         </div>
@@ -271,7 +318,7 @@ export const MovieCard = ({ item }) => {
 }
 
 export const FavoriteItem = ({ item, onRemove, onClick }) => {
-  const mediaType = item.media_type || 'movie'
+  const mediaType = getMediaType(item)
   const year = getItemYear(item)
   return (
     <div className="favorite-item" onClick={() => onClick?.(item)}>
@@ -500,8 +547,6 @@ export default function Home() {
         setNavIndex(newIndex)
         setActiveSection(navHistory[newIndex])
         setShowSearch(false)
-      } else {
-        // If at root, let browser handle normally (exit app)
       }
     }
     window.addEventListener('popstate', handlePopState)
@@ -603,13 +648,16 @@ export default function Home() {
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
 
-      // Lançamento: pick the latest release from now_playing movies
+      // Lançamento: latest release from now_playing
       const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestRelease = nowPlayingClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
       setFeatured(latestRelease)
 
-      const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).sort((a, b) => new Date(b.first_air_date || b.release_date) - new Date(a.first_air_date || a.release_date))).slice(0, 10)
-      setNewEpisodes(seriesOnAir)
+      // New episodes: enrich with last episode data
+      const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
+      const enrichedSeries = await enrichSeriesWithLastEpisode(seriesOnAir)
+      setNewEpisodes(enrichedSeries)
+
       setRecentlyAdded(nowPlayingClean.slice(0, 10))
       setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
@@ -637,14 +685,17 @@ export default function Home() {
       // Anime page specific state
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
-      const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
-      setAnimeNewEpisodes(animeOnAirClean)
 
-      // Lançamento anime: latest release from animeRecentRaw
+      // Lançamento anime: latest release
       const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
       setAnimeFeatured(latestAnimeRelease)
       setAnimeRecentlyAdded(animeRecentClean.slice(0, 10))
+
+      // Anime new episodes: enrich
+      const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
+      const enrichedAnimeSeries = await enrichSeriesWithLastEpisode(animeOnAirClean)
+      setAnimeNewEpisodes(enrichedAnimeSeries)
 
       setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
@@ -667,8 +718,8 @@ export default function Home() {
   const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
   const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
 
-  const handlePlay = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
-  const handleInfo = (item) => window.location.href = `/${item.media_type || getMediaType(item)}/${item.id}`
+  const handlePlay = (item) => window.location.href = `/${getRouteType(item)}/${item.id}`
+  const handleInfo = (item) => window.location.href = `/${getRouteType(item)}/${item.id}`
 
   const handleLogout = () => {
     setUserProfile(null)
@@ -818,7 +869,7 @@ export default function Home() {
           <h2 className="section-title">Em alta</h2>
           <div className="horizontal-scroll">
             {animeTrending.slice(0, 5).map(item => (
-              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeTrendingLogos[item.id] || null} />
+              <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeTrendingLogos[item.id] || null} />
             ))}
           </div>
         </section>
@@ -1170,4 +1221,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+  }
