@@ -201,7 +201,7 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
     <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
     <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
     <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-      <i className={activeSection === 'favorites' ? 'fas fa-heart' : 'far fa-heart'} style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
+      <i className="fas fa-heart" style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
       <span>Favoritos</span>
     </button>
     <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
@@ -270,7 +270,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
         <div className="episode-thumbnail episode-thumbnail-horizontal">
           <img src={imageUrl} alt={item.name || item.title} className="episode-img" />
         </div>
-        <h4 className="episode-title">{item.name || item.title}</h4>
+        <h4 className="episode-title">{item.title || item.name}</h4>
         <p className="episode-info">{item.episode_number ? `Episódio ${item.episode_number}` : `Em exibição • ${year || 'N/A'}`}</p>
       </div>
     </HorizontalFade>
@@ -554,13 +554,11 @@ export default function Home() {
   }, [navHistory, navIndex])
 
   const navigateTo = (section) => {
-    // Push to history stack
     const newHistory = navHistory.slice(0, navIndex + 1)
     newHistory.push(section)
     setNavHistory(newHistory)
     setNavIndex(newHistory.length - 1)
     setActiveSection(section)
-    // Push a new history entry so the back button can be used
     window.history.pushState(null, '', window.location.pathname)
   }
 
@@ -596,7 +594,6 @@ export default function Home() {
       const animeMovieParams = `&with_genres=16&with_original_language=ja`
       const animeTVParams = animeMovieParams
 
-      // General content
       const [
         trendingMovies,
         nowPlaying,
@@ -623,7 +620,6 @@ export default function Home() {
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}`)
       ])
 
-      // Anime-specific content for anime page
       const [
         animeTrendingRaw,
         animeOnAirRaw,
@@ -648,12 +644,10 @@ export default function Home() {
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
 
-      // Lançamento: latest release from now_playing
       const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestRelease = nowPlayingClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
       setFeatured(latestRelease)
 
-      // New episodes: enrich with last episode data
       const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
       const enrichedSeries = await enrichSeriesWithLastEpisode(seriesOnAir)
       setNewEpisodes(enrichedSeries)
@@ -686,13 +680,11 @@ export default function Home() {
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
 
-      // Lançamento anime: latest release
       const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
       setAnimeFeatured(latestAnimeRelease)
       setAnimeRecentlyAdded(animeRecentClean.slice(0, 10))
 
-      // Anime new episodes: enrich
       const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
       const enrichedAnimeSeries = await enrichSeriesWithLastEpisode(animeOnAirClean)
       setAnimeNewEpisodes(enrichedAnimeSeries)
@@ -702,7 +694,6 @@ export default function Home() {
       setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       setAnimeRecommended(deduplicateById(animeRecommendedRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
 
-      // Fetch anime logos for highlights
       const animeTrendingHighlights = animeTrendingClean.slice(0, 5)
       const animeTrendingLogosArr = await Promise.all(animeTrendingHighlights.map(item => fetchLogoForItem(item)))
       const animeTrendingLogosMap = {}
@@ -922,7 +913,7 @@ export default function Home() {
       <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>Favoritos</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
-        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="far fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => { setFavorites(prev => { const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type)); try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}; return updated }) }} onClick={handlePlay} />)}
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => { setFavorites(prev => { const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type)); try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}; return updated }) }} onClick={handlePlay} />)}
       </div>
     </section>
   )
@@ -1221,4 +1212,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+                         }
