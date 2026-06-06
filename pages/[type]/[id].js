@@ -171,7 +171,7 @@ export default function WatchPage() {
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
           body{font-family:'Inter',sans-serif;background:#101010;color:#fff;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-          .hero{position:relative;width:100%;height:clamp(280px,40vw,420px);overflow:hidden;background:#0a0a0a}
+          .hero{position:relative;width:100%;height:clamp(450px,60vw,620px);overflow:hidden;background:#0a0a0a}
           .hero-bg{width:100%;height:100%;object-fit:cover}
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:8px}
@@ -326,4 +326,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                                                                }
+      }
