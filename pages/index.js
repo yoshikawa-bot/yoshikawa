@@ -46,7 +46,7 @@ const CATEGORY_GENRE_MAP = {
   'Sobrenatural': 27
 }
 
-const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
+const FAVORITE_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
 const useDebounce = (callback, delay) => {
@@ -523,8 +523,8 @@ export default function Home() {
   const [activeSearchFilter, setActiveSearchFilter] = useState('Tudo')
   const [showSearch, setShowSearch] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
+  const [categoryImages, setCategoryImages] = useState({})
 
-  // Anime-specific content for full home replica
   const [animeTrending, setAnimeTrending] = useState([])
   const [animeTrendingLogos, setAnimeTrendingLogos] = useState({})
   const [animeNewEpisodes, setAnimeNewEpisodes] = useState([])
@@ -535,11 +535,9 @@ export default function Home() {
   const [animeRomance, setAnimeRomance] = useState([])
   const [animeRecommended, setAnimeRecommended] = useState([])
 
-  // Custom back navigation history
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
 
-  // Handle browser back button
   useEffect(() => {
     const handlePopState = () => {
       if (navIndex > 0) {
@@ -576,6 +574,12 @@ export default function Home() {
 
   useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
 
+  useEffect(() => {
+    if (showSearch && !searchQuery.trim()) {
+      fetchCategoryImages()
+    }
+  }, [showSearch, searchQuery])
+
   const deduplicateById = (items) => {
     const seen = new Set()
     return items.filter(item => {
@@ -584,6 +588,23 @@ export default function Home() {
       seen.add(key)
       return true
     })
+  }
+
+  const fetchCategoryImages = async () => {
+    const newImages = {}
+    await Promise.all(CATEGORIES.map(async (cat) => {
+      const genreId = CATEGORY_GENRE_MAP[cat.name]
+      if (!genreId) return
+      try {
+        const data = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&language=pt-BR&region=BR&sort_by=popularity.desc`)
+        if (data && data.length > 0) {
+          const item = data[0]
+          const img = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : (item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : null)
+          if (img) newImages[cat.name] = img
+        }
+      } catch {}
+    }))
+    setCategoryImages(newImages)
   }
 
   const loadAllContent = async () => {
@@ -640,7 +661,6 @@ export default function Home() {
 
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
 
-      // General state
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
 
@@ -676,7 +696,6 @@ export default function Home() {
       setTrendingLogos(trendingLogosMap)
       setAnimeLogos(animeLogosMap)
 
-      // Anime page specific state
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
 
@@ -785,7 +804,7 @@ export default function Home() {
   const handleSearchChange = (q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }
   useEffect(() => { if (searchQuery.trim()) fetchSearchResults(searchQuery) }, [activeSearchFilter])
 
-  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
+  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Animes' ? favorites.filter(f => f.media_type === 'anime') : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
   const handleCategoryClick = (categoryName) => {
     navigateTo('search')
@@ -939,7 +958,7 @@ export default function Home() {
             <div className="categories-grid">
               {CATEGORIES.map((category, index) => {
                 const genreId = CATEGORY_GENRE_MAP[category.name]
-                const image = GENRE_IMAGES[genreId] || DEFAULT_POSTER
+                const image = categoryImages[category.name] || GENRE_IMAGES[genreId] || DEFAULT_POSTER
                 return (
                   <CategoryCard
                     key={index}
@@ -1046,7 +1065,7 @@ export default function Home() {
           .episode-thumbnail{position:relative;border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-thumbnail-horizontal{aspect-ratio:16/9}
           .episode-img{width:100%;height:100%;object-fit:cover}
-          .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:2px}
+          .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
           .episode-info{font-size:clamp(8px,1.2vw,10px);font-weight:500;color:#c8c8c8}
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -1212,4 +1231,4 @@ export default function Home() {
       )}
     </>
   )
-                         }
+  }
