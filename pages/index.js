@@ -943,7 +943,7 @@ export default function Home() {
       </div>
       {searchQuery.trim() ? (
         <>
-          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(20px,4vw,34px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
+          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
           <div className="search-results-list">
             {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
           </div>
@@ -1038,9 +1038,9 @@ export default function Home() {
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
-          .section-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(8px,2vw,17px);margin-bottom:clamp(8px,1.5vw,12px)}
+          .section-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(10px,2.6vw,22px);margin-bottom:clamp(8px,1.5vw,12px)}
 
-          .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(6px,1vw,9px);padding-left:clamp(8px,2vw,17px);padding-right:clamp(8px,2vw,17px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(8px,1.3vw,12px);padding-left:clamp(10px,2.6vw,22px);padding-right:clamp(10px,2.6vw,22px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
 
           .trending-card{width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
@@ -1066,13 +1066,13 @@ export default function Home() {
           .episode-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;color:#ffffff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
           .episode-info{font-size:clamp(8px,1.2vw,10px);font-weight:500;color:#c8c8c8}
 
-          .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(6px,1vw,9px);padding-left:clamp(8px,2vw,17px);padding-right:clamp(8px,2vw,17px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(8px,1.3vw,12px);padding-left:clamp(10px,2.6vw,22px);padding-right:clamp(10px,2.6vw,22px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
           .card-wrapper{flex-shrink:0;width:clamp(110px,18vw,140px);cursor:pointer}
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
-          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(8px,2vw,17px);background:#1B1B1B}
+          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(10px,2.6vw,22px);background:#1B1B1B}
           .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
           .featured-img{width:100%;height:100%;object-fit:cover}
           .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
@@ -1095,14 +1095,14 @@ export default function Home() {
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
 
-          .filters-container{display:flex;gap:clamp(8px,1.5vw,18px);margin-left:clamp(8px,2vw,17px);margin-top:clamp(20px,3vw,28px);overflow-x:auto;scrollbar-width:none;padding-right:clamp(8px,2vw,17px)}
+          .filters-container{display:flex;gap:clamp(10px,2vw,23px);margin-left:clamp(10px,2.6vw,22px);margin-top:clamp(20px,3vw,28px);overflow-x:auto;scrollbar-width:none;padding-right:clamp(10px,2.6vw,22px)}
           .filters-container::-webkit-scrollbar{display:none}
           .filter-btn{height:clamp(36px,6vw,56px);padding:0 clamp(16px,3vw,32px);border-radius:clamp(18px,3vw,28px);font-size:clamp(13px,2vw,18px);font-weight:700;white-space:nowrap;transition:all 0.2s}
           .filter-btn.active{background:#ffffff;color:#000000}
           .filter-btn:not(.active){background:transparent;color:#A0A0A0}
 
-          .favorites-list{padding:0 clamp(6px,1.25vw,10px);margin-top:clamp(16px,3vw,24px)}
-          .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(6px,1.25vw,10px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
+          .favorites-list{padding:0 clamp(8px,1.6vw,13px);margin-top:clamp(16px,3vw,24px)}
+          .favorite-item{display:flex;padding:clamp(12px,2vw,18px) clamp(8px,1.6vw,13px);position:relative;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);gap:clamp(12px,2vw,18px)}
           .favorite-poster{width:clamp(90px,18vw,160px);height:clamp(125px,25vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .favorite-content{flex:1;min-width:0;padding-right:clamp(28px,5vw,44px)}
           .favorite-title{font-size:clamp(11px,1.6vw,14px);font-weight:700;line-height:1.2;margin-bottom:clamp(4px,1vw,8px);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
@@ -1112,14 +1112,14 @@ export default function Home() {
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
-          .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,18px);padding:clamp(12px,2vw,24px) clamp(8px,2vw,17px);padding-top:clamp(20px,3vw,40px)}
+          .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,18px);padding:clamp(12px,2vw,24px) clamp(10px,2.6vw,22px);padding-top:clamp(20px,3vw,40px)}
           .search-back-btn{color:#ffffff;font-size:clamp(24px,4vw,38px);width:clamp(24px,4vw,38px);height:clamp(24px,4vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
           .search-bar{flex:1;height:clamp(48px,7vw,74px);background:#1B1B1B;border-radius:clamp(24px,4vw,38px);display:flex;align-items:center;padding:0 clamp(16px,2.5vw,24px);gap:clamp(8px,1.5vw,12px)}
           .search-icon{color:#A5A5A5;font-size:clamp(16px,2.5vw,22px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,20px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
 
-          .search-results-list{padding:0 clamp(6px,1.25vw,12px);margin-top:clamp(20px,3.5vw,30px)}
+          .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
           .search-result-poster{width:clamp(90px,16vw,165px);height:clamp(120px,22vw,220px);border-radius:clamp(12px,2vw,18px);object-fit:cover;flex-shrink:0;background:#1B1B1B}
           .search-result-content{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -1129,7 +1129,7 @@ export default function Home() {
           .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
           .search-divider{height:1px;background:rgba(255,255,255,0.05)}
 
-          .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(6px,1vw,10px);padding:0 clamp(8px,1.5vw,12px);margin-top:clamp(20px,3vw,30px)}
+          .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(8px,1.3vw,13px);padding:0 clamp(10px,2vw,15px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
           .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1;text-shadow:0 2px 8px rgba(0,0,0,0.7)}
           .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover;background:#1B1B1B}
@@ -1229,4 +1229,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+}
