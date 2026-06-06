@@ -67,41 +67,16 @@ const getAvatarUrl = (name, color) => {
 
 const POSTER_SIZE = 'w780'
 
-const useFadeOnScroll = () => {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const node = ref.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setVisible(entry.isIntersecting)
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return [ref, visible]
-}
-
-const FadeWrapper = ({ children, className = '' }) => {
-  const [ref, visible] = useFadeOnScroll()
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(16px)',
-        transition: 'opacity 0.5s ease, transform 0.5s ease'
-      }}
-    >
-      {children}
-    </div>
-  )
+const fetchLogoForItem = async (item) => {
+  if (!item?.id) return null
+  const mediaType = item.media_type || getMediaType(item)
+  const type = mediaType === 'tv' ? 'tv' : 'movie'
+  try {
+    const res = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/images?api_key=${TMDB_API_KEY}&include_image_language=pt,en,null`)
+    const data = await res.json()
+    if (data.logos?.length) return data.logos[0].file_path
+  } catch {}
+  return null
 }
 
 export const LoadingScreen = ({ onComplete }) => {
@@ -182,41 +157,14 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   </nav>
 )
 
-const fetchLogoPath = async (item) => {
-  if (!item || !item.id) return null
-  const mediaType = item.media_type || getMediaType(item)
-  const type = mediaType === 'tv' ? 'tv' : 'movie'
-  try {
-    const res = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/images?api_key=${TMDB_API_KEY}&include_image_language=pt,en,null`)
-    const data = await res.json()
-    if (data.logos && data.logos.length > 0) {
-      return data.logos[0].file_path
-    }
-  } catch {}
-  return null
-}
-
-export const HighlightBanner = ({ item, onPlay }) => {
-  const [logoPath, setLogoPath] = useState(null)
-  const [logoLoaded, setLogoLoaded] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    fetchLogoPath(item).then(path => {
-      if (!cancelled) setLogoPath(path)
-    })
-    return () => { cancelled = true }
-  }, [item])
-
+export const HighlightBanner = ({ item, onPlay, logoPath }) => {
   const posterUrl = item.poster_path
     ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
     : DEFAULT_POSTER
   const backdropUrl = item.backdrop_path
     ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
     : posterUrl
-  const logoFullUrl = logoPath
-    ? `https://image.tmdb.org/t/p/w500${logoPath}`
-    : null
+  const logoFullUrl = logoPath ? `https://image.tmdb.org/t/p/w500${logoPath}` : null
 
   return (
     <div className="highlight-banner" onClick={() => onPlay?.(item)}>
@@ -226,17 +174,11 @@ export const HighlightBanner = ({ item, onPlay }) => {
       <div className="highlight-backdrop-half">
         <div className="highlight-blur-bg">
           <img src={backdropUrl} alt="" className="highlight-blur-img" />
+          <div className="highlight-blur-overlay" />
         </div>
         <div className="highlight-logo-container">
           {logoFullUrl ? (
-            <img
-              src={logoFullUrl}
-              alt={item.title || item.name}
-              className="highlight-logo-img"
-              style={{ opacity: logoLoaded ? 1 : 0, transition: 'opacity 0.3s' }}
-              onLoad={() => setLogoLoaded(true)}
-              onError={() => setLogoLoaded(false)}
-            />
+            <img src={logoFullUrl} alt={item.title || item.name} className="highlight-logo-img" />
           ) : (
             <span className="highlight-fallback-title">{item.title || item.name}</span>
           )}
@@ -249,27 +191,23 @@ export const HighlightBanner = ({ item, onPlay }) => {
 export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
-    <FadeWrapper className="trending-card-wrapper">
-      <div className="trending-card" onClick={() => onPlay?.(item)}>
-        <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
-        <div className="trending-title">
-          <span className="trending-title-text">{item.title || item.name}</span>
-        </div>
+    <div className="trending-card" onClick={() => onPlay?.(item)}>
+      <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
+      <div className="trending-title">
+        <span className="trending-title-text">{item.title || item.name}</span>
       </div>
-    </FadeWrapper>
+    </div>
   )
 }
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
-    <FadeWrapper className="episode-card-wrapper">
-      <div className="episode-card" onClick={() => onPlay?.(item)}>
-        <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
-        <h4 className="episode-title">{item.name || item.title}</h4>
-        <p className="episode-info">Em exibição • {year || 'N/A'}</p>
-      </div>
-    </FadeWrapper>
+    <div className="episode-card" onClick={() => onPlay?.(item)}>
+      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
+      <h4 className="episode-title">{item.name || item.title}</h4>
+      <p className="episode-info">Em exibição • {year || 'N/A'}</p>
+    </div>
   )
 }
 
@@ -278,26 +216,24 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const ratingClass = item.adult ? 'rating-18' : 'rating-L'
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
   return (
-    <FadeWrapper>
-      <div className="featured-card">
-        <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
-        <div className="featured-details">
-          <div className="featured-text">
-            <h2 className="featured-title">{item.title || item.name}</h2>
-            <div className="featured-meta">
-              <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
-              <span className="featured-genre">{item.genre || 'Ação'}</span>
-              {year && <span className="featured-year">{year}</span>}
-            </div>
-            <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
+    <div className="featured-card">
+      <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
+      <div className="featured-details">
+        <div className="featured-text">
+          <h2 className="featured-title">{item.title || item.name}</h2>
+          <div className="featured-meta">
+            <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
+            <span className="featured-genre">{item.genre || 'Ação'}</span>
+            {year && <span className="featured-year">{year}</span>}
           </div>
-          <div className="featured-actions">
-            <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
-            <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
-          </div>
+          <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
+        </div>
+        <div className="featured-actions">
+          <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
+          <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
         </div>
       </div>
-    </FadeWrapper>
+    </div>
   )
 }
 
@@ -305,13 +241,11 @@ export const MovieCard = ({ item }) => {
   const router = useRouter()
   const mediaType = item.media_type || getMediaType(item)
   return (
-    <FadeWrapper className="card-wrapper-fade">
-      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
-        <div className="card-poster-frame">
-          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
-        </div>
+    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+      <div className="card-poster-frame">
+        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
       </div>
-    </FadeWrapper>
+    </div>
   )
 }
 
@@ -335,7 +269,7 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
 }
 
 const getGenreFallbackImage = (genreIds) => {
-  if (!genreIds || genreIds.length === 0) return DEFAULT_POSTER
+  if (!genreIds?.length) return DEFAULT_POSTER
   for (const id of genreIds) {
     if (GENRE_IMAGES[id]) return GENRE_IMAGES[id]
   }
@@ -465,7 +399,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.5.0.R1.0</p>
+        <p><strong>Versão:</strong> 1.5.1.R1.0</p>
       </div>
     </div>
   </div>
@@ -482,6 +416,7 @@ export default function Home() {
   const [showVideo, setShowVideo] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
+  const [trendingLogos, setTrendingLogos] = useState({})
   const [newEpisodes, setNewEpisodes] = useState([])
   const [recentlyAdded, setRecentlyAdded] = useState([])
   const [featured, setFeatured] = useState(null)
@@ -490,6 +425,7 @@ export default function Home() {
   const [romance, setRomance] = useState([])
   const [recommended, setRecommended] = useState([])
   const [animes, setAnimes] = useState([])
+  const [animeLogos, setAnimeLogos] = useState({})
   const [favorites, setFavorites] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -577,6 +513,22 @@ export default function Home() {
       const combinedAnimes = deduplicateById([...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity)).slice(0, 20)
       setAnimes(combinedAnimes)
 
+      const trendingHighlights = trendingClean.slice(0, 5)
+      const animeHighlights = combinedAnimes.slice(0, 5)
+
+      const [trendingLogosArr, animeLogosArr] = await Promise.all([
+        Promise.all(trendingHighlights.map(item => fetchLogoForItem(item))),
+        Promise.all(animeHighlights.map(item => fetchLogoForItem(item)))
+      ])
+
+      const trendingLogosMap = {}
+      trendingHighlights.forEach((item, idx) => { trendingLogosMap[item.id] = trendingLogosArr[idx] })
+      const animeLogosMap = {}
+      animeHighlights.forEach((item, idx) => { animeLogosMap[item.id] = animeLogosArr[idx] })
+
+      setTrendingLogos(trendingLogosMap)
+      setAnimeLogos(animeLogosMap)
+
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
@@ -652,7 +604,7 @@ export default function Home() {
           <h2 className="section-title">Em alta</h2>
           <div className="horizontal-scroll">
             {trending.slice(0, 5).map(item => (
-              <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} />
+              <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} logoPath={trendingLogos[item.id] || null} />
             ))}
           </div>
         </section>
@@ -708,7 +660,7 @@ export default function Home() {
           <h2 className="section-title">Animes em destaque</h2>
           <div className="horizontal-scroll">
             {animes.slice(0, 5).map(item => (
-              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />
+              <HighlightBanner key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeLogos[item.id] || null} />
             ))}
           </div>
         </section>
@@ -795,7 +747,7 @@ export default function Home() {
         <button className="social-btn"><i className="fab fa-tiktok" /></button>
         <button className="social-btn"><i className="fab fa-twitter" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.5.0.R1.0</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.5.1.R1.0</p></div>
     </section>
   )
 
@@ -837,25 +789,25 @@ export default function Home() {
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
+          .horizontal-scroll{-webkit-mask-image:linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);mask-image:linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)}
 
-          .trending-card-wrapper{flex-shrink:0}
-          .trending-card{width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
+          .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
           .trending-title{position:absolute;bottom:0;left:0;right:0;padding:clamp(8px,1.5vw,12px);z-index:2}
           .trending-title-text{font-size:clamp(14px,2vw,17px);font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
 
-          .highlight-banner{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;display:flex;cursor:pointer}
-          .highlight-poster-half{width:40%;height:100%;overflow:hidden;flex-shrink:0}
+          .highlight-banner{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;display:flex;cursor:pointer;flex-direction:row-reverse}
+          .highlight-poster-half{width:50%;height:100%;overflow:hidden;flex-shrink:0}
           .highlight-poster-img{width:100%;height:100%;object-fit:cover}
-          .highlight-backdrop-half{flex:1;height:100%;position:relative;overflow:hidden}
+          .highlight-backdrop-half{width:50%;height:100%;position:relative;overflow:hidden}
           .highlight-blur-bg{position:absolute;inset:0;filter:blur(12px);transform:scale(1.15)}
           .highlight-blur-img{width:100%;height:100%;object-fit:cover}
+          .highlight-blur-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.6)}
           .highlight-logo-container{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
           .highlight-logo-img{max-width:80%;max-height:60%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.7))}
           .highlight-fallback-title{font-size:clamp(12px,2vw,16px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
 
-          .episode-card-wrapper{flex-shrink:0}
-          .episode-card{width:clamp(200px,30vw,330px);cursor:pointer}
+          .episode-card{flex-shrink:0;width:clamp(200px,30vw,330px);cursor:pointer}
           .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
           .episode-img{width:100%;height:100%;object-fit:cover}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
@@ -863,8 +815,7 @@ export default function Home() {
 
           .vertical-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .vertical-scroll::-webkit-scrollbar{display:none}
-          .card-wrapper-fade{flex-shrink:0}
-          .card-wrapper{width:clamp(110px,18vw,140px);cursor:pointer}
+          .card-wrapper{flex-shrink:0;width:clamp(110px,18vw,140px);cursor:pointer}
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
