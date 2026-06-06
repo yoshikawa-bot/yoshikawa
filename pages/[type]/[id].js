@@ -7,7 +7,7 @@ const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 
 const ContentLoader = () => (
-  <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505' }}>
+  <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010' }}>
     <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
   </div>
@@ -170,55 +170,55 @@ export default function WatchPage() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-          body{font-family:'Inter',sans-serif;background:#050505;color:#fff;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-          .hero{position:relative;width:100%;height:clamp(450px,60vw,620px);overflow:hidden;background:#0a0a0a}
+          body{font-family:'Inter',sans-serif;background:#101010;color:#fff;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+          .hero{position:relative;width:100%;height:clamp(280px,40vw,420px);overflow:hidden;background:#0a0a0a}
           .hero-bg{width:100%;height:100%;object-fit:cover}
-          .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#050505 100%)}
-          .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(20px,4vw,32px);display:flex;flex-direction:column;gap:12px}
-          .top-bar{position:absolute;top:max(20px,env(safe-area-inset-top,20px));left:0;padding:0 clamp(16px,4vw,24px);z-index:10}
-          .top-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(18px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
+          .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
+          .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:8px}
+          .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;padding:0 clamp(16px,4vw,34px);z-index:10}
+          .top-btn{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(16px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
           .top-btn:hover{transform:scale(1.1)}
-          .continue-btn{display:flex;align-items:center;gap:5px;padding:5px 14px;background:#F05454;border-radius:28px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
+          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:#F05454;border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
           .continue-btn:hover{transform:scale(1.03)}
-          .hero-title{font-size:clamp(24px,5vw,30px);font-weight:800;line-height:1.1}
-          .hero-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:clamp(13px,2vw,15px);color:#AFAFAF}
-          .hero-rating{padding:2px 8px;border-radius:8px;font-weight:700;font-size:12px;color:#fff}
+          .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
+          .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
+          .hero-rating{padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff}
           .rating-L{background:#4CAF50}.rating-18{background:#f44336}
-          .social-bar{display:flex;justify-content:space-around;padding:20px 16px}
-          .social-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:13px;transition:color 0.2s;background:none;border:none;font-family:inherit}
-          .social-item i{font-size:22px}
+          .social-bar{display:flex;justify-content:space-around;padding:16px clamp(16px,4vw,34px)}
+          .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s;background:none;border:none;font-family:inherit}
+          .social-item i{font-size:clamp(18px,3vw,22px)}
           .social-item.liked i{color:#2196F3}
           .social-item.favorited i{color:#FF5B5B}
-          .synopsis{padding:0 16px 20px}
-          .synopsis p{font-size:15px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+          .synopsis{padding:0 clamp(16px,4vw,34px) 16px}
+          .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0}
           .synopsis p.expanded{-webkit-line-clamp:unset}
-          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:13px;background:none;border:none;font-family:inherit;width:100%}
-          .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 16px 16px;gap:10px}
-          .episodes-toolbar select,.episodes-toolbar button{background:#121212;border:none;color:#fff;padding:10px 16px;border-radius:12px;font-family:inherit;font-size:14px;cursor:pointer}
-          .episodes-toolbar select{appearance:none;padding-right:30px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
-          .episodes-list{padding:0 12px 100px;display:flex;flex-direction:column;gap:4px}
-          .ep-card{display:flex;gap:12px;padding:8px 4px;cursor:pointer;transition:background 0.2s;border-radius:8px;margin:0 -4px}
+          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%}
+          .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,4vw,34px) 12px;gap:8px}
+          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer}
+          .episodes-toolbar select{appearance:none;padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
+          .episodes-list{padding:0 clamp(12px,2.5vw,24px) 80px;display:flex;flex-direction:column;gap:4px}
+          .ep-card{display:flex;gap:10px;padding:6px 4px;cursor:pointer;transition:background 0.2s;border-radius:8px;margin:0 -4px}
           .ep-card:hover{background:rgba(255,255,255,0.03)}
-          .ep-thumb{width:140px;height:80px;border-radius:12px;overflow:hidden;background:#2a2a2a;flex-shrink:0;position:relative}
+          .ep-thumb{width:clamp(120px,20vw,160px);height:clamp(68px,12vw,90px);border-radius:10px;overflow:hidden;background:#2a2a2a;flex-shrink:0;position:relative}
           .ep-thumb img{width:100%;height:100%;object-fit:cover}
           .ep-thumb.watched::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.45)}
-          .watched-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;z-index:1}
-          .ep-info{flex:1;display:flex;flex-direction:column;gap:4px;justify-content:center}
-          .ep-info h4{font-size:15px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-          .ep-info span{font-size:13px;color:#9A9A9A}
+          .watched-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:clamp(10px,1.3vw,11px);font-weight:600;z-index:1}
+          .ep-info{flex:1;display:flex;flex-direction:column;gap:3px;justify-content:center}
+          .ep-info h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
           .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
-          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:12px;max-height:100%;margin:auto}
-          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:20px;overflow:hidden;max-height:60vh;flex-shrink:0}
+          .player-box{width:100%;max-width:min(90vw,90vh);display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
+          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
-          .glass-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap;text-decoration:none}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap;text-decoration:none}
           .glass-btn:hover{background:rgba(255,255,255,0.25);transform:scale(1.02)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-          .glass-btn.circle{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);padding:0;border-radius:50%;justify-content:center}
-          .nav-ep-btns{display:flex;justify-content:center;gap:12px;flex-shrink:0;flex-wrap:wrap}
-          @media(min-width:768px){.ep-thumb{width:170px;height:95px}.player-frame{max-height:70vh}}
+          .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
+          .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}}
-          @media(max-width:400px){.glass-btn{padding:8px 14px;font-size:13px;gap:4px}}
+          @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
       </Head>
 
@@ -267,8 +267,8 @@ export default function WatchPage() {
                     <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
                         {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a1a', color: '#888', fontSize: 13, fontWeight: 500, gap: 6 }}>
-                            <i className="fas fa-clock" style={{ fontSize: 14 }} /> Em breve
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a1a', color: '#888', fontSize: 11, fontWeight: 500, gap: 6 }}>
+                            <i className="fas fa-clock" style={{ fontSize: 12 }} /> Em breve
                           </div>
                         )}
                         {watched && <div className="watched-label">Assistido</div>}
@@ -292,7 +292,7 @@ export default function WatchPage() {
           )}
         </>
       ) : hasError ? (
-        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', flexDirection: 'column', gap: 16, padding: 20 }}>
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', flexDirection: 'column', gap: 16, padding: 20 }}>
           <i className="fas fa-exclamation-triangle" style={{ fontSize: 48, color: '#F05454' }} />
           <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
           <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
@@ -326,4 +326,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                                     }
+                                                                }
