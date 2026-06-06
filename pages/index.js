@@ -79,6 +79,31 @@ const fetchLogoForItem = async (item) => {
   return null
 }
 
+const useFadeOnScroll = () => {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0, rootMargin: '0px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, visible]
+}
+
+const FadeIn = ({ children, className = '' }) => {
+  const [ref, visible] = useFadeOnScroll()
+  return (
+    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+      {children}
+    </div>
+  )
+}
+
 export const LoadingScreen = ({ onComplete }) => {
   const [closing, setClosing] = useState(false)
   const [mounted, setMounted] = useState(true)
@@ -169,7 +194,7 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
   return (
     <div className="highlight-banner" onClick={() => onPlay?.(item)}>
       <div className="highlight-poster-half">
-        <img src={posterUrl} alt={item.title || item.name} className="highlight-poster-img" />
+        <img src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
       </div>
       <div className="highlight-backdrop-half">
         <div className="highlight-blur-bg">
@@ -191,23 +216,27 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
 export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
-    <div className="trending-card" onClick={() => onPlay?.(item)}>
-      <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
-      <div className="trending-title">
-        <span className="trending-title-text">{item.title || item.name}</span>
+    <FadeIn className="trending-card-wrapper">
+      <div className="trending-card" onClick={() => onPlay?.(item)}>
+        <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
+        <div className="trending-title">
+          <span className="trending-title-text">{item.title || item.name}</span>
+        </div>
       </div>
-    </div>
+    </FadeIn>
   )
 }
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
   return (
-    <div className="episode-card" onClick={() => onPlay?.(item)}>
-      <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
-      <h4 className="episode-title">{item.name || item.title}</h4>
-      <p className="episode-info">Em exibição • {year || 'N/A'}</p>
-    </div>
+    <FadeIn className="episode-card-wrapper">
+      <div className="episode-card" onClick={() => onPlay?.(item)}>
+        <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
+        <h4 className="episode-title">{item.name || item.title}</h4>
+        <p className="episode-info">Em exibição • {year || 'N/A'}</p>
+      </div>
+    </FadeIn>
   )
 }
 
@@ -241,11 +270,13 @@ export const MovieCard = ({ item }) => {
   const router = useRouter()
   const mediaType = item.media_type || getMediaType(item)
   return (
-    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
-      <div className="card-poster-frame">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+    <FadeIn className="card-wrapper-fade">
+      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+        <div className="card-poster-frame">
+          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+        </div>
       </div>
-    </div>
+    </FadeIn>
   )
 }
 
@@ -789,7 +820,6 @@ export default function Home() {
 
           .horizontal-scroll{display:flex;overflow-x:auto;gap:clamp(12px,2vw,18px);padding-left:clamp(16px,4vw,34px);padding-right:clamp(16px,4vw,34px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
           .horizontal-scroll::-webkit-scrollbar{display:none}
-          .horizontal-scroll{-webkit-mask-image:linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);mask-image:linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)}
 
           .trending-card{flex-shrink:0;width:clamp(280px,45vw,560px);height:clamp(160px,24vw,255px);border-radius:clamp(16px,3vw,28px);overflow:hidden;position:relative;cursor:pointer}
           .trending-bg-img{width:100%;height:100%;object-fit:cover}
