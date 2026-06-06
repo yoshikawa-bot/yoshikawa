@@ -14,23 +14,24 @@ const GENRE_IMAGES = {
   28: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg',
   35: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
   18: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg',
-  14: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg',
+  14: 'https://image.tmdb.org/t/p/w500/i6dR2b2sh6MXs4fhHkKpMXrdu.jpg',
   10749: 'https://image.tmdb.org/t/p/w500/3TnH1j7bACu3mLSHrP5NHSMpIb.jpg',
   16: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg',
   27: 'https://image.tmdb.org/t/p/w500/5gzz1vKhGmX3gN9w7GmYLfNwOM.jpg',
   53: 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWm.jpg',
+  878: 'https://image.tmdb.org/t/p/w500/5M0jZmpQBGk5Yh7K3KwG7Gn6o.jpg'
 }
 
 const CATEGORIES = [
-  { name: 'Aventura', color: '#7FA8D8', image: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg' },
-  { name: 'Ação', color: '#3F6D89', image: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911B6EMThXE6Hj.jpg' },
-  { name: 'Comédia', color: '#C43708', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
-  { name: 'Drama', color: '#2C3F59', image: 'https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg' },
-  { name: 'Escolar', color: '#72615F', image: 'https://image.tmdb.org/t/p/w500/xq1Ugd62d23K2knRUx6xxuALTZB.jpg' },
-  { name: 'Fantasia', color: '#E97820', image: 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg' },
-  { name: 'Romance', color: '#A8A8B6', image: 'https://image.tmdb.org/t/p/w500/5x5B9RkHtK3N7H0hIbuBcF0OlW.jpg' },
-  { name: 'Slice of Life', color: '#E38CA8', image: 'https://image.tmdb.org/t/p/w500/4j0PNHkMr5ax3IA8tjtxcmPU3QT.jpg' },
-  { name: 'Sobrenatural', color: '#9D95C8', image: 'https://image.tmdb.org/t/p/w500/9p10J9QwFjyPZ4v4H4g4k6O6yB.jpg' }
+  { name: 'Aventura', color: '#7FA8D8', image: GENRE_IMAGES[12] },
+  { name: 'Ação', color: '#3F6D89', image: GENRE_IMAGES[28] },
+  { name: 'Comédia', color: '#C43708', image: GENRE_IMAGES[35] },
+  { name: 'Drama', color: '#2C3F59', image: GENRE_IMAGES[18] },
+  { name: 'Escolar', color: '#72615F', image: GENRE_IMAGES[53] },
+  { name: 'Fantasia', color: '#E97820', image: GENRE_IMAGES[14] },
+  { name: 'Romance', color: '#A8A8B6', image: GENRE_IMAGES[10749] },
+  { name: 'Slice of Life', color: '#E38CA8', image: GENRE_IMAGES[16] },
+  { name: 'Sobrenatural', color: '#9D95C8', image: GENRE_IMAGES[27] }
 ]
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
@@ -84,7 +85,7 @@ const useHorizontalScrollRoot = () => {
     if (ref.current) {
       let el = ref.current.parentElement
       while (el) {
-        if (el.classList.contains('horizontal-scroll')) {
+        if (el.classList.contains('horizontal-scroll') || el.classList.contains('vertical-scroll')) {
           setRoot(el)
           break
         }
@@ -203,24 +204,26 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
   const logoFullUrl = logoPath ? `https://image.tmdb.org/t/p/w500${logoPath}` : null
 
   return (
-    <div className="highlight-banner" onClick={() => onPlay?.(item)}>
-      <div className="highlight-poster-half">
-        <img src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
-      </div>
-      <div className="highlight-backdrop-half">
-        <div className="highlight-blur-bg">
-          <img src={backdropUrl} alt="" className="highlight-blur-img" />
-          <div className="highlight-blur-overlay" />
+    <HorizontalFade>
+      <div className="highlight-banner" onClick={() => onPlay?.(item)}>
+        <div className="highlight-poster-half">
+          <img src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
         </div>
-        <div className="highlight-logo-container">
-          {logoFullUrl ? (
-            <img src={logoFullUrl} alt={item.title || item.name} className="highlight-logo-img" />
-          ) : (
-            <span className="highlight-fallback-title">{item.title || item.name}</span>
-          )}
+        <div className="highlight-backdrop-half">
+          <div className="highlight-blur-bg">
+            <img src={backdropUrl} alt="" className="highlight-blur-img" />
+            <div className="highlight-blur-overlay" />
+          </div>
+          <div className="highlight-logo-container">
+            {logoFullUrl ? (
+              <img src={logoFullUrl} alt={item.title || item.name} className="highlight-logo-img" />
+            ) : (
+              <span className="highlight-fallback-title">{item.title || item.name}</span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </HorizontalFade>
   )
 }
 
@@ -240,10 +243,15 @@ export const TrendingCard = ({ item, onPlay }) => {
 
 export const EpisodeCard = ({ item, onPlay }) => {
   const year = getItemYear(item)
+  const imageUrl = item.backdrop_path
+    ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+    : (item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER)
   return (
     <HorizontalFade>
       <div className="episode-card" onClick={() => onPlay?.(item)}>
-        <div className="episode-thumbnail"><img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.name || item.title} className="episode-img" /></div>
+        <div className="episode-thumbnail episode-thumbnail-horizontal">
+          <img src={imageUrl} alt={item.name || item.title} className="episode-img" />
+        </div>
         <h4 className="episode-title">{item.name || item.title}</h4>
         <p className="episode-info">Em exibição • {year || 'N/A'}</p>
       </div>
@@ -281,11 +289,13 @@ export const MovieCard = ({ item }) => {
   const router = useRouter()
   const mediaType = item.media_type || getMediaType(item)
   return (
-    <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
-      <div className="card-poster-frame">
-        <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+    <HorizontalFade>
+      <div className="card-wrapper" onClick={() => router.push(`/${mediaType}/${item.id}`)}>
+        <div className="card-poster-frame">
+          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+        </div>
       </div>
-    </div>
+    </HorizontalFade>
   )
 }
 
@@ -424,6 +434,23 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
   )
 }
 
+export const PrivacyModal = ({ onClose }) => (
+  <div className="profile-creation-overlay" onClick={onClose}>
+    <div className="about-modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2 className="about-title">Privacidade</h2>
+        <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+      </div>
+      <div className="about-content">
+        <p><strong>Política de Privacidade</strong></p>
+        <p>Este aplicativo não coleta, armazena ou compartilha dados pessoais dos usuários. As informações de perfil e favoritos são armazenadas localmente no seu dispositivo e podem ser removidas a qualquer momento.</p>
+        <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
+        <p>Para dúvidas, entre em contato pelo WhatsApp.</p>
+      </div>
+    </div>
+  </div>
+)
+
 export const AboutModal = ({ onClose }) => (
   <div className="profile-creation-overlay" onClick={onClose}>
     <div className="about-modal" onClick={e => e.stopPropagation()}>
@@ -439,7 +466,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.5.2.R1.0</p>
+        <p><strong>Versão:</strong> 1.0.89 beta</p>
       </div>
     </div>
   </div>
@@ -453,6 +480,7 @@ export default function Home() {
   const [showProfileCreation, setShowProfileCreation] = useState(false)
   const [showProfileView, setShowProfileView] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
@@ -640,6 +668,12 @@ export default function Home() {
     setShowSearch(true)
     setSearchQuery(categoryName)
     setActiveSearchFilter('Tudo')
+    setSearchLoading(true)
+    fetchSearchResults(categoryName) // Força busca imediata
+  }
+
+  const openWhatsAppSupport = () => {
+    window.open('https://wa.me/554896989549', '_blank')
   }
 
   const renderHomePage = () => {
@@ -790,17 +824,16 @@ export default function Home() {
       </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => setShowProfileCreation(true)} />
-        <SettingsItem icon="cog" title="Configurações" description="Ajustes do aplicativo" />
-        <SettingsItem icon="shield-alt" title="Privacidade" description="Gerenciar dados" />
-        <SettingsItem icon="question-circle" title="Ajuda" description="Central de suporte" />
+        <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
+        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={openWhatsAppSupport} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
       </div>
       <div className="social-links">
-        <button className="social-btn"><i className="fas fa-link" /></button>
-        <button className="social-btn"><i className="fab fa-tiktok" /></button>
-        <button className="social-btn"><i className="fab fa-twitter" /></button>
+        <button className="social-btn" onClick={() => window.open('https://yoshikawa.vercel.app', '_blank')}><i className="fas fa-link" /></button>
+        <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
+        <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.5.2.R1.0</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.0.89 beta</p></div>
     </section>
   )
 
@@ -860,7 +893,8 @@ export default function Home() {
           .highlight-fallback-title{font-size:clamp(12px,2vw,16px);font-weight:800;color:#fff;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.2}
 
           .episode-card{width:clamp(200px,30vw,330px);cursor:pointer}
-          .episode-thumbnail{position:relative;height:clamp(120px,18vw,185px);border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
+          .episode-thumbnail{position:relative;border-radius:clamp(14px,2vw,20px);overflow:hidden;margin-bottom:8px;background:#1B1B1B}
+          .episode-thumbnail-horizontal{aspect-ratio:16/9}
           .episode-img{width:100%;height:100%;object-fit:cover}
           .episode-title{font-size:clamp(14px,2vw,17px);font-weight:700;color:#ffffff;margin-bottom:4px}
           .episode-info{font-size:clamp(10px,1.5vw,12px);font-weight:500;color:#c8c8c8}
@@ -1023,10 +1057,11 @@ export default function Home() {
 
           {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => setShowProfileCreation(false)} />}
           {showProfileView && userProfile && <ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={() => setShowProfileView(false)} />}
+          {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
           {showVideo && <VideoModal onClose={() => setShowVideo(false)} />}
         </>
       )}
     </>
   )
-  }
+}
