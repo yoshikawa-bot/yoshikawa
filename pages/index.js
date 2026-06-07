@@ -39,7 +39,7 @@ const CATEGORY_GENRE_MAP = {
   'Sobrenatural': 27
 }
 
-const FAVORITE_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
+const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
 const useDebounce = (callback, delay) => {
@@ -408,6 +408,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const startInEdit = mode === 'edit' || mode === 'create'
   const [editing, setEditing] = useState(startInEdit)
   const [name, setName] = useState(userProfile?.name || '')
+  const [username, setUsername] = useState(userProfile?.username || '')
   const [avatarPreview, setAvatarPreview] = useState(userProfile?.avatarUrl || null)
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
@@ -440,8 +441,11 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
     const trimmed = name.trim()
     if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
     if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
+    const trimmedUsername = username.trim().toLowerCase().replace(/\s/g, '')
+    if (trimmedUsername && trimmedUsername.length < 2) { setError('Username deve ter pelo menos 2 caracteres'); return }
     onSave({
       name: trimmed,
+      username: trimmedUsername,
       avatarUrl: avatarPreview,
       bannerUrl: bannerPreview
     })
@@ -451,7 +455,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
     ? { backgroundImage: `url(${bannerPreview || userProfile?.bannerUrl})` }
     : { background: DEFAULT_PROFILE_COLOR }
 
-  const username = userProfile?.name || name || 'user'
+  const displayUsername = userProfile?.username || username || (userProfile?.name ? userProfile.name.toLowerCase().replace(/\s/g, '') : 'user')
   const moviesCount = favorites?.filter(f => f.media_type === 'movie' || getMediaType(f) === 'movie').length || 0
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
 
@@ -524,6 +528,17 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
                   autoFocus
                 />
               </div>
+              <div className="edit-field">
+                <label className="edit-label">Username</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => { setUsername(e.target.value); setError('') }}
+                  className="edit-input"
+                  maxLength={20}
+                  placeholder="seuusername"
+                />
+              </div>
               {error && <p className="profile-error">{error}</p>}
               {isNew && (
                 <p className="profile-create-hint">Crie um perfil para salvar seus favoritos e personalizar a experiência.</p>
@@ -534,7 +549,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               <div className="profile-name-row">
                 <h2 className="profile-name">{userProfile?.name || name}</h2>
               </div>
-              <p className="profile-username">@{username}</p>
+              <p className="profile-username">@{displayUsername}</p>
               <p className="profile-meta">
                 <i className="fas fa-calendar-alt" /> Entrou em {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'hoje'}
               </p>
@@ -899,6 +914,7 @@ export default function Home() {
     const updatedProfile = {
       ...userProfile,
       name: profileData.name,
+      username: profileData.username,
       avatarUrl: profileData.avatarUrl,
       bannerUrl: profileData.bannerUrl,
       color: DEFAULT_PROFILE_COLOR,
@@ -907,7 +923,7 @@ export default function Home() {
     }
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
-    setShowProfile(false)
+    setProfileMode('view')
   }
 
   const openProfile = (mode = 'view') => {
@@ -962,7 +978,7 @@ export default function Home() {
   const handleSearchChange = (q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }
   useEffect(() => { if (searchQuery.trim()) fetchSearchResults(searchQuery) }, [activeSearchFilter])
 
-  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Animes' ? favorites.filter(f => f.media_type === 'anime') : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
+  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
   const handleCategoryClick = (categoryName) => {
     navigateTo('search')
@@ -1355,7 +1371,7 @@ export default function Home() {
           .profile-stats strong{color:#fff;font-weight:700}
           .profile-divider{height:1px;background:rgba(255,255,255,0.1);margin:20px 0 0}
           .profile-favorites-section{padding:16px 0 24px}
-          .profile-favorites-title { font-size: clamp(14px,2.9vw,22px); font-weight: 700; color: #fff; padding: 0 clamp(8px,1.6vw,13px); margin: 0 0 clamp(8px,1.5vw,12px); }
+          .profile-favorites-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#fff;padding:0 clamp(8px,1.6vw,13px);margin:0 0 clamp(8px,1.5vw,12px)}
           .edit-form{display:flex;flex-direction:column;gap:0}
           .edit-field{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
@@ -1418,4 +1434,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+    }
