@@ -83,7 +83,6 @@ export default function WatchPage() {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Efeito para sala
   useEffect(() => {
     if (!roomId) return
     const subscription = supabase
@@ -128,6 +127,21 @@ export default function WatchPage() {
       startRoomExpiryTimer()
     }
   }, [roomId, effectiveUserName])
+
+  // FIX: depende só de roomQuery, não de content
+  // Assim dispara corretamente mesmo quando content já está carregado
+  useEffect(() => {
+    if (!roomQuery) return
+    setRoomId(roomQuery)
+    setShowChat(true)
+    if (type === 'movie') {
+      setIsPlaying(true)
+    } else if (type === 'tv') {
+      if (querySeason) setSeason(parseInt(querySeason))
+      if (queryEpisode) setEpisode(parseInt(queryEpisode))
+      setIsPlaying(true)
+    }
+  }, [roomQuery])
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -204,22 +218,33 @@ export default function WatchPage() {
     setShowChat(false)
   }
 
+  // FIX: reutiliza sala ativa existente em vez de sempre criar uma nova
   const createRoomAndRedirect = async () => {
     if (!content) return
-    const { data, error } = await supabase
+
+    const { data: existing } = await supabase
       .from('rooms')
-      .insert({
-        content_id: content.id,
-        media_type: type,
-        is_active: true
-      })
       .select('id')
-      .single()
+      .eq('content_id', content.id)
+      .eq('media_type', type)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-    if (error) return
+    let roomIdToUse = existing?.id
 
-    const newRoomId = data.id
-    const link = `/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
+    if (!roomIdToUse) {
+      const { data, error } = await supabase
+        .from('rooms')
+        .insert({ content_id: content.id, media_type: type, is_active: true })
+        .select('id')
+        .single()
+      if (error) return
+      roomIdToUse = data.id
+    }
+
+    const link = `/${type}/${id}?room=${roomIdToUse}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     router.push(link)
   }
 
@@ -235,23 +260,6 @@ export default function WatchPage() {
     clearInterval(inactivityTimerRef.current)
     startInactivityTimer()
   }
-
-  // Ao carregar a página com room, abre o player e entra na sala
-  useEffect(() => {
-    if (content && roomQuery) {
-      setRoomId(roomQuery)
-      setShowChat(true)
-      if (type === 'movie') {
-        setIsPlaying(true)
-      } else if (type === 'tv') {
-        if (querySeason) setSeason(parseInt(querySeason))
-        if (queryEpisode) setEpisode(parseInt(queryEpisode))
-        setIsPlaying(true)
-      }
-    }
-  }, [content, roomQuery])
-
-  // ... (demais funções de conteúdo permanecem iguais: getLastWatchedEpisode, fetchSeasonData, etc.)
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -478,7 +486,6 @@ export default function WatchPage() {
             <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
           </div>
-          {/* Botão Assistir com amigo na página de detalhes */}
           <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
             <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
               <i className="fas fa-users" /> Assistir com amigo
@@ -598,4 +605,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+                    }
