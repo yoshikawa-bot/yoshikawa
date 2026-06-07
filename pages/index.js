@@ -1355,7 +1355,7 @@ export default function Home() {
           .profile-stats strong{color:#fff;font-weight:700}
           .profile-divider{height:1px;background:rgba(255,255,255,0.1);margin:20px 0 0}
           .profile-favorites-section{padding:16px 0 24px}
-          .profile-favorites-title { font-size: clamp(14px,2.9vw,22px); font-weight: 700; color: #fff; padding: 0 24px; margin: 0 0 clamp(8px,1.5vw,12px); }
+          .profile-favorites-title { font-size: clamp(14px,2.9vw,22px); font-weight: 700; color: #fff; padding: 0 clamp(8px,1.6vw,13px); margin: 0 0 clamp(8px,1.5vw,12px); }
           .edit-form{display:flex;flex-direction:column;gap:0}
           .edit-field{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
