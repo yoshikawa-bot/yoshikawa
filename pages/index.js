@@ -5,10 +5,7 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
-const CATBOX_UPLOAD_URL = 'https://catbox.moe/user/api.php'
-
-const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
-const DEFAULT_PROFILE_BG = '#505050'
+const DEFAULT_PROFILE_COLOR = '#E04E4E'
 
 const GENRE_IMAGES = {
   12: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
@@ -71,8 +68,8 @@ const getItemYear = (item) => {
   return new Date(item.release_date || item.first_air_date).getFullYear() || null
 }
 
-const getAvatarUrl = (name, color) => {
-  const bg = color?.replace('#', '') || '505050'
+const getAvatarUrl = (name, color = DEFAULT_PROFILE_COLOR) => {
+  const bg = color.replace('#', '')
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
 
@@ -126,17 +123,6 @@ const enrichSeriesWithLastEpisode = async (seriesList) => {
     }
   }))
   return enriched
-}
-
-const uploadToCatbox = async (file) => {
-  if (!file) return null
-  const formData = new FormData()
-  formData.append('reqtype', 'fileupload')
-  formData.append('fileToUpload', file)
-  const res = await fetch(CATBOX_UPLOAD_URL, { method: 'POST', body: formData })
-  const text = await res.text()
-  if (res.ok && text.startsWith('http')) return text
-  throw new Error(text)
 }
 
 const useHorizontalScrollRoot = () => {
@@ -194,15 +180,15 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
-        <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }} onClick={onProfileClick}>
+        <button className="header-btn profile-btn" style={{ background: DEFAULT_PROFILE_COLOR }} onClick={onProfileClick}>
           {userProfile ? (
             <img
-              src={userProfile.avatarUrl || getAvatarUrl(userProfile.name, userProfile.color)}
+              src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)}
               alt={userProfile.name}
               className="profile-avatar-img"
             />
           ) : (
-            <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#ccc', display: 'block', lineHeight: 1 }} />
+            <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#fff', display: 'block', lineHeight: 1 }} />
           )}
         </button>
       </div>
@@ -418,47 +404,44 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
 
 export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
   const [name, setName] = useState(existingProfile?.name || '')
-  const [selectedColor, setSelectedColor] = useState(existingProfile?.color || PROFILE_COLORS[0])
-  const [avatarFile, setAvatarFile] = useState(null)
-  const [bannerFile, setBannerFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(existingProfile?.avatarUrl || null)
   const [bannerPreview, setBannerPreview] = useState(existingProfile?.bannerUrl || null)
-  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const isEditing = !!existingProfile
+
+  const handleFileRead = (file, setPreview) => {
+    if (file.size > 1048576) {
+      setError('A imagem deve ter no máximo 1MB')
+      return
+    }
+    setError('')
+    const reader = new FileReader()
+    reader.onload = (e) => setPreview(e.target.result)
+    reader.readAsDataURL(file)
+  }
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
-    setAvatarFile(file)
-    setAvatarPreview(URL.createObjectURL(file))
+    handleFileRead(file, setAvatarPreview)
   }
 
   const handleBannerChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
-    setBannerFile(file)
-    setBannerPreview(URL.createObjectURL(file))
+    handleFileRead(file, setBannerPreview)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const trimmed = name.trim()
     if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
     if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
-    setUploading(true)
-    setError('')
-
-    try {
-      const [avatarUrl, bannerUrl] = await Promise.all([
-        avatarFile ? uploadToCatbox(avatarFile).catch(() => null) : Promise.resolve(existingProfile?.avatarUrl || null),
-        bannerFile ? uploadToCatbox(bannerFile).catch(() => null) : Promise.resolve(existingProfile?.bannerUrl || null)
-      ])
-      onCreate({ name: trimmed, color: selectedColor, avatarUrl, bannerUrl })
-    } catch {
-      setError('Falha no upload. Tente novamente.')
-    } finally {
-      setUploading(false)
-    }
+    onCreate({
+      name: trimmed,
+      color: DEFAULT_PROFILE_COLOR,
+      avatarUrl: avatarPreview,
+      bannerUrl: bannerPreview
+    })
   }
 
   return (
@@ -472,7 +455,7 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
 
         <div
           className="profile-banner-upload"
-          style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : `linear-gradient(135deg, ${selectedColor}, #222)` }}
+          style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }}
           onClick={() => document.getElementById('bannerFileInput').click()}
         >
           <i className="fas fa-camera" />
@@ -483,7 +466,7 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
           {avatarPreview ? (
             <img src={avatarPreview} alt="" className="profile-avatar-img" />
           ) : (
-            <img src={getAvatarUrl(name.trim() || '?', selectedColor)} alt="" className="profile-avatar-img" />
+            <img src={getAvatarUrl(name.trim() || '?')} alt="" className="profile-avatar-img" />
           )}
           <div className="avatar-upload-overlay"><i className="fas fa-camera" /></div>
         </div>
@@ -493,10 +476,9 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
 
         <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
         {error && <p className="profile-error">{error}</p>}
-        <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />)}</div>
         <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
-        <button className="profile-create-btn" onClick={handleSubmit} disabled={uploading}>
-          {uploading ? 'Enviando...' : isEditing ? 'Salvar' : 'Entrar'}
+        <button className="profile-create-btn" onClick={handleSubmit}>
+          {isEditing ? 'Salvar' : 'Entrar'}
         </button>
       </div>
     </div>
@@ -507,7 +489,7 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const bannerStyle = userProfile.bannerUrl
     ? { backgroundImage: `url(${userProfile.bannerUrl})` }
-    : { background: `linear-gradient(135deg, ${userProfile.color}, #222)` }
+    : { background: `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }
 
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
@@ -521,11 +503,11 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
         </div>
 
         <div className="profile-avatar-container">
-          <div className="profile-avatar-circle" style={{ background: userProfile.color }}>
+          <div className="profile-avatar-circle" style={{ background: DEFAULT_PROFILE_COLOR }}>
             {userProfile.avatarUrl ? (
               <img src={userProfile.avatarUrl} alt="" className="profile-avatar-img" />
             ) : (
-              <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt="" className="profile-avatar-img" />
+              <img src={getAvatarUrl(userProfile.name)} alt="" className="profile-avatar-img" />
             )}
           </div>
         </div>
@@ -836,15 +818,17 @@ export default function Home() {
   }
 
   const handleCreateProfile = (profileData) => {
-    if (editingProfile) {
-      const updatedProfile = { ...editingProfile, name: profileData.name, color: profileData.color, avatarUrl: profileData.avatarUrl, bannerUrl: profileData.bannerUrl }
-      setUserProfile(updatedProfile)
-      try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
-    } else {
-      const newProfile = { ...profileData, createdAt: new Date().toISOString(), favoritesCount: 0 }
-      setUserProfile(newProfile)
-      try { localStorage.setItem('yoshikawaProfile', JSON.stringify(newProfile)) } catch {}
+    const updatedProfile = {
+      ...(editingProfile || {}),
+      name: profileData.name,
+      color: DEFAULT_PROFILE_COLOR,
+      avatarUrl: profileData.avatarUrl,
+      bannerUrl: profileData.bannerUrl,
+      createdAt: editingProfile?.createdAt || new Date().toISOString(),
+      favoritesCount: editingProfile?.favoritesCount || 0
     }
+    setUserProfile(updatedProfile)
+    try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
     setShowProfileCreation(false)
     setEditingProfile(null)
   }
@@ -1082,8 +1066,8 @@ export default function Home() {
         </div>
       )}
       <div className="user-card" onClick={() => !userProfile ? openProfileModal(null) : setShowProfileView(true)}>
-        <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }}>
-          {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
+        <div className="user-avatar" style={{ background: DEFAULT_PROFILE_COLOR }}>
+          {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
@@ -1264,9 +1248,6 @@ export default function Home() {
           .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700;overflow:hidden}
           .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
           .profile-error{color:#E04E4E;font-size:13px}
-          .profile-colors{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-          .profile-color-btn{width:clamp(32px,5vw,40px);height:clamp(32px,5vw,40px);border-radius:50%;border:3px solid transparent;transition:border-color 0.2s}
-          .profile-color-btn.selected{border-color:#ffffff}
           .profile-terms{font-size:clamp(11px,1.5vw,13px);color:#888;text-align:center;padding:0 10px}
           .profile-terms strong{color:#ddd}
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
@@ -1341,4 +1322,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+                                                                                                                                            }
