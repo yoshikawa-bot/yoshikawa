@@ -2,9 +2,29 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  'https://cbnowjchxxvetoxtbtax.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibm93amNoeHh2ZXRveHRidGF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NTUyODQsImV4cCI6MjA5NjQzMTI4NH0.pC6DfDa723mSfj65g5qtoBWLXQt7h3ldLWYr5FocOU0'
+)
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
+const DEFAULT_AVATAR_BG = '#505050'
+
+const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
+  const bg = color.replace('#', '')
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
+}
+
+const getUserProfile = () => {
+  try {
+    const saved = localStorage.getItem('yoshikawaProfile')
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return null
+}
 
 const ContentLoader = () => (
   <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010' }}>
@@ -15,8 +35,7 @@ const ContentLoader = () => (
 
 export default function WatchPage() {
   const router = useRouter()
-  const { type, id } = router.query
-
+  const { type, id, room: roomQuery } = router.query
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [content, setContent] = useState(null)
@@ -30,13 +49,190 @@ export default function WatchPage() {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
-
-  const contentLoaded = useRef(false)
+  const [showRoomModal, setShowRoomModal] = useState(false)
+  const [roomId, setRoomId] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [roomUsers, setRoomUsers] = useState([])
+  const [roomWaiting, setRoomWaiting] = useState(false)
+  const [roomError, setRoomError] = useState('')
+  const chatEndRef = useRef(null)
+  const roomTimerRef = useRef(null)
+  const heartbeatRef = useRef(null)
+  const inactivityTimerRef = useRef(null)
   const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
+  const profile = getUserProfile()
 
   useEffect(() => { currentSeasonRef.current = season }, [season])
   useEffect(() => { currentEpisodeRef.current = episode }, [episode])
+
+  useEffect(() => {
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
+    if (!roomId) return
+    const subscription = supabase
+      .channel(`room-${roomId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` }, (payload) => {
+        setMessages(prev => [...prev, payload.new])
+      })
+      .subscribe()
+
+    const userSubscription = supabase
+      .channel(`room-users-${roomId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'room_users', filter: `room_id=eq.${roomId}` }, (payload) => {
+        setRoomUsers(prev => {
+          if (prev.some(u => u.user_name === payload.new.user_name)) return prev
+          return [...prev, payload.new]
+        })
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'room_users', filter: `room_id=eq.${roomId}` }, (payload) => {
+        setRoomUsers(prev => prev.filter(u => u.user_name !== payload.old.user_name))
+      })
+      .subscribe()
+
+    fetchRoomUsers()
+    heartbeatRef.current = setInterval(() => {
+      updateHeartbeat()
+    }, 30000)
+
+    return () => {
+      subscription.unsubscribe()
+      userSubscription.unsubscribe()
+      clearInterval(heartbeatRef.current)
+      clearInterval(roomTimerRef.current)
+      clearInterval(inactivityTimerRef.current)
+    }
+  }, [roomId])
+
+  useEffect(() => {
+    if (roomId && profile) {
+      fetchMessages()
+      updateHeartbeat()
+      startInactivityTimer()
+      startRoomExpiryTimer()
+    }
+  }, [roomId, profile])
+
+  const fetchMessages = async () => {
+    const { data } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: true })
+    if (data) setMessages(data)
+  }
+
+  const fetchRoomUsers = async () => {
+    const { data } = await supabase
+      .from('room_users')
+      .select('*')
+      .eq('room_id', roomId)
+    if (data) setRoomUsers(data)
+  }
+
+  const updateHeartbeat = async () => {
+    if (!roomId || !profile) return
+    await supabase.from('room_users').upsert({
+      room_id: roomId,
+      user_name: profile.name,
+      last_seen: new Date().toISOString()
+    }, { onConflict: 'room_id, user_name' })
+  }
+
+  const startInactivityTimer = () => {
+    clearInterval(inactivityTimerRef.current)
+    inactivityTimerRef.current = setInterval(async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('created_at')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (data && data.length > 0) {
+        const lastMsg = new Date(data[0].created_at)
+        if (Date.now() - lastMsg.getTime() > 20 * 60 * 1000) {
+          closeRoom('Sala fechada por inatividade')
+        }
+      } else {
+        closeRoom('Sala fechada por inatividade')
+      }
+    }, 60000)
+  }
+
+  const startRoomExpiryTimer = () => {
+    roomTimerRef.current = setTimeout(() => {
+      closeRoom('Sala expirou após 2 horas')
+    }, 2 * 60 * 60 * 1000)
+  }
+
+  const closeRoom = (reason) => {
+    setShowRoomModal(false)
+    setRoomId(null)
+    setMessages([])
+    setRoomUsers([])
+    setRoomWaiting(false)
+    setChatInput('')
+    if (roomId) {
+      supabase.from('rooms').update({ is_active: false }).eq('id', roomId)
+    }
+  }
+
+  const createRoom = async () => {
+    if (!content) return
+    const { data, error } = await supabase
+      .from('rooms')
+      .insert({
+        content_id: content.id,
+        media_type: type,
+        season: type === 'tv' ? season : null,
+        episode: type === 'tv' ? episode : null,
+        is_active: true
+      })
+      .select('id')
+      .single()
+    if (error) {
+      setRoomError('Erro ao criar sala')
+      return
+    }
+    setRoomId(data.id)
+    setShowRoomModal(true)
+    setRoomWaiting(true)
+    const link = `${window.location.origin}/watch?type=${type}&id=${content.id}${type === 'tv' ? `&s=${season}&e=${episode}` : ''}&room=${data.id}`
+    navigator.clipboard.writeText(link)
+    startWaitingTimeout()
+  }
+
+  const startWaitingTimeout = () => {
+    setTimeout(async () => {
+      if (roomWaiting) {
+        const { data } = await supabase.from('room_users').select('*').eq('room_id', roomId)
+        if (data && data.length <= 1) {
+          closeRoom('Ninguém entrou na sala')
+        }
+      }
+    }, 10 * 60 * 1000)
+  }
+
+  const joinRoom = () => {
+    setShowRoomModal(true)
+    setRoomWaiting(false)
+  }
+
+  const sendMessage = async () => {
+    if (!chatInput.trim() || !roomId || !profile) return
+    await supabase.from('messages').insert({
+      room_id: roomId,
+      user_name: profile.name,
+      user_avatar: profile.avatarUrl || getAvatarUrl(profile.name),
+      content: chatInput.trim()
+    })
+    setChatInput('')
+    clearInterval(inactivityTimerRef.current)
+    startInactivityTimer()
+  }
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -66,7 +262,6 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (!id || !type) return
-    contentLoaded.current = false
     setContent(null)
     setIsLoading(true)
     setHasError(false)
@@ -91,12 +286,18 @@ export default function WatchPage() {
         }
         checkFavorite(data)
         try { const liked = localStorage.getItem(`yoshikawaLiked_${id}`); setIsLiked(liked === 'true') } catch (e) {}
-        contentLoaded.current = true
         setIsLoading(false)
       } catch (error) { console.error('Erro ao carregar conteúdo:', error); setHasError(true); setIsLoading(false) }
     }
     load()
   }, [id, type])
+
+  useEffect(() => {
+    if (roomQuery) {
+      setRoomId(roomQuery)
+      joinRoom()
+    }
+  }, [roomQuery])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -158,7 +359,6 @@ export default function WatchPage() {
   const ratingClass = content?.adult ? 'rating-18' : 'rating-L'
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const hasLongSynopsis = content?.overview && content.overview.length > 200
-
   const showContent = content && !hasError
 
   return (
@@ -216,7 +416,21 @@ export default function WatchPage() {
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}}
+          .room-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:12px clamp(16px,4vw,34px);font-size:14px;display:flex;align-items:center;gap:8px}
+          .chat-modal{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+          .chat-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+          .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+          .chat-msg{display:flex;gap:10px;align-items:flex-start}
+          .chat-msg-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover}
+          .chat-msg-bubble{background:#1B1B1B;padding:10px 14px;border-radius:14px;max-width:80%;font-size:14px}
+          .chat-msg-name{font-weight:700;font-size:13px;margin-bottom:2px}
+          .chat-msg-text{color:#ddd}
+          .chat-input-bar{display:flex;padding:12px;gap:10px;border-top:1px solid rgba(255,255,255,0.1)}
+          .chat-input-bar input{flex:1;background:#1B1B1B;border:none;color:#fff;padding:12px 16px;border-radius:24px;font-size:14px;outline:none}
+          .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
+          .chat-waiting{text-align:center;padding:40px;color:#888}
+          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}.chat-modal{max-width:400px;right:0;left:auto;top:0;bottom:0;width:100%}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
@@ -290,6 +504,7 @@ export default function WatchPage() {
               </div>
             </div>
           )}
+          <button className="room-btn" onClick={createRoom}><i className="fas fa-users" /> Assistir com amigo</button>
         </>
       ) : hasError ? (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', flexDirection: 'column', gap: 16, padding: 20 }}>
@@ -321,9 +536,44 @@ export default function WatchPage() {
                 </button>
               </div>
             )}
+            <button className="room-btn" style={{ margin: 0 }} onClick={roomId ? () => setShowRoomModal(true) : createRoom}>
+              <i className="fas fa-users" /> {roomId ? 'Abrir chat' : 'Assistir com amigo'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showRoomModal && (
+        <div className="chat-modal">
+          <div className="chat-header">
+            <h3 style={{ fontSize: 18, fontWeight: 700 }}>Chat da sala</h3>
+            <button className="chat-close" onClick={() => setShowRoomModal(false)}><i className="fas fa-times" /></button>
+          </div>
+          <div className="chat-messages">
+            {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+            {messages.map(msg => (
+              <div key={msg.id} className="chat-msg">
+                <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
+                <div className="chat-msg-bubble">
+                  <div className="chat-msg-name">{msg.user_name}</div>
+                  <div className="chat-msg-text">{msg.content}</div>
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="chat-input-bar">
+            <input
+              type="text"
+              placeholder="Digite sua mensagem..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+            />
+            <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
           </div>
         </div>
       )}
     </>
   )
-      }
+    }
