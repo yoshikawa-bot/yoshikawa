@@ -207,6 +207,17 @@ export default function WatchPage() {
     }
   }, [roomId, effectiveUserName])
 
+  useEffect(() => {
+    if (isPlaying) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isPlaying])
+
   const fetchMessages = async () => {
     const { data } = await supabase
       .from('messages')
@@ -319,6 +330,7 @@ export default function WatchPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+    setShowShareLink(false)
   }
 
   const sendMessage = async () => {
@@ -726,4 +738,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+    }
