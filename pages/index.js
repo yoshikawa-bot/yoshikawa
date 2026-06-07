@@ -412,18 +412,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
   const [showLogout, setShowLogout] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const overlayRef = useRef(null)
-
-  useEffect(() => {
-    const el = overlayRef.current
-    if (!el) return
-    const handleScroll = () => {
-      setScrolled(el.scrollTop > 100)
-    }
-    el.addEventListener('scroll', handleScroll, { passive: true })
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [])
 
   const handleFileRead = (file, setPreview) => {
     if (file.size > 1048576) {
@@ -468,8 +456,8 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
 
   return (
-    <div className="profile-fullpage-overlay" ref={overlayRef}>
-      <div className={`profile-fixed-header ${scrolled ? 'scrolled' : ''}`}>
+    <div className="profile-fullpage-overlay">
+      <div className="profile-top-bar">
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
@@ -490,7 +478,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
         )}
       </div>
 
-      <div className="profile-body" style={{ paddingTop: '60px' }}>
+      <div className="profile-body">
         <div
           className="profile-cover"
           style={bannerStyle}
@@ -1338,9 +1326,8 @@ export default function Home() {
           .profile-error{color:#E04E4E;font-size:13px;margin-top:8px}
 
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
-          .profile-fixed-header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;transition:background 0.3s ease}
-          .profile-fixed-header.scrolled{background:#101010}
-          .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+          .profile-top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;background:transparent;position:absolute;top:0;left:0;right:0;z-index:10}
+          .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
           .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
