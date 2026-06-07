@@ -35,8 +35,8 @@ const ContentLoader = () => (
 
 export default function WatchPage() {
   const router = useRouter()
-  const { type, id } = router.query
-  const { room: roomQuery } = router.query
+  const { type, id, room: roomQuery } = router.query
+
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [content, setContent] = useState(null)
@@ -50,13 +50,19 @@ export default function WatchPage() {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
-  const [showRoomModal, setShowRoomModal] = useState(false)
+
+  // Estados do chat/sala
   const [roomId, setRoomId] = useState(null)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [roomUsers, setRoomUsers] = useState([])
   const [roomWaiting, setRoomWaiting] = useState(false)
-  const [roomError, setRoomError] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createdRoomLink, setCreatedRoomLink] = useState('')
+  const [showNamePrompt, setShowNamePrompt] = useState(false)
+  const [tempName, setTempName] = useState('')
+  const [showChat, setShowChat] = useState(true)
+
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
   const heartbeatRef = useRef(null)
@@ -64,6 +70,8 @@ export default function WatchPage() {
   const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
   const profile = getUserProfile()
+
+  const effectiveUserName = profile?.name || tempName || null
 
   useEffect(() => { currentSeasonRef.current = season }, [season])
   useEffect(() => { currentEpisodeRef.current = episode }, [episode])
@@ -109,13 +117,13 @@ export default function WatchPage() {
   }, [roomId])
 
   useEffect(() => {
-    if (roomId && profile) {
+    if (roomId && effectiveUserName) {
       fetchMessages()
       updateHeartbeat()
       startInactivityTimer()
       startRoomExpiryTimer()
     }
-  }, [roomId, profile])
+  }, [roomId, effectiveUserName])
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -135,10 +143,10 @@ export default function WatchPage() {
   }
 
   const updateHeartbeat = async () => {
-    if (!roomId || !profile) return
+    if (!roomId || !effectiveUserName) return
     await supabase.from('room_users').upsert({
       room_id: roomId,
-      user_name: profile.name,
+      user_name: effectiveUserName,
       last_seen: new Date().toISOString()
     }, { onConflict: 'room_id, user_name' })
   }
@@ -155,85 +163,126 @@ export default function WatchPage() {
       if (data && data.length > 0) {
         const lastMsg = new Date(data[0].created_at)
         if (Date.now() - lastMsg.getTime() > 20 * 60 * 1000) {
-          closeRoom('Sala fechada por inatividade')
+          closeRoom()
         }
       } else {
-        closeRoom('Sala fechada por inatividade')
+        closeRoom()
       }
     }, 60000)
   }
 
   const startRoomExpiryTimer = () => {
     roomTimerRef.current = setTimeout(() => {
-      closeRoom('Sala expirou após 2 horas')
+      closeRoom()
     }, 2 * 60 * 60 * 1000)
   }
 
-  const closeRoom = (reason) => {
-    setShowRoomModal(false)
+  const closeRoom = () => {
+    if (roomId) {
+      supabase.from('rooms').update({ is_active: false }).eq('id', roomId)
+    }
     setRoomId(null)
     setMessages([])
     setRoomUsers([])
     setRoomWaiting(false)
-    setChatInput('')
-    if (roomId) {
-      supabase.from('rooms').update({ is_active: false }).eq('id', roomId)
-    }
+    setShowChat(false)
+    clearInterval(heartbeatRef.current)
+    clearInterval(roomTimerRef.current)
+    clearInterval(inactivityTimerRef.current)
   }
 
-  const createRoom = async () => {
+  const leaveRoom = async () => {
+    if (!roomId || !effectiveUserName) return
+    await supabase.from('room_users').delete().eq('room_id', roomId).eq('user_name', effectiveUserName)
+    setRoomId(null)
+    setMessages([])
+    setRoomUsers([])
+    setShowChat(false)
+  }
+
+  const createOrJoinRoom = async () => {
     if (!content) return
+    if (!effectiveUserName) {
+      setShowNamePrompt(true)
+      return
+    }
+
+    const { data: existing } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('content_id', content.id)
+      .eq('media_type', type)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (existing) {
+      setRoomId(existing.id)
+      setShowChat(true)
+      setRoomWaiting(false)
+      return
+    }
+
     const { data, error } = await supabase
       .from('rooms')
       .insert({
         content_id: content.id,
         media_type: type,
-        season: type === 'tv' ? season : null,
-        episode: type === 'tv' ? episode : null,
         is_active: true
       })
       .select('id')
       .single()
-    if (error) {
-      setRoomError('Erro ao criar sala')
-      return
-    }
+
+    if (error) return
+
     setRoomId(data.id)
-    setShowRoomModal(true)
+    setShowChat(true)
     setRoomWaiting(true)
-    const link = `${window.location.origin}/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${season}&e=${episode}` : ''}`
-    navigator.clipboard.writeText(link)
+    const link = `${window.location.origin}/${type}/${id}?room=${data.id}`
+    setCreatedRoomLink(link)
+    setShowCreateModal(true)
     startWaitingTimeout()
   }
 
   const startWaitingTimeout = () => {
     setTimeout(async () => {
-      if (roomWaiting) {
-        const { data } = await supabase.from('room_users').select('*').eq('room_id', roomId)
-        if (data && data.length <= 1) {
-          closeRoom('Ninguém entrou na sala')
-        }
+      const { data } = await supabase.from('room_users').select('*').eq('room_id', roomId)
+      if (data && data.length <= 1) {
+        closeRoom()
       }
     }, 10 * 60 * 1000)
   }
 
-  const joinRoom = () => {
-    setShowRoomModal(true)
-    setRoomWaiting(false)
-  }
-
   const sendMessage = async () => {
-    if (!chatInput.trim() || !roomId || !profile) return
+    if (!chatInput.trim() || !roomId || !effectiveUserName) return
     await supabase.from('messages').insert({
       room_id: roomId,
-      user_name: profile.name,
-      user_avatar: profile.avatarUrl || getAvatarUrl(profile.name),
+      user_name: effectiveUserName,
+      user_avatar: profile?.avatarUrl || getAvatarUrl(effectiveUserName),
       content: chatInput.trim()
     })
     setChatInput('')
     clearInterval(inactivityTimerRef.current)
     startInactivityTimer()
   }
+
+  const handleNameSubmit = () => {
+    const trimmed = tempName.trim()
+    if (trimmed.length >= 2) {
+      setShowNamePrompt(false)
+      setTempName('')
+      createOrJoinRoom()
+    }
+  }
+
+  useEffect(() => {
+    if (roomQuery) {
+      setRoomId(roomQuery)
+      setShowChat(true)
+      if (!effectiveUserName) {
+        setShowNamePrompt(true)
+      }
+    }
+  }, [roomQuery])
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -292,13 +341,6 @@ export default function WatchPage() {
     }
     load()
   }, [id, type])
-
-  useEffect(() => {
-    if (roomQuery) {
-      setRoomId(roomQuery)
-      joinRoom()
-    }
-  }, [roomQuery])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -417,22 +459,31 @@ export default function WatchPage() {
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-          .room-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:12px clamp(16px,4vw,34px);font-size:14px;display:flex;align-items:center;gap:8px}
-          .chat-modal{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid rgba(255,255,255,0.1)}
-          .chat-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
-          .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-          .chat-msg{display:flex;gap:10px;align-items:flex-start}
-          .chat-msg-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover}
-          .chat-msg-bubble{background:#1B1B1B;padding:10px 14px;border-radius:14px;max-width:80%;font-size:14px}
-          .chat-msg-name{font-weight:700;font-size:13px;margin-bottom:2px}
+          .room-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+          .chat-container{flex-shrink:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;max-height:220px;min-height:180px}
+          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08)}
+          .chat-header-btns{display:flex;gap:8px}
+          .chat-header-btns button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
+          .chat-messages{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+          .chat-msg{display:flex;gap:8px;align-items:flex-start}
+          .chat-msg-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
+          .chat-msg-bubble{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:12px;max-width:80%;font-size:13px}
+          .chat-msg-name{font-weight:700;font-size:12px;margin-bottom:2px}
           .chat-msg-text{color:#ddd}
-          .chat-input-bar{display:flex;padding:12px;gap:10px;border-top:1px solid rgba(255,255,255,0.1)}
-          .chat-input-bar input{flex:1;background:#1B1B1B;border:none;color:#fff;padding:12px 16px;border-radius:24px;font-size:14px;outline:none}
-          .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
-          .chat-waiting{text-align:center;padding:40px;color:#888}
-          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}.chat-modal{max-width:400px;right:0;left:auto;top:0;bottom:0;width:100%}}
-          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}}
+          .chat-input-bar{display:flex;padding:8px 14px;gap:8px;border-top:1px solid rgba(255,255,255,0.08)}
+          .chat-input-bar input{flex:1;background:rgba(255,255,255,0.05);border:none;color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none}
+          .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+          .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
+          .modal-overlay{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px}
+          .modal-box{background:#1B1B1B;border-radius:20px;padding:24px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+          .modal-title{font-size:18px;font-weight:700}
+          .modal-input{width:100%;background:#2a2a2a;border:1px solid #444;color:#fff;padding:12px 16px;border-radius:12px;font-size:16px;outline:none}
+          .modal-link-box{background:#0a0a0a;padding:12px;border-radius:12px;word-break:break-all;font-size:14px;color:#ccc}
+          .modal-btns{display:flex;gap:10px;justify-content:flex-end}
+          .modal-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px}
+          .modal-btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.2)}
+          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}.chat-container{max-height:260px}}
+          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{max-height:150px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
       </Head>
@@ -505,7 +556,6 @@ export default function WatchPage() {
               </div>
             </div>
           )}
-          <button className="room-btn" onClick={createRoom}><i className="fas fa-users" /> Assistir com amigo</button>
         </>
       ) : hasError ? (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', flexDirection: 'column', gap: 16, padding: 20 }}>
@@ -537,44 +587,90 @@ export default function WatchPage() {
                 </button>
               </div>
             )}
-            <button className="room-btn" style={{ margin: 0 }} onClick={roomId ? () => setShowRoomModal(true) : createRoom}>
-              <i className="fas fa-users" /> {roomId ? 'Abrir chat' : 'Assistir com amigo'}
-            </button>
+
+            {roomId && showChat ? (
+              <div className="chat-container">
+                <div className="chat-header">
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                  <div className="chat-header-btns">
+                    <button onClick={() => setShowChat(false)}>Fechar</button>
+                    <button onClick={leaveRoom}>Sair da sala</button>
+                  </div>
+                </div>
+                <div className="chat-messages">
+                  {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+                  {messages.map(msg => (
+                    <div key={msg.id} className="chat-msg">
+                      <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
+                      <div className="chat-msg-bubble">
+                        <div className="chat-msg-name">{msg.user_name}</div>
+                        <div className="chat-msg-text">{msg.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+                <div className="chat-input-bar">
+                  <input
+                    type="text"
+                    placeholder="Digite sua mensagem..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+                  />
+                  <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+                </div>
+              </div>
+            ) : (
+              <button className="room-btn" onClick={createOrJoinRoom}>
+                <i className="fas fa-users" /> Assistir com amigo
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {showRoomModal && (
-        <div className="chat-modal">
-          <div className="chat-header">
-            <h3 style={{ fontSize: 18, fontWeight: 700 }}>Chat da sala</h3>
-            <button className="chat-close" onClick={() => setShowRoomModal(false)}><i className="fas fa-times" /></button>
+      {/* Modal de criação da sala (link copiável) */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-title">Sala criada!</div>
+            <p style={{ fontSize: 14, color: '#aaa' }}>Envie este link para seu amigo. Qualquer pessoa com o link pode entrar no chat.</p>
+            <div className="modal-link-box">{createdRoomLink}</div>
+            <div className="modal-btns">
+              <button className="modal-btn" onClick={() => {
+                navigator.clipboard.writeText(createdRoomLink)
+                setShowCreateModal(false)
+              }}>Copiar link</button>
+              <button className="modal-btn secondary" onClick={() => setShowCreateModal(false)}>Fechar</button>
+            </div>
           </div>
-          <div className="chat-messages">
-            {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
-            {messages.map(msg => (
-              <div key={msg.id} className="chat-msg">
-                <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
-                <div className="chat-msg-bubble">
-                  <div className="chat-msg-name">{msg.user_name}</div>
-                  <div className="chat-msg-text">{msg.content}</div>
-                </div>
-              </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-          <div className="chat-input-bar">
+        </div>
+      )}
+
+      {/* Modal de nome temporário para usuários sem perfil */}
+      {showNamePrompt && (
+        <div className="modal-overlay">
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-title">Como quer ser chamado?</div>
+            <p style={{ fontSize: 14, color: '#aaa' }}>Você não tem um perfil. Escolha um nome para usar no chat.</p>
             <input
+              className="modal-input"
               type="text"
-              placeholder="Digite sua mensagem..."
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+              placeholder="Seu nome"
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              maxLength={20}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit() }}
             />
-            <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+            <div className="modal-btns">
+              <button className="modal-btn" onClick={handleNameSubmit}>Entrar</button>
+              <button className="modal-btn secondary" onClick={() => { setShowNamePrompt(false); setRoomId(null) }}>Cancelar</button>
+            </div>
           </div>
         </div>
       )}
     </>
   )
-    }
+  }
