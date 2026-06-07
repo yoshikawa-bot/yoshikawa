@@ -403,7 +403,7 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
   </div>
 )
 
-export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode }) => {
+export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode, onRemoveFavorite }) => {
   const isNew = mode === 'create'
   const startInEdit = mode === 'edit' || mode === 'create'
   const [editing, setEditing] = useState(startInEdit)
@@ -534,7 +534,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               <div className="profile-name-row">
                 <h2 className="profile-name">{userProfile?.name || name}</h2>
               </div>
-              <p className="profile-username">{username}</p>
+              <p className="profile-username">@{username}</p>
               <p className="profile-meta">
                 <i className="fas fa-calendar-alt" /> Entrou em {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'hoje'}
               </p>
@@ -559,7 +559,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               ) : (
                 <div className="favorites-list">
                   {favorites.map(item => (
-                    <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={() => {}} onClick={onPlay} />
+                    <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={onRemoveFavorite} onClick={onPlay} />
                   ))}
                 </div>
               )}
@@ -973,6 +973,14 @@ export default function Home() {
     fetchSearchResults(categoryName)
   }
 
+  const removeFavorite = (fav) => {
+    setFavorites(prev => {
+      const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type))
+      try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
+      return updated
+    })
+  }
+
   const renderHomePage = () => {
     if (contentLoading) return <ContentLoader />
     return (
@@ -1090,7 +1098,7 @@ export default function Home() {
       <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>Favoritos</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
-        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={(fav) => { setFavorites(prev => { const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type)); try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}; return updated }) }} onClick={handlePlay} />)}
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay} />)}
       </div>
     </section>
   )
@@ -1401,6 +1409,7 @@ export default function Home() {
               onLogout={handleLogout}
               onClose={() => setShowProfile(false)}
               mode={profileMode}
+              onRemoveFavorite={removeFavorite}
             />
           )}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
