@@ -18,22 +18,6 @@ const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
 
-const getUserProfile = () => {
-  try {
-    const saved = localStorage.getItem('yoshikawaProfile')
-    if (saved) return JSON.parse(saved)
-  } catch {}
-  return null
-}
-
-const getGuestName = () => {
-  const existing = localStorage.getItem('yoshikawaGuestName')
-  if (existing) return existing
-  const newName = 'Convidado' + Math.random().toString(36).substring(2, 6)
-  localStorage.setItem('yoshikawaGuestName', newName)
-  return newName
-}
-
 const ContentLoader = () => (
   <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010' }}>
     <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -66,15 +50,35 @@ export default function WatchPage() {
   const [roomWaiting, setRoomWaiting] = useState(false)
   const [showChat, setShowChat] = useState(true)
 
+  // localStorage só existe no cliente — inicializado via useEffect
+  const [effectiveUserName, setEffectiveUserName] = useState('')
+  const [profile, setProfile] = useState(null)
+
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
   const heartbeatRef = useRef(null)
   const inactivityTimerRef = useRef(null)
   const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
-  const profile = getUserProfile()
-  const guestName = getGuestName()
-  const effectiveUserName = profile?.name || guestName
+
+  // Lê localStorage apenas no cliente
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('yoshikawaProfile')
+      if (saved) {
+        const p = JSON.parse(saved)
+        setProfile(p)
+        setEffectiveUserName(p.name || '')
+        return
+      }
+    } catch {}
+    let guestName = localStorage.getItem('yoshikawaGuestName')
+    if (!guestName) {
+      guestName = 'Convidado' + Math.random().toString(36).substring(2, 6)
+      localStorage.setItem('yoshikawaGuestName', guestName)
+    }
+    setEffectiveUserName(guestName)
+  }, [])
 
   useEffect(() => { currentSeasonRef.current = season }, [season])
   useEffect(() => { currentEpisodeRef.current = episode }, [episode])
@@ -579,12 +583,10 @@ export default function WatchPage() {
                 </div>
               </div>
             ) : roomId ? (
-              // Já está em uma sala mas o chat está fechado — só reabre, não cria nova sala
               <button className="room-btn" onClick={() => setShowChat(true)}>
                 <i className="fas fa-comments" /> Abrir chat
               </button>
             ) : (
-              // Sem sala — cria uma nova
               <button className="room-btn" onClick={createRoomAndRedirect}>
                 <i className="fas fa-users" /> Assistir com amigo
               </button>
@@ -594,4 +596,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+                                             }
