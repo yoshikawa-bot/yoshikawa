@@ -412,6 +412,18 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
   const [showLogout, setShowLogout] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const overlayRef = useRef(null)
+
+  useEffect(() => {
+    const el = overlayRef.current
+    if (!el) return
+    const handleScroll = () => {
+      setScrolled(el.scrollTop > 100)
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleFileRead = (file, setPreview) => {
     if (file.size > 1048576) {
@@ -456,8 +468,8 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
 
   return (
-    <div className="profile-fullpage-overlay">
-      <div className="profile-fixed-header">
+    <div className="profile-fullpage-overlay" ref={overlayRef}>
+      <div className={`profile-fixed-header ${scrolled ? 'scrolled' : ''}`}>
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
@@ -510,9 +522,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
         </div>
 
         <div className="profile-info">
-          {editing && isNew && (
-            <p className="profile-create-hint">Crie um perfil para salvar seus favoritos e personalizar a experiência.</p>
-          )}
           {editing ? (
             <div className="edit-form">
               <div className="edit-field">
@@ -528,6 +537,9 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
                 />
               </div>
               {error && <p className="profile-error">{error}</p>}
+              {isNew && (
+                <p className="profile-create-hint">Crie um perfil para salvar seus favoritos e personalizar a experiência.</p>
+              )}
             </div>
           ) : (
             <>
@@ -668,6 +680,31 @@ export default function Home() {
   useEffect(() => {
     sessionStorage.setItem('yoshikawaActiveSection', activeSection)
   }, [activeSection])
+
+  useEffect(() => {
+    const savedSearch = sessionStorage.getItem('yoshikawaShowSearch') === 'true'
+    const savedProfile = sessionStorage.getItem('yoshikawaShowProfile') === 'true'
+    const savedProfileMode = sessionStorage.getItem('yoshikawaProfileMode') || 'view'
+    if (savedSearch) {
+      setShowSearch(true)
+      setShowProfile(false)
+    } else if (savedProfile) {
+      setShowProfile(true)
+      setProfileMode(savedProfileMode)
+      setShowSearch(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('yoshikawaShowSearch', showSearch)
+    if (!showSearch) sessionStorage.removeItem('yoshikawaShowSearch')
+  }, [showSearch])
+
+  useEffect(() => {
+    sessionStorage.setItem('yoshikawaShowProfile', showProfile)
+    if (!showProfile) sessionStorage.removeItem('yoshikawaShowProfile')
+    else sessionStorage.setItem('yoshikawaProfileMode', profileMode)
+  }, [showProfile, profileMode])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1301,7 +1338,8 @@ export default function Home() {
           .profile-error{color:#E04E4E;font-size:13px;margin-top:8px}
 
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
-          .profile-fixed-header{position:fixed;top:0;left:0;right:0;z-index:10;background:#101010;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px}
+          .profile-fixed-header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;transition:background 0.3s ease}
+          .profile-fixed-header.scrolled{background:#101010}
           .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
           .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
@@ -1312,7 +1350,7 @@ export default function Home() {
           .avatar-editable{cursor:pointer}
           .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px}
           .profile-info{padding:8px 24px 0}
-          .profile-create-hint{font-size:14px;color:#888;text-align:center;margin:16px 0 0;padding:0 24px}
+          .profile-create-hint{font-size:14px;color:#888;text-align:center;margin:12px 0 0;padding:0 8px}
           .profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
           .profile-name{font-size:22px;font-weight:800;color:#fff}
           .profile-username{font-size:15px;color:#888;margin-bottom:8px}
@@ -1384,4 +1422,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+  }
