@@ -35,7 +35,7 @@ const ContentLoader = () => (
 
 export default function WatchPage() {
   const router = useRouter()
-  const { type, id, room: roomQuery } = router.query
+  const { type, id, room: roomQuery, s: querySeason, e: queryEpisode } = router.query
 
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -51,7 +51,6 @@ export default function WatchPage() {
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
 
-  // Estados do chat/sala
   const [roomId, setRoomId] = useState(null)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -200,9 +199,10 @@ export default function WatchPage() {
     setShowChat(false)
   }
 
-  const createOrJoinRoom = async () => {
+  const createOrJoinRoom = async (userName) => {
     if (!content) return
-    if (!effectiveUserName) {
+    const nameToUse = userName || effectiveUserName
+    if (!nameToUse) {
       setShowNamePrompt(true)
       return
     }
@@ -237,7 +237,7 @@ export default function WatchPage() {
     setRoomId(data.id)
     setShowChat(true)
     setRoomWaiting(true)
-    const link = `${window.location.origin}/${type}/${id}?room=${data.id}`
+    const link = `${window.location.origin}/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setCreatedRoomLink(link)
     setShowCreateModal(true)
     startWaitingTimeout()
@@ -269,20 +269,30 @@ export default function WatchPage() {
     const trimmed = tempName.trim()
     if (trimmed.length >= 2) {
       setShowNamePrompt(false)
-      setTempName('')
-      createOrJoinRoom()
+      createOrJoinRoom(trimmed)
     }
   }
 
   useEffect(() => {
-    if (roomQuery) {
+    if (content && roomQuery) {
       setRoomId(roomQuery)
       setShowChat(true)
-      if (!effectiveUserName) {
+      if (!profile?.name) {
         setShowNamePrompt(true)
+      } else {
+        createOrJoinRoom(profile.name)
+      }
+      if (type === 'movie') {
+        setIsPlaying(true)
+      } else if (type === 'tv') {
+        if (querySeason && queryEpisode) {
+          setSeason(parseInt(querySeason))
+          setEpisode(parseInt(queryEpisode))
+        }
+        setIsPlaying(true)
       }
     }
-  }, [roomQuery])
+  }, [content, roomQuery])
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -630,7 +640,6 @@ export default function WatchPage() {
         </div>
       )}
 
-      {/* Modal de criação da sala (link copiável) */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
@@ -648,7 +657,6 @@ export default function WatchPage() {
         </div>
       )}
 
-      {/* Modal de nome temporário para usuários sem perfil */}
       {showNamePrompt && (
         <div className="modal-overlay">
           <div className="modal-box" onClick={e => e.stopPropagation()}>
