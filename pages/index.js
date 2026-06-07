@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
+const CATBOX_UPLOAD_URL = 'https://catbox.moe/user/api.php'
 
 const PROFILE_COLORS = ['#E04E4E', '#4D4BAF', '#4A8B4A', '#E97820', '#9D95C8', '#3F6D89', '#C43708', '#43A45D', '#E38CA8', '#72615F']
 const DEFAULT_PROFILE_BG = '#505050'
@@ -127,6 +128,17 @@ const enrichSeriesWithLastEpisode = async (seriesList) => {
   return enriched
 }
 
+const uploadToCatbox = async (file) => {
+  if (!file) return null
+  const formData = new FormData()
+  formData.append('reqtype', 'fileupload')
+  formData.append('fileToUpload', file)
+  const res = await fetch(CATBOX_UPLOAD_URL, { method: 'POST', body: formData })
+  const text = await res.text()
+  if (res.ok && text.startsWith('http')) return text
+  throw new Error(text)
+}
+
 const useHorizontalScrollRoot = () => {
   const ref = useRef(null)
   const [root, setRoot] = useState(null)
@@ -183,7 +195,15 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }} onClick={onProfileClick}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
+          {userProfile ? (
+            <img
+              src={userProfile.avatarUrl || getAvatarUrl(userProfile.name, userProfile.color)}
+              alt={userProfile.name}
+              className="profile-avatar-img"
+            />
+          ) : (
+            <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#ccc', display: 'block', lineHeight: 1 }} />
+          )}
         </button>
       </div>
     </header>
@@ -399,14 +419,46 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
 export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
   const [name, setName] = useState(existingProfile?.name || '')
   const [selectedColor, setSelectedColor] = useState(existingProfile?.color || PROFILE_COLORS[0])
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [bannerFile, setBannerFile] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(existingProfile?.avatarUrl || null)
+  const [bannerPreview, setBannerPreview] = useState(existingProfile?.bannerUrl || null)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const isEditing = !!existingProfile
 
-  const handleSubmit = () => {
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
+
+  const handleBannerChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setBannerFile(file)
+    setBannerPreview(URL.createObjectURL(file))
+  }
+
+  const handleSubmit = async () => {
     const trimmed = name.trim()
     if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
     if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
-    onCreate({ name: trimmed, color: selectedColor })
+    setUploading(true)
+    setError('')
+
+    try {
+      const [avatarUrl, bannerUrl] = await Promise.all([
+        avatarFile ? uploadToCatbox(avatarFile).catch(() => null) : Promise.resolve(existingProfile?.avatarUrl || null),
+        bannerFile ? uploadToCatbox(bannerFile).catch(() => null) : Promise.resolve(existingProfile?.bannerUrl || null)
+      ])
+      onCreate({ name: trimmed, color: selectedColor, avatarUrl, bannerUrl })
+    } catch {
+      setError('Falha no upload. Tente novamente.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -416,15 +468,36 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
           <h2 className="profile-creation-title">{isEditing ? 'Editar Perfil' : 'Criar Perfil'}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
-        <p className="profile-creation-subtitle">{isEditing ? 'Altere seu nome e cor' : 'Escolha seu nome e cor para continuar'}</p>
-        <div className="profile-avatar-preview" style={{ background: selectedColor }}>
-          {name.trim() ? <img src={getAvatarUrl(name.trim(), selectedColor)} alt="" className="profile-avatar-img" /> : <i className="fas fa-user" />}
+        <p className="profile-creation-subtitle">{isEditing ? 'Altere seu nome, foto e banner' : 'Escolha seu nome, foto e banner'}</p>
+
+        <div
+          className="profile-banner-upload"
+          style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : `linear-gradient(135deg, ${selectedColor}, #222)` }}
+          onClick={() => document.getElementById('bannerFileInput').click()}
+        >
+          <i className="fas fa-camera" />
+          <span>Toque para alterar o banner</span>
         </div>
+
+        <div className="profile-avatar-upload" onClick={() => document.getElementById('avatarFileInput').click()}>
+          {avatarPreview ? (
+            <img src={avatarPreview} alt="" className="profile-avatar-img" />
+          ) : (
+            <img src={getAvatarUrl(name.trim() || '?', selectedColor)} alt="" className="profile-avatar-img" />
+          )}
+          <div className="avatar-upload-overlay"><i className="fas fa-camera" /></div>
+        </div>
+
+        <input type="file" id="avatarFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+        <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
+
         <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
         {error && <p className="profile-error">{error}</p>}
         <div className="profile-colors">{PROFILE_COLORS.map(color => <button key={color} className={`profile-color-btn ${selectedColor === color ? 'selected' : ''}`} style={{ background: color }} onClick={() => setSelectedColor(color)} />)}</div>
         <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
-        <button className="profile-create-btn" onClick={handleSubmit}>{isEditing ? 'Salvar' : 'Entrar'}</button>
+        <button className="profile-create-btn" onClick={handleSubmit} disabled={uploading}>
+          {uploading ? 'Enviando...' : isEditing ? 'Salvar' : 'Entrar'}
+        </button>
       </div>
     </div>
   )
@@ -432,21 +505,47 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
 
 export const ProfileView = ({ userProfile, onLogout, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const bannerStyle = userProfile.bannerUrl
+    ? { backgroundImage: `url(${userProfile.bannerUrl})` }
+    : { background: `linear-gradient(135deg, ${userProfile.color}, #222)` }
+
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
-      <div className="profile-view-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
+      <div className="profile-page-modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn profile-close-fixed" onClick={onClose}>
+          <i className="fas fa-times" />
+        </button>
+
+        <div className="profile-banner" style={bannerStyle}>
+          {!userProfile.bannerUrl && <div className="profile-banner-placeholder" />}
+        </div>
+
+        <div className="profile-avatar-container">
+          <div className="profile-avatar-circle" style={{ background: userProfile.color }}>
+            {userProfile.avatarUrl ? (
+              <img src={userProfile.avatarUrl} alt="" className="profile-avatar-img" />
+            ) : (
+              <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt="" className="profile-avatar-img" />
+            )}
+          </div>
+        </div>
+
+        <div className="profile-info-section">
           <h2 className="profile-view-name">{userProfile.name}</h2>
-          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+          <div className="profile-view-stats">
+            <div className="profile-stat">
+              <span className="profile-stat-value">{userProfile.favoritesCount || 0}</span>
+              <span className="profile-stat-label">Favoritos</span>
+            </div>
+            <div className="profile-stat">
+              <span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span>
+              <span className="profile-stat-label">Membro desde</span>
+            </div>
+          </div>
+          <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}>
+            <i className="fas fa-sign-out-alt" /> Sair da conta
+          </button>
         </div>
-        <div className="profile-view-avatar" style={{ background: userProfile.color, margin: '0 auto 24px' }}>
-          <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" />
-        </div>
-        <div className="profile-view-stats">
-          <div className="profile-stat"><span className="profile-stat-value">{userProfile.favoritesCount || 0}</span><span className="profile-stat-label">Favoritos</span></div>
-          <div className="profile-stat"><span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span><span className="profile-stat-label">Membro desde</span></div>
-        </div>
-        <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}><i className="fas fa-sign-out-alt" /> Sair da conta</button>
       </div>
       {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </div>
@@ -738,7 +837,7 @@ export default function Home() {
 
   const handleCreateProfile = (profileData) => {
     if (editingProfile) {
-      const updatedProfile = { ...editingProfile, name: profileData.name, color: profileData.color }
+      const updatedProfile = { ...editingProfile, name: profileData.name, color: profileData.color, avatarUrl: profileData.avatarUrl, bannerUrl: profileData.bannerUrl }
       setUserProfile(updatedProfile)
       try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
     } else {
@@ -984,13 +1083,13 @@ export default function Home() {
       )}
       <div className="user-card" onClick={() => !userProfile ? openProfileModal(null) : setShowProfileView(true)}>
         <div className="user-avatar" style={userProfile ? { background: userProfile.color } : { background: DEFAULT_PROFILE_BG }}>
-          {userProfile ? <img src={getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
+          {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name, userProfile.color)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#ccc', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
-        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome e cor' : 'Personalize sua experiência'} onClick={() => openProfileModal(userProfile || null)} />
+        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfileModal(userProfile || null)} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
         <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
@@ -1173,6 +1272,19 @@ export default function Home() {
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
           .profile-create-btn:hover{opacity:0.9}
 
+          .profile-banner-upload{width:100%;height:clamp(120px,20vw,160px);border-radius:16px;background-size:cover;background-position:center;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.8);font-size:13px;gap:6px;cursor:pointer;margin-bottom:-30px;position:relative;z-index:1}
+          .profile-avatar-upload{width:80px;height:80px;border-radius:50%;position:relative;cursor:pointer;z-index:2;border:3px solid #1B1B1B;overflow:hidden}
+          .avatar-upload-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s}
+          .profile-avatar-upload:hover .avatar-upload-overlay{opacity:1}
+
+          .profile-page-modal{width:100%;max-width:420px;max-height:90vh;overflow-y:auto;background:#1B1B1B;border-radius:24px;position:relative}
+          .profile-close-fixed{position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border-radius:50%;width:32px;height:32px}
+          .profile-banner{width:100%;height:160px;background-size:cover;background-position:center;border-radius:24px 24px 0 0;position:relative}
+          .profile-banner-placeholder{width:100%;height:100%}
+          .profile-avatar-container{display:flex;justify-content:center;margin-top:-40px;position:relative;z-index:2}
+          .profile-avatar-circle{width:80px;height:80px;border-radius:50%;border:3px solid #1B1B1B;overflow:hidden}
+          .profile-info-section{padding:20px 24px 30px;text-align:center}
+
           .profile-view-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
           .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff;margin:0}
           .profile-view-avatar{width:clamp(72px,12vw,96px);height:clamp(72px,12vw,96px);border-radius:50%;overflow:hidden}
@@ -1229,4 +1341,4 @@ export default function Home() {
       )}
     </>
   )
-}
+    }
