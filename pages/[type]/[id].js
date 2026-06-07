@@ -83,6 +83,21 @@ export default function WatchPage() {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Entra na sala ao receber ?room= na URL
+  // router.isReady garante que o query já foi hidratado pelo Next.js
+  useEffect(() => {
+    if (!router.isReady || !roomQuery) return
+    setRoomId(roomQuery)
+    setShowChat(true)
+    if (type === 'movie') {
+      setIsPlaying(true)
+    } else if (type === 'tv') {
+      if (querySeason) setSeason(parseInt(querySeason))
+      if (queryEpisode) setEpisode(parseInt(queryEpisode))
+      setIsPlaying(true)
+    }
+  }, [router.isReady, roomQuery])
+
   useEffect(() => {
     if (!roomId) return
     const subscription = supabase
@@ -127,21 +142,6 @@ export default function WatchPage() {
       startRoomExpiryTimer()
     }
   }, [roomId, effectiveUserName])
-
-  // FIX: depende só de roomQuery, não de content
-  // Assim dispara corretamente mesmo quando content já está carregado
-  useEffect(() => {
-    if (!roomQuery) return
-    setRoomId(roomQuery)
-    setShowChat(true)
-    if (type === 'movie') {
-      setIsPlaying(true)
-    } else if (type === 'tv') {
-      if (querySeason) setSeason(parseInt(querySeason))
-      if (queryEpisode) setEpisode(parseInt(queryEpisode))
-      setIsPlaying(true)
-    }
-  }, [roomQuery])
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -218,33 +218,16 @@ export default function WatchPage() {
     setShowChat(false)
   }
 
-  // FIX: reutiliza sala ativa existente em vez de sempre criar uma nova
+  // Só chamado por quem cria a sala — nunca por quem recebe o link
   const createRoomAndRedirect = async () => {
     if (!content) return
-
-    const { data: existing } = await supabase
+    const { data, error } = await supabase
       .from('rooms')
+      .insert({ content_id: String(content.id), media_type: type, is_active: true })
       .select('id')
-      .eq('content_id', content.id)
-      .eq('media_type', type)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    let roomIdToUse = existing?.id
-
-    if (!roomIdToUse) {
-      const { data, error } = await supabase
-        .from('rooms')
-        .insert({ content_id: content.id, media_type: type, is_active: true })
-        .select('id')
-        .single()
-      if (error) return
-      roomIdToUse = data.id
-    }
-
-    const link = `/${type}/${id}?room=${roomIdToUse}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
+      .single()
+    if (error) return
+    const link = `/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     router.push(link)
   }
 
@@ -595,7 +578,13 @@ export default function WatchPage() {
                   <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
                 </div>
               </div>
+            ) : roomId ? (
+              // Já está em uma sala mas o chat está fechado — só reabre, não cria nova sala
+              <button className="room-btn" onClick={() => setShowChat(true)}>
+                <i className="fas fa-comments" /> Abrir chat
+              </button>
             ) : (
+              // Sem sala — cria uma nova
               <button className="room-btn" onClick={createRoomAndRedirect}>
                 <i className="fas fa-users" /> Assistir com amigo
               </button>
@@ -605,4 +594,4 @@ export default function WatchPage() {
       )}
     </>
   )
-                    }
+}
