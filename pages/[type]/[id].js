@@ -51,7 +51,7 @@ export default function WatchPage() {
   const [showChat, setShowChat] = useState(true)
   const [isRoomCreator, setIsRoomCreator] = useState(false)
 
-  const [showRoomModal, setShowRoomModal] = useState(false)
+  const [showRoomLinkInChat, setShowRoomLinkInChat] = useState(false)
   const [roomLink, setRoomLink] = useState('')
   const [copied, setCopied] = useState(false)
 
@@ -97,6 +97,7 @@ export default function WatchPage() {
     setShowChat(true)
     setIsRoomCreator(false)
     roomCreatorRef.current = false
+    setShowRoomLinkInChat(false)
     if (type === 'movie') {
       setIsPlaying(true)
     } else if (type === 'tv') {
@@ -208,7 +209,13 @@ export default function WatchPage() {
       .select('*')
       .eq('room_id', roomId)
       .order('created_at', { ascending: true })
-    if (data) setMessages(data)
+    if (data) {
+      setMessages(prev => {
+        const dbIds = new Set(data.map(m => m.id))
+        const localSystem = prev.filter(m => m.is_system && !dbIds.has(m.id))
+        return [...data, ...localSystem]
+      })
+    }
   }
 
   const fetchRoomUsers = async () => {
@@ -272,6 +279,7 @@ export default function WatchPage() {
     setShowChat(false)
     setIsRoomCreator(false)
     roomCreatorRef.current = false
+    setShowRoomLinkInChat(false)
   }
 
   const createRoomAndRedirect = async () => {
@@ -284,13 +292,11 @@ export default function WatchPage() {
     if (error) return
     const link = `${window.location.origin}/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
-    setShowRoomModal(true)
-    setCopied(false)
-
     setRoomId(data.id)
     setShowChat(true)
     setIsRoomCreator(true)
     roomCreatorRef.current = true
+    setShowRoomLinkInChat(true)
     setIsPlaying(true)
   }
 
@@ -300,10 +306,7 @@ export default function WatchPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
-  }
-
-  const handleCloseModal = () => {
-    setShowRoomModal(false)
+    setShowRoomLinkInChat(false)
   }
 
   const sendMessage = async () => {
@@ -312,8 +315,7 @@ export default function WatchPage() {
       room_id: roomId,
       user_name: effectiveUserName,
       user_avatar: profile?.avatarUrl || getAvatarUrl(effectiveUserName),
-      content: chatInput.trim(),
-      is_system: false
+      content: chatInput.trim()
     })
     setChatInput('')
     clearInterval(inactivityTimerRef.current)
@@ -487,10 +489,10 @@ export default function WatchPage() {
           .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
           .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
           .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
-          @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh}.chat-container{width:320px;flex-shrink:0;max-height:75vh;min-height:400px}}
-          .player-frame{width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
+          @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh;aspect-ratio:16/9}.chat-container{width:320px;flex-shrink:0;max-height:75vh;min-height:400px}}
+          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0;position:relative}
           .player-frame iframe{width:100%;height:100%;border:none}
-          .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
+          .player-controls{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;z-index:10}
           .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap;text-decoration:none}
           .glass-btn:hover{background:rgba(255,255,255,0.25);transform:scale(1.02)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
@@ -512,15 +514,12 @@ export default function WatchPage() {
           .chat-input-bar input{flex:1;background:rgba(255,255,255,0.05);border:none;color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none}
           .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
-          .modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px}
-          .modal-box{background:#1B1B1B;border-radius:20px;padding:24px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
-          .modal-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
-          .modal-desc{font-size:14px;color:#aaa;line-height:1.5}
-          .modal-link-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:12px;border-radius:12px}
-          .modal-link{flex:1;font-size:13px;color:#fff;word-break:break-all;overflow-wrap:break-word}
-          .modal-copy-btn{background:#FF6B6B;border:none;color:#fff;padding:8px 16px;border-radius:10px;font-weight:600;cursor:pointer;white-space:nowrap;font-size:13px;display:flex;align-items:center;gap:4px}
-          .modal-close-btn{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px;border-radius:12px;font-weight:600;cursor:pointer;width:100%;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px}
-          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}.chat-container{max-height:260px}}
+          .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
+          .share-link-area p{font-size:14px;color:#ccc;margin-bottom:4px}
+          .link-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;width:100%}
+          .link-text{flex:1;font-size:13px;color:#fff;word-break:break-all}
+          .copy-btn{background:#FF6B6B;border:none;color:#fff;padding:8px 16px;border-radius:10px;font-weight:600;cursor:pointer;white-space:nowrap;font-size:13px;display:flex;align-items:center;gap:4px}
+          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{max-height:150px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
@@ -612,13 +611,13 @@ export default function WatchPage() {
         <div className="player-overlay">
           <div className="player-box">
             <div className="player-frame">
-              <div className="player-controls" style={{ position: 'absolute', top: 8, left: 8, right: 8, zIndex: 10 }}>
+              <div className="player-controls">
                 <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
                   {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
                 </div>
-                <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+                <button className="glass-btn circle" onClick={() => router.push('/')}><i className="fas fa-times" /></button>
               </div>
-              <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" style={{ width: '100%', height: '100%', border: 'none' }} />
+              <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 10, maxWidth: '100%' }}>
@@ -633,49 +632,66 @@ export default function WatchPage() {
                 </div>
               )}
 
-              {roomId && showChat ? (
-                <div className="chat-container" style={{ flex: 1 }}>
-                  <div className="chat-header">
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
-                    <div className="chat-header-btns">
-                      <button onClick={() => setShowChat(false)}>Fechar</button>
-                      <button onClick={leaveRoom}>Sair da sala</button>
+              {roomId ? (
+                showRoomLinkInChat ? (
+                  <div className="chat-container" style={{ flex: 1 }}>
+                    <div className="chat-header">
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>🔗 Compartilhar sala</span>
+                    </div>
+                    <div className="share-link-area">
+                      <p>Envie este link para seu amigo assistir junto:</p>
+                      <div className="link-box">
+                        <span className="link-text">{roomLink}</span>
+                        <button className="copy-btn" onClick={handleCopyLink}>
+                          {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar</>}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="chat-messages">
-                    {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
-                    {messages.map(msg => (
-                      msg.is_system ? (
-                        <div key={msg.id} className="chat-msg system">
-                          <span>{msg.content}</span>
-                        </div>
-                      ) : (
-                        <div key={msg.id} className="chat-msg">
-                          <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
-                          <div className="chat-msg-bubble">
-                            <div className="chat-msg-name">{msg.user_name}</div>
-                            <div className="chat-msg-text">{msg.content}</div>
+                ) : showChat ? (
+                  <div className="chat-container" style={{ flex: 1 }}>
+                    <div className="chat-header">
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                      <div className="chat-header-btns">
+                        <button onClick={() => setShowChat(false)}>Fechar</button>
+                        <button onClick={leaveRoom}>Sair da sala</button>
+                      </div>
+                    </div>
+                    <div className="chat-messages">
+                      {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+                      {messages.map(msg => (
+                        msg.is_system ? (
+                          <div key={msg.id} className="chat-msg system">
+                            <span>{msg.content}</span>
                           </div>
-                        </div>
-                      )
-                    ))}
-                    <div ref={chatEndRef} />
+                        ) : (
+                          <div key={msg.id} className="chat-msg">
+                            <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
+                            <div className="chat-msg-bubble">
+                              <div className="chat-msg-name">{msg.user_name}</div>
+                              <div className="chat-msg-text">{msg.content}</div>
+                            </div>
+                          </div>
+                        )
+                      ))}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <div className="chat-input-bar">
+                      <input
+                        type="text"
+                        placeholder="Digite sua mensagem..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+                      />
+                      <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+                    </div>
                   </div>
-                  <div className="chat-input-bar">
-                    <input
-                      type="text"
-                      placeholder="Digite sua mensagem..."
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
-                    />
-                    <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
-                  </div>
-                </div>
-              ) : roomId ? (
-                <button className="room-btn" onClick={() => setShowChat(true)}>
-                  <i className="fas fa-comments" /> Abrir chat
-                </button>
+                ) : (
+                  <button className="room-btn" onClick={() => setShowChat(true)}>
+                    <i className="fas fa-comments" /> Abrir chat
+                  </button>
+                )
               ) : (
                 <button className="room-btn" onClick={createRoomAndRedirect}>
                   <i className="fas fa-users" /> Assistir com amigo
@@ -685,28 +701,6 @@ export default function WatchPage() {
           </div>
         </div>
       )}
-
-      {showRoomModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <div className="modal-title">
-              <i className="fas fa-link" /> Sala criada!
-            </div>
-            <div className="modal-desc">
-              Copie o link abaixo e envie para quem quiser assistir junto com você.
-            </div>
-            <div className="modal-link-box">
-              <div className="modal-link">{roomLink}</div>
-              <button className="modal-copy-btn" onClick={handleCopyLink}>
-                {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar</>}
-              </button>
-            </div>
-            <button className="modal-close-btn" onClick={handleCloseModal}>
-              <i className="fas fa-play" /> Entendi, vou assistir
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
-              }
+            }
