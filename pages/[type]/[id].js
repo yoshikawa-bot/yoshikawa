@@ -600,7 +600,7 @@ export default function WatchPage() {
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
           .room-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
-          .chat-container{flex:1;min-height:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
           .chat-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
           .chat-header-btns{display:flex;gap:8px}
           .chat-header-btns button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
@@ -621,9 +621,8 @@ export default function WatchPage() {
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:#FF6B6B;border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
-          .login-required-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:8px;text-align:center;color:#aaa;font-size:14px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
-          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}}
+          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
       </Head>
@@ -746,7 +745,7 @@ export default function WatchPage() {
                 roomClosed ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
                     </div>
                     <div className="room-closed-message">
                       <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
@@ -756,7 +755,7 @@ export default function WatchPage() {
                 ) : showShareLink ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>🔗 Compartilhar sala</span>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-share-alt" /> Compartilhar sala</span>
                       {isRoomCreator && (
                         <div className="chat-header-btns">
                           <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
@@ -773,7 +772,7 @@ export default function WatchPage() {
                 ) : showChat ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
                       <div className="chat-header-btns">
                         {isRoomCreator && (
                           <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
@@ -822,7 +821,7 @@ export default function WatchPage() {
               ) : roomInvalid ? (
                 <div className="chat-container">
                   <div className="chat-header">
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
                   </div>
                   <div className="room-closed-message">
                     <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
@@ -832,7 +831,7 @@ export default function WatchPage() {
               ) : roomFull ? (
                 <div className="chat-container">
                   <div className="chat-header">
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
                   </div>
                   <div className="room-full-message">
                     <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
@@ -850,4 +849,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+          }
