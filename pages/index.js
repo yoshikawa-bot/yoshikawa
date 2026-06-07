@@ -450,25 +450,33 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
 
   const username = userProfile?.name ? `@${userProfile.name.toLowerCase().replace(/\s/g, '')}` : '@user'
 
+  const moviesCount = favorites?.filter(f => f.media_type === 'movie' || getMediaType(f) === 'movie').length || 0
+  const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
+
   return (
     <div className="profile-fullpage-overlay">
-      {/* Barra superior estilo Twitter */}
       <div className="profile-top-bar">
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
-        <span className="profile-top-title">{editing ? 'Editar perfil' : 'Perfil'}</span>
+        <div style={{ flex: 1 }} />
         {editing ? (
           <button className="profile-save-btn" onClick={handleSave}>Salvar</button>
         ) : (
-          <button className="profile-top-btn" onClick={() => setEditing(true)}>
-            <i className="fas fa-pencil" />
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="profile-top-btn" onClick={() => setEditing(true)}>
+              <i className="fas fa-pencil" />
+            </button>
+            {!isNew && (
+              <button className="profile-top-btn" onClick={() => setShowLogout(true)}>
+                <i className="fas fa-sign-out-alt" />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       <div className="profile-body">
-        {/* Banner */}
         <div
           className="profile-cover"
           style={bannerStyle}
@@ -481,7 +489,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
           )}
         </div>
 
-        {/* Avatar sobreposto */}
         <div className="profile-avatar-wrapper">
           <div
             className={`profile-avatar-circle ${editing ? 'avatar-editable' : ''}`}
@@ -500,7 +507,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
           </div>
         </div>
 
-        {/* Informações do perfil */}
         <div className="profile-info">
           {editing ? (
             <div className="edit-form">
@@ -517,14 +523,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
                 />
               </div>
               {error && <p className="profile-error">{error}</p>}
-              <div className="edit-field">
-                <label className="edit-label">Bio</label>
-                <input type="text" className="edit-input" placeholder="Escreva uma bio..." />
-              </div>
-              <div className="edit-field">
-                <label className="edit-label">Localização</label>
-                <input type="text" className="edit-input" value="Brasil" readOnly />
-              </div>
             </div>
           ) : (
             <>
@@ -535,42 +533,33 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               <p className="profile-meta">
                 <i className="fas fa-calendar-alt" /> Entrou em {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'hoje'}
               </p>
-              <p className="profile-meta">
-                <i className="fas fa-map-marker-alt" /> Brasil
-              </p>
               <div className="profile-stats">
-                <span><strong>{favorites?.length || 0}</strong> Favoritos</span>
-                <span><strong>0</strong> Seguindo</span>
-                <span><strong>0</strong> Seguidores</span>
+                <span><strong>{moviesCount}</strong> Filmes</span>
+                <span><strong>{seriesCount}</strong> Séries</span>
               </div>
             </>
           )}
         </div>
 
-        {/* Seção de favoritos (apenas visualização) */}
         {!editing && (
-          <div className="profile-favorites-section">
-            <h3 className="profile-favorites-title">Favoritos</h3>
-            {(!favorites || favorites.length === 0) ? (
-              <div className="empty-favorites">
-                <i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} />
-                <p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito ainda</p>
-              </div>
-            ) : (
-              <div className="favorites-list">
-                {favorites.map(item => (
-                  <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={() => {}} onClick={onPlay} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Botão de sair discreto */}
-        {!isNew && !editing && (
-          <button className="profile-logout-link" onClick={() => setShowLogout(true)}>
-            Sair da conta
-          </button>
+          <>
+            <div className="profile-divider" />
+            <div className="profile-favorites-section">
+              <h3 className="profile-favorites-title">Favoritos</h3>
+              {(!favorites || favorites.length === 0) ? (
+                <div className="empty-favorites">
+                  <i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} />
+                  <p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito ainda</p>
+                </div>
+              ) : (
+                <div className="favorites-list">
+                  {favorites.map(item => (
+                    <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={() => {}} onClick={onPlay} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -1294,28 +1283,26 @@ export default function Home() {
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
           .profile-top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;background:transparent;position:absolute;top:0;left:0;right:0;z-index:10}
           .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
-          .profile-top-title{font-size:20px;font-weight:700;color:#fff}
-          .profile-save-btn{font-size:18px;font-weight:700;color:#FF6B6B;background:transparent;padding:8px 16px;border-radius:20px}
+          .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
-          .profile-cover{width:100%;height:240px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
-          .cover-edit-icon{width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:28px}
-          .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-60px;position:relative;z-index:2}
-          .profile-avatar-circle{width:120px;height:120px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#FF6B6B}
+          .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
+          .cover-edit-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px}
+          .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-50px;position:relative;z-index:2}
+          .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#FF6B6B}
           .avatar-editable{cursor:pointer}
-          .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;opacity:0;transition:opacity 0.2s}
+          .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;opacity:0;transition:opacity 0.2s}
           .avatar-editable:hover .avatar-edit-overlay{opacity:1}
-          .profile-info{padding:12px 24px 0}
+          .profile-info{padding:8px 24px 0}
           .profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-          .profile-name{font-size:24px;font-weight:800;color:#fff}
-          .profile-username{font-size:16px;color:#888;margin-bottom:12px}
-          .profile-meta{font-size:15px;color:#888;display:flex;align-items:center;gap:8px;margin-bottom:6px}
-          .profile-meta i{width:18px;text-align:center}
-          .profile-stats{display:flex;gap:20px;margin:16px 0;font-size:15px;color:#888}
+          .profile-name{font-size:22px;font-weight:800;color:#fff}
+          .profile-username{font-size:15px;color:#888;margin-bottom:8px}
+          .profile-meta{font-size:14px;color:#888;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+          .profile-meta i{width:16px;text-align:center}
+          .profile-stats{display:flex;gap:20px;margin:12px 0;font-size:14px;color:#888}
           .profile-stats strong{color:#fff;font-weight:700}
-          .profile-favorites-section{padding:0 24px 24px}
-          .profile-favorites-title{font-size:20px;font-weight:700;margin-bottom:16px;color:#fff}
-          .profile-logout-link{display:block;text-align:center;color:#666;font-size:14px;padding:16px;margin:0 24px 32px;cursor:pointer;transition:color 0.2s}
-          .profile-logout-link:hover{color:#E04E4E}
+          .profile-divider{height:1px;background:rgba(255,255,255,0.1);margin:20px 0 0}
+          .profile-favorites-section{padding:16px 0 24px}
+          .profile-favorites-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(10px,2.6vw,22px);margin-bottom:clamp(8px,1.5vw,12px)}
           .edit-form{display:flex;flex-direction:column;gap:0}
           .edit-field{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
@@ -1377,4 +1364,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+  }
