@@ -181,7 +181,7 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
-        <button className="header-btn profile-btn" style={{ background: DEFAULT_PROFILE_COLOR }} onClick={onProfileClick}>
+        <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
           {userProfile ? (
             <img
               src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)}
@@ -457,7 +457,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
 
   return (
     <div className="profile-fullpage-overlay">
-      <div className="profile-top-bar">
+      <div className="profile-fixed-header">
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
@@ -478,7 +478,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
         )}
       </div>
 
-      <div className="profile-body">
+      <div className="profile-body" style={{ paddingTop: '60px' }}>
         <div
           className="profile-cover"
           style={bannerStyle}
@@ -510,6 +510,9 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
         </div>
 
         <div className="profile-info">
+          {editing && isNew && (
+            <p className="profile-create-hint">Crie um perfil para salvar seus favoritos e personalizar a experiência.</p>
+          )}
           {editing ? (
             <div className="edit-form">
               <div className="edit-field">
@@ -654,6 +657,17 @@ export default function Home() {
 
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
+
+  useEffect(() => {
+    const savedSection = sessionStorage.getItem('yoshikawaActiveSection')
+    if (savedSection && savedSection !== 'home') {
+      setActiveSection(savedSection)
+    }
+  }, [])
+
+  useEffect(() => {
+    sessionStorage.setItem('yoshikawaActiveSection', activeSection)
+  }, [activeSection])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1057,40 +1071,42 @@ export default function Home() {
   )
 
   const renderSearchPage = () => (
-    <>
-      <div className="search-container">
+    <div className="search-page-container">
+      <div className="search-fixed-header">
         <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
-      {searchQuery.trim() ? (
-        <>
-          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
-          <div className="search-results-list">
-            {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,30px)' }}>{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
-          <section className="section">
-            <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
-            <div className="categories-grid">
-              {CATEGORIES.map((category, index) => {
-                const genreId = CATEGORY_GENRE_MAP[category.name]
-                const image = categoryImages[category.name] || GENRE_IMAGES[genreId] || DEFAULT_POSTER
-                return (
-                  <CategoryCard
-                    key={index}
-                    category={{ ...category, image }}
-                    onClick={() => handleCategoryClick(category.name)}
-                  />
-                )
-              })}
+      <div className="search-content" style={{ paddingTop: '70px' }}>
+        {searchQuery.trim() ? (
+          <>
+            <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
+            <div className="search-results-list">
+              {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
             </div>
-          </section>
-        </>
-      )}
-    </>
+          </>
+        ) : (
+          <>
+            <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,30px)' }}>{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
+            <section className="section">
+              <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
+              <div className="categories-grid">
+                {CATEGORIES.map((category, index) => {
+                  const genreId = CATEGORY_GENRE_MAP[category.name]
+                  const image = categoryImages[category.name] || GENRE_IMAGES[genreId] || DEFAULT_POSTER
+                  return (
+                    <CategoryCard
+                      key={index}
+                      category={{ ...category, image }}
+                      onClick={() => handleCategoryClick(category.name)}
+                    />
+                  )
+                })}
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+    </div>
   )
 
   const renderMenuPage = () => (
@@ -1233,12 +1249,14 @@ export default function Home() {
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
-          .search-container{display:flex;align-items:center;gap:clamp(8px,1.5vw,18px);padding:clamp(12px,2vw,24px) clamp(10px,2.6vw,22px);padding-top:clamp(20px,3vw,40px)}
+          .search-page-container{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+          .search-fixed-header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,20px) clamp(16px,3vw,24px);display:flex;align-items:center;gap:clamp(10px,2vw,18px);height:clamp(60px,8vw,90px)}
           .search-back-btn{color:#ffffff;font-size:clamp(24px,4vw,38px);width:clamp(24px,4vw,38px);height:clamp(24px,4vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-          .search-bar{flex:1;height:clamp(48px,7vw,74px);background:#1B1B1B;border-radius:clamp(24px,4vw,38px);display:flex;align-items:center;padding:0 clamp(16px,2.5vw,24px);gap:clamp(8px,1.5vw,12px)}
-          .search-icon{color:#A5A5A5;font-size:clamp(16px,2.5vw,22px);flex-shrink:0}
-          .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,20px);font-weight:500;outline:none;min-width:0}
+          .search-bar{flex:1;height:clamp(40px,6vw,52px);background:#1B1B1B;border-radius:clamp(20px,4vw,26px);display:flex;align-items:center;padding:0 clamp(12px,2vw,18px);gap:clamp(6px,1vw,10px)}
+          .search-icon{color:#A5A5A5;font-size:clamp(14px,2vw,18px);flex-shrink:0}
+          .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,16px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
+          .search-content{flex:1;overflow-y:auto;padding-bottom:clamp(70px,9vw,96px)}
 
           .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
@@ -1283,8 +1301,8 @@ export default function Home() {
           .profile-error{color:#E04E4E;font-size:13px;margin-top:8px}
 
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
-          .profile-top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;background:transparent;position:absolute;top:0;left:0;right:0;z-index:10}
-          .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+          .profile-fixed-header{position:fixed;top:0;left:0;right:0;z-index:10;background:#101010;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px}
+          .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
           .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
@@ -1294,6 +1312,7 @@ export default function Home() {
           .avatar-editable{cursor:pointer}
           .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px}
           .profile-info{padding:8px 24px 0}
+          .profile-create-hint{font-size:14px;color:#888;text-align:center;margin:16px 0 0;padding:0 24px}
           .profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
           .profile-name{font-size:22px;font-weight:800;color:#fff}
           .profile-username{font-size:15px;color:#888;margin-bottom:8px}
