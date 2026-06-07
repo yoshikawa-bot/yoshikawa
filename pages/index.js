@@ -6,6 +6,7 @@ const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 const DEFAULT_PROFILE_COLOR = '#FF6B6B'
+const DEFAULT_AVATAR_BG = '#505050'
 
 const GENRE_IMAGES = {
   12: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
@@ -68,7 +69,7 @@ const getItemYear = (item) => {
   return new Date(item.release_date || item.first_air_date).getFullYear() || null
 }
 
-const getAvatarUrl = (name, color = DEFAULT_PROFILE_COLOR) => {
+const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   const bg = color.replace('#', '')
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
@@ -402,8 +403,10 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
   </div>
 )
 
-export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, isNew = false }) => {
-  const [editing, setEditing] = useState(isNew)
+export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode }) => {
+  const isNew = mode === 'create'
+  const startInEdit = mode === 'edit' || mode === 'create'
+  const [editing, setEditing] = useState(startInEdit)
   const [name, setName] = useState(userProfile?.name || '')
   const [avatarPreview, setAvatarPreview] = useState(userProfile?.avatarUrl || null)
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
@@ -448,8 +451,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
     ? { backgroundImage: `url(${bannerPreview || userProfile?.bannerUrl})` }
     : { background: DEFAULT_PROFILE_COLOR }
 
-  const username = userProfile?.name ? `@${userProfile.name.toLowerCase().replace(/\s/g, '')}` : '@user'
-
+  const username = userProfile?.name || name || 'user'
   const moviesCount = favorites?.filter(f => f.media_type === 'movie' || getMediaType(f) === 'movie').length || 0
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
 
@@ -1102,14 +1104,14 @@ export default function Home() {
         </div>
       )}
       <div className="user-card" onClick={() => !userProfile ? openProfile('create') : openProfile('view')}>
-        <div className="user-avatar" style={{ background: DEFAULT_PROFILE_COLOR }}>
+        <div className="user-avatar" style={{ background: DEFAULT_AVATAR_BG }}>
           {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); openProfile('view') }}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
-        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'view' : 'create')} />
+        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
         <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
@@ -1288,10 +1290,9 @@ export default function Home() {
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
           .cover-edit-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px}
           .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-50px;position:relative;z-index:2}
-          .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#FF6B6B}
+          .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#505050}
           .avatar-editable{cursor:pointer}
-          .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;opacity:0;transition:opacity 0.2s}
-          .avatar-editable:hover .avatar-edit-overlay{opacity:1}
+          .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px}
           .profile-info{padding:8px 24px 0}
           .profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
           .profile-name{font-size:22px;font-weight:800;color:#fff}
@@ -1302,7 +1303,7 @@ export default function Home() {
           .profile-stats strong{color:#fff;font-weight:700}
           .profile-divider{height:1px;background:rgba(255,255,255,0.1);margin:20px 0 0}
           .profile-favorites-section{padding:16px 0 24px}
-          .profile-favorites-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(10px,2.6vw,22px);margin-bottom:clamp(8px,1.5vw,12px)}
+          .profile-favorites-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#fff;padding:0 clamp(8px,1.6vw,13px);margin:0 0 clamp(8px,1.5vw,12px)}
           .edit-form{display:flex;flex-direction:column;gap:0}
           .edit-field{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
@@ -1355,7 +1356,7 @@ export default function Home() {
               onSave={handleSaveProfile}
               onLogout={handleLogout}
               onClose={() => setShowProfile(false)}
-              isNew={!userProfile}
+              mode={profileMode}
             />
           )}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
@@ -1364,4 +1365,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+    }
