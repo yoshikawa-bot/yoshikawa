@@ -402,12 +402,13 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => (
   </div>
 )
 
-export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
-  const [name, setName] = useState(existingProfile?.name || '')
-  const [avatarPreview, setAvatarPreview] = useState(existingProfile?.avatarUrl || null)
-  const [bannerPreview, setBannerPreview] = useState(existingProfile?.bannerUrl || null)
+export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, isNew = false }) => {
+  const [editing, setEditing] = useState(isNew)
+  const [name, setName] = useState(userProfile?.name || '')
+  const [avatarPreview, setAvatarPreview] = useState(userProfile?.avatarUrl || null)
+  const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
-  const isEditing = !!existingProfile
+  const [showLogout, setShowLogout] = useState(false)
 
   const handleFileRead = (file, setPreview) => {
     if (file.size > 1048576) {
@@ -432,17 +433,20 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
     handleFileRead(file, setBannerPreview)
   }
 
-  const handleSubmit = () => {
+  const handleSave = () => {
     const trimmed = name.trim()
     if (!trimmed || trimmed.length < 2) { setError('Nome deve ter pelo menos 2 caracteres'); return }
     if (trimmed.length > 20) { setError('Nome deve ter no máximo 20 caracteres'); return }
-    onCreate({
+    onSave({
       name: trimmed,
-      color: DEFAULT_PROFILE_COLOR,
       avatarUrl: avatarPreview,
       bannerUrl: bannerPreview
     })
   }
+
+  const bannerStyle = (bannerPreview || userProfile?.bannerUrl)
+    ? { backgroundImage: `url(${bannerPreview || userProfile?.bannerUrl})` }
+    : { background: `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }
 
   return (
     <div className="profile-fullpage-overlay">
@@ -450,83 +454,73 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
         <button className="profile-fullpage-back" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
-        <h2 className="profile-fullpage-title">{isEditing ? 'Editar Perfil' : 'Criar Perfil'}</h2>
-        <div style={{ width: 32 }} />
+        {editing ? (
+          <>
+            <h2 className="profile-fullpage-title">Editar perfil</h2>
+            <button className="profile-save-text" onClick={handleSave}>Salvar</button>
+          </>
+        ) : (
+          <>
+            <h2 className="profile-fullpage-title">Perfil</h2>
+            <button className="profile-edit-btn" onClick={() => setEditing(true)}>
+              <i className="fas fa-paint-brush" />
+            </button>
+          </>
+        )}
       </div>
 
-      <div className="profile-fullpage-body">
+      <div className="profile-content">
         <div
-          className="profile-banner-upload"
-          style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }}
-          onClick={() => document.getElementById('bannerFileInput').click()}
+          className={`profile-banner ${editing ? 'profile-banner-edit' : ''}`}
+          style={bannerStyle}
+          onClick={editing ? () => document.getElementById('bannerFileInput').click() : undefined}
         >
-          <div className="edit-indicator"><i className="fas fa-paint-brush" /></div>
-        </div>
-
-        <div className="profile-avatar-upload" onClick={() => document.getElementById('avatarFileInput').click()}>
-          {avatarPreview ? (
-            <img src={avatarPreview} alt="" className="profile-avatar-img" />
-          ) : (
-            <img src={getAvatarUrl(name.trim() || '?')} alt="" className="profile-avatar-img" />
+          {editing && (
+            <div className="edit-badge">
+              <i className="fas fa-paint-brush" />
+            </div>
           )}
-          <div className="edit-indicator avatar-edit"><i className="fas fa-paint-brush" /></div>
         </div>
 
-        <input type="file" id="avatarFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
-        <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
-
-        <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
-        {error && <p className="profile-error">{error}</p>}
-        <p className="profile-terms">Etapa necessária. Ao criar o perfil, você concorda com os <strong>Termos de Uso</strong>.</p>
-        <button className="profile-create-btn" onClick={handleSubmit}>
-          {isEditing ? 'Salvar' : 'Entrar'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-export const ProfileView = ({ userProfile, favorites, onPlay, onEdit, onLogout, onClose }) => {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const bannerStyle = userProfile.bannerUrl
-    ? { backgroundImage: `url(${userProfile.bannerUrl})` }
-    : { background: `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }
-
-  return (
-    <div className="profile-fullpage-overlay">
-      <div className="profile-fullpage-header transparent-header">
-        <button className="profile-fullpage-back" onClick={onClose}>
-          <i className="fas fa-arrow-left" />
-        </button>
-        <button className="profile-edit-btn" onClick={onEdit}>
-          <i className="fas fa-paint-brush" /> Editar
-        </button>
-      </div>
-
-      <div className="profile-view-content">
-        <div className="profile-banner-view" style={bannerStyle} />
-        <div className="profile-avatar-view-container">
-          <div className="profile-avatar-view" style={{ background: DEFAULT_PROFILE_COLOR }}>
-            {userProfile.avatarUrl ? (
-              <img src={userProfile.avatarUrl} alt="" className="profile-avatar-img" />
+        <div className="profile-avatar-container">
+          <div
+            className={`profile-avatar-circle ${editing ? 'avatar-editable' : ''}`}
+            onClick={editing ? () => document.getElementById('avatarFileInput').click() : undefined}
+          >
+            {(avatarPreview || userProfile?.avatarUrl) ? (
+              <img src={avatarPreview || userProfile?.avatarUrl} alt="" className="profile-avatar-img" />
             ) : (
-              <img src={getAvatarUrl(userProfile.name)} alt="" className="profile-avatar-img" />
+              <img src={getAvatarUrl(name || '?')} alt="" className="profile-avatar-img" />
+            )}
+            {editing && (
+              <div className="edit-badge avatar-badge">
+                <i className="fas fa-paint-brush" />
+              </div>
             )}
           </div>
         </div>
 
+        {editing && (
+          <input type="text" placeholder="Seu nome" className="profile-name-input" value={name} onChange={e => { setName(e.target.value); setError('') }} maxLength={20} autoFocus />
+        )}
+        {error && <p className="profile-error">{error}</p>}
+
         <div className="profile-info-section">
-          <h2 className="profile-view-name">{userProfile.name}</h2>
-          <div className="profile-view-stats">
-            <div className="profile-stat">
-              <span className="profile-stat-value">{favorites?.length || 0}</span>
-              <span className="profile-stat-label">Favoritos</span>
-            </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">{userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span>
-              <span className="profile-stat-label">Membro desde</span>
-            </div>
-          </div>
+          {!editing && (
+            <>
+              <h2 className="profile-view-name">{userProfile?.name || name}</h2>
+              <div className="profile-view-stats">
+                <div className="profile-stat">
+                  <span className="profile-stat-value">{favorites?.length || 0}</span>
+                  <span className="profile-stat-label">Favoritos</span>
+                </div>
+                <div className="profile-stat">
+                  <span className="profile-stat-value">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Hoje'}</span>
+                  <span className="profile-stat-label">Membro desde</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="profile-favorites-section">
@@ -545,12 +539,17 @@ export const ProfileView = ({ userProfile, favorites, onPlay, onEdit, onLogout, 
           )}
         </div>
 
-        <button className="profile-logout-btn full-width" onClick={() => setShowLogoutConfirm(true)}>
-          <i className="fas fa-sign-out-alt" /> Sair da conta
-        </button>
+        {!isNew && (
+          <button className="profile-logout-link" onClick={() => setShowLogout(true)}>
+            Sair da conta
+          </button>
+        )}
       </div>
 
-      {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={() => setShowLogoutConfirm(false)} />}
+      <input type="file" id="avatarFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+      <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
+
+      {showLogout && <LogoutConfirm onConfirm={() => { setShowLogout(false); onLogout() }} onCancel={() => setShowLogout(false)} />}
     </div>
   )
 }
@@ -598,9 +597,8 @@ export default function Home() {
   const [welcomed, setWelcomed] = useState(false)
   const [loadingComplete, setLoadingComplete] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
-  const [showProfileCreation, setShowProfileCreation] = useState(false)
-  const [editingProfile, setEditingProfile] = useState(null)
-  const [showProfileView, setShowProfileView] = useState(false)
+  const [showProfile, setShowProfile] = useState(false) // unified profile page
+  const [profileMode, setProfileMode] = useState('view') // 'create', 'view', 'edit'
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
@@ -835,33 +833,36 @@ export default function Home() {
     setUserProfile(null)
     setFavorites([])
     try { localStorage.removeItem('yoshikawaProfile'); localStorage.removeItem('yoshikawaFavorites') } catch {}
-    setShowProfileView(false)
+    setShowProfile(false)
   }
 
-  const handleCreateProfile = (profileData) => {
+  const handleSaveProfile = (profileData) => {
+    const now = new Date().toISOString()
     const updatedProfile = {
-      ...(editingProfile || {}),
+      ...userProfile,
       name: profileData.name,
-      color: DEFAULT_PROFILE_COLOR,
       avatarUrl: profileData.avatarUrl,
       bannerUrl: profileData.bannerUrl,
-      createdAt: editingProfile?.createdAt || new Date().toISOString(),
-      favoritesCount: editingProfile?.favoritesCount || 0
+      color: DEFAULT_PROFILE_COLOR,
+      createdAt: userProfile?.createdAt || now,
+      favoritesCount: userProfile?.favoritesCount || 0
     }
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
-    setShowProfileCreation(false)
-    setEditingProfile(null)
+    setShowProfile(false)
   }
 
-  const openProfileModal = (existing = null) => {
-    setEditingProfile(existing)
-    setShowProfileCreation(true)
+  const openProfile = (mode = 'view') => {
+    if (mode === 'create') {
+      setUserProfile(null) // ensure no profile data for creation
+    }
+    setProfileMode(mode)
+    setShowProfile(true)
   }
 
   const handleProfileClick = () => {
-    if (userProfile) setShowProfileView(true)
-    else openProfileModal(null)
+    if (userProfile) openProfile('view')
+    else openProfile('create')
   }
 
   const handleLogoClick = () => {
@@ -1080,21 +1081,21 @@ export default function Home() {
     <section className="section" style={{ paddingTop: 'clamp(40px,8vw,80px)' }}>
       {!userProfile && (
         <div className="menu-banner-container">
-          <div className="verify-banner" onClick={() => openProfileModal(null)} style={{ cursor: 'pointer' }}>
+          <div className="verify-banner" onClick={() => openProfile('create')} style={{ cursor: 'pointer' }}>
             <span>Crie seu perfil para personalizar sua experiência!</span>
             <i className="fas fa-chevron-right" />
           </div>
         </div>
       )}
-      <div className="user-card" onClick={() => !userProfile ? openProfileModal(null) : setShowProfileView(true)}>
+      <div className="user-card" onClick={() => !userProfile ? openProfile('create') : openProfile('view')}>
         <div className="user-avatar" style={{ background: DEFAULT_PROFILE_COLOR }}>
           {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
-        {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); setShowProfileView(true) }}><i className="fas fa-sign-out-alt" /></button>}
+        {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); openProfile('view') }}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
-        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfileModal(userProfile || null)} />
+        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'view' : 'create')} />
         <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
         <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
         <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
@@ -1263,43 +1264,34 @@ export default function Home() {
           .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;align-items:center;justify-content:center;padding:20px}
           .modal-header{display:flex;justify-content:space-between;align-items:center;width:100%}
           .modal-close-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:20px;background:transparent;border:none;cursor:pointer;flex-shrink:0}
-          .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin:0}
-          .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center;width:100%}
-          .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
-          .profile-error{color:#E04E4E;font-size:13px}
-          .profile-terms{font-size:clamp(11px,1.5vw,13px);color:#888;text-align:center;padding:0 10px}
-          .profile-terms strong{color:#ddd}
-          .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
-          .profile-create-btn:hover{opacity:0.9}
+          .profile-name-input{width:90%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center;margin-top:16px}
+          .profile-error{color:#E04E4E;font-size:13px;margin-top:8px}
 
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
-          .profile-fullpage-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(12px,2vw,20px) clamp(16px,3vw,24px);min-height:clamp(56px,8vw,70px);background:#101010;position:sticky;top:0;z-index:10}
-          .transparent-header{background:transparent;position:absolute;width:100%}
+          .profile-fullpage-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(12px,2vw,20px) clamp(16px,3vw,24px);min-height:clamp(56px,8vw,70px);background:#101010;z-index:10}
           .profile-fullpage-back{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
           .profile-fullpage-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#fff}
-          .profile-edit-btn{display:flex;align-items:center;gap:6px;color:#fff;font-size:15px;font-weight:600;background:rgba(255,255,255,0.15);padding:8px 16px;border-radius:20px}
-          .profile-fullpage-body{flex:1;padding:0 clamp(16px,3vw,24px) 40px;display:flex;flex-direction:column;align-items:center;gap:20px;margin-top:-clamp(30px,5vw,40px)}
+          .profile-save-text{color:#FF6B6B;font-size:16px;font-weight:600;background:none}
+          .profile-edit-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
 
-          .profile-banner-upload{width:100%;height:clamp(140px,25vw,200px);border-radius:0;background-size:cover;background-position:center;position:relative;cursor:pointer}
-          .edit-indicator{position:absolute;bottom:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
-          .profile-avatar-upload{width:90px;height:90px;border-radius:50%;position:relative;cursor:pointer;z-index:2;border:3px solid #101010;margin-top:-45px;overflow:hidden}
-          .avatar-edit{bottom:4px;right:4px;width:28px;height:28px;font-size:12px}
-
-          .profile-view-content{display:flex;flex-direction:column}
-          .profile-banner-view{width:100%;height:180px;background-size:cover;background-position:center}
-          .profile-avatar-view-container{display:flex;justify-content:center;margin-top:-45px;position:relative;z-index:2}
-          .profile-avatar-view{width:90px;height:90px;border-radius:50%;border:3px solid #101010;overflow:hidden}
-          .profile-info-section{padding:16px 24px 0;text-align:center}
+          .profile-content{flex:1}
+          .profile-banner{width:100%;height:180px;background-size:cover;background-position:center;position:relative}
+          .profile-banner-edit{cursor:pointer}
+          .profile-avatar-container{display:flex;justify-content:center;margin-top:-45px;position:relative;z-index:2}
+          .profile-avatar-circle{width:90px;height:90px;border-radius:50%;border:3px solid #101010;overflow:hidden;position:relative}
+          .avatar-editable{cursor:pointer}
+          .edit-badge{position:absolute;bottom:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+          .avatar-badge{bottom:2px;right:2px}
+          .profile-info-section{padding:12px 24px 0;text-align:center}
           .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff;margin:0 0 16px}
-          .profile-view-stats{display:flex;justify-content:space-around;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
+          .profile-view-stats{display:flex;justify-content:space-around;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:24px}
           .profile-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
           .profile-stat-value{font-size:clamp(16px,2.5vw,20px);font-weight:700;color:#ffffff}
           .profile-stat-label{font-size:clamp(11px,1.5vw,13px);color:#888}
-          .profile-favorites-section{padding:24px}
+          .profile-favorites-section{padding:0 24px 24px}
           .profile-favorites-title{font-size:clamp(16px,2.5vw,20px);font-weight:700;margin-bottom:16px}
-          .profile-logout-btn.full-width{width:100%;margin:24px;align-self:center;max-width:calc(100% - 48px)}
-          .profile-logout-btn{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#E04E4E;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;padding:12px;border-radius:12px}
-          .profile-logout-btn:hover{background:rgba(224,78,78,0.1)}
+          .profile-logout-link{display:block;text-align:center;color:#888;font-size:14px;padding:16px;margin:0 24px 32px;text-decoration:none;cursor:pointer;transition:color 0.2s}
+          .profile-logout-link:hover{color:#E04E4E}
 
           .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
           .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin:0}
@@ -1320,12 +1312,11 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && !showProfileCreation && !showProfileView && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+          {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-          <main className="container" style={showSearch || showProfileCreation || showProfileView ? { paddingTop: '0' } : {}}>
+          <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
-              showProfileCreation ? null :
-              showProfileView ? null :
+              showProfile ? null :
               activeSection === 'home' ? renderHomePage() :
               activeSection === 'animes' ? renderAnimesPage() :
               activeSection === 'favorites' ? renderFavoritesPage() :
@@ -1333,7 +1324,7 @@ export default function Home() {
               renderHomePage()}
           </main>
 
-          {!showSearch && !showProfileCreation && !showProfileView && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+          {!showSearch && !showProfile && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
             navigateTo(section)
             setShowSearch(false)
             setSearchQuery('')
@@ -1341,18 +1332,15 @@ export default function Home() {
             setActiveSearchFilter('Tudo')
           }} />}
 
-          {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => { setShowProfileCreation(false); setEditingProfile(null) }} existingProfile={editingProfile} />}
-          {showProfileView && userProfile && (
-            <ProfileView
+          {showProfile && (
+            <ProfilePage
               userProfile={userProfile}
               favorites={favorites}
               onPlay={handlePlay}
-              onEdit={() => {
-                setShowProfileView(false)
-                openProfileModal(userProfile)
-              }}
+              onSave={handleSaveProfile}
               onLogout={handleLogout}
-              onClose={() => setShowProfileView(false)}
+              onClose={() => setShowProfile(false)}
+              isNew={!userProfile}
             />
           )}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
@@ -1361,4 +1349,4 @@ export default function Home() {
       )}
     </>
   )
-                                         }
+    }
