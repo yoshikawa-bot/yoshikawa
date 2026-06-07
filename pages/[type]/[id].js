@@ -35,7 +35,8 @@ const ContentLoader = () => (
 
 export default function WatchPage() {
   const router = useRouter()
-  const { type, id, room: roomQuery } = router.query
+  const { type, id } = router.query
+  const { room: roomQuery } = router.query
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const [content, setContent] = useState(null)
@@ -200,7 +201,7 @@ export default function WatchPage() {
     setRoomId(data.id)
     setShowRoomModal(true)
     setRoomWaiting(true)
-    const link = `${window.location.origin}/watch?type=${type}&id=${content.id}${type === 'tv' ? `&s=${season}&e=${episode}` : ''}&room=${data.id}`
+    const link = `${window.location.origin}/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${season}&e=${episode}` : ''}`
     navigator.clipboard.writeText(link)
     startWaitingTimeout()
   }
@@ -576,4 +577,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+    }
