@@ -12,6 +12,9 @@ const supabase = createClient(
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 const DEFAULT_AVATAR_BG = '#505050'
+const MAX_ROOM_USERS = 5
+const MESSAGE_COOLDOWN_MS = 2000
+const MAX_MESSAGE_LENGTH = 500
 
 const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   const bg = color.replace('#', '')
@@ -51,6 +54,7 @@ export default function WatchPage() {
   const [showChat, setShowChat] = useState(true)
   const [isRoomCreator, setIsRoomCreator] = useState(false)
   const [roomClosed, setRoomClosed] = useState(false)
+  const [roomFull, setRoomFull] = useState(false)
 
   const [showShareLink, setShowShareLink] = useState(false)
   const [roomLink, setRoomLink] = useState('')
@@ -66,6 +70,7 @@ export default function WatchPage() {
   const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
   const roomCreatorRef = useRef(false)
+  const lastMessageTimeRef = useRef(0)
 
   useEffect(() => {
     try {
@@ -100,6 +105,7 @@ export default function WatchPage() {
     roomCreatorRef.current = false
     setShowShareLink(false)
     setRoomClosed(false)
+    setRoomFull(false)
     if (type === 'movie') {
       setIsPlaying(true)
     } else if (type === 'tv') {
@@ -115,7 +121,11 @@ export default function WatchPage() {
     const subscription = supabase
       .channel(`room-${roomId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` }, (payload) => {
-        setMessages(prev => [...prev, payload.new])
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === payload.new.id)
+          if (exists) return prev
+          return [...prev, payload.new]
+        })
       })
       .subscribe()
 
@@ -199,12 +209,24 @@ export default function WatchPage() {
   }, [roomId])
 
   useEffect(() => {
-    if (roomId && effectiveUserName) {
+    if (!roomId || !effectiveUserName) return
+
+    const initRoom = async () => {
+      if (!roomCreatorRef.current) {
+        const canJoin = await checkRoomCapacity()
+        if (!canJoin) {
+          setRoomFull(true)
+          setRoomId(null)
+          return
+        }
+      }
       fetchMessages()
       updateHeartbeat()
       startInactivityTimer()
       startRoomExpiryTimer()
     }
+
+    initRoom()
   }, [roomId, effectiveUserName])
 
   useEffect(() => {
@@ -217,6 +239,15 @@ export default function WatchPage() {
       document.body.style.overflow = ''
     }
   }, [isPlaying])
+
+  const checkRoomCapacity = async () => {
+    const { count, error } = await supabase
+      .from('room_users')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId)
+    if (error) return false
+    return count < MAX_ROOM_USERS
+  }
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -296,10 +327,11 @@ export default function WatchPage() {
     roomCreatorRef.current = false
     setShowShareLink(false)
     setRoomClosed(false)
+    setRoomFull(false)
   }
 
   const endRoom = async () => {
-    if (!roomId || !effectiveUserName) return
+    if (!roomId || !effectiveUserName || !isRoomCreator) return
     await supabase.from('room_users').delete().eq('room_id', roomId).eq('user_name', effectiveUserName)
     closeRoom()
     setRoomClosed(true)
@@ -335,6 +367,13 @@ export default function WatchPage() {
 
   const sendMessage = async () => {
     if (!chatInput.trim() || !roomId || !effectiveUserName) return
+    if (chatInput.length > MAX_MESSAGE_LENGTH) return
+    if (roomClosed) return
+
+    const now = Date.now()
+    if (now - lastMessageTimeRef.current < MESSAGE_COOLDOWN_MS) return
+    lastMessageTimeRef.current = now
+
     await supabase.from('messages').insert({
       room_id: roomId,
       user_name: effectiveUserName,
@@ -540,6 +579,7 @@ export default function WatchPage() {
           .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
           .room-closed-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
+          .room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:#FF6B6B;border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
@@ -639,7 +679,7 @@ export default function WatchPage() {
                 <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
                   {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
                 </div>
-                <button className="glass-btn circle" onClick={() => router.push('/')}><i className="fas fa-times" /></button>
+                <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
               </div>
               <div className="player-frame">
                 <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
@@ -672,9 +712,11 @@ export default function WatchPage() {
                   <div className="chat-container" style={{ flex: 1 }}>
                     <div className="chat-header">
                       <span style={{ fontWeight: 600, fontSize: 14 }}>🔗 Compartilhar sala</span>
-                      <div className="chat-header-btns">
-                        <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
-                      </div>
+                      {isRoomCreator && (
+                        <div className="chat-header-btns">
+                          <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
+                        </div>
+                      )}
                     </div>
                     <div className="share-link-area">
                       <p>Envie o link para seu amigo assistir junto:</p>
@@ -688,7 +730,9 @@ export default function WatchPage() {
                     <div className="chat-header">
                       <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
                       <div className="chat-header-btns">
-                        <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
+                        {isRoomCreator && (
+                          <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
+                        )}
                         <button onClick={leaveRoom}>Sair</button>
                       </div>
                     </div>
@@ -711,22 +755,35 @@ export default function WatchPage() {
                       ))}
                       <div ref={chatEndRef} />
                     </div>
-                    <div className="chat-input-bar">
-                      <input
-                        type="text"
-                        placeholder="Digite sua mensagem..."
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
-                      />
-                      <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
-                    </div>
+                    {!roomClosed && (
+                      <div className="chat-input-bar">
+                        <input
+                          type="text"
+                          placeholder="Digite sua mensagem..."
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+                          maxLength={MAX_MESSAGE_LENGTH}
+                        />
+                        <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button className="room-btn" onClick={() => setShowChat(true)}>
                     <i className="fas fa-comments" /> Abrir chat
                   </button>
                 )
+              ) : roomFull ? (
+                <div className="chat-container" style={{ flex: 1 }}>
+                  <div className="chat-header">
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>💬 Chat da sala</span>
+                  </div>
+                  <div className="room-full-message">
+                    <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                    <span>Sala cheia (máximo {MAX_ROOM_USERS} pessoas).</span>
+                  </div>
+                </div>
               ) : (
                 <button className="room-btn" onClick={createRoomAndRedirect}>
                   <i className="fas fa-users" /> Assistir com amigo
@@ -738,4 +795,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+            }
