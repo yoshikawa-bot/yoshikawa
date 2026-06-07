@@ -5,7 +5,7 @@ import { useRouter } from 'next/router'
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
-const DEFAULT_PROFILE_COLOR = '#E04E4E'
+const DEFAULT_PROFILE_COLOR = '#FF6B6B'
 
 const GENRE_IMAGES = {
   12: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
@@ -445,21 +445,22 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
   }
 
   return (
-    <div className="profile-creation-overlay">
-      <div className="profile-creation-card">
-        <div className="modal-header">
-          <h2 className="profile-creation-title">{isEditing ? 'Editar Perfil' : 'Criar Perfil'}</h2>
-          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
-        </div>
-        <p className="profile-creation-subtitle">{isEditing ? 'Altere seu nome, foto e banner' : 'Escolha seu nome, foto e banner'}</p>
+    <div className="profile-fullpage-overlay">
+      <div className="profile-fullpage-header">
+        <button className="profile-fullpage-back" onClick={onClose}>
+          <i className="fas fa-arrow-left" />
+        </button>
+        <h2 className="profile-fullpage-title">{isEditing ? 'Editar Perfil' : 'Criar Perfil'}</h2>
+        <div style={{ width: 32 }} />
+      </div>
 
+      <div className="profile-fullpage-body">
         <div
           className="profile-banner-upload"
           style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }}
           onClick={() => document.getElementById('bannerFileInput').click()}
         >
-          <i className="fas fa-camera" />
-          <span>Toque para alterar o banner</span>
+          <div className="edit-indicator"><i className="fas fa-paint-brush" /></div>
         </div>
 
         <div className="profile-avatar-upload" onClick={() => document.getElementById('avatarFileInput').click()}>
@@ -468,7 +469,7 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
           ) : (
             <img src={getAvatarUrl(name.trim() || '?')} alt="" className="profile-avatar-img" />
           )}
-          <div className="avatar-upload-overlay"><i className="fas fa-camera" /></div>
+          <div className="edit-indicator avatar-edit"><i className="fas fa-paint-brush" /></div>
         </div>
 
         <input type="file" id="avatarFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
@@ -485,25 +486,27 @@ export const ProfileCreation = ({ onCreate, onClose, existingProfile }) => {
   )
 }
 
-export const ProfileView = ({ userProfile, onLogout, onClose }) => {
+export const ProfileView = ({ userProfile, favorites, onPlay, onEdit, onLogout, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const bannerStyle = userProfile.bannerUrl
     ? { backgroundImage: `url(${userProfile.bannerUrl})` }
     : { background: `linear-gradient(135deg, ${DEFAULT_PROFILE_COLOR}, #222)` }
 
   return (
-    <div className="profile-creation-overlay" onClick={onClose}>
-      <div className="profile-page-modal" onClick={e => e.stopPropagation()}>
-        <button className="modal-close-btn profile-close-fixed" onClick={onClose}>
-          <i className="fas fa-times" />
+    <div className="profile-fullpage-overlay">
+      <div className="profile-fullpage-header transparent-header">
+        <button className="profile-fullpage-back" onClick={onClose}>
+          <i className="fas fa-arrow-left" />
         </button>
+        <button className="profile-edit-btn" onClick={onEdit}>
+          <i className="fas fa-paint-brush" /> Editar
+        </button>
+      </div>
 
-        <div className="profile-banner" style={bannerStyle}>
-          {!userProfile.bannerUrl && <div className="profile-banner-placeholder" />}
-        </div>
-
-        <div className="profile-avatar-container">
-          <div className="profile-avatar-circle" style={{ background: DEFAULT_PROFILE_COLOR }}>
+      <div className="profile-view-content">
+        <div className="profile-banner-view" style={bannerStyle} />
+        <div className="profile-avatar-view-container">
+          <div className="profile-avatar-view" style={{ background: DEFAULT_PROFILE_COLOR }}>
             {userProfile.avatarUrl ? (
               <img src={userProfile.avatarUrl} alt="" className="profile-avatar-img" />
             ) : (
@@ -516,7 +519,7 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
           <h2 className="profile-view-name">{userProfile.name}</h2>
           <div className="profile-view-stats">
             <div className="profile-stat">
-              <span className="profile-stat-value">{userProfile.favoritesCount || 0}</span>
+              <span className="profile-stat-value">{favorites?.length || 0}</span>
               <span className="profile-stat-label">Favoritos</span>
             </div>
             <div className="profile-stat">
@@ -524,11 +527,29 @@ export const ProfileView = ({ userProfile, onLogout, onClose }) => {
               <span className="profile-stat-label">Membro desde</span>
             </div>
           </div>
-          <button className="profile-logout-btn" onClick={() => setShowLogoutConfirm(true)}>
-            <i className="fas fa-sign-out-alt" /> Sair da conta
-          </button>
         </div>
+
+        <div className="profile-favorites-section">
+          <h3 className="profile-favorites-title">Favoritos</h3>
+          {(!favorites || favorites.length === 0) ? (
+            <div className="empty-favorites">
+              <i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} />
+              <p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito ainda</p>
+            </div>
+          ) : (
+            <div className="favorites-list">
+              {favorites.map(item => (
+                <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={() => {}} onClick={onPlay} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button className="profile-logout-btn full-width" onClick={() => setShowLogoutConfirm(true)}>
+          <i className="fas fa-sign-out-alt" /> Sair da conta
+        </button>
       </div>
+
       {showLogoutConfirm && <LogoutConfirm onConfirm={onLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </div>
   )
@@ -1240,12 +1261,10 @@ export default function Home() {
           .version-info p{font-size:clamp(13px,2.2vw,18px);font-weight:500;color:#E0E0E0}
 
           .profile-creation-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;align-items:center;justify-content:center;padding:20px}
-          .profile-creation-card{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:clamp(16px,2.5vw,24px)}
           .modal-header{display:flex;justify-content:space-between;align-items:center;width:100%}
           .modal-close-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:20px;background:transparent;border:none;cursor:pointer;flex-shrink:0}
           .profile-creation-title{font-size:clamp(20px,3vw,28px);font-weight:800;color:#ffffff;margin:0}
           .profile-creation-subtitle{font-size:clamp(13px,2vw,16px);color:#888;text-align:center;width:100%}
-          .profile-avatar-preview{width:clamp(64px,10vw,80px);height:clamp(64px,10vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(28px,4vw,40px);font-weight:700;overflow:hidden}
           .profile-name-input{width:100%;padding:12px 16px;border-radius:12px;background:#2a2a2a;border:1px solid #333;color:#ffffff;font-size:16px;outline:none;text-align:center}
           .profile-error{color:#E04E4E;font-size:13px}
           .profile-terms{font-size:clamp(11px,1.5vw,13px);color:#888;text-align:center;padding:0 10px}
@@ -1253,27 +1272,33 @@ export default function Home() {
           .profile-create-btn{width:100%;padding:14px;border-radius:14px;background:#ffffff;color:#000000;font-size:16px;font-weight:700;cursor:pointer;transition:opacity 0.2s}
           .profile-create-btn:hover{opacity:0.9}
 
-          .profile-banner-upload{width:100%;height:clamp(120px,20vw,160px);border-radius:16px;background-size:cover;background-position:center;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.8);font-size:13px;gap:6px;cursor:pointer;margin-bottom:-30px;position:relative;z-index:1}
-          .profile-avatar-upload{width:80px;height:80px;border-radius:50%;position:relative;cursor:pointer;z-index:2;border:3px solid #1B1B1B;overflow:hidden}
-          .avatar-upload-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s}
-          .profile-avatar-upload:hover .avatar-upload-overlay{opacity:1}
+          .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
+          .profile-fullpage-header{display:flex;align-items:center;justify-content:space-between;padding:clamp(12px,2vw,20px) clamp(16px,3vw,24px);min-height:clamp(56px,8vw,70px);background:#101010;position:sticky;top:0;z-index:10}
+          .transparent-header{background:transparent;position:absolute;width:100%}
+          .profile-fullpage-back{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+          .profile-fullpage-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#fff}
+          .profile-edit-btn{display:flex;align-items:center;gap:6px;color:#fff;font-size:15px;font-weight:600;background:rgba(255,255,255,0.15);padding:8px 16px;border-radius:20px}
+          .profile-fullpage-body{flex:1;padding:0 clamp(16px,3vw,24px) 40px;display:flex;flex-direction:column;align-items:center;gap:20px;margin-top:-clamp(30px,5vw,40px)}
 
-          .profile-page-modal{width:100%;max-width:420px;max-height:90vh;overflow-y:auto;background:#1B1B1B;border-radius:24px;position:relative}
-          .profile-close-fixed{position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border-radius:50%;width:32px;height:32px}
-          .profile-banner{width:100%;height:160px;background-size:cover;background-position:center;border-radius:24px 24px 0 0;position:relative}
-          .profile-banner-placeholder{width:100%;height:100%}
-          .profile-avatar-container{display:flex;justify-content:center;margin-top:-40px;position:relative;z-index:2}
-          .profile-avatar-circle{width:80px;height:80px;border-radius:50%;border:3px solid #1B1B1B;overflow:hidden}
-          .profile-info-section{padding:20px 24px 30px;text-align:center}
+          .profile-banner-upload{width:100%;height:clamp(140px,25vw,200px);border-radius:0;background-size:cover;background-position:center;position:relative;cursor:pointer}
+          .edit-indicator{position:absolute;bottom:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+          .profile-avatar-upload{width:90px;height:90px;border-radius:50%;position:relative;cursor:pointer;z-index:2;border:3px solid #101010;margin-top:-45px;overflow:hidden}
+          .avatar-edit{bottom:4px;right:4px;width:28px;height:28px;font-size:12px}
 
-          .profile-view-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
-          .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff;margin:0}
-          .profile-view-avatar{width:clamp(72px,12vw,96px);height:clamp(72px,12vw,96px);border-radius:50%;overflow:hidden}
-          .profile-view-stats{display:flex;justify-content:space-around;margin-bottom:24px;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
+          .profile-view-content{display:flex;flex-direction:column}
+          .profile-banner-view{width:100%;height:180px;background-size:cover;background-position:center}
+          .profile-avatar-view-container{display:flex;justify-content:center;margin-top:-45px;position:relative;z-index:2}
+          .profile-avatar-view{width:90px;height:90px;border-radius:50%;border:3px solid #101010;overflow:hidden}
+          .profile-info-section{padding:16px 24px 0;text-align:center}
+          .profile-view-name{font-size:clamp(20px,3vw,24px);font-weight:700;color:#ffffff;margin:0 0 16px}
+          .profile-view-stats{display:flex;justify-content:space-around;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
           .profile-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
           .profile-stat-value{font-size:clamp(16px,2.5vw,20px);font-weight:700;color:#ffffff}
           .profile-stat-label{font-size:clamp(11px,1.5vw,13px);color:#888}
-          .profile-logout-btn{width:100%;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#E04E4E;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s}
+          .profile-favorites-section{padding:24px}
+          .profile-favorites-title{font-size:clamp(16px,2.5vw,20px);font-weight:700;margin-bottom:16px}
+          .profile-logout-btn.full-width{width:100%;margin:24px;align-self:center;max-width:calc(100% - 48px)}
+          .profile-logout-btn{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#E04E4E;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;padding:12px;border-radius:12px}
           .profile-logout-btn:hover{background:rgba(224,78,78,0.1)}
 
           .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
@@ -1295,10 +1320,12 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+          {!showSearch && !showProfileCreation && !showProfileView && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-          <main className="container" style={showSearch ? { paddingTop: '0' } : {}}>
+          <main className="container" style={showSearch || showProfileCreation || showProfileView ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
+              showProfileCreation ? null :
+              showProfileView ? null :
               activeSection === 'home' ? renderHomePage() :
               activeSection === 'animes' ? renderAnimesPage() :
               activeSection === 'favorites' ? renderFavoritesPage() :
@@ -1306,7 +1333,7 @@ export default function Home() {
               renderHomePage()}
           </main>
 
-          {!showSearch && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+          {!showSearch && !showProfileCreation && !showProfileView && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
             navigateTo(section)
             setShowSearch(false)
             setSearchQuery('')
@@ -1315,11 +1342,23 @@ export default function Home() {
           }} />}
 
           {showProfileCreation && <ProfileCreation onCreate={handleCreateProfile} onClose={() => { setShowProfileCreation(false); setEditingProfile(null) }} existingProfile={editingProfile} />}
-          {showProfileView && userProfile && <ProfileView userProfile={userProfile} onLogout={handleLogout} onClose={() => setShowProfileView(false)} />}
+          {showProfileView && userProfile && (
+            <ProfileView
+              userProfile={userProfile}
+              favorites={favorites}
+              onPlay={handlePlay}
+              onEdit={() => {
+                setShowProfileView(false)
+                openProfileModal(userProfile)
+              }}
+              onLogout={handleLogout}
+              onClose={() => setShowProfileView(false)}
+            />
+          )}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
         </>
       )}
     </>
   )
-                                                                                                                                            }
+                                         }
