@@ -530,14 +530,18 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               </div>
               <div className="edit-field">
                 <label className="edit-label">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={e => { setUsername(e.target.value); setError('') }}
-                  className="edit-input"
-                  maxLength={20}
-                  placeholder="seuusername"
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: '#888', fontSize: '18px', fontWeight: 600 }}>@</span>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => { setUsername(e.target.value); setError('') }}
+                    className="edit-input"
+                    maxLength={20}
+                    placeholder="username"
+                    style={{ flex: 1 }}
+                  />
+                </div>
               </div>
               {error && <p className="profile-error">{error}</p>}
               {isNew && (
@@ -1389,6 +1393,16 @@ export default function Home() {
           .about-content{color:#ccc;font-size:clamp(13px,2vw,15px);line-height:1.6}
           .about-content p{margin-bottom:12px}
           .about-content strong{color:#fff}
+
+          @media (min-width: 768px) {
+            .profile-cover {
+              height: 224px;
+            }
+            .profile-favorites-title {
+              padding: 0 24px !important;
+              font-size: 15px !important;
+            }
+          }
         `}</style>
       </Head>
 
@@ -1434,4 +1448,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+                                            }
