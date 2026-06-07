@@ -927,7 +927,10 @@ export default function Home() {
     }
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
+    // Voltar para a tela inicial após salvar
+    setShowProfile(false)
     setProfileMode('view')
+    navigateTo('home')
   }
 
   const openProfile = (mode = 'view') => {
@@ -1402,6 +1405,11 @@ export default function Home() {
               padding: 0 24px !important;
               font-size: 15px !important;
             }
+            .favorite-remove {
+              font-size: clamp(14px, 2.275vw, 22px) !important;
+              width: clamp(14px, 2.275vw, 22px) !important;
+              height: clamp(14px, 2.275vw, 22px) !important;
+            }
           }
         `}</style>
       </Head>
@@ -1448,4 +1456,4 @@ export default function Home() {
       )}
     </>
   )
-                                            }
+                                 }
