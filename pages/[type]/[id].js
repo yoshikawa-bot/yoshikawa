@@ -26,6 +26,14 @@ const getUserProfile = () => {
   return null
 }
 
+const getGuestName = () => {
+  const existing = localStorage.getItem('yoshikawaGuestName')
+  if (existing) return existing
+  const newName = 'Convidado' + Math.random().toString(36).substring(2, 6)
+  localStorage.setItem('yoshikawaGuestName', newName)
+  return newName
+}
+
 const ContentLoader = () => (
   <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010' }}>
     <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -56,10 +64,6 @@ export default function WatchPage() {
   const [chatInput, setChatInput] = useState('')
   const [roomUsers, setRoomUsers] = useState([])
   const [roomWaiting, setRoomWaiting] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createdRoomLink, setCreatedRoomLink] = useState('')
-  const [showNamePrompt, setShowNamePrompt] = useState(false)
-  const [tempName, setTempName] = useState('')
   const [showChat, setShowChat] = useState(true)
 
   const chatEndRef = useRef(null)
@@ -69,8 +73,8 @@ export default function WatchPage() {
   const currentSeasonRef = useRef(season)
   const currentEpisodeRef = useRef(episode)
   const profile = getUserProfile()
-
-  const effectiveUserName = profile?.name || tempName || null
+  const guestName = getGuestName()
+  const effectiveUserName = profile?.name || guestName
 
   useEffect(() => { currentSeasonRef.current = season }, [season])
   useEffect(() => { currentEpisodeRef.current = episode }, [episode])
@@ -79,6 +83,7 @@ export default function WatchPage() {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Efeito para sala
   useEffect(() => {
     if (!roomId) return
     const subscription = supabase
@@ -199,29 +204,8 @@ export default function WatchPage() {
     setShowChat(false)
   }
 
-  const createOrJoinRoom = async (userName) => {
+  const createRoomAndRedirect = async () => {
     if (!content) return
-    const nameToUse = userName || effectiveUserName
-    if (!nameToUse) {
-      setShowNamePrompt(true)
-      return
-    }
-
-    const { data: existing } = await supabase
-      .from('rooms')
-      .select('id')
-      .eq('content_id', content.id)
-      .eq('media_type', type)
-      .eq('is_active', true)
-      .maybeSingle()
-
-    if (existing) {
-      setRoomId(existing.id)
-      setShowChat(true)
-      setRoomWaiting(false)
-      return
-    }
-
     const { data, error } = await supabase
       .from('rooms')
       .insert({
@@ -234,22 +218,9 @@ export default function WatchPage() {
 
     if (error) return
 
-    setRoomId(data.id)
-    setShowChat(true)
-    setRoomWaiting(true)
-    const link = `${window.location.origin}/${type}/${id}?room=${data.id}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
-    setCreatedRoomLink(link)
-    setShowCreateModal(true)
-    startWaitingTimeout()
-  }
-
-  const startWaitingTimeout = () => {
-    setTimeout(async () => {
-      const { data } = await supabase.from('room_users').select('*').eq('room_id', roomId)
-      if (data && data.length <= 1) {
-        closeRoom()
-      }
-    }, 10 * 60 * 1000)
+    const newRoomId = data.id
+    const link = `/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
+    router.push(link)
   }
 
   const sendMessage = async () => {
@@ -265,34 +236,22 @@ export default function WatchPage() {
     startInactivityTimer()
   }
 
-  const handleNameSubmit = () => {
-    const trimmed = tempName.trim()
-    if (trimmed.length >= 2) {
-      setShowNamePrompt(false)
-      createOrJoinRoom(trimmed)
-    }
-  }
-
+  // Ao carregar a página com room, abre o player e entra na sala
   useEffect(() => {
     if (content && roomQuery) {
       setRoomId(roomQuery)
       setShowChat(true)
-      if (!profile?.name) {
-        setShowNamePrompt(true)
-      } else {
-        createOrJoinRoom(profile.name)
-      }
       if (type === 'movie') {
         setIsPlaying(true)
       } else if (type === 'tv') {
-        if (querySeason && queryEpisode) {
-          setSeason(parseInt(querySeason))
-          setEpisode(parseInt(queryEpisode))
-        }
+        if (querySeason) setSeason(parseInt(querySeason))
+        if (queryEpisode) setEpisode(parseInt(queryEpisode))
         setIsPlaying(true)
       }
     }
   }, [content, roomQuery])
+
+  // ... (demais funções de conteúdo permanecem iguais: getLastWatchedEpisode, fetchSeasonData, etc.)
 
   const getLastWatchedEpisode = useCallback(() => {
     if (!id || type !== 'tv') return { season: 1, episode: 1 }
@@ -484,14 +443,6 @@ export default function WatchPage() {
           .chat-input-bar input{flex:1;background:rgba(255,255,255,0.05);border:none;color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none}
           .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
-          .modal-overlay{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px}
-          .modal-box{background:#1B1B1B;border-radius:20px;padding:24px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
-          .modal-title{font-size:18px;font-weight:700}
-          .modal-input{width:100%;background:#2a2a2a;border:1px solid #444;color:#fff;padding:12px 16px;border-radius:12px;font-size:16px;outline:none}
-          .modal-link-box{background:#0a0a0a;padding:12px;border-radius:12px;word-break:break-all;font-size:14px;color:#ccc}
-          .modal-btns{display:flex;gap:10px;justify-content:flex-end}
-          .modal-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px}
-          .modal-btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.2)}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}.player-frame{max-height:70vh}.chat-container{max-height:260px}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{max-height:150px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -526,6 +477,12 @@ export default function WatchPage() {
           <div className="synopsis">
             <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
+          </div>
+          {/* Botão Assistir com amigo na página de detalhes */}
+          <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
+            <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
+              <i className="fas fa-users" /> Assistir com amigo
+            </button>
           </div>
           {type === 'tv' ? (
             <>
@@ -632,53 +589,13 @@ export default function WatchPage() {
                 </div>
               </div>
             ) : (
-              <button className="room-btn" onClick={createOrJoinRoom}>
+              <button className="room-btn" onClick={createRoomAndRedirect}>
                 <i className="fas fa-users" /> Assistir com amigo
               </button>
             )}
           </div>
         </div>
       )}
-
-      {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div className="modal-title">Sala criada!</div>
-            <p style={{ fontSize: 14, color: '#aaa' }}>Envie este link para seu amigo. Qualquer pessoa com o link pode entrar no chat.</p>
-            <div className="modal-link-box">{createdRoomLink}</div>
-            <div className="modal-btns">
-              <button className="modal-btn" onClick={() => {
-                navigator.clipboard.writeText(createdRoomLink)
-                setShowCreateModal(false)
-              }}>Copiar link</button>
-              <button className="modal-btn secondary" onClick={() => setShowCreateModal(false)}>Fechar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showNamePrompt && (
-        <div className="modal-overlay">
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div className="modal-title">Como quer ser chamado?</div>
-            <p style={{ fontSize: 14, color: '#aaa' }}>Você não tem um perfil. Escolha um nome para usar no chat.</p>
-            <input
-              className="modal-input"
-              type="text"
-              placeholder="Seu nome"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              maxLength={20}
-              autoFocus
-              onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit() }}
-            />
-            <div className="modal-btns">
-              <button className="modal-btn" onClick={handleNameSubmit}>Entrar</button>
-              <button className="modal-btn secondary" onClick={() => { setShowNamePrompt(false); setRoomId(null) }}>Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
-  }
+    }
