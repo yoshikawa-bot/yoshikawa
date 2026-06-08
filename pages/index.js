@@ -628,7 +628,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.0.90 beta</p>
+        <p><strong>Versão:</strong> 1.0.91 beta</p>
       </div>
     </div>
   </div>
@@ -917,19 +917,34 @@ export default function Home() {
     try {
       if (tvSubSection === 'channels') {
         const res = await fetch('https://superflixapi.best/lista?category=canais&format=json')
-        const data = await res.json()
-        setTvChannels(data || [])
+        if (res.ok) {
+          const data = await res.json()
+          setTvChannels(Array.isArray(data) ? data : data?.results || data?.data || [])
+        } else {
+          setTvChannels([])
+        }
       } else if (tvSubSection === 'events') {
         const res = await fetch('https://superflixapi.best/lista?category=eventos&format=json')
-        const data = await res.json()
-        setTvEvents(data || [])
+        if (res.ok) {
+          const data = await res.json()
+          setTvEvents(Array.isArray(data) ? data : data?.results || data?.data || [])
+        } else {
+          setTvEvents([])
+        }
       } else if (tvSubSection === 'calendar') {
         const res = await fetch('https://superflixapi.best/calendario.php')
-        const data = await res.json()
-        setCalendarEntries(data || [])
+        if (res.ok) {
+          const data = await res.json()
+          setCalendarEntries(Array.isArray(data) ? data : data?.results || data?.data || [])
+        } else {
+          setCalendarEntries([])
+        }
       }
     } catch (e) {
       console.error('Erro ao carregar TV', e)
+      if (tvSubSection === 'channels') setTvChannels([])
+      if (tvSubSection === 'events') setTvEvents([])
+      if (tvSubSection === 'calendar') setCalendarEntries([])
     }
     setTvLoading(false)
   }
@@ -988,28 +1003,36 @@ export default function Home() {
   const fetchSearchResults = async (query) => {
     if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
     setSearchLoading(true)
+
+    // TMDB é a base confiável
+    let tmdbResults = []
     try {
-      let results = []
       const baseSearch = `api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&region=BR`
 
       if (activeSearchFilter === 'Filmes') {
-        results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
-        results = results.map(i => ({ ...i, media_type: 'movie' }))
+        tmdbResults = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
+        tmdbResults = tmdbResults.map(i => ({ ...i, media_type: 'movie' }))
       } else if (activeSearchFilter === 'Séries') {
-        results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
-        results = results.map(i => ({ ...i, media_type: 'tv' }))
+        tmdbResults = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
+        tmdbResults = tmdbResults.map(i => ({ ...i, media_type: 'tv' }))
       } else {
         const [movies, tv] = await Promise.all([
           fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`),
           fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
         ])
-        results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
+        tmdbResults = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
       }
 
       if (activeSearchFilter === 'Animes') {
-        results = results.filter(i => i.genre_ids?.includes(16))
+        tmdbResults = tmdbResults.filter(i => i.genre_ids?.includes(16))
       }
+    } catch (e) {
+      console.error('TMDB search error', e)
+      tmdbResults = []
+    }
 
+    // Superflix complementa sem quebrar
+    try {
       const superflixRes = await fetch(`https://superflixapi.best/lista?category=pesquisa&q=${encodeURIComponent(query)}&format=json`)
       if (superflixRes.ok) {
         const superData = await superflixRes.json()
@@ -1021,13 +1044,16 @@ export default function Home() {
             poster_path: item.poster_path || null,
             media_type: item.media_type || 'movie'
           }))
-          results = [...results, ...superItems]
+          tmdbResults = [...tmdbResults, ...superItems]
         }
       }
+    } catch (e) {
+      console.error('Superflix search error', e)
+    }
 
-      results = deduplicateById(results).sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 30)
-      setSearchResults(results)
-    } catch { setSearchResults([]) } finally { setSearchLoading(false) }
+    const final = deduplicateById(tmdbResults).sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 30)
+    setSearchResults(final)
+    setSearchLoading(false)
   }
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
@@ -1313,7 +1339,7 @@ export default function Home() {
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.0.90 beta</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.0.91 beta</p></div>
     </section>
   )
 
@@ -1577,4 +1603,4 @@ export default function Home() {
       )}
     </>
   )
-}
+  }
