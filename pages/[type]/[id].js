@@ -15,6 +15,7 @@ const DEFAULT_AVATAR_BG = '#505050'
 const MAX_ROOM_USERS = 5
 const MESSAGE_COOLDOWN_MS = 2000
 const MAX_MESSAGE_LENGTH = 500
+const CONTINUE_COLOR = '#F05454'
 
 const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   const bg = color.replace('#', '')
@@ -63,6 +64,8 @@ export default function WatchPage() {
 
   const [effectiveUserName, setEffectiveUserName] = useState('')
   const [profile, setProfile] = useState(null)
+
+  const [bgBlack, setBgBlack] = useState(false)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -542,7 +545,8 @@ export default function WatchPage() {
 
   const getEmbedUrl = () => {
     if (!content) return ''
-    const hashes = 'noEpList#noLink#transparent'
+    const colorCode = CONTINUE_COLOR.replace('#', '')
+    const hashes = `noEpList#noLink#transparent#bg${colorCode}`
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
       const base = imdbId ? `https://superflixapi.fit/filme/${imdbId}` : `https://superflixapi.fit/filme/${id}`
@@ -577,7 +581,7 @@ export default function WatchPage() {
           .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,4vw,34px);z-index:10;display:flex;justify-content:space-between;align-items:center}
           .top-btn{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(16px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
           .top-btn:hover{transform:scale(1.1)}
-          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:#F05454;border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
+          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
           .continue-btn:hover{transform:scale(1.03)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
@@ -605,7 +609,7 @@ export default function WatchPage() {
           .ep-info{flex:1;display:flex;flex-direction:column;gap:3px;justify-content:center}
           .ep-info h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
-          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
+          .player-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
           .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
           @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh;aspect-ratio:16/9}.chat-sidebar{width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;max-height:75vh}}
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
@@ -616,9 +620,9 @@ export default function WatchPage() {
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-          .room-btn{background:#FF6B6B;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+          .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
-          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:#1B1B1B;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
           .chat-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
           .chat-header-btns{display:flex;gap:8px}
           .chat-header-btns button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
@@ -632,13 +636,13 @@ export default function WatchPage() {
           .chat-msg-text{color:#ddd}
           .chat-input-bar{display:flex;padding:8px 14px;gap:8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
           .chat-input-bar input{flex:1;background:rgba(255,255,255,0.05);border:none;color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none}
-          .chat-send-btn{background:#FF6B6B;border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
           .room-closed-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
           .room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
-          .copy-btn{background:#FF6B6B;border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
+          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -689,7 +693,7 @@ export default function WatchPage() {
                   <i className="fas fa-users" /> Assistir com amigo
                 </button>
               ) : (
-                <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center', background: '#444', cursor: 'not-allowed' }}>
+                <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
                   <i className="fas fa-lock" /> Faça login para criar salas
                 </button>
               )}
@@ -744,7 +748,7 @@ export default function WatchPage() {
       ) : <div className="hero" />}
 
       {isPlaying && (
-        <div className="player-overlay">
+        <div className="player-overlay" style={{ background: bgBlack ? '#101010' : 'rgba(0,0,0,0.1)', backdropFilter: bgBlack ? 'none' : 'blur(40px)', WebkitBackdropFilter: bgBlack ? 'none' : 'blur(40px)' }}>
           <div className="player-box">
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 10 }}>
               <div className="player-controls">
@@ -758,6 +762,13 @@ export default function WatchPage() {
                     title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
                   >
                     <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
+                  </button>
+                  <button
+                    className="glass-btn circle"
+                    onClick={() => setBgBlack(!bgBlack)}
+                    title={bgBlack ? 'Fundo com blur' : 'Fundo preto absoluto'}
+                  >
+                    <i className="fas fa-moon" />
                   </button>
                   <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
                 </div>
@@ -888,7 +899,7 @@ export default function WatchPage() {
                   <button
                     className="room-btn"
                     disabled
-                    style={{ width: '100%', justifyContent: 'center', background: '#444', cursor: 'not-allowed' }}
+                    style={{ width: '100%', justifyContent: 'center' }}
                   >
                     <i className="fas fa-lock" /> Faça login para criar salas
                   </button>
@@ -900,4 +911,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+    }
