@@ -74,24 +74,18 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
-  const [playerConfig, setPlayerConfig] = useState({
-    color: null,
-    transparent: false,
-    noEpList: false,
-    noLink: false
-  })
-  const [showPlayerSettings, setShowPlayerSettings] = useState(false)
+  const [disableFriendMode, setDisableFriendMode] = useState(false)
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('yoshikawaPlayerConfig')
-      if (saved) setPlayerConfig(JSON.parse(saved))
+      const saved = localStorage.getItem('yoshikawaDisableFriendMode')
+      if (saved === 'true') setDisableFriendMode(true)
     } catch {}
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('yoshikawaPlayerConfig', JSON.stringify(playerConfig))
-  }, [playerConfig])
+    localStorage.setItem('yoshikawaDisableFriendMode', disableFriendMode ? 'true' : 'false')
+  }, [disableFriendMode])
 
   useEffect(() => {
     try {
@@ -548,19 +542,11 @@ export default function WatchPage() {
 
   const getEmbedUrl = () => {
     if (!content) return ''
-    let base = ''
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      base = imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
-    } else {
-      base = `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
+      return imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
     }
-    const hashes = []
-    if (playerConfig.noEpList) hashes.push('noEpList')
-    if (playerConfig.color) hashes.push(`color:${playerConfig.color}`)
-    if (playerConfig.noLink) hashes.push('noLink')
-    if (playerConfig.transparent) hashes.push('transparent')
-    return hashes.length > 0 ? `${base}#${hashes.join('#')}` : base
+    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -654,19 +640,6 @@ export default function WatchPage() {
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
-          .player-settings-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px}
-          .player-settings-modal{background:#1B1B1B;border-radius:20px;padding:24px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:20px}
-          .player-settings-title{font-size:18px;font-weight:700;color:#fff}
-          .setting-row{display:flex;justify-content:space-between;align-items:center}
-          .setting-label{font-size:14px;color:#ccc}
-          .setting-toggle{width:48px;height:26px;border-radius:13px;background:#333;position:relative;cursor:pointer;transition:background 0.2s}
-          .setting-toggle.active{background:#F05454}
-          .setting-toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s}
-          .setting-toggle.active::after{left:25px}
-          .color-picker-row{display:flex;align-items:center;gap:12px}
-          .color-picker-input{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);overflow:hidden;cursor:pointer}
-          .color-picker-input input{opacity:0;width:100%;height:100%;cursor:pointer}
-          .settings-close-btn{margin-top:8px;align-self:center;background:rgba(255,255,255,0.1);color:#fff;border:none;padding:10px 24px;border-radius:12px;font-weight:600;cursor:pointer}
         `}</style>
       </Head>
 
@@ -699,17 +672,19 @@ export default function WatchPage() {
             <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
           </div>
-          <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
-            {isLoggedIn ? (
-              <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
-                <i className="fas fa-users" /> Assistir com amigo
-              </button>
-            ) : (
-              <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center', background: '#444', cursor: 'not-allowed' }}>
-                <i className="fas fa-lock" /> Faça login para criar salas
-              </button>
-            )}
-          </div>
+          {!disableFriendMode && (
+            <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
+              {isLoggedIn ? (
+                <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
+                  <i className="fas fa-users" /> Assistir com amigo
+                </button>
+              ) : (
+                <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center', background: '#444', cursor: 'not-allowed' }}>
+                  <i className="fas fa-lock" /> Faça login para criar salas
+                </button>
+              )}
+            </div>
+          )}
           {type === 'tv' ? (
             <>
               <div className="episodes-toolbar">
@@ -767,8 +742,12 @@ export default function WatchPage() {
                   {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="glass-btn circle" onClick={() => setShowPlayerSettings(true)} title="Configurações do player">
-                    <i className="fas fa-cog" />
+                  <button
+                    className="glass-btn circle"
+                    onClick={() => setDisableFriendMode(!disableFriendMode)}
+                    title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                  >
+                    <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
                   </button>
                   <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
                 </div>
@@ -788,149 +767,127 @@ export default function WatchPage() {
               )}
             </div>
 
-            <div className="chat-sidebar">
-              {roomId ? (
-                roomClosed ? (
+            {!disableFriendMode && (
+              <div className="chat-sidebar">
+                {roomId ? (
+                  roomClosed ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
+                      </div>
+                      <div className="room-closed-message">
+                        <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                        <span>A sala foi encerrada e não está mais disponível.</span>
+                      </div>
+                    </div>
+                  ) : showShareLink ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-share-alt" /> Compartilhar sala</span>
+                        {isRoomCreator && (
+                          <div className="chat-header-btns">
+                            <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="share-link-area">
+                        <p>Envie o link para seu amigo assistir junto:</p>
+                        <button className="copy-btn" onClick={handleCopyLink}>
+                          {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
+                        </button>
+                      </div>
+                    </div>
+                  ) : showChat ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
+                        <div className="chat-header-btns">
+                          {isRoomCreator && (
+                            <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
+                          )}
+                          <button onClick={leaveRoom}>Sair</button>
+                        </div>
+                      </div>
+                      <div className="chat-messages">
+                        {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+                        {messages.map(msg => (
+                          msg.is_system ? (
+                            <div key={msg.id} className="chat-msg system">
+                              <span>{msg.content}</span>
+                            </div>
+                          ) : (
+                            <div key={msg.id} className="chat-msg">
+                              <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
+                              <div className="chat-msg-bubble">
+                                <div className="chat-msg-name">{msg.user_name}</div>
+                                <div className="chat-msg-text">{msg.content}</div>
+                              </div>
+                            </div>
+                          )
+                        ))}
+                        <div ref={chatEndRef} />
+                      </div>
+                      {!roomClosed && (
+                        <div className="chat-input-bar">
+                          <input
+                            type="text"
+                            placeholder="Digite sua mensagem..."
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+                            maxLength={MAX_MESSAGE_LENGTH}
+                          />
+                          <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button className="room-btn" onClick={() => setShowChat(true)}>
+                      <i className="fas fa-comments" /> Abrir chat
+                    </button>
+                  )
+                ) : roomInvalid ? (
                   <div className="chat-container">
                     <div className="chat-header">
                       <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
                     </div>
                     <div className="room-closed-message">
-                      <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                      <span>A sala foi encerrada e não está mais disponível.</span>
+                      <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                      <span>Este link é inválido ou a sala foi encerrada.</span>
                     </div>
                   </div>
-                ) : showShareLink ? (
-                  <div className="chat-container">
-                    <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-share-alt" /> Compartilhar sala</span>
-                      {isRoomCreator && (
-                        <div className="chat-header-btns">
-                          <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="share-link-area">
-                      <p>Envie o link para seu amigo assistir junto:</p>
-                      <button className="copy-btn" onClick={handleCopyLink}>
-                        {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
-                      </button>
-                    </div>
-                  </div>
-                ) : showChat ? (
+                ) : roomFull ? (
                   <div className="chat-container">
                     <div className="chat-header">
                       <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
-                      <div className="chat-header-btns">
-                        {isRoomCreator && (
-                          <button className="danger-btn" onClick={endRoom}>Encerrar sala</button>
-                        )}
-                        <button onClick={leaveRoom}>Sair</button>
-                      </div>
                     </div>
-                    <div className="chat-messages">
-                      {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
-                      {messages.map(msg => (
-                        msg.is_system ? (
-                          <div key={msg.id} className="chat-msg system">
-                            <span>{msg.content}</span>
-                          </div>
-                        ) : (
-                          <div key={msg.id} className="chat-msg">
-                            <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
-                            <div className="chat-msg-bubble">
-                              <div className="chat-msg-name">{msg.user_name}</div>
-                              <div className="chat-msg-text">{msg.content}</div>
-                            </div>
-                          </div>
-                        )
-                      ))}
-                      <div ref={chatEndRef} />
+                    <div className="room-full-message">
+                      <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                      <span>Sala cheia (máximo {MAX_ROOM_USERS} pessoas).</span>
                     </div>
-                    {!roomClosed && (
-                      <div className="chat-input-bar">
-                        <input
-                          type="text"
-                          placeholder="Digite sua mensagem..."
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
-                          maxLength={MAX_MESSAGE_LENGTH}
-                        />
-                        <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
-                      </div>
-                    )}
                   </div>
-                ) : (
-                  <button className="room-btn" onClick={() => setShowChat(true)}>
-                    <i className="fas fa-comments" /> Abrir chat
+                ) : isLoggedIn ? (
+                  <button
+                    className="room-btn"
+                    onClick={createRoomAndRedirect}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    <i className="fas fa-users" /> Assistir com amigo
                   </button>
-                )
-              ) : roomInvalid ? (
-                <div className="chat-container">
-                  <div className="chat-header">
-                    <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
-                  </div>
-                  <div className="room-closed-message">
-                    <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                    <span>Este link é inválido ou a sala foi encerrada.</span>
-                  </div>
-                </div>
-              ) : roomFull ? (
-                <div className="chat-container">
-                  <div className="chat-header">
-                    <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /> Chat da sala</span>
-                  </div>
-                  <div className="room-full-message">
-                    <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                    <span>Sala cheia (máximo {MAX_ROOM_USERS} pessoas).</span>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="room-btn"
-                  onClick={createRoomAndRedirect}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  <i className="fas fa-users" /> Assistir com amigo
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPlayerSettings && (
-        <div className="player-settings-overlay" onClick={() => setShowPlayerSettings(false)}>
-          <div className="player-settings-modal" onClick={e => e.stopPropagation()}>
-            <div className="player-settings-title">Personalizar player</div>
-            <div className="setting-row">
-              <span className="setting-label">Cor do tema</span>
-              <div className="color-picker-row">
-                <div className="color-picker-input" style={{ background: playerConfig.color || '#F05454' }}>
-                  <input type="color" value={playerConfig.color || '#F05454'} onChange={e => setPlayerConfig({ ...playerConfig, color: e.target.value.replace('#', '') })} />
-                </div>
-                {playerConfig.color && (
-                  <button className="glass-btn" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => setPlayerConfig({ ...playerConfig, color: null })}>Limpar</button>
+                ) : (
+                  <button
+                    className="room-btn"
+                    disabled
+                    style={{ width: '100%', justifyContent: 'center', background: '#444', cursor: 'not-allowed' }}
+                  >
+                    <i className="fas fa-lock" /> Faça login para criar salas
+                  </button>
                 )}
               </div>
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">Fundo transparente</span>
-              <div className={`setting-toggle ${playerConfig.transparent ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, transparent: !playerConfig.transparent })} />
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">Ocultar lista de episódios</span>
-              <div className={`setting-toggle ${playerConfig.noEpList ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, noEpList: !playerConfig.noEpList })} />
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">Remover link externo</span>
-              <div className={`setting-toggle ${playerConfig.noLink ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, noLink: !playerConfig.noLink })} />
-            </div>
-            <button className="settings-close-btn" onClick={() => setShowPlayerSettings(false)}>Fechar</button>
+            )}
           </div>
         </div>
       )}
     </>
   )
-          }
+      }
