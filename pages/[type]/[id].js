@@ -74,6 +74,7 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
+  // Modo amigo: true = desativado (some tudo), false = ativo (padrão)
   const [disableFriendMode, setDisableFriendMode] = useState(false)
 
   useEffect(() => {
@@ -542,11 +543,13 @@ export default function WatchPage() {
 
   const getEmbedUrl = () => {
     if (!content) return ''
+    const hashes = 'noEpList#noLink#transparent'
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      return imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
+      const base = imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
+      return `${base}#${hashes}`
     }
-    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
+    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}#${hashes}`
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -572,7 +575,7 @@ export default function WatchPage() {
           .hero-bg{width:100%;height:100%;object-fit:cover}
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:8px}
-          .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;padding:0 clamp(16px,4vw,34px);z-index:10}
+          .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,4vw,34px);z-index:10;display:flex;justify-content:space-between;align-items:center}
           .top-btn{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(16px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
           .top-btn:hover{transform:scale(1.1)}
           .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:#F05454;border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
@@ -652,6 +655,14 @@ export default function WatchPage() {
             <div className="hero-gradient" />
             <div className="top-bar">
               <Link href="/" className="top-btn"><i className="fas fa-arrow-left" /></Link>
+              <button
+                className="top-btn"
+                onClick={() => setDisableFriendMode(!disableFriendMode)}
+                title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                style={{ background: disableFriendMode ? '#444' : '#fff' }}
+              >
+                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} style={{ color: disableFriendMode ? '#ccc' : '#000' }} />
+              </button>
             </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}</button>
@@ -890,4 +901,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+}
