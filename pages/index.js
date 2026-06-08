@@ -201,6 +201,7 @@ export const BottomNav = ({ activeSection, setActiveSection }) => (
   <nav className="bottom-nav">
     <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
     <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
+    <button className={`nav-item ${activeSection === 'tv' ? 'active' : ''}`} onClick={() => setActiveSection('tv')}><i className="fas fa-tv" /><span>TV</span></button>
     <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
       <i className="fas fa-heart" style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
       <span>Favoritos</span>
@@ -627,7 +628,7 @@ export const AboutModal = ({ onClose }) => (
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
         <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.0.89 beta</p>
+        <p><strong>Versão:</strong> 1.0.90 beta</p>
       </div>
     </div>
   </div>
@@ -673,6 +674,12 @@ export default function Home() {
   const [animeComedy, setAnimeComedy] = useState([])
   const [animeRomance, setAnimeRomance] = useState([])
   const [animeRecommended, setAnimeRecommended] = useState([])
+
+  const [tvChannels, setTvChannels] = useState([])
+  const [tvEvents, setTvEvents] = useState([])
+  const [calendarEntries, setCalendarEntries] = useState([])
+  const [tvSubSection, setTvSubSection] = useState('channels')
+  const [tvLoading, setTvLoading] = useState(false)
 
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
@@ -754,6 +761,12 @@ export default function Home() {
       fetchCategoryImages()
     }
   }, [showSearch, searchQuery])
+
+  useEffect(() => {
+    if (activeSection === 'tv') {
+      loadTVContent()
+    }
+  }, [activeSection, tvSubSection])
 
   const deduplicateById = (items) => {
     const seen = new Set()
@@ -899,6 +912,28 @@ export default function Home() {
     setContentLoading(false)
   }
 
+  const loadTVContent = async () => {
+    setTvLoading(true)
+    try {
+      if (tvSubSection === 'channels') {
+        const res = await fetch('https://superflixapi.best/lista?category=canais&format=json')
+        const data = await res.json()
+        setTvChannels(data || [])
+      } else if (tvSubSection === 'events') {
+        const res = await fetch('https://superflixapi.best/lista?category=eventos&format=json')
+        const data = await res.json()
+        setTvEvents(data || [])
+      } else if (tvSubSection === 'calendar') {
+        const res = await fetch('https://superflixapi.best/calendario.php')
+        const data = await res.json()
+        setCalendarEntries(data || [])
+      }
+    } catch (e) {
+      console.error('Erro ao carregar TV', e)
+    }
+    setTvLoading(false)
+  }
+
   const fetchTMDB = async (url) => { try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] } }
   const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
   const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
@@ -927,7 +962,6 @@ export default function Home() {
     }
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
-    // Voltar para a tela inicial após salvar
     setShowProfile(false)
     setProfileMode('view')
     navigateTo('home')
@@ -976,7 +1010,22 @@ export default function Home() {
         results = results.filter(i => i.genre_ids?.includes(16))
       }
 
-      results = results.sort((a, b) => b.popularity - a.popularity).slice(0, 30)
+      const superflixRes = await fetch(`https://superflixapi.best/lista?category=pesquisa&q=${encodeURIComponent(query)}&format=json`)
+      if (superflixRes.ok) {
+        const superData = await superflixRes.json()
+        if (Array.isArray(superData)) {
+          const superItems = superData.map(item => ({
+            ...item,
+            id: item.id,
+            title: item.title || item.name,
+            poster_path: item.poster_path || null,
+            media_type: item.media_type || 'movie'
+          }))
+          results = [...results, ...superItems]
+        }
+      }
+
+      results = deduplicateById(results).sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 30)
       setSearchResults(results)
     } catch { setSearchResults([]) } finally { setSearchLoading(false) }
   }
@@ -1003,6 +1052,77 @@ export default function Home() {
       return updated
     })
   }
+
+  const handleChannelPlay = (channel) => {
+    if (channel.url) {
+      window.open(channel.url, '_blank')
+    }
+  }
+
+  const handleEventClick = (event) => {
+    if (event.play_event_url) {
+      window.open(event.play_event_url, '_blank')
+    } else if (event.page_url) {
+      window.open(event.page_url, '_blank')
+    }
+  }
+
+  const renderTVPage = () => (
+    <div>
+      <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,28px)' }}>
+        {['Canais', 'Eventos', 'Calendário'].map(sub => (
+          <button
+            key={sub}
+            className={`filter-btn ${tvSubSection === (sub === 'Canais' ? 'channels' : sub === 'Eventos' ? 'events' : 'calendar') ? 'active' : ''}`}
+            onClick={() => setTvSubSection(sub === 'Canais' ? 'channels' : sub === 'Eventos' ? 'events' : 'calendar')}
+          >
+            {sub}
+          </button>
+        ))}
+      </div>
+      <section className="section">
+        {tvLoading ? <ContentLoader /> : (
+          tvSubSection === 'channels' ? (
+            <div className="vertical-scroll" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+              {tvChannels.length > 0 ? tvChannels.map((channel, idx) => (
+                <div key={channel.id || idx} className="episode-card" style={{ width: 'clamp(200px,30vw,330px)', cursor: 'pointer' }} onClick={() => handleChannelPlay(channel)}>
+                  <div className="episode-thumbnail episode-thumbnail-horizontal">
+                    <img src={channel.logo || DEFAULT_POSTER} alt={channel.name} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
+                  </div>
+                  <h4 className="episode-title">{channel.name}</h4>
+                  <p className="episode-info">{channel.category || 'Canal ao vivo'}</p>
+                </div>
+              )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum canal disponível</p></div>}
+            </div>
+          ) : tvSubSection === 'events' ? (
+            <div className="vertical-scroll" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+              {tvEvents.length > 0 ? tvEvents.map((event, idx) => (
+                <div key={event.id || idx} className="episode-card" style={{ width: 'clamp(200px,30vw,330px)', cursor: 'pointer' }} onClick={() => handleEventClick(event)}>
+                  <div className="episode-thumbnail episode-thumbnail-horizontal">
+                    <img src={event.event_logo || event.competition_logo || DEFAULT_POSTER} alt={event.name} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
+                  </div>
+                  <h4 className="episode-title">{event.name}</h4>
+                  <p className="episode-info">{event.competition} {event.status ? `• ${event.status}` : ''}</p>
+                </div>
+              )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum evento no momento</p></div>}
+            </div>
+          ) : (
+            <div className="favorites-list">
+              {calendarEntries.length > 0 ? calendarEntries.map((entry, idx) => (
+                <div key={idx} className="favorite-item" style={{ cursor: 'default' }}>
+                  <div className="favorite-content" style={{ paddingRight: 0 }}>
+                    <h3 className="favorite-title">{entry.title || entry.name}</h3>
+                    <p className="favorite-year">{entry.date || entry.air_date}</p>
+                    <p className="favorite-episodes">{entry.episode ? `Episódio ${entry.episode}` : 'Novo'}</p>
+                  </div>
+                </div>
+              )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Calendário vazio</p></div>}
+            </div>
+          )
+        )}
+      </section>
+    </div>
+  )
 
   const renderHomePage = () => {
     if (contentLoading) return <ContentLoader />
@@ -1193,7 +1313,7 @@ export default function Home() {
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.0.89 beta</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.0.90 beta</p></div>
     </section>
   )
 
@@ -1425,6 +1545,7 @@ export default function Home() {
               showProfile ? null :
               activeSection === 'home' ? renderHomePage() :
               activeSection === 'animes' ? renderAnimesPage() :
+              activeSection === 'tv' ? renderTVPage() :
               activeSection === 'favorites' ? renderFavoritesPage() :
               activeSection === 'menu' ? renderMenuPage() :
               renderHomePage()}
@@ -1456,4 +1577,4 @@ export default function Home() {
       )}
     </>
   )
-                                 }
+}
