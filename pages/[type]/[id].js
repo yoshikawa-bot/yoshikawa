@@ -74,7 +74,6 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
-  // Modo amigo: true = desativado (some tudo), false = ativo (padrão)
   const [disableFriendMode, setDisableFriendMode] = useState(false)
 
   useEffect(() => {
@@ -546,10 +545,10 @@ export default function WatchPage() {
     const hashes = 'noEpList#noLink#transparent'
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      const base = imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
+      const base = imdbId ? `https://superflixapi.fit/filme/${imdbId}` : `https://superflixapi.fit/filme/${id}`
       return `${base}#${hashes}`
     }
-    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}#${hashes}`
+    return `https://superflixapi.fit/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}#${hashes}`
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -901,4 +900,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+            }
