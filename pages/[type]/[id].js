@@ -839,7 +839,11 @@ export default function WatchPage() {
                   </div>
                 </div>
               ) : (
-                <button className="room-btn" onClick={createRoomAndRedirect}>
+                <button
+                  className="room-btn"
+                  onClick={createRoomAndRedirect}
+                  style={{ width: '100%', justifyContent: 'center' }} // ✅ Botão agora igual ao da Sinopse
+                >
                   <i className="fas fa-users" /> Assistir com amigo
                 </button>
               )}
@@ -849,4 +853,4 @@ export default function WatchPage() {
       )}
     </>
   )
-          }
+                    }
