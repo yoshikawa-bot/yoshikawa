@@ -74,6 +74,25 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
+  const [playerConfig, setPlayerConfig] = useState({
+    color: null,
+    transparent: false,
+    noEpList: false,
+    noLink: false
+  })
+  const [showPlayerSettings, setShowPlayerSettings] = useState(false)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('yoshikawaPlayerConfig')
+      if (saved) setPlayerConfig(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('yoshikawaPlayerConfig', JSON.stringify(playerConfig))
+  }, [playerConfig])
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('yoshikawaProfile')
@@ -529,8 +548,19 @@ export default function WatchPage() {
 
   const getEmbedUrl = () => {
     if (!content) return ''
-    if (type === 'movie') { const imdbId = content.external_ids?.imdb_id || content.imdb_id; return imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}` }
-    return `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
+    let base = ''
+    if (type === 'movie') {
+      const imdbId = content.external_ids?.imdb_id || content.imdb_id
+      base = imdbId ? `https://superflixapi.best/filme/${imdbId}` : `https://superflixapi.best/filme/${id}`
+    } else {
+      base = `https://superflixapi.best/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}`
+    }
+    const hashes = []
+    if (playerConfig.noEpList) hashes.push('noEpList')
+    if (playerConfig.color) hashes.push(`color:${playerConfig.color}`)
+    if (playerConfig.noLink) hashes.push('noLink')
+    if (playerConfig.transparent) hashes.push('transparent')
+    return hashes.length > 0 ? `${base}#${hashes.join('#')}` : base
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -624,6 +654,19 @@ export default function WatchPage() {
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
+          .player-settings-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px}
+          .player-settings-modal{background:#1B1B1B;border-radius:20px;padding:24px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:20px}
+          .player-settings-title{font-size:18px;font-weight:700;color:#fff}
+          .setting-row{display:flex;justify-content:space-between;align-items:center}
+          .setting-label{font-size:14px;color:#ccc}
+          .setting-toggle{width:48px;height:26px;border-radius:13px;background:#333;position:relative;cursor:pointer;transition:background 0.2s}
+          .setting-toggle.active{background:#F05454}
+          .setting-toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s}
+          .setting-toggle.active::after{left:25px}
+          .color-picker-row{display:flex;align-items:center;gap:12px}
+          .color-picker-input{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);overflow:hidden;cursor:pointer}
+          .color-picker-input input{opacity:0;width:100%;height:100%;cursor:pointer}
+          .settings-close-btn{margin-top:8px;align-self:center;background:rgba(255,255,255,0.1);color:#fff;border:none;padding:10px 24px;border-radius:12px;font-weight:600;cursor:pointer}
         `}</style>
       </Head>
 
@@ -723,7 +766,12 @@ export default function WatchPage() {
                 <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
                   {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
                 </div>
-                <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="glass-btn circle" onClick={() => setShowPlayerSettings(true)} title="Configurações do player">
+                    <i className="fas fa-cog" />
+                  </button>
+                  <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+                </div>
               </div>
               <div className="player-frame">
                 <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
@@ -842,7 +890,7 @@ export default function WatchPage() {
                 <button
                   className="room-btn"
                   onClick={createRoomAndRedirect}
-                  style={{ width: '100%', justifyContent: 'center' }} // ✅ Botão agora igual ao da Sinopse
+                  style={{ width: '100%', justifyContent: 'center' }}
                 >
                   <i className="fas fa-users" /> Assistir com amigo
                 </button>
@@ -851,6 +899,38 @@ export default function WatchPage() {
           </div>
         </div>
       )}
+
+      {showPlayerSettings && (
+        <div className="player-settings-overlay" onClick={() => setShowPlayerSettings(false)}>
+          <div className="player-settings-modal" onClick={e => e.stopPropagation()}>
+            <div className="player-settings-title">Personalizar player</div>
+            <div className="setting-row">
+              <span className="setting-label">Cor do tema</span>
+              <div className="color-picker-row">
+                <div className="color-picker-input" style={{ background: playerConfig.color || '#F05454' }}>
+                  <input type="color" value={playerConfig.color || '#F05454'} onChange={e => setPlayerConfig({ ...playerConfig, color: e.target.value.replace('#', '') })} />
+                </div>
+                {playerConfig.color && (
+                  <button className="glass-btn" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => setPlayerConfig({ ...playerConfig, color: null })}>Limpar</button>
+                )}
+              </div>
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">Fundo transparente</span>
+              <div className={`setting-toggle ${playerConfig.transparent ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, transparent: !playerConfig.transparent })} />
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">Ocultar lista de episódios</span>
+              <div className={`setting-toggle ${playerConfig.noEpList ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, noEpList: !playerConfig.noEpList })} />
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">Remover link externo</span>
+              <div className={`setting-toggle ${playerConfig.noLink ? 'active' : ''}`} onClick={() => setPlayerConfig({ ...playerConfig, noLink: !playerConfig.noLink })} />
+            </div>
+            <button className="settings-close-btn" onClick={() => setShowPlayerSettings(false)}>Fechar</button>
+          </div>
+        </div>
+      )}
     </>
   )
-                    }
+          }
