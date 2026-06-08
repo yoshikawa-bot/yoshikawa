@@ -607,8 +607,10 @@ export default function WatchPage() {
           .ep-info{flex:1;display:flex;flex-direction:column;gap:3px;justify-content:center}
           .ep-info h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
-          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
-          .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
+          .player-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
+          .player-overlay-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(40px);transform:scale(1.1)}
+          .player-overlay-mask{position:absolute;inset:0;background:rgba(0,0,0,0.65)}
+          .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto;position:relative;z-index:1}
           @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh;aspect-ratio:16/9}.chat-sidebar{width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;max-height:75vh}}
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
@@ -745,8 +747,15 @@ export default function WatchPage() {
         </div>
       ) : <div className="hero" />}
 
-      {isPlaying && (
+      {isPlaying && content && (
         <div className="player-overlay">
+          <div
+            className="player-overlay-bg"
+            style={{
+              backgroundImage: `url(https://image.tmdb.org/t/p/original${content.poster_path || content.backdrop_path || DEFAULT_BACKDROP})`
+            }}
+          />
+          <div className="player-overlay-mask" />
           <div className="player-box">
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 10 }}>
               <div className="player-controls">
@@ -902,4 +911,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+         }
