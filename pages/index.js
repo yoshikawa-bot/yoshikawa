@@ -627,8 +627,8 @@ export const AboutModal = ({ onClose }) => (
         <p><strong>Direitos Autorais</strong></p>
         <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
         <p><strong>Isenção de Responsabilidade</strong></p>
-        <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB e SuperFlixAPI) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.0.92 beta</p>
+        <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
+        <p><strong>Versão:</strong> 1.0.94 beta</p>
       </div>
     </div>
   </div>
@@ -677,7 +677,6 @@ export default function Home() {
 
   const [tvChannels, setTvChannels] = useState([])
   const [tvEvents, setTvEvents] = useState([])
-  const [calendarEntries, setCalendarEntries] = useState([])
   const [tvSubSection, setTvSubSection] = useState('channels')
   const [tvLoading, setTvLoading] = useState(false)
 
@@ -917,34 +916,25 @@ export default function Home() {
     try {
       if (tvSubSection === 'channels') {
         const res = await fetch('https://superflixapi.fit/lista?category=canais&format=json')
-        if (res.ok) {
-          const data = await res.json()
-          setTvChannels(Array.isArray(data) ? data : data?.results || data?.data || [])
+        const json = await res.json()
+        if (json.success && Array.isArray(json.data)) {
+          setTvChannels(json.data)
         } else {
           setTvChannels([])
         }
       } else if (tvSubSection === 'events') {
         const res = await fetch('https://superflixapi.fit/lista?category=eventos&format=json')
-        if (res.ok) {
-          const data = await res.json()
-          setTvEvents(Array.isArray(data) ? data : data?.results || data?.data || [])
+        const json = await res.json()
+        if (json.success && Array.isArray(json.data)) {
+          setTvEvents(json.data)
         } else {
           setTvEvents([])
-        }
-      } else if (tvSubSection === 'calendar') {
-        const res = await fetch('https://superflixapi.fit/calendario.php')
-        if (res.ok) {
-          const data = await res.json()
-          setCalendarEntries(Array.isArray(data) ? data : data?.results || data?.data || [])
-        } else {
-          setCalendarEntries([])
         }
       }
     } catch (e) {
       console.error('Erro ao carregar TV', e)
-      if (tvSubSection === 'channels') setTvChannels([])
-      if (tvSubSection === 'events') setTvEvents([])
-      if (tvSubSection === 'calendar') setCalendarEntries([])
+      setTvChannels([])
+      setTvEvents([])
     }
     setTvLoading(false)
   }
@@ -1004,56 +994,36 @@ export default function Home() {
     if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
     setSearchLoading(true)
 
-    // TMDB como base confiável
-    let tmdbResults = []
     try {
+      let results = []
       const baseSearch = `api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&region=BR`
 
       if (activeSearchFilter === 'Filmes') {
-        tmdbResults = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
-        tmdbResults = tmdbResults.map(i => ({ ...i, media_type: 'movie' }))
+        results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
+        results = results.map(i => ({ ...i, media_type: 'movie' }))
       } else if (activeSearchFilter === 'Séries') {
-        tmdbResults = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
-        tmdbResults = tmdbResults.map(i => ({ ...i, media_type: 'tv' }))
+        results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
+        results = results.map(i => ({ ...i, media_type: 'tv' }))
       } else {
         const [movies, tv] = await Promise.all([
           fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`),
           fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
         ])
-        tmdbResults = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
+        results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
       }
 
       if (activeSearchFilter === 'Animes') {
-        tmdbResults = tmdbResults.filter(i => i.genre_ids?.includes(16))
+        results = results.filter(i => i.genre_ids?.includes(16))
       }
-    } catch (e) {
-      console.error('TMDB search error', e)
-      tmdbResults = []
-    }
 
-    // SuperFlixAPI complementa sem quebrar
-    try {
-      const superflixRes = await fetch(`https://superflixapi.fit/lista?category=pesquisa&q=${encodeURIComponent(query)}&format=json`)
-      if (superflixRes.ok) {
-        const superData = await superflixRes.json()
-        if (Array.isArray(superData)) {
-          const superItems = superData.map(item => ({
-            ...item,
-            id: item.id,
-            title: item.title || item.name,
-            poster_path: item.poster_path || null,
-            media_type: item.media_type || 'movie'
-          }))
-          tmdbResults = [...tmdbResults, ...superItems]
-        }
-      }
+      results = results.sort((a, b) => b.popularity - a.popularity).slice(0, 30)
+      setSearchResults(results)
     } catch (e) {
-      console.error('SuperFlixAPI search error', e)
+      console.error('Erro na busca', e)
+      setSearchResults([])
+    } finally {
+      setSearchLoading(false)
     }
-
-    const final = deduplicateById(tmdbResults).sort((a, b) => (b.popularity || 0) - (a.popularity || 0)).slice(0, 30)
-    setSearchResults(final)
-    setSearchLoading(false)
   }
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
@@ -1080,8 +1050,8 @@ export default function Home() {
   }
 
   const handleChannelPlay = (channel) => {
-    if (channel.url) {
-      window.open(channel.url, '_blank')
+    if (channel.embed_url) {
+      window.open(channel.embed_url, '_blank')
     }
   }
 
@@ -1096,11 +1066,11 @@ export default function Home() {
   const renderTVPage = () => (
     <div>
       <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,28px)' }}>
-        {['Canais', 'Eventos', 'Calendário'].map(sub => (
+        {['Canais', 'Eventos'].map(sub => (
           <button
             key={sub}
-            className={`filter-btn ${tvSubSection === (sub === 'Canais' ? 'channels' : sub === 'Eventos' ? 'events' : 'calendar') ? 'active' : ''}`}
-            onClick={() => setTvSubSection(sub === 'Canais' ? 'channels' : sub === 'Eventos' ? 'events' : 'calendar')}
+            className={`filter-btn ${tvSubSection === (sub === 'Canais' ? 'channels' : 'events') ? 'active' : ''}`}
+            onClick={() => setTvSubSection(sub === 'Canais' ? 'channels' : 'events')}
           >
             {sub}
           </button>
@@ -1113,36 +1083,24 @@ export default function Home() {
               {tvChannels.length > 0 ? tvChannels.map((channel, idx) => (
                 <div key={channel.id || idx} className="episode-card" style={{ width: 'clamp(200px,30vw,330px)', cursor: 'pointer' }} onClick={() => handleChannelPlay(channel)}>
                   <div className="episode-thumbnail episode-thumbnail-horizontal">
-                    <img src={channel.logo || DEFAULT_POSTER} alt={channel.name} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
+                    <img src={channel.logo_url || DEFAULT_POSTER} alt={channel.name} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
                   </div>
                   <h4 className="episode-title">{channel.name}</h4>
                   <p className="episode-info">{channel.category || 'Canal ao vivo'}</p>
                 </div>
               )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum canal disponível</p></div>}
             </div>
-          ) : tvSubSection === 'events' ? (
+          ) : (
             <div className="vertical-scroll" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
               {tvEvents.length > 0 ? tvEvents.map((event, idx) => (
                 <div key={event.id || idx} className="episode-card" style={{ width: 'clamp(200px,30vw,330px)', cursor: 'pointer' }} onClick={() => handleEventClick(event)}>
                   <div className="episode-thumbnail episode-thumbnail-horizontal">
-                    <img src={event.event_logo || event.competition_logo || DEFAULT_POSTER} alt={event.name} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
+                    <img src={event.event_logo || event.competition_logo || DEFAULT_POSTER} alt={event.title} className="episode-img" style={{ objectFit: 'contain', background: '#111' }} />
                   </div>
-                  <h4 className="episode-title">{event.name}</h4>
+                  <h4 className="episode-title">{event.title}</h4>
                   <p className="episode-info">{event.competition} {event.status ? `• ${event.status}` : ''}</p>
                 </div>
               )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum evento no momento</p></div>}
-            </div>
-          ) : (
-            <div className="favorites-list">
-              {calendarEntries.length > 0 ? calendarEntries.map((entry, idx) => (
-                <div key={idx} className="favorite-item" style={{ cursor: 'default' }}>
-                  <div className="favorite-content" style={{ paddingRight: 0 }}>
-                    <h3 className="favorite-title">{entry.title || entry.name}</h3>
-                    <p className="favorite-year">{entry.date || entry.air_date}</p>
-                    <p className="favorite-episodes">{entry.episode ? `Episódio ${entry.episode}` : 'Novo'}</p>
-                  </div>
-                </div>
-              )) : <div className="empty-favorites"><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Calendário vazio</p></div>}
             </div>
           )
         )}
@@ -1339,7 +1297,7 @@ export default function Home() {
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.0.92 beta</p></div>
+      <div className="version-info"><p>RELEASE BUILD - 1.0.94 beta</p></div>
     </section>
   )
 
@@ -1603,4 +1561,4 @@ export default function Home() {
       )}
     </>
   )
-                           }
+}
