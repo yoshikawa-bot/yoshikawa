@@ -51,6 +51,7 @@ export default function WatchPage() {
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [chatDisplayName, setChatDisplayName] = useState('')
+  const [isNameSet, setIsNameSet] = useState(false)
   const [roomUsers, setRoomUsers] = useState([])
   const [roomWaiting, setRoomWaiting] = useState(false)
   const [showChat, setShowChat] = useState(true)
@@ -145,7 +146,6 @@ export default function WatchPage() {
       setRoomClosed(false)
       setRoomFull(false)
       setRoomInvalid(false)
-      setChatDisplayName('')
       if (type === 'movie') {
         setIsPlaying(true)
       } else if (type === 'tv') {
@@ -153,22 +153,29 @@ export default function WatchPage() {
         if (queryEpisode) setEpisode(parseInt(queryEpisode))
         setIsPlaying(true)
       }
-
-      await supabase.from('messages').insert({
-        room_id: roomQuery,
-        user_name: 'Sistema',
-        user_avatar: '',
-        content: `${effectiveUserName} entrou no chat`,
-        is_system: true,
-        created_at: new Date().toISOString()
-      })
     }
 
     validateRoom()
   }, [router.isReady, roomQuery])
 
   useEffect(() => {
-    if (!roomId) return
+    if (isLoggedIn) {
+      setChatDisplayName(profile.name)
+      setIsNameSet(true)
+    } else {
+      const savedName = localStorage.getItem('yoshikawaChatName')
+      if (savedName) {
+        setChatDisplayName(savedName)
+        setIsNameSet(true)
+      } else {
+        setChatDisplayName('')
+        setIsNameSet(false)
+      }
+    }
+  }, [isLoggedIn, profile])
+
+  useEffect(() => {
+    if (!roomId || !effectiveUserName) return
 
     const subscription = supabase
       .channel(`room-${roomId}`)
@@ -210,15 +217,24 @@ export default function WatchPage() {
             setRoomWaiting(false)
             setIsRoomCreator(false)
             setRoomClosed(false)
+            setIsNameSet(false)
+            setChatDisplayName('')
           }, 4000)
         }
       })
       .subscribe()
 
     fetchRoomUsers()
+    fetchMessages()
     heartbeatRef.current = setInterval(() => {
       updateHeartbeat()
     }, 30000)
+    startInactivityTimer()
+    startRoomExpiryTimer()
+
+    if (isNameSet) {
+      announceEntry(chatDisplayName)
+    }
 
     return () => {
       subscription.unsubscribe()
@@ -229,7 +245,13 @@ export default function WatchPage() {
       clearInterval(inactivityTimerRef.current)
       clearTimeout(roomCloseTimeoutRef.current)
     }
-  }, [roomId])
+  }, [roomId, effectiveUserName])
+
+  useEffect(() => {
+    if (roomId && isNameSet && chatDisplayName) {
+      announceEntry(chatDisplayName)
+    }
+  }, [isNameSet, chatDisplayName, roomId])
 
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
@@ -243,7 +265,6 @@ export default function WatchPage() {
           return
         }
       }
-      fetchMessages()
       updateHeartbeat()
       startInactivityTimer()
       startRoomExpiryTimer()
@@ -262,6 +283,18 @@ export default function WatchPage() {
       document.body.style.overflow = ''
     }
   }, [isPlaying])
+
+  const announceEntry = async (name) => {
+    if (!roomId || !name) return
+    await supabase.from('messages').insert({
+      room_id: roomId,
+      user_name: 'Sistema',
+      user_avatar: '',
+      content: `${name} entrou no chat`,
+      is_system: true,
+      created_at: new Date().toISOString()
+    })
+  }
 
   const checkRoomCapacity = async () => {
     const { count, error } = await supabase
@@ -341,11 +374,12 @@ export default function WatchPage() {
 
   const leaveRoom = async () => {
     if (!roomId || !effectiveUserName) return
+    const displayName = chatDisplayName || effectiveUserName
     await supabase.from('messages').insert({
       room_id: roomId,
       user_name: 'Sistema',
       user_avatar: '',
-      content: `${effectiveUserName} saiu do chat`,
+      content: `${displayName} saiu do chat`,
       is_system: true,
       created_at: new Date().toISOString()
     })
@@ -360,6 +394,7 @@ export default function WatchPage() {
     setRoomClosed(false)
     setRoomFull(false)
     setRoomInvalid(false)
+    setIsNameSet(false)
     setChatDisplayName('')
   }
 
@@ -379,6 +414,7 @@ export default function WatchPage() {
     setShowShareLink(false)
     setIsRoomCreator(false)
     roomCreatorRef.current = false
+    setIsNameSet(false)
     setChatDisplayName('')
     clearTimeout(roomCloseTimeoutRef.current)
     roomCloseTimeoutRef.current = setTimeout(() => {
@@ -409,15 +445,6 @@ export default function WatchPage() {
     roomCreatorRef.current = true
     setShowShareLink(true)
     setIsPlaying(true)
-    setChatDisplayName('')
-    await supabase.from('messages').insert({
-      room_id: newRoomId,
-      user_name: 'Sistema',
-      user_avatar: '',
-      content: `${effectiveUserName} entrou no chat`,
-      is_system: true,
-      created_at: new Date().toISOString()
-    })
   }
 
   const handleCopyLink = () => {
@@ -427,6 +454,16 @@ export default function WatchPage() {
       setTimeout(() => setCopied(false), 2000)
     }
     setShowShareLink(false)
+  }
+
+  const confirmName = () => {
+    const trimmed = chatDisplayName.trim()
+    if (!trimmed) return
+    setChatDisplayName(trimmed)
+    setIsNameSet(true)
+    if (!isLoggedIn) {
+      localStorage.setItem('yoshikawaChatName', trimmed)
+    }
   }
 
   const sendMessage = async () => {
@@ -892,19 +929,19 @@ export default function WatchPage() {
                       </div>
                       {!roomClosed && (
                         <div className="chat-input-bar">
-                          {!chatDisplayName ? (
+                          {!isNameSet ? (
                             <>
                               <input
                                 type="text"
                                 placeholder="Seu nome para o chat"
                                 value={chatDisplayName}
                                 onChange={(e) => setChatDisplayName(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter' && chatDisplayName.trim()) setChatDisplayName(chatDisplayName.trim()) }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') confirmName() }}
                                 maxLength={20}
                               />
                               <button
                                 className="chat-send-btn"
-                                onClick={() => { if (chatDisplayName.trim()) setChatDisplayName(chatDisplayName.trim()) }}
+                                onClick={confirmName}
                                 disabled={!chatDisplayName.trim()}
                               >
                                 <i className="fas fa-check" />
@@ -975,4 +1012,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+      }
