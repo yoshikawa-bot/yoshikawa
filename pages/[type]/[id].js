@@ -73,6 +73,7 @@ export default function WatchPage() {
   const currentEpisodeRef = useRef(episode)
   const roomCreatorRef = useRef(false)
   const lastMessageTimeRef = useRef(0)
+  const roomCloseTimeoutRef = useRef(null)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
@@ -112,6 +113,12 @@ export default function WatchPage() {
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (seasonData && seasonData.episodes && episode > seasonData.episodes.length) {
+      setEpisode(seasonData.episodes.length || 1)
+    }
+  }, [seasonData, episode])
 
   useEffect(() => {
     if (!router.isReady || !roomQuery) return
@@ -216,7 +223,7 @@ export default function WatchPage() {
           setRoomClosed(true)
           setIsRoomCreator(false)
           roomCreatorRef.current = false
-          setTimeout(() => {
+          roomCloseTimeoutRef.current = setTimeout(() => {
             setRoomId(null)
             setMessages([])
             setRoomUsers([])
@@ -242,6 +249,7 @@ export default function WatchPage() {
       clearInterval(heartbeatRef.current)
       clearInterval(roomTimerRef.current)
       clearInterval(inactivityTimerRef.current)
+      clearTimeout(roomCloseTimeoutRef.current)
     }
   }, [roomId])
 
@@ -378,7 +386,8 @@ export default function WatchPage() {
     setIsRoomCreator(false)
     roomCreatorRef.current = false
     setIsPlaying(false)
-    setTimeout(() => {
+    clearTimeout(roomCloseTimeoutRef.current)
+    roomCloseTimeoutRef.current = setTimeout(() => {
       setRoomId(null)
       setMessages([])
       setRoomUsers([])
@@ -526,20 +535,32 @@ export default function WatchPage() {
 
   const handleSeasonChange = (e) => {
     const ns = parseInt(e.target.value)
-    const savedEp = (() => { try { const w = localStorage.getItem(`yoshikawaWatched_${id}`); if (w) { const eps = JSON.parse(w).filter(k => k.startsWith(`${ns}-`)).map(k => parseInt(k.split('-')[1])); if (eps.length) return Math.max(...eps) } } catch (e) {}; return 1 })()
     fetchSeasonData(id, ns)
+    const savedEp = (() => { try { const w = localStorage.getItem(`yoshikawaWatched_${id}`); if (w) { const eps = JSON.parse(w).filter(k => k.startsWith(`${ns}-`)).map(k => parseInt(k.split('-')[1])); if (eps.length) return Math.max(...eps) } } catch (e) {}; return 1 })()
     setEpisode(savedEp)
   }
 
-  const handleEpisodeClick = (epNum) => { setEpisode(epNum); setIsPlaying(true); markWatched(currentSeasonRef.current, epNum) }
+  const handleEpisodeClick = (epNum) => {
+    setEpisode(epNum)
+    setIsPlaying(true)
+    markWatched(currentSeasonRef.current, epNum)
+  }
 
   const markWatched = useCallback((s, ep) => {
     if (type !== 'tv' || !id) return
     const key = `${s}-${ep}`
-    setWatchedEps(prev => { if (prev.has(key)) return prev; const next = new Set([...prev, key]); try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch (e) {}; return next })
+    setWatchedEps(prev => {
+      if (prev.has(key)) return prev
+      const next = new Set([...prev, key])
+      try { localStorage.setItem(`yoshikawaWatched_${id}`, JSON.stringify([...next])) } catch (e) {}
+      return next
+    })
   }, [id, type])
 
-  const handleContinue = () => { if (type === 'tv') markWatched(currentSeasonRef.current, currentEpisodeRef.current); setIsPlaying(true) }
+  const handleContinue = () => {
+    if (type === 'tv') markWatched(currentSeasonRef.current, currentEpisodeRef.current)
+    setIsPlaying(true)
+  }
 
   const getEmbedUrl = () => {
     if (!content) return ''
@@ -550,7 +571,7 @@ export default function WatchPage() {
       const base = imdbId ? `https://superflixapi.fit/filme/${imdbId}` : `https://superflixapi.fit/filme/${id}`
       return `${base}#${hashes}`
     }
-    return `https://superflixapi.fit/serie/${id}/${currentSeasonRef.current}/${currentEpisodeRef.current}#${hashes}`
+    return `https://superflixapi.fit/serie/${id}/${season}/${episode}#${hashes}`
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -765,14 +786,40 @@ export default function WatchPage() {
                 </div>
               </div>
               <div className="player-frame">
-                <iframe src={getEmbedUrl()} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerPolicy="origin" />
+                <iframe
+                  key={`${season}-${episode}`}
+                  src={getEmbedUrl()}
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  referrerPolicy="origin"
+                />
               </div>
               {type === 'tv' && (
                 <div className="nav-ep-btns">
-                  <button className="glass-btn" onClick={() => { if (episode > 1) { const prevEp = episode - 1; setEpisode(prevEp); markWatched(season, prevEp) } }} disabled={episode === 1}>
+                  <button
+                    className="glass-btn"
+                    onClick={() => {
+                      if (episode > 1) {
+                        const prevEp = episode - 1
+                        setEpisode(prevEp)
+                        markWatched(season, prevEp)
+                      }
+                    }}
+                    disabled={episode === 1}
+                  >
                     <i className="fas fa-backward" /> Anterior
                   </button>
-                  <button className="glass-btn" onClick={() => { if (seasonData && episode < seasonData.episodes.length) { const nextEp = episode + 1; setEpisode(nextEp); markWatched(season, nextEp) } }}>
+                  <button
+                    className="glass-btn"
+                    onClick={() => {
+                      if (seasonData && episode < seasonData.episodes.length) {
+                        const nextEp = episode + 1
+                        setEpisode(nextEp)
+                        markWatched(season, nextEp)
+                      }
+                    }}
+                    disabled={!seasonData || episode >= seasonData.episodes.length}
+                  >
                     Próximo <i className="fas fa-forward" />
                   </button>
                 </div>
@@ -902,4 +949,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+      }
