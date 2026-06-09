@@ -122,6 +122,24 @@ export default function WatchPage() {
     }
   }, [seasonData, episode])
 
+  // Define o nome do chat automaticamente para logados, ou recupera do localStorage
+  useEffect(() => {
+    if (isLoggedIn) {
+      setChatDisplayName(profile.name)
+      setIsNameSet(true)
+    } else {
+      const savedName = localStorage.getItem('yoshikawaChatName')
+      if (savedName) {
+        setChatDisplayName(savedName)
+        setIsNameSet(true)
+      } else {
+        setChatDisplayName('')
+        setIsNameSet(false)
+      }
+    }
+  }, [isLoggedIn, profile])
+
+  // Validação da sala (quando acessa via link)
   useEffect(() => {
     if (!router.isReady || !roomQuery) return
 
@@ -158,22 +176,7 @@ export default function WatchPage() {
     validateRoom()
   }, [router.isReady, roomQuery])
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      setChatDisplayName(profile.name)
-      setIsNameSet(true)
-    } else {
-      const savedName = localStorage.getItem('yoshikawaChatName')
-      if (savedName) {
-        setChatDisplayName(savedName)
-        setIsNameSet(true)
-      } else {
-        setChatDisplayName('')
-        setIsNameSet(false)
-      }
-    }
-  }, [isLoggedIn, profile])
-
+  // Gerencia assinaturas e mensagens
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
 
@@ -232,10 +235,6 @@ export default function WatchPage() {
     startInactivityTimer()
     startRoomExpiryTimer()
 
-    if (isNameSet) {
-      announceEntry(chatDisplayName)
-    }
-
     return () => {
       subscription.unsubscribe()
       userSubscription.unsubscribe()
@@ -247,12 +246,14 @@ export default function WatchPage() {
     }
   }, [roomId, effectiveUserName])
 
+  // Anuncia entrada assim que o nome for definido
   useEffect(() => {
     if (roomId && isNameSet && chatDisplayName) {
       announceEntry(chatDisplayName)
     }
-  }, [isNameSet, chatDisplayName, roomId])
+  }, [roomId, isNameSet, chatDisplayName])
 
+  // Capacidade e heartbeat ao entrar na sala
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
 
@@ -294,6 +295,7 @@ export default function WatchPage() {
       is_system: true,
       created_at: new Date().toISOString()
     })
+    fetchMessages() // garante que a mensagem apareça imediatamente
   }
 
   const checkRoomCapacity = async () => {
@@ -445,6 +447,7 @@ export default function WatchPage() {
     roomCreatorRef.current = true
     setShowShareLink(true)
     setIsPlaying(true)
+    // A entrada será anunciada automaticamente via useEffect quando isNameSet estiver true
   }
 
   const handleCopyLink = () => {
