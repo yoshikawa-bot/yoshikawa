@@ -290,7 +290,6 @@ export default function WatchPage() {
       is_system: true,
       created_at: new Date().toISOString()
     })
-    fetchMessages()
   }
 
   const checkRoomCapacity = async () => {
@@ -432,10 +431,7 @@ export default function WatchPage() {
       .insert({ content_id: String(content.id), media_type: type, is_active: true })
       .select('id')
       .single()
-    if (error) {
-      console.error('Erro ao criar sala:', error.message)
-      return
-    }
+    if (error) return
     const newRoomId = data.id
     const link = `${window.location.origin}/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
@@ -467,18 +463,18 @@ export default function WatchPage() {
   }
 
   const sendMessage = async () => {
-    if (!chatInput.trim() || !roomId || !chatDisplayName) return
+    if (!chatInput.trim() || !roomId || !chatDisplayName || roomClosed) return
     if (chatInput.length > MAX_MESSAGE_LENGTH) return
-    if (roomClosed) return
 
     const now = Date.now()
     if (now - lastMessageTimeRef.current < MESSAGE_COOLDOWN_MS) return
     lastMessageTimeRef.current = now
 
+    const avatar = profile?.avatarUrl || getAvatarUrl(chatDisplayName)
     await supabase.from('messages').insert({
       room_id: roomId,
       user_name: chatDisplayName,
-      user_avatar: getAvatarUrl(chatDisplayName),
+      user_avatar: avatar,
       content: chatInput.trim()
     })
     setChatInput('')
@@ -539,7 +535,7 @@ export default function WatchPage() {
         checkFavorite(data)
         try { const liked = localStorage.getItem(`yoshikawaLiked_${id}`); setIsLiked(liked === 'true') } catch (e) {}
         setIsLoading(false)
-      } catch (error) { console.error('Erro ao carregar conteúdo:', error); setHasError(true); setIsLoading(false) }
+      } catch (error) { setHasError(true); setIsLoading(false) }
     }
     load()
   }, [id, type])
@@ -552,7 +548,7 @@ export default function WatchPage() {
       setAllSeasonsData(prev => ({ ...prev, [sn]: data }))
       setSeasonData(data)
       setSeason(sn)
-    } catch (e) { console.error('Erro ao carregar temporada:', e) }
+    } catch (e) {}
   }
 
   const checkFavorite = (item) => {
@@ -569,7 +565,7 @@ export default function WatchPage() {
       else favs.push({ id: content.id, media_type: type, title: content.title || content.name, poster_path: content.poster_path })
       localStorage.setItem('yoshikawaFavorites', JSON.stringify(favs))
       setIsFavorite(!exists)
-    } catch (e) { console.error('Erro ao favoritar:', e) }
+    } catch (e) {}
   }
 
   const toggleLike = () => { const newLiked = !isLiked; setIsLiked(newLiked); try { localStorage.setItem(`yoshikawaLiked_${id}`, newLiked.toString()) } catch (e) {} }
@@ -962,6 +958,12 @@ export default function WatchPage() {
                           )}
                         </div>
                       )}
+                      {roomClosed && (
+                        <div className="chat-input-bar" style={{ opacity: 0.5, pointerEvents: 'none' }}>
+                          <input type="text" placeholder="Chat encerrado" disabled />
+                          <button className="chat-send-btn" disabled><i className="fas fa-lock" /></button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <button className="room-btn" onClick={() => setShowChat(true)}>
@@ -1012,4 +1014,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
