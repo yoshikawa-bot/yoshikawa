@@ -601,12 +601,14 @@ export default function WatchPage() {
 
   const getEmbedUrl = () => {
     if (!content) return ''
+    const colorCode = CONTINUE_COLOR.replace('#', '')
+    const hashes = `noEpList#noLink#transparent#bg${colorCode}`
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      const mediaId = imdbId || id
-      return `/api/player?type=movie&id=${encodeURIComponent(mediaId)}`
+      const base = imdbId ? `https://superflixapi.fit/filme/${imdbId}` : `https://superflixapi.fit/filme/${id}`
+      return `${base}#${hashes}`
     }
-    return `/api/player?type=tv&id=${encodeURIComponent(id)}&s=${season}&e=${episode}`
+    return `https://superflixapi.fit/serie/${id}/${season}/${episode}#${hashes}`
   }
 
   const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
@@ -825,9 +827,8 @@ export default function WatchPage() {
                   key={`${season}-${episode}`}
                   src={getEmbedUrl()}
                   allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   referrerPolicy="origin"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
                 />
               </div>
               {type === 'tv' && (
@@ -1013,4 +1014,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+        }
