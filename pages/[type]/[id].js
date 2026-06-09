@@ -122,7 +122,6 @@ export default function WatchPage() {
     }
   }, [seasonData, episode])
 
-  // Define o nome do chat automaticamente para logados, ou recupera do localStorage
   useEffect(() => {
     if (isLoggedIn) {
       setChatDisplayName(profile.name)
@@ -139,7 +138,6 @@ export default function WatchPage() {
     }
   }, [isLoggedIn, profile])
 
-  // Validação da sala (quando acessa via link)
   useEffect(() => {
     if (!router.isReady || !roomQuery) return
 
@@ -176,7 +174,6 @@ export default function WatchPage() {
     validateRoom()
   }, [router.isReady, roomQuery])
 
-  // Gerencia assinaturas e mensagens
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
 
@@ -246,14 +243,12 @@ export default function WatchPage() {
     }
   }, [roomId, effectiveUserName])
 
-  // Anuncia entrada assim que o nome for definido
   useEffect(() => {
     if (roomId && isNameSet && chatDisplayName) {
       announceEntry(chatDisplayName)
     }
   }, [roomId, isNameSet, chatDisplayName])
 
-  // Capacidade e heartbeat ao entrar na sala
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
 
@@ -295,7 +290,7 @@ export default function WatchPage() {
       is_system: true,
       created_at: new Date().toISOString()
     })
-    fetchMessages() // garante que a mensagem apareça imediatamente
+    fetchMessages()
   }
 
   const checkRoomCapacity = async () => {
@@ -437,7 +432,10 @@ export default function WatchPage() {
       .insert({ content_id: String(content.id), media_type: type, is_active: true })
       .select('id')
       .single()
-    if (error) return
+    if (error) {
+      console.error('Erro ao criar sala:', error.message)
+      return
+    }
     const newRoomId = data.id
     const link = `${window.location.origin}/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
@@ -447,7 +445,6 @@ export default function WatchPage() {
     roomCreatorRef.current = true
     setShowShareLink(true)
     setIsPlaying(true)
-    // A entrada será anunciada automaticamente via useEffect quando isNameSet estiver true
   }
 
   const handleCopyLink = () => {
@@ -1015,4 +1012,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+    }
