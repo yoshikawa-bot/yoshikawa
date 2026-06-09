@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   'https://imltlehcxlokhlteikat.supabase.co',
-  'sb_publishable_gtLCVu42vWp-u138psnGZA_-7fbOB0-'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltbHRsZWhjeGxva2hsdGVpa2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzA2MDUsImV4cCI6MjA5NjU0NjYwNX0.i7nCX3n6-aQ0uLKmKTzxEb4h-PdHSIRUNP0VoCIy_iU'
 )
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
