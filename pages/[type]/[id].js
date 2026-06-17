@@ -16,6 +16,7 @@ const MAX_ROOM_USERS = 5
 const MESSAGE_COOLDOWN_MS = 2000
 const MAX_MESSAGE_LENGTH = 500
 const CONTINUE_COLOR = '#F05454'
+const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
 const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   const bg = color.replace('#', '')
@@ -66,6 +67,12 @@ export default function WatchPage() {
 
   const [effectiveUserName, setEffectiveUserName] = useState('')
   const [profile, setProfile] = useState(null)
+
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareImageUrl, setShareImageUrl] = useState(null)
+  const [shareImageLoading, setShareImageLoading] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const canvasRef = useRef(null)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -611,7 +618,195 @@ export default function WatchPage() {
     return `https://superflixapi.fit/serie/${id}/${season}/${episode}#${hashes}`
   }
 
-  const handleShare = () => { if (navigator.share) navigator.share({ title: content.title || content.name, url: window.location.href }) }
+  const generateShareImage = useCallback(async () => {
+    if (!content) return
+    setShareImageLoading(true)
+    setShowShareModal(true)
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 1080
+    canvas.height = 1080
+    const ctx = canvas.getContext('2d')
+    const radius = 40
+
+    ctx.beginPath()
+    ctx.moveTo(radius, 0)
+    ctx.lineTo(canvas.width - radius, 0)
+    ctx.arcTo(canvas.width, 0, canvas.width, radius, radius)
+    ctx.lineTo(canvas.width, canvas.height - radius)
+    ctx.arcTo(canvas.width, canvas.height, canvas.width - radius, canvas.height, radius)
+    ctx.lineTo(radius, canvas.height)
+    ctx.arcTo(0, canvas.height, 0, canvas.height - radius, radius)
+    ctx.lineTo(0, radius)
+    ctx.arcTo(0, 0, radius, 0, radius)
+    ctx.closePath()
+    ctx.clip()
+
+    ctx.fillStyle = '#101010'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    const imgSrc = content.backdrop_path
+      ? `https://image.tmdb.org/t/p/w1280${content.backdrop_path}`
+      : content.poster_path
+        ? `https://image.tmdb.org/t/p/w780${content.poster_path}`
+        : null
+
+    const drawOverlay = () => {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+      gradient.addColorStop(0, 'rgba(0,0,0,0.2)')
+      gradient.addColorStop(1, 'rgba(0,0,0,0.85)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      const logoImg = new Image()
+      logoImg.crossOrigin = 'anonymous'
+      logoImg.src = LOGO_URL
+      logoImg.onload = () => {
+        const logoSize = 100
+        ctx.drawImage(logoImg, canvas.width - logoSize - 60, canvas.height - logoSize - 60, logoSize, logoSize)
+
+        const title = content.title || content.name
+        ctx.font = 'bold 64px Inter, sans-serif'
+        ctx.fillStyle = '#ffffff'
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'
+        ctx.shadowBlur = 12
+        ctx.textAlign = 'left'
+        const maxWidth = canvas.width - 200
+        const lines = breakLines(ctx, title, maxWidth)
+        let y = canvas.height - 180
+        lines.forEach(line => {
+          ctx.fillText(line, 60, y)
+          y += 80
+        })
+
+        ctx.font = '36px Inter, sans-serif'
+        ctx.fillStyle = '#cccccc'
+        ctx.shadowBlur = 8
+        ctx.fillText('Assistir no Yoshikawa Streaming', 60, y + 20)
+
+        canvas.toBlob(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setShareImageUrl(url)
+          }
+          setShareImageLoading(false)
+        }, 'image/jpeg', 0.95)
+      }
+      logoImg.onerror = () => {
+        const title = content.title || content.name
+        ctx.font = 'bold 64px Inter, sans-serif'
+        ctx.fillStyle = '#ffffff'
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'
+        ctx.shadowBlur = 12
+        const maxWidth = canvas.width - 200
+        const lines = breakLines(ctx, title, maxWidth)
+        let y = canvas.height - 160
+        lines.forEach(line => {
+          ctx.fillText(line, 60, y)
+          y += 80
+        })
+        ctx.font = '36px Inter, sans-serif'
+        ctx.fillStyle = '#cccccc'
+        ctx.shadowBlur = 8
+        ctx.fillText('Assistir no Yoshikawa Streaming', 60, y + 20)
+        canvas.toBlob(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setShareImageUrl(url)
+          }
+          setShareImageLoading(false)
+        }, 'image/jpeg', 0.95)
+      }
+    }
+
+    if (imgSrc) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = imgSrc
+      img.onload = () => {
+        const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
+        const w = img.width * scale
+        const h = img.height * scale
+        const x = (canvas.width - w) / 2
+        const y = (canvas.height - h) / 2
+        ctx.drawImage(img, x, y, w, h)
+        drawOverlay()
+      }
+      img.onerror = () => {
+        drawOverlay()
+      }
+    } else {
+      drawOverlay()
+    }
+  }, [content])
+
+  function breakLines(ctx, text, maxWidth) {
+    const words = text.split(' ')
+    const lines = []
+    let currentLine = ''
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word
+      const metrics = ctx.measureText(testLine)
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine)
+        currentLine = word
+      } else {
+        currentLine = testLine
+      }
+    }
+    if (currentLine) lines.push(currentLine)
+    return lines
+  }
+
+  const handleShare = () => {
+    if (!content) return
+    generateShareImage()
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setLinkCopied(true)
+        setTimeout(() => setLinkCopied(false), 3000)
+      }).catch(() => {})
+    }
+  }
+
+  const copyPageLink = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setLinkCopied(true)
+        setTimeout(() => setLinkCopied(false), 3000)
+      }).catch(() => {})
+    }
+  }
+
+  const downloadShareImage = () => {
+    if (shareImageUrl) {
+      const a = document.createElement('a')
+      a.href = shareImageUrl
+      a.download = `${content.title || content.name}-yoshikawa.jpg`
+      a.click()
+    }
+  }
+
+  const shareImage = async () => {
+    if (!shareImageUrl) return
+    try {
+      const response = await fetch(shareImageUrl)
+      const blob = await response.blob()
+      const file = new File([blob], `${content.title || content.name}.jpg`, { type: 'image/jpeg' })
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: content.title || content.name,
+        })
+      } else {
+        downloadShareImage()
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        downloadShareImage()
+      }
+    }
+  }
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
   const genres = content?.genres?.map(g => g.name).join(', ') || 'Gênero desconhecido'
@@ -624,7 +819,13 @@ export default function WatchPage() {
     <>
       <Head>
         <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
+        <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta property="og:title" content={content ? (content.title || content.name) : 'Yoshikawa Streaming'} />
+        <meta property="og:description" content={content?.overview?.slice(0, 200) || 'Assista no Yoshikawa Streaming'} />
+        <meta property="og:image" content={content?.backdrop_path ? `https://image.tmdb.org/t/p/w780${content.backdrop_path}` : DEFAULT_BACKDROP} />
+        <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : ''} />
+        <meta property="og:type" content="website" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
@@ -699,6 +900,13 @@ export default function WatchPage() {
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
+          .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
+          .share-modal{background:#1B1B1B;border-radius:24px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
+          .share-modal img{max-width:100%;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+          .share-modal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+          .share-modal-actions button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px}
+          .share-modal-actions .primary{background:${CONTINUE_COLOR}}
+          .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -1012,6 +1220,28 @@ export default function WatchPage() {
           </div>
         </div>
       )}
+
+      {showShareModal && (
+        <div className="share-modal-overlay" onClick={() => setShowShareModal(false)}>
+          <div className="share-modal" onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 18, fontWeight: 700 }}>Compartilhar</h3>
+            {shareImageLoading ? (
+              <div style={{ width: '100%', aspectRatio: '1/1', background: '#2a2a2a', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="loading-spinner" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : shareImageUrl ? (
+              <img src={shareImageUrl} alt="Compartilhar" style={{ aspectRatio: '1/1' }} />
+            ) : null}
+            {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
+            <div className="share-modal-actions">
+              <button className="primary" onClick={shareImage}><i className="fas fa-share-alt" /> Compartilhar imagem</button>
+              <button onClick={downloadShareImage}><i className="fas fa-download" /> Salvar</button>
+              <button onClick={copyPageLink}><i className="fas fa-copy" /> Copiar link</button>
+              <button onClick={() => setShowShareModal(false)}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
-            }
+        }
