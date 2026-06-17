@@ -72,7 +72,6 @@ export default function WatchPage() {
   const [shareImageUrl, setShareImageUrl] = useState(null)
   const [shareImageLoading, setShareImageLoading] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
-  const canvasRef = useRef(null)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -618,145 +617,210 @@ export default function WatchPage() {
     return `https://superflixapi.fit/serie/${id}/${season}/${episode}#${hashes}`
   }
 
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y)
+    ctx.arcTo(x + w, y, x + w, y + r, r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+    ctx.lineTo(x + r, y + h)
+    ctx.arcTo(x, y + h, x, y + h - r, r)
+    ctx.lineTo(x, y + r)
+    ctx.arcTo(x, y, x + r, y, r)
+    ctx.closePath()
+  }
+
   const generateShareImage = useCallback(async () => {
     if (!content) return
     setShareImageLoading(true)
     setShowShareModal(true)
 
     const canvas = document.createElement('canvas')
-    canvas.width = 1080
-    canvas.height = 1080
+    const SIZE = 1080
+    canvas.width = SIZE
+    canvas.height = SIZE
     const ctx = canvas.getContext('2d')
-    const radius = 40
+    const CARD_RADIUS = 140
+    const PAD = 64
 
-    ctx.beginPath()
-    ctx.moveTo(radius, 0)
-    ctx.lineTo(canvas.width - radius, 0)
-    ctx.arcTo(canvas.width, 0, canvas.width, radius, radius)
-    ctx.lineTo(canvas.width, canvas.height - radius)
-    ctx.arcTo(canvas.width, canvas.height, canvas.width - radius, canvas.height, radius)
-    ctx.lineTo(radius, canvas.height)
-    ctx.arcTo(0, canvas.height, 0, canvas.height - radius, radius)
-    ctx.lineTo(0, radius)
-    ctx.arcTo(0, 0, radius, 0, radius)
-    ctx.closePath()
+    roundRect(ctx, 0, 0, SIZE, SIZE, CARD_RADIUS)
     ctx.clip()
 
-    ctx.fillStyle = '#101010'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#0d0d0f'
+    ctx.fillRect(0, 0, SIZE, SIZE)
 
-    const imgSrc = content.backdrop_path
+    const posterUrl = content.backdrop_path
       ? `https://image.tmdb.org/t/p/w1280${content.backdrop_path}`
       : content.poster_path
         ? `https://image.tmdb.org/t/p/w780${content.poster_path}`
         : null
 
     const drawOverlay = () => {
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-      gradient.addColorStop(0, 'rgba(0,0,0,0.2)')
-      gradient.addColorStop(1, 'rgba(0,0,0,0.85)')
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      const INFO_Y = SIZE - 320
+      const grad = ctx.createLinearGradient(0, INFO_Y - 280, 0, SIZE)
+      grad.addColorStop(0, 'rgba(0,0,0,0)')
+      grad.addColorStop(0.25, 'rgba(0,0,0,0.45)')
+      grad.addColorStop(0.6, 'rgba(0,0,0,0.72)')
+      grad.addColorStop(1, 'rgba(0,0,0,0.88)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, SIZE, SIZE)
 
-      const logoImg = new Image()
-      logoImg.crossOrigin = 'anonymous'
-      logoImg.src = LOGO_URL
-      logoImg.onload = () => {
-        const logoSize = 100
-        ctx.drawImage(logoImg, canvas.width - logoSize - 60, canvas.height - logoSize - 60, logoSize, logoSize)
+      const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
+      ctx.font = 'bold 24px Inter, sans-serif'
+      const badgeW = ctx.measureText(badgeText).width + 56
+      const badgeH = 40
+      const badgeX = PAD
+      const badgeY = INFO_Y - 60
 
-        const title = content.title || content.name
-        ctx.font = 'bold 64px Inter, sans-serif'
-        ctx.fillStyle = '#ffffff'
-        ctx.shadowColor = 'rgba(0,0,0,0.8)'
-        ctx.shadowBlur = 12
-        ctx.textAlign = 'left'
-        const maxWidth = canvas.width - 200
-        const lines = breakLines(ctx, title, maxWidth)
-        let y = canvas.height - 180
-        lines.forEach(line => {
-          ctx.fillText(line, 60, y)
-          y += 80
-        })
-
-        ctx.font = '36px Inter, sans-serif'
-        ctx.fillStyle = '#cccccc'
-        ctx.shadowBlur = 8
-        ctx.fillText('Assistir no Yoshikawa Streaming', 60, y + 20)
-
-        canvas.toBlob(blob => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            setShareImageUrl(url)
-          }
-          setShareImageLoading(false)
-        }, 'image/jpeg', 0.95)
+      if (posterImg) {
+        ctx.save()
+        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
+        ctx.clip()
+        ctx.filter = 'blur(20px)'
+        ctx.drawImage(posterImg, 0, 0, SIZE, SIZE)
+        ctx.filter = 'none'
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'
+        ctx.fillRect(badgeX, badgeY, badgeW, badgeH)
+        ctx.restore()
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'
+        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
+        ctx.fill()
       }
-      logoImg.onerror = () => {
-        const title = content.title || content.name
-        ctx.font = 'bold 64px Inter, sans-serif'
-        ctx.fillStyle = '#ffffff'
-        ctx.shadowColor = 'rgba(0,0,0,0.8)'
-        ctx.shadowBlur = 12
-        const maxWidth = canvas.width - 200
-        const lines = breakLines(ctx, title, maxWidth)
-        let y = canvas.height - 160
-        lines.forEach(line => {
-          ctx.fillText(line, 60, y)
-          y += 80
-        })
-        ctx.font = '36px Inter, sans-serif'
-        ctx.fillStyle = '#cccccc'
-        ctx.shadowBlur = 8
-        ctx.fillText('Assistir no Yoshikawa Streaming', 60, y + 20)
-        canvas.toBlob(blob => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            setShareImageUrl(url)
-          }
-          setShareImageLoading(false)
-        }, 'image/jpeg', 0.95)
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+      ctx.lineWidth = 1
+      roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(255,255,255,0.90)'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(badgeText, badgeX + 28, badgeY + badgeH / 2)
+
+      const brandText = 'YOSHIKAWA SYSTEMS'
+      ctx.font = 'bold 24px Inter, sans-serif'
+      const brandW = ctx.measureText(brandText).width + 56
+      const brandX = badgeX + badgeW + 16
+
+      if (posterImg) {
+        ctx.save()
+        roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
+        ctx.clip()
+        ctx.filter = 'blur(20px)'
+        ctx.drawImage(posterImg, 0, 0, SIZE, SIZE)
+        ctx.filter = 'none'
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'
+        ctx.fillRect(brandX, badgeY, brandW, badgeH)
+        ctx.restore()
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'
+        roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
+        ctx.fill()
       }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+      roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(255,255,255,0.70)'
+      ctx.fillText(brandText, brandX + 28, badgeY + badgeH / 2)
+
+      const title = content.title || content.name
+      let titleFontSize = 72
+      ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
+      while (ctx.measureText(title).width > SIZE - PAD * 2 && titleFontSize > 36) {
+        titleFontSize -= 2
+        ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
+      }
+      ctx.fillStyle = '#ffffff'
+      ctx.textBaseline = 'top'
+      const words = title.split(' ')
+      const lines = []
+      let current = ''
+      for (const word of words) {
+        const test = current ? `${current} ${word}` : word
+        if (ctx.measureText(test).width <= SIZE - PAD * 2) {
+          current = test
+        } else {
+          if (current) lines.push(current)
+          current = word
+        }
+      }
+      if (current) lines.push(current)
+      const lineH = titleFontSize * 1.15
+      lines.slice(0, 2).forEach((line, i) => {
+        ctx.fillText(line, PAD, INFO_Y + i * lineH)
+      })
+      const afterTitle = INFO_Y + Math.min(lines.length, 2) * lineH + 16
+
+      const year = new Date(content.release_date || content.first_air_date).getFullYear()
+      const meta = content.runtime ? `${content.runtime} min` : (content.number_of_seasons ? `${content.number_of_seasons} temporadas` : '')
+      const yearMeta = [year, meta].filter(Boolean).join('  •  ')
+      if (yearMeta) {
+        ctx.font = '500 34px Inter, sans-serif'
+        ctx.fillStyle = 'rgba(255,255,255,0.65)'
+        ctx.fillText(yearMeta, PAD, afterTitle)
+      }
+
+      const afterMeta = afterTitle + 52
+      const genres = content.genres?.map(g => g.name).join(', ') || ''
+      if (genres) {
+        ctx.font = '500 30px Inter, sans-serif'
+        ctx.fillStyle = 'rgba(255,255,255,0.45)'
+        const genreWords = genres.split(' ')
+        const genreLines = []
+        let gCurrent = ''
+        for (const word of genreWords) {
+          const test = gCurrent ? `${gCurrent} ${word}` : word
+          if (ctx.measureText(test).width <= SIZE - PAD * 2) {
+            gCurrent = test
+          } else {
+            if (gCurrent) genreLines.push(gCurrent)
+            gCurrent = word
+          }
+        }
+        if (gCurrent) genreLines.push(gCurrent)
+        genreLines.slice(0, 1).forEach((line, i) => {
+          ctx.fillText(line, PAD, afterMeta + i * 40)
+        })
+      }
+
+      canvas.toBlob(blob => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          setShareImageUrl(url)
+        }
+        setShareImageLoading(false)
+      }, 'image/jpeg', 0.95)
     }
 
-    if (imgSrc) {
+    let posterImg = null
+    if (posterUrl) {
       const img = new Image()
       img.crossOrigin = 'anonymous'
-      img.src = imgSrc
-      img.onload = () => {
-        const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
-        const w = img.width * scale
-        const h = img.height * scale
-        const x = (canvas.width - w) / 2
-        const y = (canvas.height - h) / 2
-        ctx.drawImage(img, x, y, w, h)
-        drawOverlay()
-      }
-      img.onerror = () => {
-        drawOverlay()
-      }
-    } else {
-      drawOverlay()
+      img.src = posterUrl
+      try {
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+        })
+        posterImg = img
+      } catch (e) {}
     }
-  }, [content])
 
-  function breakLines(ctx, text, maxWidth) {
-    const words = text.split(' ')
-    const lines = []
-    let currentLine = ''
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word
-      const metrics = ctx.measureText(testLine)
-      if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine)
-        currentLine = word
-      } else {
-        currentLine = testLine
-      }
+    if (posterImg) {
+      const scale = Math.max(SIZE / posterImg.width, SIZE / posterImg.height)
+      const pw = posterImg.width * scale
+      const ph = posterImg.height * scale
+      const px = (SIZE - pw) / 2
+      const py = (SIZE - ph) / 2
+      ctx.drawImage(posterImg, px, py, pw, ph)
     }
-    if (currentLine) lines.push(currentLine)
-    return lines
-  }
+
+    drawOverlay()
+  }, [content, type])
 
   const handleShare = () => {
     if (!content) return
@@ -778,15 +842,6 @@ export default function WatchPage() {
     }
   }
 
-  const downloadShareImage = () => {
-    if (shareImageUrl) {
-      const a = document.createElement('a')
-      a.href = shareImageUrl
-      a.download = `${content.title || content.name}-yoshikawa.jpg`
-      a.click()
-    }
-  }
-
   const shareImage = async () => {
     if (!shareImageUrl) return
     try {
@@ -798,12 +853,10 @@ export default function WatchPage() {
           files: [file],
           title: content.title || content.name,
         })
-      } else {
-        downloadShareImage()
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
-        downloadShareImage()
+        console.error(error)
       }
     }
   }
@@ -902,7 +955,7 @@ export default function WatchPage() {
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
           .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
           .share-modal{background:#1B1B1B;border-radius:24px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
-          .share-modal img{max-width:100%;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+          .share-modal img{max-width:100%;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.5);aspect-ratio:1/1;object-fit:cover}
           .share-modal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
           .share-modal-actions button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px}
           .share-modal-actions .primary{background:${CONTINUE_COLOR}}
@@ -1230,12 +1283,11 @@ export default function WatchPage() {
                 <div className="loading-spinner" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               </div>
             ) : shareImageUrl ? (
-              <img src={shareImageUrl} alt="Compartilhar" style={{ aspectRatio: '1/1' }} />
+              <img src={shareImageUrl} alt="Compartilhar" />
             ) : null}
             {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
             <div className="share-modal-actions">
               <button className="primary" onClick={shareImage}><i className="fas fa-share-alt" /> Compartilhar imagem</button>
-              <button onClick={downloadShareImage}><i className="fas fa-download" /> Salvar</button>
               <button onClick={copyPageLink}><i className="fas fa-copy" /> Copiar link</button>
               <button onClick={() => setShowShareModal(false)}>Fechar</button>
             </div>
@@ -1244,4 +1296,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+      }
