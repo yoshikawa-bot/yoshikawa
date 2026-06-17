@@ -767,17 +767,26 @@ export default function Home() {
 
   const fetchCategoryImages = async () => {
     const newImages = {}
+    const usedImageUrls = new Set()
     await Promise.all(CATEGORIES.map(async (cat) => {
       const genreId = CATEGORY_GENRE_MAP[cat.name]
       if (!genreId) return
-      try {
-        const data = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&language=pt-BR&region=BR&sort_by=popularity.desc`)
-        if (data && data.length > 0) {
-          const item = data[0]
-          const img = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : (item.backdrop_path ? `https://image.tmdb.org/t/p/w500${item.backdrop_path}` : null)
-          if (img) newImages[cat.name] = img
+      let found = false
+      for (let page = 1; page <= 5; page++) {
+        const data = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&language=pt-BR&region=BR&sort_by=popularity.desc&page=${page}`)
+        for (const item of data) {
+          const imgPath = item.poster_path || item.backdrop_path
+          if (!imgPath) continue
+          const imgUrl = `https://image.tmdb.org/t/p/w500${imgPath}`
+          if (!usedImageUrls.has(imgUrl)) {
+            newImages[cat.name] = imgUrl
+            usedImageUrls.add(imgUrl)
+            found = true
+            break
+          }
         }
-      } catch {}
+        if (found) break
+      }
     }))
     setCategoryImages(newImages)
   }
@@ -1206,7 +1215,7 @@ export default function Home() {
     <>
       <Head>
         <title>Yoshikawa Streaming</title>
-        <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/f0a282ce.png" />
+        <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -1327,12 +1336,12 @@ export default function Home() {
           .search-result-title{font-size:clamp(11px,1.6vw,15px);font-weight:700;line-height:1.2;color:#ffffff;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 4px rgba(0,0,0,0.6)}
           .search-result-year{font-size:clamp(10px,1.5vw,13px);font-weight:500;color:#B3B3B3;margin-bottom:clamp(4px,0.8vw,8px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
           .search-result-episodes{font-size:clamp(9px,1.3vw,12px);font-weight:500;color:#9A9A9A;margin-bottom:clamp(8px,1.5vw,12px);text-shadow:0 1px 2px rgba(0,0,0,0.5)}
-          .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+          .search-result-badge{display:inline-block;padding:clamp(3px,0.5vw,6px) clamp(10px,1.5vw,16px);border-radius:clamp(6px,1vw,10px);font-size:clamp(11px,1.5vw,15px);font-weight:600;color:#ffffff;align-self:flex-start}
           .search-divider{height:1px;background:rgba(255,255,255,0.05)}
 
           .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(8px,1.3vw,13px);padding:0 clamp(10px,2vw,15px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
-          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1;text-shadow:0 2px 8px rgba(0,0,0,0.7)}
+          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1}
           .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover;background:#1B1B1B}
 
           .menu-banner-container{padding:0 clamp(16px,3vw,28px);margin-top:clamp(16px,3vw,24px)}
@@ -1462,4 +1471,4 @@ export default function Home() {
       )}
     </>
   )
-  }
+    }
