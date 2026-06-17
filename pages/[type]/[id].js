@@ -644,9 +644,14 @@ export default function WatchPage() {
     const CARD_RADIUS = 140
     const PAD = 64
 
+    // Limpar canvas com fundo transparente primeiro
+    ctx.clearRect(0, 0, SIZE, SIZE)
+    
+    // Aplicar arredondamento
     roundRect(ctx, 0, 0, SIZE, SIZE, CARD_RADIUS)
     ctx.clip()
 
+    // Fundo escuro dentro do recorte
     ctx.fillStyle = '#0d0d0f'
     ctx.fillRect(0, 0, SIZE, SIZE)
 
@@ -655,6 +660,20 @@ export default function WatchPage() {
       : content.poster_path
         ? `https://image.tmdb.org/t/p/w780${content.poster_path}`
         : null
+
+    let posterImg = null
+    if (posterUrl) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = posterUrl
+      try {
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+        })
+        posterImg = img
+      } catch (e) {}
+    }
 
     const drawOverlay = () => {
       const INFO_Y = SIZE - 320
@@ -666,6 +685,7 @@ export default function WatchPage() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, SIZE, SIZE)
 
+      // Badge de tipo (FILME/SÉRIE/ANIME)
       const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
       ctx.font = 'bold 24px Inter, sans-serif'
       const badgeW = ctx.measureText(badgeText).width + 56
@@ -699,6 +719,7 @@ export default function WatchPage() {
       ctx.textBaseline = 'middle'
       ctx.fillText(badgeText, badgeX + 28, badgeY + badgeH / 2)
 
+      // Badge YOSHIKAWA SYSTEMS
       const brandText = 'YOSHIKAWA SYSTEMS'
       ctx.font = 'bold 24px Inter, sans-serif'
       const brandW = ctx.measureText(brandText).width + 56
@@ -727,6 +748,7 @@ export default function WatchPage() {
       ctx.fillStyle = 'rgba(255,255,255,0.70)'
       ctx.fillText(brandText, brandX + 28, badgeY + badgeH / 2)
 
+      // Título
       const title = content.title || content.name
       let titleFontSize = 72
       ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
@@ -755,6 +777,7 @@ export default function WatchPage() {
       })
       const afterTitle = INFO_Y + Math.min(lines.length, 2) * lineH + 16
 
+      // Ano e metadata
       const year = new Date(content.release_date || content.first_air_date).getFullYear()
       const meta = content.runtime ? `${content.runtime} min` : (content.number_of_seasons ? `${content.number_of_seasons} temporadas` : '')
       const yearMeta = [year, meta].filter(Boolean).join('  •  ')
@@ -787,27 +810,38 @@ export default function WatchPage() {
         })
       }
 
-      canvas.toBlob(blob => {
-        if (blob) {
-          const url = URL.createObjectURL(blob)
-          setShareImageUrl(url)
-        }
-        setShareImageLoading(false)
-      }, 'image/jpeg', 0.95)
-    }
+      // Logo no canto superior direito
+      const logoImg = new Image()
+      logoImg.crossOrigin = 'anonymous'
+      logoImg.src = LOGO_URL
+      logoImg.onload = () => {
+        const logoSize = 80
+        const logoX = SIZE - PAD - logoSize
+        const logoY = PAD
+        ctx.save()
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'
+        ctx.shadowBlur = 10
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize)
+        ctx.restore()
 
-    let posterImg = null
-    if (posterUrl) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = posterUrl
-      try {
-        await new Promise((resolve, reject) => {
-          img.onload = resolve
-          img.onerror = reject
-        })
-        posterImg = img
-      } catch (e) {}
+        canvas.toBlob(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setShareImageUrl(url)
+          }
+          setShareImageLoading(false)
+        }, 'image/jpeg', 0.95)
+      }
+      logoImg.onerror = () => {
+        // Fallback sem logo
+        canvas.toBlob(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setShareImageUrl(url)
+          }
+          setShareImageLoading(false)
+        }, 'image/jpeg', 0.95)
+      }
     }
 
     if (posterImg) {
@@ -825,12 +859,6 @@ export default function WatchPage() {
   const handleShare = () => {
     if (!content) return
     generateShareImage()
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        setLinkCopied(true)
-        setTimeout(() => setLinkCopied(false), 3000)
-      }).catch(() => {})
-    }
   }
 
   const copyPageLink = () => {
@@ -1296,4 +1324,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+        }
