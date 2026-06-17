@@ -984,13 +984,9 @@ export default function WatchPage() {
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
           .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
-          .share-modal{background:#1B1B1B;border-radius:24px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
-          .share-modal-header{display:flex;justify-content:space-between;align-items:center;width:100%}
-          .share-modal-header h3{font-size:18px;font-weight:700;color:#fff;margin:0}
+          .share-modal{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
           .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:#2a2a2a}
           .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
-          .share-modal-actions{display:flex;gap:10px;width:100%}
-          .share-modal-actions .glass-btn{flex:1}
           .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
@@ -1309,9 +1305,11 @@ export default function WatchPage() {
       {showShareModal && (
         <div className="share-modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="share-modal" onClick={e => e.stopPropagation()}>
-            <div className="share-modal-header">
-              <h3>Compartilhar</h3>
-              <button className="top-btn" onClick={() => setShowShareModal(false)}>
+            <div className="player-controls" style={{ width: '100%' }}>
+              <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
+                Compartilhar
+              </div>
+              <button className="glass-btn circle" onClick={() => setShowShareModal(false)}>
                 <i className="fas fa-times" />
               </button>
             </div>
@@ -1327,7 +1325,7 @@ export default function WatchPage() {
               )}
             </div>
             {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
-            <div className="share-modal-actions">
+            <div className="nav-ep-btns" style={{ width: '100%' }}>
               <button className="glass-btn" onClick={shareImage}>
                 <i className="fas fa-share-alt" /> Compartilhar
               </button>
@@ -1340,4 +1338,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+      }
