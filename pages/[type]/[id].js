@@ -286,6 +286,17 @@ export default function WatchPage() {
     }
   }, [isPlaying])
 
+  useEffect(() => {
+    if (showShareModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showShareModal])
+
   const announceEntry = async (name) => {
     if (!roomId || !name) return
     await supabase.from('messages').insert({
@@ -644,14 +655,14 @@ export default function WatchPage() {
     const CARD_RADIUS = 140
     const PAD = 64
 
-    // Limpar canvas com fundo transparente primeiro
+    // Limpar canvas
     ctx.clearRect(0, 0, SIZE, SIZE)
-    
-    // Aplicar arredondamento
+
+    // Criar caminho arredondado
     roundRect(ctx, 0, 0, SIZE, SIZE, CARD_RADIUS)
     ctx.clip()
 
-    // Fundo escuro dentro do recorte
+    // Fundo escuro
     ctx.fillStyle = '#0d0d0f'
     ctx.fillRect(0, 0, SIZE, SIZE)
 
@@ -685,7 +696,7 @@ export default function WatchPage() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, SIZE, SIZE)
 
-      // Badge de tipo (FILME/SÉRIE/ANIME)
+      // Badge de tipo
       const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
       ctx.font = 'bold 24px Inter, sans-serif'
       const badgeW = ctx.measureText(badgeText).width + 56
@@ -719,8 +730,8 @@ export default function WatchPage() {
       ctx.textBaseline = 'middle'
       ctx.fillText(badgeText, badgeX + 28, badgeY + badgeH / 2)
 
-      // Badge YOSHIKAWA SYSTEMS
-      const brandText = 'YOSHIKAWA SYSTEMS'
+      // Badge YOSHIKAWA STREAMING
+      const brandText = 'YOSHIKAWA STREAMING'
       ctx.font = 'bold 24px Inter, sans-serif'
       const brandW = ctx.measureText(brandText).width + 56
       const brandX = badgeX + badgeW + 16
@@ -830,17 +841,16 @@ export default function WatchPage() {
             setShareImageUrl(url)
           }
           setShareImageLoading(false)
-        }, 'image/jpeg', 0.95)
+        }, 'image/png')
       }
       logoImg.onerror = () => {
-        // Fallback sem logo
         canvas.toBlob(blob => {
           if (blob) {
             const url = URL.createObjectURL(blob)
             setShareImageUrl(url)
           }
           setShareImageLoading(false)
-        }, 'image/jpeg', 0.95)
+        }, 'image/png')
       }
     }
 
@@ -875,7 +885,7 @@ export default function WatchPage() {
     try {
       const response = await fetch(shareImageUrl)
       const blob = await response.blob()
-      const file = new File([blob], `${content.title || content.name}.jpg`, { type: 'image/jpeg' })
+      const file = new File([blob], `${content.title || content.name}.png`, { type: 'image/png' })
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -984,9 +994,10 @@ export default function WatchPage() {
           .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
           .share-modal{background:#1B1B1B;border-radius:24px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
           .share-modal img{max-width:100%;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.5);aspect-ratio:1/1;object-fit:cover}
-          .share-modal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-          .share-modal-actions button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px}
+          .share-modal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+          .share-modal-actions button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;flex:1;justify-content:center;min-width:0}
           .share-modal-actions .primary{background:${CONTINUE_COLOR}}
+          .share-modal-actions .close-btn{flex:0;min-width:auto;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.2)}
           .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
@@ -1315,13 +1326,13 @@ export default function WatchPage() {
             ) : null}
             {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
             <div className="share-modal-actions">
-              <button className="primary" onClick={shareImage}><i className="fas fa-share-alt" /> Compartilhar imagem</button>
+              <button className="primary" onClick={shareImage}><i className="fas fa-share-alt" /> Compartilhar</button>
               <button onClick={copyPageLink}><i className="fas fa-copy" /> Copiar link</button>
-              <button onClick={() => setShowShareModal(false)}>Fechar</button>
+              <button className="close-btn" onClick={() => setShowShareModal(false)}><i className="fas fa-times" /></button>
             </div>
           </div>
         </div>
       )}
     </>
   )
-        }
+          }
