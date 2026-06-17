@@ -983,7 +983,7 @@ export default function WatchPage() {
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
           .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
           .share-modal{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
-          .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:#2a2a2a}
+          .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:transparent}
           .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
           .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
@@ -1007,9 +1007,8 @@ export default function WatchPage() {
                 className="glass-btn circle"
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
                 title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
-                style={{ background: disableFriendMode ? '#444' : 'rgba(255,255,255,0.15)' }}
               >
-                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} style={{ color: '#fff' }} />
+                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
               </button>
             </div>
             <div className="hero-content">
