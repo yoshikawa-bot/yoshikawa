@@ -655,14 +655,11 @@ export default function WatchPage() {
     const CARD_RADIUS = 140
     const PAD = 64
 
-    // Limpar canvas
     ctx.clearRect(0, 0, SIZE, SIZE)
 
-    // Criar caminho arredondado
     roundRect(ctx, 0, 0, SIZE, SIZE, CARD_RADIUS)
     ctx.clip()
 
-    // Fundo escuro
     ctx.fillStyle = '#0d0d0f'
     ctx.fillRect(0, 0, SIZE, SIZE)
 
@@ -696,7 +693,6 @@ export default function WatchPage() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, SIZE, SIZE)
 
-      // Badge de tipo
       const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
       ctx.font = 'bold 24px Inter, sans-serif'
       const badgeW = ctx.measureText(badgeText).width + 56
@@ -730,7 +726,6 @@ export default function WatchPage() {
       ctx.textBaseline = 'middle'
       ctx.fillText(badgeText, badgeX + 28, badgeY + badgeH / 2)
 
-      // Badge YOSHIKAWA STREAMING
       const brandText = 'YOSHIKAWA STREAMING'
       ctx.font = 'bold 24px Inter, sans-serif'
       const brandW = ctx.measureText(brandText).width + 56
@@ -759,7 +754,6 @@ export default function WatchPage() {
       ctx.fillStyle = 'rgba(255,255,255,0.70)'
       ctx.fillText(brandText, brandX + 28, badgeY + badgeH / 2)
 
-      // Título
       const title = content.title || content.name
       let titleFontSize = 72
       ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
@@ -788,7 +782,6 @@ export default function WatchPage() {
       })
       const afterTitle = INFO_Y + Math.min(lines.length, 2) * lineH + 16
 
-      // Ano e metadata
       const year = new Date(content.release_date || content.first_air_date).getFullYear()
       const meta = content.runtime ? `${content.runtime} min` : (content.number_of_seasons ? `${content.number_of_seasons} temporadas` : '')
       const yearMeta = [year, meta].filter(Boolean).join('  •  ')
@@ -821,7 +814,6 @@ export default function WatchPage() {
         })
       }
 
-      // Logo no canto superior direito
       const logoImg = new Image()
       logoImg.crossOrigin = 'anonymous'
       logoImg.src = LOGO_URL
@@ -993,11 +985,12 @@ export default function WatchPage() {
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
           .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
           .share-modal{background:#1B1B1B;border-radius:24px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
-          .share-modal img{max-width:100%;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.5);aspect-ratio:1/1;object-fit:cover}
-          .share-modal-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
-          .share-modal-actions button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;flex:1;justify-content:center;min-width:0}
-          .share-modal-actions .primary{background:${CONTINUE_COLOR}}
-          .share-modal-actions .close-btn{flex:0;min-width:auto;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.2)}
+          .share-modal-header{display:flex;justify-content:space-between;align-items:center;width:100%}
+          .share-modal-header h3{font-size:18px;font-weight:700;color:#fff;margin:0}
+          .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:#2a2a2a}
+          .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
+          .share-modal-actions{display:flex;gap:10px;width:100%}
+          .share-modal-actions .glass-btn{flex:1}
           .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
@@ -1316,23 +1309,35 @@ export default function WatchPage() {
       {showShareModal && (
         <div className="share-modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="share-modal" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 18, fontWeight: 700 }}>Compartilhar</h3>
-            {shareImageLoading ? (
-              <div style={{ width: '100%', aspectRatio: '1/1', background: '#2a2a2a', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="loading-spinner" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              </div>
-            ) : shareImageUrl ? (
-              <img src={shareImageUrl} alt="Compartilhar" />
-            ) : null}
+            <div className="share-modal-header">
+              <h3>Compartilhar</h3>
+              <button className="top-btn" onClick={() => setShowShareModal(false)}>
+                <i className="fas fa-times" />
+              </button>
+            </div>
+            <div className="share-modal-image">
+              {shareImageLoading ? (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="loading-spinner" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                </div>
+              ) : shareImageUrl ? (
+                <img src={shareImageUrl} alt="Compartilhar" />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Pré-visualização</div>
+              )}
+            </div>
             {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
             <div className="share-modal-actions">
-              <button className="primary" onClick={shareImage}><i className="fas fa-share-alt" /> Compartilhar</button>
-              <button onClick={copyPageLink}><i className="fas fa-copy" /> Copiar link</button>
-              <button className="close-btn" onClick={() => setShowShareModal(false)}><i className="fas fa-times" /></button>
+              <button className="glass-btn" onClick={shareImage}>
+                <i className="fas fa-share-alt" /> Compartilhar
+              </button>
+              <button className="glass-btn" onClick={copyPageLink}>
+                <i className="fas fa-copy" /> Copiar link
+              </button>
             </div>
           </div>
         </div>
       )}
     </>
   )
-          }
+    }
