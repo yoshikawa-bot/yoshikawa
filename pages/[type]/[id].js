@@ -71,7 +71,6 @@ export default function WatchPage() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareImageUrl, setShareImageUrl] = useState(null)
   const [shareImageLoading, setShareImageLoading] = useState(false)
-  const [linkCopied, setLinkCopied] = useState(false)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -865,14 +864,15 @@ export default function WatchPage() {
 
   const copyPageLink = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        setLinkCopied(true)
-        setTimeout(() => setLinkCopied(false), 3000)
-      }).catch(() => {})
+      navigator.clipboard.writeText(window.location.href).catch(() => {})
     }
   }
 
   const shareImage = async () => {
+    // Copiar link automaticamente ao compartilhar a imagem
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href).catch(() => {})
+    }
     if (!shareImageUrl) return
     try {
       const response = await fetch(shareImageUrl)
@@ -985,7 +985,6 @@ export default function WatchPage() {
           .share-modal{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
           .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:transparent}
           .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
-          .link-copied-message{color:#4CAF50;font-size:13px;display:flex;align-items:center;gap:6px}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -1323,7 +1322,6 @@ export default function WatchPage() {
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Pré-visualização</div>
               )}
             </div>
-            {linkCopied && <div className="link-copied-message"><i className="fas fa-check-circle" /> Link copiado!</div>}
             <div className="nav-ep-btns" style={{ width: '100%' }}>
               <button className="glass-btn" onClick={shareImage}>
                 <i className="fas fa-share-alt" /> Compartilhar
@@ -1337,4 +1335,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+          }
