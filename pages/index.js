@@ -677,6 +677,11 @@ export default function Home() {
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
 
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const touchStartTime = useRef(0)
+  const SECTIONS_ORDER = ['home', 'animes', 'favorites', 'menu']
+
   useEffect(() => {
     const savedSection = sessionStorage.getItem('yoshikawaActiveSection')
     if (savedSection && savedSection !== 'home') {
@@ -825,13 +830,13 @@ export default function Home() {
         animeRomanceRaw,
         animeRecommendedRaw
       ] = await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=popularity.desc`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
       ])
 
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
@@ -874,8 +879,8 @@ export default function Home() {
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
 
-      const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
-      const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
+      const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })))
+      const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.first_air_date) - new Date(a.first_air_date))[0] || null
       setAnimeFeatured(latestAnimeRelease)
       setAnimeRecentlyAdded(animeRecentClean.slice(0, 10))
 
@@ -883,10 +888,10 @@ export default function Home() {
       const enrichedAnimeSeries = await enrichSeriesWithLastEpisode(animeOnAirClean)
       setAnimeNewEpisodes(enrichedAnimeSeries)
 
-      setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setAnimeRecommended(deduplicateById(animeRecommendedRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10))
+      setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10))
+      setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10))
+      setAnimeRecommended(deduplicateById(animeRecommendedRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10))
 
       const animeTrendingHighlights = animeTrendingClean.slice(0, 5)
       const animeTrendingLogosArr = await Promise.all(animeTrendingHighlights.map(item => fetchLogoForItem(item)))
@@ -1007,6 +1012,29 @@ export default function Home() {
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
       return updated
     })
+  }
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    touchStartTime.current = Date.now()
+  }
+
+  const handleTouchEnd = (e) => {
+    const endX = e.changedTouches[0].clientX
+    const endY = e.changedTouches[0].clientY
+    const dx = endX - touchStartX.current
+    const dy = endY - touchStartY.current
+    const dt = Date.now() - touchStartTime.current
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50 && dt < 300) {
+      const currentIndex = SECTIONS_ORDER.indexOf(activeSection)
+      if (currentIndex === -1) return
+      if (dx < 0 && currentIndex < SECTIONS_ORDER.length - 1) {
+        navigateTo(SECTIONS_ORDER[currentIndex + 1])
+      } else if (dx > 0 && currentIndex > 0) {
+        navigateTo(SECTIONS_ORDER[currentIndex - 1])
+      }
+    }
   }
 
   const renderHomePage = () => {
@@ -1205,7 +1233,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Yoshikawa Player</title>
+        <title>Yoshikawa Streaming</title>
+        <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/f0a282ce.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -1425,7 +1454,12 @@ export default function Home() {
         <>
           {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-          <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
+          <main
+            className="container"
+            style={showSearch || showProfile ? { paddingTop: '0' } : {}}
+            onTouchStart={!showSearch && !showProfile ? handleTouchStart : undefined}
+            onTouchEnd={!showSearch && !showProfile ? handleTouchEnd : undefined}
+          >
             {showSearch ? renderSearchPage() :
               showProfile ? null :
               activeSection === 'home' ? renderHomePage() :
@@ -1461,4 +1495,4 @@ export default function Home() {
       )}
     </>
   )
-                                            }
+}
