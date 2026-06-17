@@ -833,7 +833,7 @@ export default function WatchPage() {
             setShareImageUrl(url)
           }
           setShareImageLoading(false)
-        }, 'image/png')
+        }, 'image/webp')
       }
       logoImg.onerror = () => {
         canvas.toBlob(blob => {
@@ -842,7 +842,7 @@ export default function WatchPage() {
             setShareImageUrl(url)
           }
           setShareImageLoading(false)
-        }, 'image/png')
+        }, 'image/webp')
       }
     }
 
@@ -877,7 +877,7 @@ export default function WatchPage() {
     try {
       const response = await fetch(shareImageUrl)
       const blob = await response.blob()
-      const file = new File([blob], `${content.title || content.name}.png`, { type: 'image/png' })
+      const file = new File([blob], `${content.title || content.name}.webp`, { type: 'image/webp' })
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -919,8 +919,6 @@ export default function WatchPage() {
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:8px}
           .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,4vw,34px);z-index:10;display:flex;justify-content:space-between;align-items:center}
-          .top-btn{width:clamp(32px,5vw,42px);height:clamp(32px,5vw,42px);display:flex;align-items:center;justify-content:center;color:#000;font-size:clamp(16px,2.5vw,20px);background:#fff;border-radius:50%;cursor:pointer;border:none;transition:transform 0.2s;text-decoration:none}
-          .top-btn:hover{transform:scale(1.1)}
           .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
           .continue-btn:hover{transform:scale(1.03)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
@@ -1002,14 +1000,16 @@ export default function WatchPage() {
             <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
             <div className="hero-gradient" />
             <div className="top-bar">
-              <Link href="/" className="top-btn"><i className="fas fa-arrow-left" /></Link>
+              <button className="glass-btn circle" onClick={() => router.push('/')}>
+                <i className="fas fa-arrow-left" />
+              </button>
               <button
-                className="top-btn"
+                className="glass-btn circle"
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
                 title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
-                style={{ background: disableFriendMode ? '#444' : '#fff' }}
+                style={{ background: disableFriendMode ? '#444' : 'rgba(255,255,255,0.15)' }}
               >
-                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} style={{ color: disableFriendMode ? '#ccc' : '#000' }} />
+                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} style={{ color: '#fff' }} />
               </button>
             </div>
             <div className="hero-content">
@@ -1307,7 +1307,7 @@ export default function WatchPage() {
           <div className="share-modal" onClick={e => e.stopPropagation()}>
             <div className="player-controls" style={{ width: '100%' }}>
               <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
-                Compartilhar
+                @kawalyansky &lt;3
               </div>
               <button className="glass-btn circle" onClick={() => setShowShareModal(false)}>
                 <i className="fas fa-times" />
@@ -1338,4 +1338,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+        }
