@@ -1243,7 +1243,7 @@ export default function Home() {
           .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
-          .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
+          .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(90px,11vw,110px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
           .section-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(10px,2.6vw,22px);margin-bottom:clamp(8px,1.5vw,12px)}
@@ -1298,7 +1298,25 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
+          .bottom-nav {
+            position: fixed;
+            bottom: clamp(16px, 3vw, 24px);
+            left: clamp(16px, 3vw, 24px);
+            right: clamp(16px, 3vw, 24px);
+            z-index: 1000;
+            background: rgba(22, 22, 24, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            height: clamp(52px, 7.5vw, 70px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-radius: clamp(28px, 5vw, 40px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            padding: 0 clamp(8px, 2vw, 16px);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+          }
+
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
@@ -1471,4 +1489,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+}
