@@ -684,7 +684,8 @@ export default function Home() {
     fetch('https://ipapi.co/json/')
       .then(res => res.json())
       .then(data => {
-        if (data.region_code === 'SC' || data.region === 'Santa Catarina') {
+        // Alterado para bloquear São Paulo (SP) para teste
+        if (data.region_code === 'SP' || data.region === 'São Paulo') {
           setGeoBlocked(true)
         } else {
           setGeoBlocked(false)
@@ -1521,4 +1522,4 @@ export default function Home() {
       )}
     </>
   )
-                          }
+  }
