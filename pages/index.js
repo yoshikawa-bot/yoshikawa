@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 
@@ -41,6 +41,321 @@ const CATEGORY_GENRE_MAP = {
 
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
+
+const LANGUAGES = [
+  { code: 'pt', label: 'Português' },
+  { code: 'es', label: 'Español' },
+  { code: 'en', label: 'English' },
+  { code: 'ja', label: '日本語' }
+]
+
+const TRANSLATIONS = {
+  pt: {
+    inicio: 'Início',
+    animes: 'Animes',
+    favoritos: 'Favoritos',
+    menu: 'Menu',
+    emAlta: 'Em alta',
+    novosEpisodios: 'Novos episódios',
+    recemAdicionados: 'Recém adicionados',
+    lancamento: 'Lançamento',
+    aventura: 'Aventura',
+    comedia: 'Comédia',
+    romance: 'Romance',
+    talvezGoste: 'Talvez você goste',
+    tudo: 'Tudo',
+    filmes: 'Filmes',
+    series: 'Séries',
+    buscar: 'O que está procurando?',
+    categorias: 'Categorias',
+    nenhumResultado: 'Nenhum resultado encontrado',
+    nenhumFavorito: 'Nenhum favorito encontrado',
+    episodio: 'Episódio',
+    emExibicao: 'Em exibição',
+    sinopseIndisponivel: 'Sinopse não disponível.',
+    popularidade: 'Popularidade',
+    criarPerfil: 'Criar perfil',
+    editarPerfil: 'Editar Perfil',
+    privacidade: 'Privacidade',
+    ajuda: 'Ajuda',
+    sobre: 'Sobre',
+    linguagem: 'Linguagem',
+    sairDoPerfil: 'Sair do perfil',
+    sairLimpar: 'Sair e limpar dados',
+    cancelar: 'Cancelar',
+    aoSalvar: 'Ao sair, todos os seus favoritos serão perdidos permanentemente. Deseja continuar?',
+    nome: 'Nome',
+    username: 'Username',
+    salvar: 'Salvar',
+    entrouEm: 'Entrou em',
+    hoje: 'hoje',
+    privacidadeTitulo: 'Privacidade',
+    privacidadeTexto: 'Este aplicativo não coleta, armazena ou compartilha dados pessoais dos usuários. As informações de perfil e favoritos são armazenadas localmente no seu dispositivo e podem ser removidas a qualquer momento.',
+    sobreTitulo: 'Yoshikawa Player',
+    creditos: 'Créditos',
+    desenvolvedor: 'Desenvolvido por',
+    design: 'Design e implementação por Yoshikawa Systems',
+    direitos: 'Direitos Autorais',
+    isencao: 'Isenção de Responsabilidade',
+    isencaoTexto: 'Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.',
+    versao: 'Versão',
+    anime: 'Anime',
+    filme: 'Filme',
+    serie: 'Série',
+    politicaPrivacidade: 'Política de Privacidade',
+    faleConosco: 'Fale conosco',
+    versaoApp: 'Versão do app',
+    releaseBuild: 'RELEASE BUILD',
+    criePerfilBanner: 'Crie seu perfil para personalizar sua experiência!',
+    userPadrao: '@user',
+    criar: 'Criar',
+    editar: 'Editar',
+    perfil: 'Perfil',
+    sair: 'Sair',
+    voltar: 'Voltar',
+    confirmar: 'Confirmar',
+    linguagemTitulo: 'Idioma',
+    selecioneIdioma: 'Selecione o idioma',
+  },
+  es: {
+    inicio: 'Inicio',
+    animes: 'Animes',
+    favoritos: 'Favoritos',
+    menu: 'Menú',
+    emAlta: 'En tendencia',
+    novosEpisodios: 'Nuevos episodios',
+    recemAdicionados: 'Recién añadidos',
+    lancamento: 'Lanzamiento',
+    aventura: 'Aventura',
+    comedia: 'Comedia',
+    romance: 'Romance',
+    talvezGoste: 'Quizás te guste',
+    tudo: 'Todo',
+    filmes: 'Películas',
+    series: 'Series',
+    buscar: '¿Qué estás buscando?',
+    categorias: 'Categorías',
+    nenhumResultado: 'No se encontraron resultados',
+    nenhumFavorito: 'No se encontraron favoritos',
+    episodio: 'Episodio',
+    emExibicao: 'En emisión',
+    sinopseIndisponivel: 'Sinopsis no disponible.',
+    popularidade: 'Popularidad',
+    criarPerfil: 'Crear perfil',
+    editarPerfil: 'Editar perfil',
+    privacidade: 'Privacidad',
+    ajuda: 'Ayuda',
+    sobre: 'Acerca de',
+    linguagem: 'Idioma',
+    sairDoPerfil: 'Salir del perfil',
+    sairLimpar: 'Salir y borrar datos',
+    cancelar: 'Cancelar',
+    aoSalvar: 'Al salir, todos tus favoritos se perderán permanentemente. ¿Deseas continuar?',
+    nome: 'Nombre',
+    username: 'Usuario',
+    salvar: 'Guardar',
+    entrouEm: 'Se unió en',
+    hoje: 'hoy',
+    privacidadeTitulo: 'Privacidad',
+    privacidadeTexto: 'Esta aplicación no recopila, almacena ni comparte datos personales de los usuarios. La información del perfil y los favoritos se almacenan localmente en tu dispositivo y se pueden eliminar en cualquier momento.',
+    sobreTitulo: 'Yoshikawa Player',
+    creditos: 'Créditos',
+    desenvolvedor: 'Desarrollado por',
+    design: 'Diseño e implementación por Yoshikawa Systems',
+    direitos: 'Derechos de autor',
+    isencao: 'Descargo de responsabilidad',
+    isencaoTexto: 'Este sitio no aloja ningún contenido. Utiliza APIs públicas de terceros (TMDB) para indexar información. Cualquier infracción de derechos de autor debe informarse directamente a los proveedores de contenido.',
+    versao: 'Versión',
+    anime: 'Anime',
+    filme: 'Película',
+    serie: 'Serie',
+    politicaPrivacidade: 'Política de privacidad',
+    faleConosco: 'Contáctanos',
+    versaoApp: 'Versión de la app',
+    releaseBuild: 'VERSIÓN DE LANZAMIENTO',
+    criePerfilBanner: '¡Crea tu perfil para personalizar tu experiencia!',
+    userPadrao: '@usuario',
+    criar: 'Crear',
+    editar: 'Editar',
+    perfil: 'Perfil',
+    sair: 'Salir',
+    voltar: 'Volver',
+    confirmar: 'Confirmar',
+    linguagemTitulo: 'Idioma',
+    selecioneIdioma: 'Seleccionar idioma',
+  },
+  en: {
+    inicio: 'Home',
+    animes: 'Animes',
+    favoritos: 'Favorites',
+    menu: 'Menu',
+    emAlta: 'Trending',
+    novosEpisodios: 'New Episodes',
+    recemAdicionados: 'Recently Added',
+    lancamento: 'Now Playing',
+    aventura: 'Adventure',
+    comedia: 'Comedy',
+    romance: 'Romance',
+    talvezGoste: 'You Might Like',
+    tudo: 'All',
+    filmes: 'Movies',
+    series: 'TV Shows',
+    buscar: 'What are you looking for?',
+    categorias: 'Categories',
+    nenhumResultado: 'No results found',
+    nenhumFavorito: 'No favorites found',
+    episodio: 'Episode',
+    emExibicao: 'Airing',
+    sinopseIndisponivel: 'Synopsis not available.',
+    popularidade: 'Popularity',
+    criarPerfil: 'Create Profile',
+    editarPerfil: 'Edit Profile',
+    privacidade: 'Privacy',
+    ajuda: 'Help',
+    sobre: 'About',
+    linguagem: 'Language',
+    sairDoPerfil: 'Sign Out',
+    sairLimpar: 'Sign out and clear data',
+    cancelar: 'Cancel',
+    aoSalvar: 'By signing out, all your favorites will be permanently lost. Do you wish to continue?',
+    nome: 'Name',
+    username: 'Username',
+    salvar: 'Save',
+    entrouEm: 'Joined in',
+    hoje: 'today',
+    privacidadeTitulo: 'Privacy',
+    privacidadeTexto: 'This app does not collect, store, or share personal data. Profile and favorites are stored locally on your device and can be removed at any time.',
+    sobreTitulo: 'Yoshikawa Player',
+    creditos: 'Credits',
+    desenvolvedor: 'Developed by',
+    design: 'Design and implementation by Yoshikawa Systems',
+    direitos: 'Copyright',
+    isencao: 'Disclaimer',
+    isencaoTexto: 'This site does not host any content. It uses public third-party APIs (TMDB) for content indexing. Any copyright infringement should be reported directly to the content providers.',
+    versao: 'Version',
+    anime: 'Anime',
+    filme: 'Movie',
+    serie: 'TV Show',
+    politicaPrivacidade: 'Privacy Policy',
+    faleConosco: 'Contact us',
+    versaoApp: 'App version',
+    releaseBuild: 'RELEASE BUILD',
+    criePerfilBanner: 'Create your profile to personalize your experience!',
+    userPadrao: '@user',
+    criar: 'Create',
+    editar: 'Edit',
+    perfil: 'Profile',
+    sair: 'Sign out',
+    voltar: 'Back',
+    confirmar: 'Confirm',
+    linguagemTitulo: 'Language',
+    selecioneIdioma: 'Select language',
+  },
+  ja: {
+    inicio: 'ホーム',
+    animes: 'アニメ',
+    favoritos: 'お気に入り',
+    menu: 'メニュー',
+    emAlta: 'トレンド',
+    novosEpisodios: '新エピソード',
+    recemAdicionados: '最近追加',
+    lancamento: '公開中',
+    aventura: '冒険',
+    comedia: 'コメディ',
+    romance: 'ロマンス',
+    talvezGoste: 'おすすめ',
+    tudo: 'すべて',
+    filmes: '映画',
+    series: 'ドラマ',
+    buscar: '何をお探しですか？',
+    categorias: 'カテゴリ',
+    nenhumResultado: '結果が見つかりません',
+    nenhumFavorito: 'お気に入りがありません',
+    episodio: 'エピソード',
+    emExibicao: '放送中',
+    sinopseIndisponivel: '概要はありません。',
+    popularidade: '人気',
+    criarPerfil: 'プロフィール作成',
+    editarPerfil: 'プロフィール編集',
+    privacidade: 'プライバシー',
+    ajuda: 'ヘルプ',
+    sobre: 'について',
+    linguagem: '言語',
+    sairDoPerfil: 'サインアウト',
+    sairLimpar: 'サインアウトしてデータを消去',
+    cancelar: 'キャンセル',
+    aoSalvar: 'サインアウトすると、お気に入りが完全に失われます。続行しますか？',
+    nome: '名前',
+    username: 'ユーザー名',
+    salvar: '保存',
+    entrouEm: '参加日',
+    hoje: '今日',
+    privacidadeTitulo: 'プライバシー',
+    privacidadeTexto: 'このアプリは個人データを収集、保存、共有しません。プロフィールとお気に入りはデバイスにローカルに保存され、いつでも削除できます。',
+    sobreTitulo: 'Yoshikawa Player',
+    creditos: 'クレジット',
+    desenvolvedor: '開発者',
+    design: 'Yoshikawa Systemsによるデザインと実装',
+    direitos: '著作権',
+    isencao: '免責事項',
+    isencaoTexto: 'このサイトはコンテンツをホストしていません。公開されているサードパーティAPI（TMDB）を使用して情報をインデックスしています。著作権侵害は、直接コンテンツ提供者に報告してください。',
+    versao: 'バージョン',
+    anime: 'アニメ',
+    filme: '映画',
+    serie: 'ドラマ',
+    politicaPrivacidade: 'プライバシーポリシー',
+    faleConosco: 'お問い合わせ',
+    versaoApp: 'アプリバージョン',
+    releaseBuild: 'リリースビルド',
+    criePerfilBanner: 'プロフィールを作成してエクスペリエンスをパーソナライズしましょう！',
+    userPadrao: '@ユーザー',
+    criar: '作成',
+    editar: '編集',
+    perfil: 'プロフィール',
+    sair: 'サインアウト',
+    voltar: '戻る',
+    confirmar: '確認',
+    linguagemTitulo: '言語',
+    selecioneIdioma: '言語を選択',
+  }
+}
+
+const LanguageContext = createContext()
+
+export const LanguageProvider = ({ children }) => {
+  const [language, setLanguageState] = useState('pt')
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('yoshikawaLanguage')
+      if (saved && LANGUAGES.some(l => l.code === saved)) {
+        setLanguageState(saved)
+      }
+    } catch {}
+  }, [])
+
+  const setLanguage = (lang) => {
+    setLanguageState(lang)
+    try { localStorage.setItem('yoshikawaLanguage', lang) } catch {}
+  }
+
+  const t = (key) => {
+    return TRANSLATIONS[language]?.[key] || TRANSLATIONS.pt[key] || key
+  }
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  )
+}
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext)
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider')
+  }
+  return context
+}
 
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
@@ -197,17 +512,20 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
   )
 }
 
-export const BottomNav = ({ activeSection, setActiveSection }) => (
-  <nav className="bottom-nav">
-    <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>Início</span></button>
-    <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>Animes</span></button>
-    <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
-      <i className="fas fa-heart" style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
-      <span>Favoritos</span>
-    </button>
-    <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>Menu</span></button>
-  </nav>
-)
+export const BottomNav = ({ activeSection, setActiveSection }) => {
+  const { t } = useLanguage()
+  return (
+    <nav className="bottom-nav">
+      <button className={`nav-item ${activeSection === 'home' ? 'active' : ''}`} onClick={() => setActiveSection('home')}><i className="fas fa-home" /><span>{t('inicio')}</span></button>
+      <button className={`nav-item ${activeSection === 'animes' ? 'active' : ''}`} onClick={() => setActiveSection('animes')}><i className="fas fa-play" /><span>{t('animes')}</span></button>
+      <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
+        <i className="fas fa-heart" style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
+        <span>{t('favoritos')}</span>
+      </button>
+      <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>{t('menu')}</span></button>
+    </nav>
+  )
+}
 
 export const HighlightBanner = ({ item, onPlay, logoPath }) => {
   const posterUrl = item.poster_path
@@ -265,6 +583,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
       : (item.poster_path
         ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`
         : DEFAULT_POSTER))
+  const { t } = useLanguage()
   return (
     <HorizontalFade>
       <div className="episode-card" onClick={() => onPlay?.(item)}>
@@ -272,7 +591,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
           <img src={imageUrl} alt={item.name || item.title} className="episode-img" />
         </div>
         <h4 className="episode-title">{item.title || item.name}</h4>
-        <p className="episode-info">{item.episode_number ? `Episódio ${item.episode_number}` : `Em exibição • ${year || 'N/A'}`}</p>
+        <p className="episode-info">{item.episode_number ? `${t('episodio')} ${item.episode_number}` : `${t('emExibicao')} • ${year || 'N/A'}`}</p>
       </div>
     </HorizontalFade>
   )
@@ -282,6 +601,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const year = getItemYear(item)
   const ratingClass = item.adult ? 'rating-18' : 'rating-L'
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
+  const { t } = useLanguage()
   return (
     <div className="featured-card">
       <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
@@ -293,7 +613,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
             <span className="featured-genre">{item.genre || 'Ação'}</span>
             {year && <span className="featured-year">{year}</span>}
           </div>
-          <p className="featured-synopsis">{item.overview || 'Sinopse não disponível.'}</p>
+          <p className="featured-synopsis">{item.overview || t('sinopseIndisponivel')}</p>
         </div>
         <div className="featured-actions">
           <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
@@ -322,7 +642,8 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
   const mediaType = getMediaType(item)
   const year = getItemYear(item)
   const badgeColor = mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#E97820'
-  const badgeText = mediaType === 'anime' ? 'Anime' : mediaType === 'tv' ? 'Série' : 'Filme'
+  const { t } = useLanguage()
+  const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
   return (
     <div className="favorite-item" onClick={() => onClick?.(item)}>
       <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title} className="favorite-poster" />
@@ -356,7 +677,8 @@ export const SearchResultItem = ({ item, onClick }) => {
       ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.backdrop_path}`
       : getGenreFallbackImage(item.genre_ids))
   const badgeColor = mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#E97820'
-  const badgeText = mediaType === 'anime' ? 'Anime' : mediaType === 'tv' ? 'Série' : 'Filme'
+  const { t } = useLanguage()
+  const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
 
   return (
     <div className="search-result-item" onClick={() => onClick?.(item)}>
@@ -364,7 +686,7 @@ export const SearchResultItem = ({ item, onClick }) => {
       <div className="search-result-content">
         <h3 className="search-result-title">{item.title || item.name}</h3>
         {year && <p className="search-result-year">{year}</p>}
-        <p className="search-result-episodes">{item.popularity ? `${Math.round(item.popularity)} Popularidade` : '12 Episódios'}</p>
+        <p className="search-result-episodes">{item.popularity ? `${Math.round(item.popularity)} ${t('popularidade')}` : '12 Episódios'}</p>
         <div className="search-result-badge" style={{ background: badgeColor }}>
           {badgeText}
         </div>
@@ -387,23 +709,27 @@ export const SettingsItem = ({ icon, title, description, onClick }) => (
   </div>
 )
 
-export const LogoutConfirm = ({ onConfirm, onCancel }) => (
-  <div className="profile-creation-overlay" onClick={onCancel}>
-    <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h3 className="logout-confirm-title">Sair do perfil</h3>
-        <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times" /></button>
-      </div>
-      <p className="logout-confirm-text">Ao sair, todos os seus favoritos serão perdidos permanentemente. Deseja continuar?</p>
-      <div className="logout-confirm-actions">
-        <button className="logout-cancel-btn" onClick={onCancel}>Cancelar</button>
-        <button className="logout-confirm-btn" onClick={onConfirm}>Sair e limpar dados</button>
+export const LogoutConfirm = ({ onConfirm, onCancel }) => {
+  const { t } = useLanguage()
+  return (
+    <div className="profile-creation-overlay" onClick={onCancel}>
+      <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="logout-confirm-title">{t('sairDoPerfil')}</h3>
+          <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times" /></button>
+        </div>
+        <p className="logout-confirm-text">{t('aoSalvar')}</p>
+        <div className="logout-confirm-actions">
+          <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
+          <button className="logout-confirm-btn" onClick={onConfirm}>{t('sairLimpar')}</button>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
 export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode, onRemoveFavorite }) => {
+  const { t } = useLanguage()
   const isNew = mode === 'create'
   const startInEdit = mode === 'edit' || mode === 'create'
   const [editing, setEditing] = useState(startInEdit)
@@ -467,7 +793,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
         </button>
         <div style={{ flex: 1 }} />
         {editing ? (
-          <button className="profile-save-btn" onClick={handleSave}>Salvar</button>
+          <button className="profile-save-btn" onClick={handleSave}>{t('salvar')}</button>
         ) : (
           <div style={{ display: 'flex', gap: '10px' }}>
             <button className="profile-top-btn" onClick={() => setEditing(true)}>
@@ -517,19 +843,19 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
           {editing ? (
             <div className="edit-form">
               <div className="edit-field">
-                <label className="edit-label">Nome</label>
+                <label className="edit-label">{t('nome')}</label>
                 <input
                   type="text"
                   value={name}
                   onChange={e => { setName(e.target.value); setError('') }}
                   className="edit-input"
                   maxLength={20}
-                  placeholder="Seu nome"
+                  placeholder={t('nome')}
                   autoFocus
                 />
               </div>
               <div className="edit-field">
-                <label className="edit-label">Username</label>
+                <label className="edit-label">{t('username')}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span style={{ color: '#888', fontSize: '18px', fontWeight: 600 }}>@</span>
                   <input
@@ -545,7 +871,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               </div>
               {error && <p className="profile-error">{error}</p>}
               {isNew && (
-                <p className="profile-create-hint">Crie um perfil para salvar seus favoritos e personalizar a experiência.</p>
+                <p className="profile-create-hint">{t('criePerfilBanner')}</p>
               )}
             </div>
           ) : (
@@ -555,11 +881,11 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               </div>
               <p className="profile-username">@{displayUsername}</p>
               <p className="profile-meta">
-                <i className="fas fa-calendar-alt" /> Entrou em {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'hoje'}
+                <i className="fas fa-calendar-alt" /> {t('entrouEm')} {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : t('hoje')}
               </p>
               <div className="profile-stats">
-                <span><strong>{moviesCount}</strong> Filmes</span>
-                <span><strong>{seriesCount}</strong> Séries</span>
+                <span><strong>{moviesCount}</strong> {t('filmes')}</span>
+                <span><strong>{seriesCount}</strong> {t('series')}</span>
               </div>
             </>
           )}
@@ -569,11 +895,11 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
           <>
             <div className="profile-divider" />
             <div className="profile-favorites-section">
-              <h3 className="profile-favorites-title">Favoritos</h3>
+              <h3 className="profile-favorites-title">{t('favoritos')}</h3>
               {(!favorites || favorites.length === 0) ? (
                 <div className="empty-favorites">
                   <i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} />
-                  <p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito ainda</p>
+                  <p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumFavorito')}</p>
                 </div>
               ) : (
                 <div className="favorites-list">
@@ -595,43 +921,84 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   )
 }
 
-export const PrivacyModal = ({ onClose }) => (
-  <div className="profile-creation-overlay" onClick={onClose}>
-    <div className="about-modal" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2 className="about-title">Privacidade</h2>
-        <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
-      </div>
-      <div className="about-content">
-        <p><strong>Política de Privacidade</strong></p>
-        <p>Este aplicativo não coleta, armazena ou compartilha dados pessoais dos usuários. As informações de perfil e favoritos são armazenadas localmente no seu dispositivo e podem ser removidas a qualquer momento.</p>
-        <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
-        <p>Para dúvidas, entre em contato pelo e-mail yoshikawa_bot@proton.me.</p>
+export const PrivacyModal = ({ onClose }) => {
+  const { t } = useLanguage()
+  return (
+    <div className="profile-creation-overlay" onClick={onClose}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="about-title">{t('privacidadeTitulo')}</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <div className="about-content">
+          <p><strong>{t('politicaPrivacidade')}</strong></p>
+          <p>{t('privacidadeTexto')}</p>
+          <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
+          <p>Para dúvidas, entre em contato pelo e-mail yoshikawa_bot@proton.me.</p>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
-export const AboutModal = ({ onClose }) => (
-  <div className="profile-creation-overlay" onClick={onClose}>
-    <div className="about-modal" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2 className="about-title">Yoshikawa Player</h2>
-        <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
-      </div>
-      <div className="about-content">
-        <p><strong>Créditos</strong></p>
-        <p>Desenvolvido por <strong>@kawalyansky</strong></p>
-        <p>Design e implementação por Yoshikawa Systems</p>
-        <p><strong>Direitos Autorais</strong></p>
-        <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
-        <p><strong>Isenção de Responsabilidade</strong></p>
-        <p>Este site não hospeda nenhum conteúdo. Utiliza APIs públicas de terceiros (TMDB) para indexação de informações. Qualquer violação de direitos autorais deve ser reportada diretamente aos provedores de conteúdo.</p>
-        <p><strong>Versão:</strong> 1.0.93 beta</p>
+export const AboutModal = ({ onClose }) => {
+  const { t } = useLanguage()
+  return (
+    <div className="profile-creation-overlay" onClick={onClose}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="about-title">{t('sobreTitulo')}</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <div className="about-content">
+          <p><strong>{t('creditos')}</strong></p>
+          <p>{t('desenvolvedor')} <strong>@kawalyansky</strong></p>
+          <p>{t('design')}</p>
+          <p><strong>{t('direitos')}</strong></p>
+          <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
+          <p><strong>{t('isencao')}</strong></p>
+          <p>{t('isencaoTexto')}</p>
+          <p><strong>{t('versao')}:</strong> 1.0.93 beta</p>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
+
+export const LanguageModal = ({ onClose }) => {
+  const { t, setLanguage, language: currentLang } = useLanguage()
+  return (
+    <div className="profile-creation-overlay" onClick={onClose}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="about-title">{t('linguagemTitulo')}</h2>
+          <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        <div className="about-content" style={{ padding: '12px 0' }}>
+          {LANGUAGES.map(lang => (
+            <div
+              key={lang.code}
+              style={{
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                background: currentLang === lang.code ? 'rgba(255,255,255,0.1)' : 'transparent',
+                borderRadius: '8px',
+                marginBottom: '4px'
+              }}
+              onClick={() => { setLanguage(lang.code); onClose() }}
+            >
+              <span style={{ fontSize: '16px', fontWeight: 600 }}>{lang.label}</span>
+              {currentLang === lang.code && <i className="fas fa-check" style={{ color: '#E04E4E' }} />}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Home() {
   const router = useRouter()
@@ -642,6 +1009,7 @@ export default function Home() {
   const [profileMode, setProfileMode] = useState('view')
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
+  const [showLanguage, setShowLanguage] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
   const [trendingLogos, setTrendingLogos] = useState({})
@@ -676,6 +1044,12 @@ export default function Home() {
 
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
+
+  const { t } = useLanguage()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [activeSection])
 
   useEffect(() => {
     const savedSection = sessionStorage.getItem('yoshikawaActiveSection')
@@ -1023,7 +1397,7 @@ export default function Home() {
     return (
       <>
         <section className="section">
-          <h2 className="section-title">Em alta</h2>
+          <h2 className="section-title">{t('emAlta')}</h2>
           <div className="horizontal-scroll">
             {trending.slice(0, 5).map(item => (
               <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} logoPath={trendingLogos[item.id] || null} />
@@ -1031,41 +1405,41 @@ export default function Home() {
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Novos episódios</h2>
+          <h2 className="section-title">{t('novosEpisodios')}</h2>
           <div className="horizontal-scroll">
             {newEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Recém adicionados</h2>
+          <h2 className="section-title">{t('recemAdicionados')}</h2>
           <div className="vertical-scroll">
             {recentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Lançamento</h2>
+          <h2 className="section-title">{t('lancamento')}</h2>
           {featured && <FeaturedCard item={featured} onPlay={handlePlay} onInfo={handleInfo} />}
         </section>
         <section className="section">
-          <h2 className="section-title">Aventura</h2>
+          <h2 className="section-title">{t('aventura')}</h2>
           <div className="vertical-scroll">
             {adventure.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Comédia</h2>
+          <h2 className="section-title">{t('comedia')}</h2>
           <div className="vertical-scroll">
             {comedy.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Romance</h2>
+          <h2 className="section-title">{t('romance')}</h2>
           <div className="vertical-scroll">
             {romance.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Talvez você goste</h2>
+          <h2 className="section-title">{t('talvezGoste')}</h2>
           <div className="vertical-scroll">
             {recommended.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
@@ -1079,7 +1453,7 @@ export default function Home() {
     return (
       <>
         <section className="section">
-          <h2 className="section-title">Em alta</h2>
+          <h2 className="section-title">{t('emAlta')}</h2>
           <div className="horizontal-scroll">
             {animeTrending.slice(0, 5).map(item => (
               <HighlightBanner key={`${item.media_type || getMediaType(item)}-${item.id}`} item={item} onPlay={handlePlay} logoPath={animeTrendingLogos[item.id] || null} />
@@ -1087,41 +1461,41 @@ export default function Home() {
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Novos episódios</h2>
+          <h2 className="section-title">{t('novosEpisodios')}</h2>
           <div className="horizontal-scroll">
             {animeNewEpisodes.map(item => <EpisodeCard key={`${item.media_type}-${item.id}`} item={item} onPlay={handlePlay} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Recém adicionados</h2>
+          <h2 className="section-title">{t('recemAdicionados')}</h2>
           <div className="vertical-scroll">
             {animeRecentlyAdded.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Lançamento</h2>
+          <h2 className="section-title">{t('lancamento')}</h2>
           {animeFeatured && <FeaturedCard item={animeFeatured} onPlay={handlePlay} onInfo={handleInfo} />}
         </section>
         <section className="section">
-          <h2 className="section-title">Aventura</h2>
+          <h2 className="section-title">{t('aventura')}</h2>
           <div className="vertical-scroll">
             {animeAdventure.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Comédia</h2>
+          <h2 className="section-title">{t('comedia')}</h2>
           <div className="vertical-scroll">
             {animeComedy.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Romance</h2>
+          <h2 className="section-title">{t('romance')}</h2>
           <div className="vertical-scroll">
             {animeRomance.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
         </section>
         <section className="section">
-          <h2 className="section-title">Talvez você goste</h2>
+          <h2 className="section-title">{t('talvezGoste')}</h2>
           <div className="vertical-scroll">
             {animeRecommended.map(item => <MovieCard key={`${item.media_type}-${item.id}`} item={item} />)}
           </div>
@@ -1132,10 +1506,10 @@ export default function Home() {
 
   const renderFavoritesPage = () => (
     <section className="section">
-      <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>Favoritos</h2>
+      <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>{t('favoritos')}</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
-        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum favorito encontrado</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay} />)}
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumFavorito')}</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay} />)}
       </div>
     </section>
   )
@@ -1144,21 +1518,21 @@ export default function Home() {
     <div className="search-page-container">
       <div className="search-fixed-header">
         <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
-        <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder="O que está procurando?" className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
+        <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder={t('buscar')} className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
       <div className="search-content" style={{ paddingTop: '70px' }}>
         {searchQuery.trim() ? (
           <>
             <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
             <div className="search-results-list">
-              {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>Nenhum resultado encontrado</p></div>}
+              {searchLoading ? <ContentLoader /> : searchResults.length > 0 ? searchResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < searchResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-search" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumResultado')}</p></div>}
             </div>
           </>
         ) : (
           <>
             <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,30px)' }}>{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
             <section className="section">
-              <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>Categorias</h2>
+              <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,38px)', fontWeight: '800' }}>{t('categorias')}</h2>
               <div className="categories-grid">
                 {CATEGORIES.map((category, index) => {
                   const genreId = CATEGORY_GENRE_MAP[category.name]
@@ -1184,7 +1558,7 @@ export default function Home() {
       {!userProfile && (
         <div className="menu-banner-container">
           <div className="verify-banner" onClick={() => openProfile('create')} style={{ cursor: 'pointer' }}>
-            <span>Crie seu perfil para personalizar sua experiência!</span>
+            <span>{t('criePerfilBanner')}</span>
             <i className="fas fa-chevron-right" />
           </div>
         </div>
@@ -1193,26 +1567,27 @@ export default function Home() {
         <div className="user-avatar" style={{ background: DEFAULT_AVATAR_BG }}>
           {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
-        <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : '@user'}</h3>{!userProfile && <p className="user-email">Criar perfil</p>}</div>
+        <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : t('userPadrao')}</h3>{!userProfile && <p className="user-email">{t('criarPerfil')}</p>}</div>
         {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); openProfile('view') }}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
-        <SettingsItem icon="user-edit" title={userProfile ? 'Editar Perfil' : 'Criar Perfil'} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
-        <SettingsItem icon="shield-alt" title="Privacidade" description="Política de privacidade" onClick={() => setShowPrivacy(true)} />
-        <SettingsItem icon="question-circle" title="Ajuda" description="Fale conosco" onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
-        <SettingsItem icon="info-circle" title="Sobre" description="Versão do app" onClick={() => setShowAbout(true)} />
+        <SettingsItem icon="user-edit" title={userProfile ? t('editarPerfil') : t('criarPerfil')} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
+        <SettingsItem icon="language" title={t('linguagem')} description={t('selecioneIdioma')} onClick={() => setShowLanguage(true)} />
+        <SettingsItem icon="shield-alt" title={t('privacidade')} description={t('politicaPrivacidade')} onClick={() => setShowPrivacy(true)} />
+        <SettingsItem icon="question-circle" title={t('ajuda')} description={t('faleConosco')} onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
+        <SettingsItem icon="info-circle" title={t('sobre')} description={t('versaoApp')} onClick={() => setShowAbout(true)} />
       </div>
       <div className="social-links">
         <button className="social-btn" onClick={() => window.open('https://yoshikawa.vercel.app', '_blank')}><i className="fas fa-link" /></button>
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>RELEASE BUILD - 1.0.93 beta</p></div>
+      <div className="version-info"><p>{t('releaseBuild')} - 1.0.93 beta</p></div>
     </section>
   )
 
   return (
-    <>
+    <LanguageProvider>
       <Head>
         <title>Yoshikawa Streaming</title>
         <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
@@ -1467,8 +1842,9 @@ export default function Home() {
           )}
           {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
           {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+          {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
         </>
       )}
-    </>
+    </LanguageProvider>
   )
-  }
+      }
