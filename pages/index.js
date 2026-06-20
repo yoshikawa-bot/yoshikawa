@@ -634,6 +634,26 @@ export const AboutModal = ({ onClose }) => (
 )
 
 export default function Home() {
+  const MAINTENANCE_MODE = true
+  if (MAINTENANCE_MODE) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#101010',
+        color: '#fff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: 'clamp(16px, 4vw, 24px)',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        Serviço em manutenção por tempo indeterminado
+      </div>
+    )
+  }
+
   const router = useRouter()
   const [welcomed, setWelcomed] = useState(false)
   const [loadingComplete, setLoadingComplete] = useState(false)
@@ -1471,4 +1491,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+}
