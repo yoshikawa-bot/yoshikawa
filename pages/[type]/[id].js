@@ -31,6 +31,7 @@ const ContentLoader = () => (
 )
 
 export default function WatchPage() {
+  const MAINTENANCE_MODE = true
   const router = useRouter()
   const { type, id, room: roomQuery, s: querySeason, e: queryEpisode } = router.query
 
@@ -898,6 +899,25 @@ export default function WatchPage() {
   const hasLongSynopsis = content?.overview && content.overview.length > 200
   const showContent = content && !hasError
 
+  if (MAINTENANCE_MODE) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#101010',
+        color: '#fff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: 'clamp(16px, 4vw, 24px)',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        O serviço não está mais disponível na sua região.
+      </div>
+    )
+  }
+
   return (
     <>
       <Head>
@@ -1335,4 +1355,4 @@ export default function WatchPage() {
       )}
     </>
   )
-          }
+    }
