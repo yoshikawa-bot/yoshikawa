@@ -634,26 +634,6 @@ export const AboutModal = ({ onClose }) => (
 )
 
 export default function Home() {
-  const MAINTENANCE_MODE = true
-  if (MAINTENANCE_MODE) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: '#101010',
-        color: '#fff',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: 'clamp(16px, 4vw, 24px)',
-        padding: '20px',
-        textAlign: 'center'
-      }}>
-        Serviço em manutenção por tempo indeterminado
-      </div>
-    )
-  }
-
   const router = useRouter()
   const [welcomed, setWelcomed] = useState(false)
   const [loadingComplete, setLoadingComplete] = useState(false)
@@ -696,6 +676,26 @@ export default function Home() {
 
   const [navHistory, setNavHistory] = useState(['home'])
   const [navIndex, setNavIndex] = useState(0)
+
+  const [geoBlocked, setGeoBlocked] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.region_code === 'SC' || data.region === 'Santa Catarina') {
+          setGeoBlocked(true)
+        } else {
+          setGeoBlocked(false)
+        }
+        setGeoLoading(false)
+      })
+      .catch(() => {
+        setGeoBlocked(false)
+        setGeoLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
     const savedSection = sessionStorage.getItem('yoshikawaActiveSection')
@@ -767,7 +767,7 @@ export default function Home() {
     setLoadingComplete(true)
   }
 
-  useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
+  useEffect(() => { if (loadingComplete && !geoBlocked) loadAllContent() }, [loadingComplete, geoBlocked])
 
   useEffect(() => {
     if (showSearch && !searchQuery.trim()) {
@@ -1231,6 +1231,36 @@ export default function Home() {
     </section>
   )
 
+  if (geoLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#101010' }}>
+        <div className="loading-spinner" style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    )
+  }
+
+  if (geoBlocked) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#101010',
+        color: '#fff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: 'clamp(16px, 4vw, 24px)',
+        padding: '20px',
+        textAlign: 'center',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        <i className="fas fa-map-marker-alt" style={{ fontSize: 'clamp(32px, 6vw, 48px)', color: '#F05454' }} />
+        <span>Acesso não disponível na sua localização.</span>
+      </div>
+    )
+  }
+
   return (
     <>
       <Head>
@@ -1491,4 +1521,4 @@ export default function Home() {
       )}
     </>
   )
-}
+                          }
