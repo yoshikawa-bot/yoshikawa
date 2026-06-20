@@ -1298,7 +1298,7 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:clamp(16px,3vw,24px);left:50%;transform:translateX(-50%);z-index:1000;background:rgba(20,20,20,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;height:clamp(56px,8vw,72px);display:flex;justify-content:space-around;align-items:center;padding:0 clamp(8px,2vw,16px);width:fit-content;max-width:90vw}
+          .bottom-nav{position:fixed;bottom:clamp(16px,3vw,24px);left:50%;transform:translateX(-50%);z-index:1000;background:rgba(60,60,60,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;height:clamp(56px,8vw,72px);display:flex;justify-content:space-around;align-items:center;padding:clamp(16px,3vw,24px);width:fit-content;max-width:90vw}
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px);white-space:nowrap}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
