@@ -31,7 +31,6 @@ const ContentLoader = () => (
 )
 
 export default function WatchPage() {
-  const MAINTENANCE_MODE = true
   const router = useRouter()
   const { type, id, room: roomQuery, s: querySeason, e: queryEpisode } = router.query
 
@@ -85,6 +84,26 @@ export default function WatchPage() {
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
+
+  const [geoBlocked, setGeoBlocked] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.region_code === 'SC' || data.region === 'Santa Catarina') {
+          setGeoBlocked(true)
+        } else {
+          setGeoBlocked(false)
+        }
+        setGeoLoading(false)
+      })
+      .catch(() => {
+        setGeoBlocked(false)
+        setGeoLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
     try {
@@ -145,7 +164,7 @@ export default function WatchPage() {
   }, [isLoggedIn, profile])
 
   useEffect(() => {
-    if (!router.isReady || !roomQuery) return
+    if (!router.isReady || !roomQuery || geoBlocked) return
 
     const validateRoom = async () => {
       const { data, error } = await supabase
@@ -178,7 +197,7 @@ export default function WatchPage() {
     }
 
     validateRoom()
-  }, [router.isReady, roomQuery])
+  }, [router.isReady, roomQuery, geoBlocked])
 
   useEffect(() => {
     if (!roomId || !effectiveUserName) return
@@ -520,13 +539,13 @@ export default function WatchPage() {
   }, [id, type])
 
   useEffect(() => {
-    if (type === 'tv' && id && content) {
+    if (type === 'tv' && id && content && !geoBlocked) {
       try { localStorage.setItem(`yoshikawaProgress_${id}`, JSON.stringify({ season, episode })) } catch (e) {}
     }
-  }, [season, episode, id, type, content])
+  }, [season, episode, id, type, content, geoBlocked])
 
   useEffect(() => {
-    if (!id || !type) return
+    if (!id || !type || geoBlocked) return
     setContent(null)
     setIsLoading(true)
     setHasError(false)
@@ -555,7 +574,7 @@ export default function WatchPage() {
       } catch (error) { setHasError(true); setIsLoading(false) }
     }
     load()
-  }, [id, type])
+  }, [id, type, geoBlocked])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -870,7 +889,6 @@ export default function WatchPage() {
   }
 
   const shareImage = async () => {
-    // Copiar link automaticamente ao compartilhar a imagem
     if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href).catch(() => {})
     }
@@ -899,7 +917,15 @@ export default function WatchPage() {
   const hasLongSynopsis = content?.overview && content.overview.length > 200
   const showContent = content && !hasError
 
-  if (MAINTENANCE_MODE) {
+  if (geoLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#101010' }}>
+        <div className="loading-spinner" style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    )
+  }
+
+  if (geoBlocked) {
     return (
       <div style={{
         display: 'flex',
@@ -911,9 +937,12 @@ export default function WatchPage() {
         fontFamily: 'Inter, sans-serif',
         fontSize: 'clamp(16px, 4vw, 24px)',
         padding: '20px',
-        textAlign: 'center'
+        textAlign: 'center',
+        flexDirection: 'column',
+        gap: '12px'
       }}>
-        O serviço não está mais disponível na sua região.
+        <i className="fas fa-map-marker-alt" style={{ fontSize: 'clamp(32px, 6vw, 48px)', color: '#F05454' }} />
+        <span>Acesso não disponível na sua localização.</span>
       </div>
     )
   }
