@@ -212,7 +212,7 @@ export const BottomNav = ({ activeSection, setActiveSection, onSearchClick }) =>
         <span>{t('favoritos')}</span>
       </button>
       <button className="nav-item" onClick={onSearchClick}>
-        <i className="fas fa-search" /><span>{t('buscar')}</span>
+        <i className="fas fa-search" /><span>buscar</span>
       </button>
       <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>{t('menu')}</span></button>
     </nav>
@@ -699,7 +699,6 @@ const LANGUAGES = [
   { code: 'ja', label: '日本語' }
 ]
 
-// Página de notificações
 const NotificationPage = ({ onClose }) => {
   return (
     <div className="search-page-container">
@@ -710,20 +709,41 @@ const NotificationPage = ({ onClose }) => {
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontSize: 'clamp(18px,3vw,24px)', fontWeight: 700 }}>Notificações</span>
         </div>
-        <div style={{ width: 24 }} /> {/* espaço para alinhar */}
+        <div style={{ width: 24 }} />
       </div>
-      <div className="search-content" style={{ paddingTop: '80px', padding: '20px' }}>
-        <p style={{ color: '#ccc', fontSize: 'clamp(14px,2.5vw,18px)', lineHeight: 1.6, marginBottom: '24px' }}>
+      <div style={{ 
+        paddingTop: 'clamp(60px,8vw,90px)', 
+        paddingLeft: '20px', 
+        paddingRight: '20px', 
+        paddingBottom: '20px',
+        overflowY: 'auto',
+        height: '100%'
+      }}>
+        <p style={{ 
+          color: '#ccc', 
+          fontSize: 'clamp(14px,2.5vw,18px)', 
+          lineHeight: 1.6, 
+          marginBottom: '32px' 
+        }}>
           Obrigado por utilizar os serviços dos Sistemas Yoshikawa! Agradecemos pelos 5 mil usuários ativos.
           Os projetos que fazem parte deste sistema estão em constante atualização. Peço desculpas por possíveis atrasos nas novidades; desenvolvo tudo sozinho, mas sempre tento entregar a melhor experiência. Você pode ajudar seguindo o canal no WhatsApp e apoiando por meio do PixGG.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <a
             href="https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G"
             target="_blank"
             rel="noopener noreferrer"
             className="featured-btn play-btn"
-            style={{ width: 'auto', padding: '0 24px', borderRadius: '30px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            style={{ 
+              width: 'auto', 
+              padding: '12px 24px', 
+              borderRadius: '30px', 
+              textDecoration: 'none', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              fontSize: 'clamp(14px,2.5vw,16px)'
+            }}
           >
             <i className="fab fa-whatsapp" /> WhatsApp
           </a>
@@ -732,7 +752,16 @@ const NotificationPage = ({ onClose }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="featured-btn play-btn"
-            style={{ width: 'auto', padding: '0 24px', borderRadius: '30px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            style={{ 
+              width: 'auto', 
+              padding: '12px 24px', 
+              borderRadius: '30px', 
+              textDecoration: 'none', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              fontSize: 'clamp(14px,2.5vw,16px)'
+            }}
           >
             <i className="fas fa-hand-holding-heart" /> PixGG
           </a>
@@ -1418,7 +1447,7 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(30,30,30,0.9);backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);border-radius:30px;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding:0 4px;width:90%;max-width:500px}
+          .bottom-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:1000;background:#1E1E1E;box-shadow:0 4px 20px rgba(0,0,0,0.5);border-radius:30px;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding:0 4px;width:90%;max-width:500px}
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
@@ -1593,4 +1622,4 @@ export default function Home() {
       )}
     </>
   )
-    }
+  }
