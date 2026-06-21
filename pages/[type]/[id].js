@@ -3,6 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { createClient } from '@supabase/supabase-js'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const supabase = createClient(
   'https://imltlehcxlokhlteikat.supabase.co',
@@ -33,6 +34,7 @@ const ContentLoader = () => (
 export default function WatchPage() {
   const router = useRouter()
   const { type, id, room: roomQuery, s: querySeason, e: queryEpisode } = router.query
+  const { t } = useLanguage()
 
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -302,7 +304,7 @@ export default function WatchPage() {
       room_id: roomId,
       user_name: 'Sistema',
       user_avatar: '',
-      content: `${name} entrou no chat`,
+      content: t('entrouNoChat', { name }),
       is_system: true,
       created_at: new Date().toISOString()
     })
@@ -391,7 +393,7 @@ export default function WatchPage() {
       room_id: roomId,
       user_name: 'Sistema',
       user_avatar: '',
-      content: `${displayName} saiu do chat`,
+      content: t('saiuDoChat', { name: displayName }),
       is_system: true,
       created_at: new Date().toISOString()
     })
@@ -416,7 +418,7 @@ export default function WatchPage() {
       room_id: roomId,
       user_name: 'Sistema',
       user_avatar: '',
-      content: 'O chat foi fechado pelo criador',
+      content: t('chatFechadoPeloCriador'),
       is_system: true,
       created_at: new Date().toISOString()
     })
@@ -692,7 +694,7 @@ export default function WatchPage() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, SIZE, SIZE)
 
-      const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
+      const badgeText = type === 'movie' ? t('filme').toUpperCase() : type === 'tv' ? t('serie').toUpperCase() : 'ANIME'
       ctx.font = 'bold 24px Inter, sans-serif'
       const badgeW = ctx.measureText(badgeText).width + 56
       const badgeH = 40
@@ -782,7 +784,7 @@ export default function WatchPage() {
       const afterTitle = INFO_Y + Math.min(lines.length, 2) * lineH + 16
 
       const year = new Date(content.release_date || content.first_air_date).getFullYear()
-      const meta = content.runtime ? `${content.runtime} min` : (content.number_of_seasons ? `${content.number_of_seasons} temporadas` : '')
+      const meta = content.runtime ? `${content.runtime} ${t('min')}` : (content.number_of_seasons ? `${content.number_of_seasons} ${t('temporadas')}` : '')
       const yearMeta = [year, meta].filter(Boolean).join('  •  ')
       if (yearMeta) {
         ctx.font = '500 34px Inter, sans-serif'
@@ -855,7 +857,7 @@ export default function WatchPage() {
     }
 
     drawOverlay()
-  }, [content, type])
+  }, [content, type, t])
 
   const handleShare = () => {
     if (!content) return
@@ -869,7 +871,6 @@ export default function WatchPage() {
   }
 
   const shareImage = async () => {
-    // Copiar link automaticamente ao compartilhar a imagem
     if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href).catch(() => {})
     }
@@ -891,8 +892,8 @@ export default function WatchPage() {
     }
   }
 
-  const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
-  const genres = content?.genres?.map(g => g.name).join(', ') || 'Gênero desconhecido'
+  const releaseDate = content?.release_date || content?.first_air_date || t('desconhecido')
+  const genres = content?.genres?.map(g => g.name).join(', ') || t('generoDesconhecido')
   const ratingClass = content?.adult ? 'rating-18' : 'rating-L'
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const hasLongSynopsis = content?.overview && content.overview.length > 200
@@ -1005,13 +1006,13 @@ export default function WatchPage() {
               <button
                 className="glass-btn circle"
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
-                title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                title={disableFriendMode ? t('ativarModoAmigo') : t('desativarModoAmigo')}
               >
                 <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
               </button>
             </div>
             <div className="hero-content">
-              <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}</button>
+              <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `${t('continuar')} S${season}:E${episode}` : t('assistir')}</button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
                 <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
@@ -1021,23 +1022,23 @@ export default function WatchPage() {
             </div>
           </div>
           <div className="social-bar">
-            <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}><i className="fas fa-thumbs-up" /><span>{isLiked ? 'Curtiu' : 'Curtir'}</span></button>
-            <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}><i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} /><span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span></button>
-            <button className="social-item" onClick={handleShare}><i className="fas fa-share-alt" /><span>Compartilhar</span></button>
+            <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}><i className="fas fa-thumbs-up" /><span>{isLiked ? t('curtiu') : t('curtir')}</span></button>
+            <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}><i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} /><span>{isFavorite ? t('favoritado') : t('favoritar')}</span></button>
+            <button className="social-item" onClick={handleShare}><i className="fas fa-share-alt" /><span>{t('compartilhar')}</span></button>
           </div>
           <div className="synopsis">
-            <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
-            {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
+            <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || t('sinopseIndisponivel')}</p>
+            {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? t('verMenos') : t('verMais')} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
           </div>
           {!disableFriendMode && (
             <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
               {isLoggedIn ? (
                 <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
-                  <i className="fas fa-users" /> Assistir com amigo
+                  <i className="fas fa-users" /> {t('assistirComAmigo')}
                 </button>
               ) : (
                 <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
-                  <i className="fas fa-lock" /> Faça login para criar salas
+                  <i className="fas fa-lock" /> {t('facaLoginParaSalas')}
                 </button>
               )}
             </div>
@@ -1046,9 +1047,9 @@ export default function WatchPage() {
             <>
               <div className="episodes-toolbar">
                 <select value={season} onChange={handleSeasonChange}>
-                  {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => <option key={n} value={n}>Temporada {n}</option>)}
+                  {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{t('temporada')} {n}</option>)}
                 </select>
-                <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>{episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <i className="fas fa-sort" /></button>
+                <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>{episodeOrder === 'asc' ? t('antigos') : t('recentes')} <i className="fas fa-sort" /></button>
               </div>
               <div className="episodes-list">
                 {orderedEps.map(ep => {
@@ -1059,14 +1060,14 @@ export default function WatchPage() {
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
                         {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a1a', color: '#888', fontSize: 11, fontWeight: 500, gap: 6 }}>
-                            <i className="fas fa-clock" style={{ fontSize: 12 }} /> Em breve
+                            <i className="fas fa-clock" style={{ fontSize: 12 }} /> {t('emBreve')}
                           </div>
                         )}
-                        {watched && <div className="watched-label">Assistido</div>}
+                        {watched && <div className="watched-label">{t('assistido')}</div>}
                       </div>
                       <div className="ep-info">
-                        <h4>{ep.episode_number}. {ep.name || 'Sem título'}</h4>
-                        <span>{ep.runtime ? `${ep.runtime} min` : 'Duração indisponível'}</span>
+                        <h4>{ep.episode_number}. {ep.name || t('semTitulo')}</h4>
+                        <span>{ep.runtime ? `${ep.runtime} ${t('min')}` : t('duracaoIndisponivel')}</span>
                       </div>
                     </div>
                   )
@@ -1077,7 +1078,7 @@ export default function WatchPage() {
             <div className="episodes-list">
               <div className="ep-card" onClick={handleContinue}>
                 <div className="ep-thumb"><img src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" /></div>
-                <div className="ep-info"><h4>{content.title || content.name}</h4><span>{content.runtime ? `${content.runtime} min` : 'Duração indisponível'}</span></div>
+                <div className="ep-info"><h4>{content.title || content.name}</h4><span>{content.runtime ? `${content.runtime} ${t('min')}` : t('duracaoIndisponivel')}</span></div>
               </div>
             </div>
           )}
@@ -1085,8 +1086,8 @@ export default function WatchPage() {
       ) : hasError ? (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', flexDirection: 'column', gap: 16, padding: 20 }}>
           <i className="fas fa-exclamation-triangle" style={{ fontSize: 48, color: '#F05454' }} />
-          <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
-          <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
+          <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>{t('erroCarregarConteudo')}</p>
+          <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>{t('voltarInicio')}</Link>
         </div>
       ) : <div className="hero" />}
 
@@ -1096,13 +1097,13 @@ export default function WatchPage() {
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 10 }}>
               <div className="player-controls">
                 <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
-                  {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+                  {type === 'tv' ? `S${season}:E${episode}` : t('filme').toUpperCase()}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     className="glass-btn circle"
                     onClick={() => setDisableFriendMode(!disableFriendMode)}
-                    title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                    title={disableFriendMode ? t('ativarModoAmigo') : t('desativarModoAmigo')}
                   >
                     <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
                   </button>
@@ -1131,7 +1132,7 @@ export default function WatchPage() {
                     }}
                     disabled={episode === 1}
                   >
-                    <i className="fas fa-backward" /> Anterior
+                    <i className="fas fa-backward" /> {t('anterior')}
                   </button>
                   <button
                     className="glass-btn"
@@ -1144,7 +1145,7 @@ export default function WatchPage() {
                     }}
                     disabled={!seasonData || episode >= seasonData.episodes.length}
                   >
-                    Próximo <i className="fas fa-forward" />
+                    {t('proximo')} <i className="fas fa-forward" />
                   </button>
                 </div>
               )}
@@ -1160,7 +1161,7 @@ export default function WatchPage() {
                       </div>
                       <div className="room-closed-message">
                         <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                        <span>O chat foi encerrado e não está mais disponível.</span>
+                        <span>{t('chatEncerrado')}</span>
                       </div>
                     </div>
                   ) : showShareLink ? (
@@ -1169,14 +1170,14 @@ export default function WatchPage() {
                         <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-share-alt" /></span>
                         {isRoomCreator && (
                           <div className="chat-header-btns">
-                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
+                            <button className="danger-btn" onClick={endRoom}>{t('sair')}</button>
                           </div>
                         )}
                       </div>
                       <div className="share-link-area">
-                        <p>Envie o link para assistir junto:</p>
+                        <p>{t('envieLinkParaAssistirJunto')}</p>
                         <button className="copy-btn" onClick={handleCopyLink}>
-                          {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
+                          {copied ? <><i className="fas fa-check" /> {t('copiado')}</> : <><i className="fas fa-copy" /> {t('copiarLink')}</>}
                         </button>
                       </div>
                     </div>
@@ -1186,13 +1187,13 @@ export default function WatchPage() {
                         <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /></span>
                         <div className="chat-header-btns">
                           {isRoomCreator && (
-                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
+                            <button className="danger-btn" onClick={endRoom}>{t('sair')}</button>
                           )}
-                          <button onClick={leaveRoom}>Sair</button>
+                          <button onClick={leaveRoom}>{t('sair')}</button>
                         </div>
                       </div>
                       <div className="chat-messages">
-                        {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+                        {messages.length === 0 && roomWaiting && <div className="chat-waiting">{t('aguardandoAlguem')}</div>}
                         {messages.map(msg => (
                           msg.is_system ? (
                             <div key={msg.id} className="chat-msg system">
@@ -1216,7 +1217,7 @@ export default function WatchPage() {
                             <>
                               <input
                                 type="text"
-                                placeholder="Seu nome para o chat"
+                                placeholder={t('seuNomeParaChat')}
                                 value={chatDisplayName}
                                 onChange={(e) => setChatDisplayName(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') confirmName() }}
@@ -1234,7 +1235,7 @@ export default function WatchPage() {
                             <>
                               <input
                                 type="text"
-                                placeholder="Digite sua mensagem..."
+                                placeholder={t('digiteMensagem')}
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
@@ -1247,14 +1248,14 @@ export default function WatchPage() {
                       )}
                       {roomClosed && (
                         <div className="chat-input-bar" style={{ opacity: 0.5, pointerEvents: 'none' }}>
-                          <input type="text" placeholder="Chat encerrado" disabled />
+                          <input type="text" placeholder={t('chatEncerradoPlaceholder')} disabled />
                           <button className="chat-send-btn" disabled><i className="fas fa-lock" /></button>
                         </div>
                       )}
                     </div>
                   ) : (
                     <button className="room-btn" onClick={() => setShowChat(true)}>
-                      <i className="fas fa-comments" /> Abrir chat
+                      <i className="fas fa-comments" /> {t('abrirChat')}
                     </button>
                   )
                 ) : roomInvalid ? (
@@ -1264,7 +1265,7 @@ export default function WatchPage() {
                     </div>
                     <div className="room-closed-message">
                       <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                      <span>Este link é inválido ou o chat foi encerrado.</span>
+                      <span>{t('linkInvalido')}</span>
                     </div>
                   </div>
                 ) : roomFull ? (
@@ -1274,7 +1275,7 @@ export default function WatchPage() {
                     </div>
                     <div className="room-full-message">
                       <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
-                      <span>Chat cheio (máximo {MAX_ROOM_USERS} pessoas).</span>
+                      <span>{t('chatCheio', { max: MAX_ROOM_USERS })}</span>
                     </div>
                   </div>
                 ) : isLoggedIn ? (
@@ -1283,7 +1284,7 @@ export default function WatchPage() {
                     onClick={createRoomAndRedirect}
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <i className="fas fa-users" /> Assistir com amigo
+                    <i className="fas fa-users" /> {t('assistirComAmigo')}
                   </button>
                 ) : (
                   <button
@@ -1291,7 +1292,7 @@ export default function WatchPage() {
                     disabled
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <i className="fas fa-lock" /> Faça login para criar salas
+                    <i className="fas fa-lock" /> {t('facaLoginParaSalas')}
                   </button>
                 )}
               </div>
@@ -1319,15 +1320,15 @@ export default function WatchPage() {
               ) : shareImageUrl ? (
                 <img src={shareImageUrl} alt="Compartilhar" />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Pré-visualização</div>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>{t('preview')}</div>
               )}
             </div>
             <div className="nav-ep-btns" style={{ width: '100%' }}>
               <button className="glass-btn" onClick={shareImage}>
-                <i className="fas fa-share-alt" /> Compartilhar
+                <i className="fas fa-share-alt" /> {t('compartilhar')}
               </button>
               <button className="glass-btn" onClick={copyPageLink}>
-                <i className="fas fa-copy" /> Copiar link
+                <i className="fas fa-copy" /> {t('copiarLink')}
               </button>
             </div>
           </div>
@@ -1335,4 +1336,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+      }
