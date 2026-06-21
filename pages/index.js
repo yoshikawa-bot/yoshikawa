@@ -176,12 +176,15 @@ export const LoadingScreen = ({ onComplete }) => {
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
-export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
+export const Header = ({ onNotificationsClick, userProfile, onProfileClick, onLogoClick }) => {
   return (
     <header className="header">
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
       <div className="header-actions">
-        <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
+        <button className="header-btn notification-btn" onClick={onNotificationsClick}>
+          <i className="fas fa-bell" />
+          <span className="notification-dot" />
+        </button>
         <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
           {userProfile ? (
             <img
@@ -198,7 +201,7 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
   )
 }
 
-export const BottomNav = ({ activeSection, setActiveSection }) => {
+export const BottomNav = ({ activeSection, setActiveSection, onSearchClick }) => {
   const { t } = useLanguage()
   return (
     <nav className="bottom-nav">
@@ -207,6 +210,9 @@ export const BottomNav = ({ activeSection, setActiveSection }) => {
       <button className={`nav-item ${activeSection === 'favorites' ? 'active' : ''}`} onClick={() => setActiveSection('favorites')}>
         <i className="fas fa-heart" style={activeSection === 'favorites' ? { color: '#E04E4E' } : {}} />
         <span>{t('favoritos')}</span>
+      </button>
+      <button className="nav-item" onClick={onSearchClick}>
+        <i className="fas fa-search" /><span>{t('buscar')}</span>
       </button>
       <button className={`nav-item ${activeSection === 'menu' ? 'active' : ''}`} onClick={() => setActiveSection('menu')}><i className="fas fa-bars" /><span>{t('menu')}</span></button>
     </nav>
@@ -693,6 +699,49 @@ const LANGUAGES = [
   { code: 'ja', label: '日本語' }
 ]
 
+// Página de notificações
+const NotificationPage = ({ onClose }) => {
+  return (
+    <div className="search-page-container">
+      <div className="search-fixed-header">
+        <button className="search-back-btn" onClick={onClose}>
+          <i className="fas fa-arrow-left" />
+        </button>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <span style={{ color: '#fff', fontSize: 'clamp(18px,3vw,24px)', fontWeight: 700 }}>Notificações</span>
+        </div>
+        <div style={{ width: 24 }} /> {/* espaço para alinhar */}
+      </div>
+      <div className="search-content" style={{ paddingTop: '80px', padding: '20px' }}>
+        <p style={{ color: '#ccc', fontSize: 'clamp(14px,2.5vw,18px)', lineHeight: 1.6, marginBottom: '24px' }}>
+          Obrigado por utilizar os serviços dos Sistemas Yoshikawa! Agradecemos pelos 5 mil usuários ativos.
+          Os projetos que fazem parte deste sistema estão em constante atualização. Peço desculpas por possíveis atrasos nas novidades; desenvolvo tudo sozinho, mas sempre tento entregar a melhor experiência. Você pode ajudar seguindo o canal no WhatsApp e apoiando por meio do PixGG.
+        </p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <a
+            href="https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="featured-btn play-btn"
+            style={{ width: 'auto', padding: '0 24px', borderRadius: '30px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <i className="fab fa-whatsapp" /> WhatsApp
+          </a>
+          <a
+            href="https://pixgg.com/kawalyansky"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="featured-btn play-btn"
+            style={{ width: 'auto', padding: '0 24px', borderRadius: '30px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <i className="fas fa-hand-holding-heart" /> PixGG
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const router = useRouter()
   const [welcomed, setWelcomed] = useState(false)
@@ -703,6 +752,7 @@ export default function Home() {
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showLanguage, setShowLanguage] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
   const [trendingLogos, setTrendingLogos] = useState({})
@@ -1306,12 +1356,14 @@ export default function Home() {
           .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
           .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
-          .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
+          .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s;position:relative}
           .header-btn:hover{opacity:0.8}
           .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+          .notification-btn { position: relative; }
+          .notification-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: #E04E4E; border-radius: 50%; border: 1.5px solid #101010; }
 
-          .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
+          .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(80px,10vw,120px)}
 
           .section{margin-top:clamp(16px,3vw,24px)}
           .section-title{font-size:clamp(14px,2.9vw,22px);font-weight:700;color:#ffffff;margin-left:clamp(10px,2.6vw,22px);margin-bottom:clamp(8px,1.5vw,12px)}
@@ -1366,7 +1418,7 @@ export default function Home() {
           .play-btn{background:#ffffff;color:#000000}
           .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
 
-          .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#101010;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding-bottom:clamp(4px,1vw,8px)}
+          .bottom-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(30,30,30,0.9);backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);border-radius:30px;height:clamp(56px,8vw,80px);display:flex;justify-content:space-around;align-items:center;padding:0 4px;width:90%;max-width:500px}
           .nav-item{display:flex;flex-direction:column;align-items:center;gap:clamp(2px,0.5vw,4px);color:#5B5B5B;font-size:clamp(9px,1.5vw,12px);font-weight:600;transition:color 0.2s;padding:clamp(4px,1vw,8px)}
           .nav-item i{font-size:clamp(16px,3vw,24px)}
           .nav-item.active{color:#ffffff}
@@ -1501,10 +1553,11 @@ export default function Home() {
 
       {loadingComplete && (
         <>
-          {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+          {!showSearch && !showProfile && !showNotifications && <Header onNotificationsClick={() => setShowNotifications(true)} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-          <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
+          <main className="container" style={showSearch || showProfile || showNotifications ? { paddingTop: '0' } : {}}>
             {showSearch ? renderSearchPage() :
+              showNotifications ? <NotificationPage onClose={() => setShowNotifications(false)} /> :
               showProfile ? null :
               activeSection === 'home' ? renderHomePage() :
               activeSection === 'animes' ? renderAnimesPage() :
@@ -1513,13 +1566,13 @@ export default function Home() {
               renderHomePage()}
           </main>
 
-          {!showSearch && !showProfile && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+          {!showSearch && !showProfile && !showNotifications && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
             navigateTo(section)
             setShowSearch(false)
             setSearchQuery('')
             setSearchResults([])
             setActiveSearchFilter('Tudo')
-          }} />}
+          }} onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} />}
 
           {showProfile && (
             <ProfilePage
