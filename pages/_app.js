@@ -1,11 +1,10 @@
-import Head from 'next/head'; // Importação necessária para gerenciar o cabeçalho da página
-import '../pages/index.js'
+import Head from 'next/head';
+import { LanguageProvider } from '../contexts/LanguageContext';
 
 export default function App({ Component, pageProps }) {
   return (
-    <>
+    <LanguageProvider>
       <Head>
-        {/* CORREÇÃO PARA OS ÍCONES: Link do CDN do Font Awesome (versão 6.5.2) */}
         <link 
           rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
@@ -15,6 +14,6 @@ export default function App({ Component, pageProps }) {
         />
       </Head>
       <Component {...pageProps} />
-    </>
-  )
+    </LanguageProvider>
+  );
 }
