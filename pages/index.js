@@ -165,51 +165,13 @@ const HorizontalFade = ({ children }) => {
   )
 }
 
-export const WelcomeScreen = ({ onEnter }) => {
+export const LoadingScreen = ({ onComplete }) => {
   const [closing, setClosing] = useState(false)
-
-  const handleEnter = useCallback(() => {
-    if (closing) return
-    setClosing(true)
-    setTimeout(() => onEnter(), 800)
-  }, [closing, onEnter])
-
-  return (
-    <div className={`welcome-overlay ${closing ? 'welcome-closing' : ''}`} onClick={handleEnter}>
-      <div className="welcome-content" onClick={e => e.stopPropagation()}>
-        <img src={LOGO_URL} alt="Yoshikawa" className="welcome-logo" />
-        <p className="welcome-text">
-          Bem-vindo ao ecossistema Yoshikawa! 🎉<br />
-          Obrigado por fazer parte desta jornada.<br />
-          Para apoiar nosso desenvolvimento, siga o canal no WhatsApp e, se puder, contribua via PixGG.
-        </p>
-        <div className="welcome-buttons">
-          <button
-            className="welcome-btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')
-            }}
-          >
-            <i className="fab fa-whatsapp" /> Canal WhatsApp
-          </button>
-          <button
-            className="welcome-btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              window.open('https://pixgg.com/kawalyansky', '_blank')
-            }}
-          >
-            <i className="fas fa-hand-holding-heart" /> PixGG
-          </button>
-        </div>
-        <div className="welcome-swipe-indicator">
-          <i className="fas fa-chevron-up welcome-arrow" />
-          <p>toque para entrar</p>
-        </div>
-      </div>
-    </div>
-  )
+  const [mounted, setMounted] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setClosing(true), 2000); return () => clearTimeout(t) }, [])
+  useEffect(() => { if (closing) { const t = setTimeout(() => { setMounted(false); onComplete() }, 800); return () => clearTimeout(t) } }, [closing, onComplete])
+  if (!mounted) return null
+  return <div className={`loading-overlay ${closing ? 'closing' : ''}`}><div className="loading-content"><img src={LOGO_URL} alt="Yoshikawa" className="loading-logo" /><div className="loading-spinner" /></div></div>
 }
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
@@ -734,6 +696,7 @@ const LANGUAGES = [
 export default function Home() {
   const router = useRouter()
   const [welcomed, setWelcomed] = useState(false)
+  const [loadingComplete, setLoadingComplete] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -840,13 +803,18 @@ export default function Home() {
   }
 
   useEffect(() => {
+    try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
     if (router.query.section) navigateTo(router.query.section)
   }, [router.query.section])
 
-  useEffect(() => {
-    loadAllContent()
-  }, [])
+  const handleLoadingComplete = () => {
+    try { sessionStorage.setItem('yoshikawaWelcomed', '1') } catch {}
+    setWelcomed(true)
+    setLoadingComplete(true)
+  }
+
+  useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
 
   useEffect(() => {
     if (showSearch && !searchQuery.trim()) {
@@ -1327,20 +1295,10 @@ export default function Home() {
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
           img{max-width:100%;height:auto;display:block}
 
-          .welcome-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#101010;transition:opacity 0.8s ease;padding:24px;cursor:pointer}
-          .welcome-overlay.welcome-closing{opacity:0;pointer-events:none}
-          .welcome-content{display:flex;flex-direction:column;align-items:center;gap:clamp(20px,3.5vw,32px);max-width:480px;width:100%;text-align:center}
-          .welcome-logo{width:clamp(100px,18vw,150px);height:clamp(100px,18vw,150px);object-fit:contain}
-          .welcome-text{font-size:clamp(14px,2.2vw,16px);font-weight:500;color:#c8c8c8;line-height:1.6;padding:0 8px}
-          .welcome-buttons{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;width:100%}
-          .welcome-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:clamp(12px,2vw,16px) clamp(20px,3vw,28px);border-radius:clamp(14px,2.5vw,20px);font-size:clamp(14px,2vw,16px);font-weight:700;background:#ffffff;color:#000000;transition:transform 0.2s,opacity 0.2s;min-width:160px;flex:1}
-          .welcome-btn:hover{transform:scale(1.02);opacity:0.9}
-          .welcome-btn i{font-size:clamp(16px,2.2vw,20px)}
-          .welcome-swipe-indicator{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:clamp(24px,4vw,40px)}
-          .welcome-arrow{font-size:clamp(32px,6vw,48px);color:#ffffff;animation:welcomeBounce 2s infinite}
-          .welcome-swipe-indicator p{font-size:clamp(14px,2.2vw,17px);font-weight:600;color:#ffffff}
-          @keyframes welcomeBounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}60%{transform:translateY(-5px)}}
-
+          .loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#101010;transition:opacity 0.8s ease}
+          .loading-overlay.closing{opacity:0;pointer-events:none}
+          .loading-content{display:flex;flex-direction:column;align-items:center;gap:clamp(24px,4vw,32px)}
+          .loading-logo{width:clamp(120px,20vw,180px);height:clamp(120px,20vw,180px);object-fit:contain}
           .loading-spinner{width:clamp(32px,5vw,40px);height:clamp(32px,5vw,40px);border:3px solid rgba(255,255,255,0.1);border-top-color:#ffffff;border-radius:50%;animation:spin 0.8s linear infinite}
           .content-loader{display:flex;align-items:center;justify-content:center;padding:clamp(60px,10vw,100px) 0}
           @keyframes spin{to{transform:rotate(360deg)}}
@@ -1539,9 +1497,9 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!welcomed && <WelcomeScreen onEnter={() => setWelcomed(true)} />}
+      {!welcomed && <LoadingScreen onComplete={handleLoadingComplete} />}
 
-      {welcomed && (
+      {loadingComplete && (
         <>
           {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
