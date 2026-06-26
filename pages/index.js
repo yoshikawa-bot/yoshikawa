@@ -1081,7 +1081,7 @@ export default function Home() {
 
   const LandingScreen = ({ onEnter }) => {
     const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
-    const text = 'Obrigado por utilizar os serviços Yoshikawa, considere apoiar os esforços de desenvolvimento fazendo uma doação anônima no PixGG, basta clicar no link abaixo, aplicação desenvolvida e mantida por @kawalyansky <3'
+    const text = 'Obrigado por utilizar os serviços Yoshikawa. Considere apoiar o desenvolvimento com uma doação anônima via PixGG. Clique no botão de coração para doar ou no ícone do Instagram para seguir @kawalyansky. Aplicação desenvolvida com <3'
 
     const handlePixGG = () => window.open('https://pixgg.com/kawalyansky', '_blank')
     const handleInstagram = () => window.open('https://instagram.com/kawalyansky', '_blank')
@@ -1098,10 +1098,10 @@ export default function Home() {
             </div>
             <div className="featured-actions">
               <button className="featured-btn play-btn" onClick={handlePixGG}>
-                <i className="fas fa-play" />
+                <i className="fas fa-hand-holding-heart" />
               </button>
               <button className="featured-btn info-btn" onClick={handleInstagram}>
-                <i className="fas fa-info" />
+                <i className="fab fa-instagram" />
               </button>
             </div>
           </div>
@@ -1601,4 +1601,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-}
+  }
