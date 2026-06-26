@@ -1081,7 +1081,7 @@ export default function Home() {
 
   const LandingScreen = ({ onEnter }) => {
     const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
-    const text = 'Obrigado por utilizar os serviços Yoshikawa. Considere apoiar o desenvolvimento com uma doação anônima via PixGG. Clique no botão de coração para doar ou no ícone do Instagram para seguir @kawalyansky. Aplicação desenvolvida com <3'
+    const text = 'Obrigado por utilizar os serviços Yoshikawa. Considere apoiar o desenvolvimento com uma doação anônima via PixGG. Clique no botão de coração para doar ou no ícone do Instagram para seguir @kawalyansky <3'
 
     const handlePixGG = () => window.open('https://pixgg.com/kawalyansky', '_blank')
     const handleInstagram = () => window.open('https://instagram.com/kawalyansky', '_blank')
