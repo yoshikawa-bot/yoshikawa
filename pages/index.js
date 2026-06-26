@@ -695,8 +695,7 @@ const LANGUAGES = [
 
 export default function Home() {
   const router = useRouter()
-  const [welcomed, setWelcomed] = useState(false)
-  const [loadingComplete, setLoadingComplete] = useState(false)
+  const [landingVisible, setLandingVisible] = useState(true)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -803,18 +802,13 @@ export default function Home() {
   }
 
   useEffect(() => {
-    try { const seen = sessionStorage.getItem('yoshikawaWelcomed'); if (seen) { setWelcomed(true); setLoadingComplete(true) } else { setWelcomed(false) } } catch { setWelcomed(false) }
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
     if (router.query.section) navigateTo(router.query.section)
   }, [router.query.section])
 
-  const handleLoadingComplete = () => {
-    try { sessionStorage.setItem('yoshikawaWelcomed', '1') } catch {}
-    setWelcomed(true)
-    setLoadingComplete(true)
-  }
-
-  useEffect(() => { if (loadingComplete) loadAllContent() }, [loadingComplete])
+  useEffect(() => {
+    loadAllContent()
+  }, [])
 
   useEffect(() => {
     if (showSearch && !searchQuery.trim()) {
@@ -1085,6 +1079,40 @@ export default function Home() {
     })
   }
 
+  const LandingScreen = ({ onEnter }) => {
+    const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
+    const text = 'Obrigado por utilizar os serviços Yoshikawa, considere apoiar os esforços de desenvolvimento fazendo uma doação anônima no PixGG, basta clicar no link abaixo, aplicação desenvolvida e mantida por @kawalyansky <3'
+
+    const handlePixGG = () => window.open('https://pixgg.com/kawalyansky', '_blank')
+    const handleInstagram = () => window.open('https://instagram.com/kawalyansky', '_blank')
+
+    return (
+      <div className="landing-overlay">
+        <div className="landing-card">
+          <div className="featured-poster">
+            <img src={imageUrl} alt="Landing" className="featured-img" />
+          </div>
+          <div className="featured-details">
+            <div className="featured-text">
+              <p className="featured-synopsis">{text}</p>
+            </div>
+            <div className="featured-actions">
+              <button className="featured-btn play-btn" onClick={handlePixGG}>
+                <i className="fas fa-play" />
+              </button>
+              <button className="featured-btn info-btn" onClick={handleInstagram}>
+                <i className="fas fa-info" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <button className="landing-enter-btn" onClick={onEnter}>
+          Entrar
+        </button>
+      </div>
+    )
+  }
+
   const renderHomePage = () => {
     if (contentLoading) return <ContentLoader />
     return (
@@ -1278,6 +1306,45 @@ export default function Home() {
       <div className="version-info"><p>{t('releaseBuild')} - 1.0.93 beta</p></div>
     </section>
   )
+
+  if (landingVisible) {
+    return (
+      <>
+        <Head>
+          <title>Yoshikawa Streaming</title>
+          <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+          <style>{`
+            *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+            html{scroll-behavior:smooth}
+            body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
+            a{color:inherit;text-decoration:none}
+            button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
+            img{max-width:100%;height:auto;display:block}
+
+            .landing-overlay{position:fixed;inset:0;z-index:9999;background:#101010;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(20px,4vw,40px);overflow-y:auto}
+            .landing-card{width:100%;max-width:500px;border-radius:clamp(14px,2vw,20px);overflow:hidden;background:#1B1B1B;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+            .landing-enter-btn{display:inline-flex;align-items:center;justify-content:center;background:#ffffff;color:#000000;border:none;font-size:clamp(16px,2.5vw,18px);font-weight:700;padding:clamp(12px,2vw,16px) clamp(32px,5vw,48px);border-radius:clamp(24px,4vw,32px);cursor:pointer;margin-top:clamp(24px,4vw,36px);transition:transform 0.2s}
+            .landing-enter-btn:hover{transform:scale(1.05)}
+
+            .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
+            .featured-img{width:100%;height:100%;object-fit:cover}
+            .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
+            .featured-text{flex:1}
+            .featured-synopsis{color:#808080;font-size:clamp(10px,1.5vw,11px);line-height:1.6}
+            .featured-actions{display:flex;gap:clamp(8px,1.5vw,12px);align-self:flex-end}
+            .featured-btn{width:clamp(40px,6vw,48px);height:clamp(40px,6vw,48px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.5vw,20px);transition:transform 0.2s}
+            .featured-btn:hover{transform:scale(1.1)}
+            .play-btn{background:#ffffff;color:#000000}
+            .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
+          `}</style>
+        </Head>
+        <LandingScreen onEnter={() => setLandingVisible(false)} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -1497,47 +1564,41 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!welcomed && <LoadingScreen onComplete={handleLoadingComplete} />}
+      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-      {loadingComplete && (
-        <>
-          {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+      <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
+        {showSearch ? renderSearchPage() :
+          showProfile ? null :
+          activeSection === 'home' ? renderHomePage() :
+          activeSection === 'animes' ? renderAnimesPage() :
+          activeSection === 'favorites' ? renderFavoritesPage() :
+          activeSection === 'menu' ? renderMenuPage() :
+          renderHomePage()}
+      </main>
 
-          <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
-            {showSearch ? renderSearchPage() :
-              showProfile ? null :
-              activeSection === 'home' ? renderHomePage() :
-              activeSection === 'animes' ? renderAnimesPage() :
-              activeSection === 'favorites' ? renderFavoritesPage() :
-              activeSection === 'menu' ? renderMenuPage() :
-              renderHomePage()}
-          </main>
+      {!showSearch && !showProfile && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+        navigateTo(section)
+        setShowSearch(false)
+        setSearchQuery('')
+        setSearchResults([])
+        setActiveSearchFilter('Tudo')
+      }} />}
 
-          {!showSearch && !showProfile && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
-            navigateTo(section)
-            setShowSearch(false)
-            setSearchQuery('')
-            setSearchResults([])
-            setActiveSearchFilter('Tudo')
-          }} />}
-
-          {showProfile && (
-            <ProfilePage
-              userProfile={userProfile}
-              favorites={favorites}
-              onPlay={handlePlay}
-              onSave={handleSaveProfile}
-              onLogout={handleLogout}
-              onClose={() => setShowProfile(false)}
-              mode={profileMode}
-              onRemoveFavorite={removeFavorite}
-            />
-          )}
-          {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-          {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-          {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
-        </>
+      {showProfile && (
+        <ProfilePage
+          userProfile={userProfile}
+          favorites={favorites}
+          onPlay={handlePlay}
+          onSave={handleSaveProfile}
+          onLogout={handleLogout}
+          onClose={() => setShowProfile(false)}
+          mode={profileMode}
+          onRemoveFavorite={removeFavorite}
+        />
       )}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-  }
+}
