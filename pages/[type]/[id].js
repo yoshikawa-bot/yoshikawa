@@ -621,10 +621,10 @@ export default function WatchPage() {
     const hashes = `noEpList#noLink#transparent#bg${colorCode}`
     if (type === 'movie') {
       const imdbId = content.external_ids?.imdb_id || content.imdb_id
-      const base = imdbId ? `https://superflixapi.fit/filme/${imdbId}` : `https://superflixapi.fit/filme/${id}`
+      const base = imdbId ? `https://superflixapi.pro/filme/${imdbId}` : `https://superflixapi.pro/filme/${id}`
       return `${base}#${hashes}`
     }
-    return `https://superflixapi.fit/serie/${id}/${season}/${episode}#${hashes}`
+    return `https://superflixapi.pro/serie/${id}/${season}/${episode}#${hashes}`
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -1335,4 +1335,4 @@ export default function WatchPage() {
       )}
     </>
   )
-        }
+    }
