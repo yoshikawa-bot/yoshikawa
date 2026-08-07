@@ -678,7 +678,7 @@ export const AboutModal = ({ onClose }) => {
           <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
           <p><strong>{t('isencao')}</strong></p>
           <p>{t('isencaoTexto')}</p>
-          <p><strong>{t('versao')}:</strong> 1.0.94 beta</p>
+          <p><strong>{t('versao')}:</strong> 1.0.95 beta</p>
         </div>
       </div>
     </div>
@@ -729,12 +729,7 @@ const LANGUAGES = [
 
 export default function Home() {
   const router = useRouter()
-  const [landingVisible, setLandingVisible] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('landingDismissed') !== 'true'
-    }
-    return true
-  })
+  const [landingVisible, setLandingVisible] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -779,6 +774,12 @@ export default function Home() {
   const { t } = useLanguage()
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLandingVisible(sessionStorage.getItem('landingDismissed') !== 'true')
+    }
+  }, [])
+
+  useEffect(() => {
     window.scrollTo(0, 0)
   }, [activeSection])
 
@@ -819,17 +820,24 @@ export default function Home() {
   }, [showProfile, profileMode])
 
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (event) => {
+      if (showProfile) {
+        setShowProfile(false)
+        return
+      }
+      if (showSearch) {
+        setShowSearch(false)
+        return
+      }
       if (navIndex > 0) {
         const newIndex = navIndex - 1
         setNavIndex(newIndex)
         setActiveSection(navHistory[newIndex])
-        setShowSearch(false)
       }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [navHistory, navIndex])
+  }, [showProfile, showSearch, navHistory, navIndex])
 
   const navigateTo = useCallback((section) => {
     const newHistory = navHistory.slice(0, navIndex + 1)
@@ -1124,8 +1132,11 @@ export default function Home() {
 
   const openProfile = useCallback((mode = 'view') => {
     setProfileMode(mode)
+    if (!showProfile) {
+      window.history.pushState({ profile: true }, '')
+    }
     setShowProfile(true)
-  }, [])
+  }, [showProfile])
 
   const handleProfileClick = useCallback(() => {
     if (userProfile) openProfile('view')
@@ -1139,6 +1150,20 @@ export default function Home() {
     setSearchResults([])
     setActiveSearchFilter('Tudo')
   }, [navigateTo])
+
+  const openSearch = useCallback(() => {
+    if (!showSearch) {
+      window.history.pushState({ search: true }, '')
+    }
+    setShowSearch(true)
+  }, [showSearch])
+
+  const closeSearch = useCallback(() => {
+    setShowSearch(false)
+    setSearchQuery('')
+    setSearchResults([])
+    setActiveSearchFilter('Tudo')
+  }, [])
 
   const fetchSearchResults = useCallback(async (query) => {
     if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
@@ -1189,12 +1214,12 @@ export default function Home() {
 
   const handleCategoryClick = useCallback((categoryName) => {
     navigateTo('search')
-    setShowSearch(true)
+    openSearch()
     setSearchQuery(categoryName)
     setActiveSearchFilter('Tudo')
     setSearchLoading(true)
     fetchSearchResults(categoryName)
-  }, [navigateTo, fetchSearchResults])
+  }, [navigateTo, openSearch, fetchSearchResults])
 
   const removeFavorite = useCallback((fav) => {
     setFavorites(prev => {
@@ -1363,10 +1388,10 @@ export default function Home() {
   const renderSearchPage = () => (
     <div className="search-page-container">
       <div className="search-fixed-header">
-        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
+        <button className="search-back-btn" onClick={() => { closeSearch(); window.history.back() }}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder={t('buscar')} className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
-      <div className="search-content" style={{ paddingTop: '70px' }}>
+      <div className="search-content" style={{ paddingTop: '70px', paddingBottom: '0' }}>
         {searchQuery.trim() ? (
           <>
             <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
@@ -1428,9 +1453,11 @@ export default function Home() {
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>{t('releaseBuild')} - 1.0.94 beta</p></div>
+      <div className="version-info"><p>{t('releaseBuild')} - 1.0.95 beta</p></div>
     </section>
   )
+
+  if (landingVisible === null) return null
 
   if (landingVisible) {
     return (
@@ -1590,7 +1617,7 @@ export default function Home() {
           .search-icon{color:#A5A5A5;font-size:clamp(14px,2vw,18px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,16px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
-          .search-content{flex:1;overflow-y:auto;padding-bottom:clamp(70px,9vw,96px)}
+          .search-content{flex:1;overflow-y:auto;padding-bottom:0}
 
           .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
@@ -1692,7 +1719,7 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); openSearch() }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
       <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
         {showSearch ? renderSearchPage() :
@@ -1719,7 +1746,7 @@ export default function Home() {
           onPlay={handlePlay}
           onSave={handleSaveProfile}
           onLogout={handleLogout}
-          onClose={() => setShowProfile(false)}
+          onClose={() => { setShowProfile(false); window.history.back() }}
           mode={profileMode}
           onRemoveFavorite={removeFavorite}
         />
@@ -1729,4 +1756,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-    }
+      }
