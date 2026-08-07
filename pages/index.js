@@ -729,7 +729,12 @@ const LANGUAGES = [
 
 export default function Home() {
   const router = useRouter()
-  const [landingVisible, setLandingVisible] = useState(true)
+  const [landingVisible, setLandingVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('landingDismissed') !== 'true'
+    }
+    return true
+  })
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -1461,7 +1466,10 @@ export default function Home() {
             .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
           `}</style>
         </Head>
-        <LandingScreen onEnter={() => setLandingVisible(false)} />
+        <LandingScreen onEnter={() => {
+          sessionStorage.setItem('landingDismissed', 'true')
+          setLandingVisible(false)
+        }} />
       </>
     )
   }
@@ -1721,4 +1729,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-}
+    }
