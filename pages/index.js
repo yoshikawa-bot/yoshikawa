@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -43,17 +43,6 @@ const CATEGORY_GENRE_MAP = {
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
-const POSTER_SIZE = 'w780'
-
-const CERTIFICATION_CLASS_MAP = {
-  'L': 'rating-L',
-  '10': 'rating-10',
-  '12': 'rating-12',
-  '14': 'rating-14',
-  '16': 'rating-16',
-  '18': 'rating-18'
-}
-
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -86,6 +75,8 @@ const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
 
+const POSTER_SIZE = 'w780'
+
 const fetchLogoForItem = async (item) => {
   if (!item?.id) return null
   const mediaType = item.media_type || getMediaType(item)
@@ -96,30 +87,6 @@ const fetchLogoForItem = async (item) => {
     if (data.logos?.length) return data.logos[0].file_path
   } catch {}
   return null
-}
-
-const fetchCertification = async (item) => {
-  if (!item?.id) return 'L'
-  const mediaType = item.media_type || getMediaType(item)
-  try {
-    if (mediaType === 'tv') {
-      const res = await fetch(`https://api.themoviedb.org/3/tv/${item.id}/content_ratings?api_key=${TMDB_API_KEY}`)
-      const data = await res.json()
-      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
-      return br?.rating || 'L'
-    } else {
-      const res = await fetch(`https://api.themoviedb.org/3/movie/${item.id}/release_dates?api_key=${TMDB_API_KEY}`)
-      const data = await res.json()
-      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
-      if (br?.release_dates?.length > 0) {
-        const cert = br.release_dates.find(d => d.certification)?.certification
-        return cert || 'L'
-      }
-      return 'L'
-    }
-  } catch {
-    return 'L'
-  }
 }
 
 const enrichSeriesWithLastEpisode = async (seriesList) => {
@@ -318,8 +285,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
 
 export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const year = getItemYear(item)
-  const certification = item.certification || 'L'
-  const ratingClass = CERTIFICATION_CLASS_MAP[certification] || 'rating-L'
+  const ratingClass = item.adult ? 'rating-18' : 'rating-L'
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
   const { t } = useLanguage()
   return (
@@ -329,7 +295,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
         <div className="featured-text">
           <h2 className="featured-title">{item.title || item.name}</h2>
           <div className="featured-meta">
-            <span className={`featured-rating ${ratingClass}`}>{certification}</span>
+            <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
             <span className="featured-genre">{item.genre || 'Ação'}</span>
             {year && <span className="featured-year">{year}</span>}
           </div>
@@ -678,7 +644,7 @@ export const AboutModal = ({ onClose }) => {
           <p>© {new Date().getFullYear()} Yoshikawa Systems. Todos os direitos reservados.</p>
           <p><strong>{t('isencao')}</strong></p>
           <p>{t('isencaoTexto')}</p>
-          <p><strong>{t('versao')}:</strong> 1.0.95 beta</p>
+          <p><strong>{t('versao')}:</strong> 1.0.93 beta</p>
         </div>
       </div>
     </div>
@@ -729,7 +695,7 @@ const LANGUAGES = [
 
 export default function Home() {
   const router = useRouter()
-  const [landingVisible, setLandingVisible] = useState(null)
+  const [landingVisible, setLandingVisible] = useState(true)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -774,12 +740,6 @@ export default function Home() {
   const { t } = useLanguage()
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setLandingVisible(sessionStorage.getItem('landingDismissed') !== 'true')
-    }
-  }, [])
-
-  useEffect(() => {
     window.scrollTo(0, 0)
   }, [activeSection])
 
@@ -820,45 +780,26 @@ export default function Home() {
   }, [showProfile, profileMode])
 
   useEffect(() => {
-    const handlePopState = (event) => {
-      if (showLanguage) {
-        setShowLanguage(false)
-        return
-      }
-      if (showPrivacy) {
-        setShowPrivacy(false)
-        return
-      }
-      if (showAbout) {
-        setShowAbout(false)
-        return
-      }
-      if (showProfile) {
-        setShowProfile(false)
-        return
-      }
-      if (showSearch) {
-        closeSearch()
-        return
-      }
+    const handlePopState = () => {
       if (navIndex > 0) {
         const newIndex = navIndex - 1
         setNavIndex(newIndex)
         setActiveSection(navHistory[newIndex])
+        setShowSearch(false)
       }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [showLanguage, showPrivacy, showAbout, showProfile, showSearch, navHistory, navIndex])
+  }, [navHistory, navIndex])
 
-  const navigateTo = useCallback((section) => {
+  const navigateTo = (section) => {
     const newHistory = navHistory.slice(0, navIndex + 1)
     newHistory.push(section)
     setNavHistory(newHistory)
     setNavIndex(newHistory.length - 1)
     setActiveSection(section)
     window.history.pushState(null, '', window.location.pathname)
-  }, [navHistory, navIndex])
+  }
 
   useEffect(() => {
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
@@ -875,7 +816,7 @@ export default function Home() {
     }
   }, [showSearch, searchQuery])
 
-  const deduplicateById = useCallback((items) => {
+  const deduplicateById = (items) => {
     const seen = new Set()
     return items.filter(item => {
       const key = `${item.media_type || getMediaType(item)}-${item.id}`
@@ -883,7 +824,7 @@ export default function Home() {
       seen.add(key)
       return true
     })
-  }, [])
+  }
 
   const fetchCategoryImages = async () => {
     const newImages = {}
@@ -911,7 +852,7 @@ export default function Home() {
     setCategoryImages(newImages)
   }
 
-  const loadAllContent = useCallback(async () => {
+  const loadAllContent = async () => {
     setContentLoading(true)
     try {
       const baseParams = `api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`
@@ -919,45 +860,49 @@ export default function Home() {
       const animeMovieParams = `&with_genres=16&with_original_language=ja`
       const animeTVParams = animeMovieParams
 
-      const results = await Promise.allSettled([
+      const [
+        trendingMovies,
+        nowPlaying,
+        onAirSeries,
+        upcoming,
+        popular,
+        adventureShows,
+        comedyShows,
+        romanceShows,
+        topRated,
+        animeMovies,
+        animeTV
+      ] = await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?${baseParams}`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?${baseParams}`),
         fetchTMDBPages(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?${baseParams}`),
         fetchTMDBPages(`https://api.themoviedb.org/3/discover/movie?${baseParams}&${watchParams}&sort_by=popularity.desc`),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=12&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=35&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=10749&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?${baseParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/tv/top_rated?${baseParams}`)
-        ]),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?${baseParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}`)
       ])
 
-      const getValue = (result) => result.status === 'fulfilled' ? result.value : []
-
-      const trendingMovies = getValue(results[0])
-      const nowPlaying = getValue(results[1])
-      const onAirSeries = getValue(results[2])
-      const upcoming = getValue(results[3])
-      const popular = getValue(results[4])
-      const [adventureMovies, adventureTV] = getValue(results[5])
-      const [comedyMovies, comedyTV] = getValue(results[6])
-      const [romanceMovies, romanceTV] = getValue(results[7])
-      const [topRatedMovies, topRatedTV] = getValue(results[8])
-      const animeMovies = getValue(results[9])
-      const animeTV = getValue(results[10])
+      const [
+        animeTrendingRaw,
+        animeOnAirRaw,
+        animeRecentRaw,
+        animeAdventureRaw,
+        animeComedyRaw,
+        animeRomanceRaw,
+        animeRecommendedRaw
+      ] = await Promise.all([
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
+      ])
 
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
 
@@ -966,40 +911,17 @@ export default function Home() {
 
       const nowPlayingClean = deduplicateById(nowPlaying.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestRelease = nowPlayingClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
+      setFeatured(latestRelease)
 
       const seriesOnAir = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
       const enrichedSeries = await enrichSeriesWithLastEpisode(seriesOnAir)
       setNewEpisodes(enrichedSeries)
 
-      const recentMovies = nowPlayingClean.slice(0, 10)
-      const recentTV = deduplicateById(onAirSeries.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
-      const combinedRecent = [...recentMovies, ...recentTV].sort((a, b) => b.popularity - a.popularity).slice(0, 10)
-      setRecentlyAdded(combinedRecent)
-
-      const adventureCombined = deduplicateById([
-        ...adventureMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...adventureTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10)
-      setAdventure(adventureCombined)
-
-      const comedyCombined = deduplicateById([
-        ...comedyMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...comedyTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10)
-      setComedy(comedyCombined)
-
-      const romanceCombined = deduplicateById([
-        ...romanceMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...romanceTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10)
-      setRomance(romanceCombined)
-
-      const recommendedCombined = deduplicateById([
-        ...topRatedMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...topRatedTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.vote_average - a.vote_average).slice(0, 10)
-      setRecommended(recommendedCombined)
-
+      setRecentlyAdded(nowPlayingClean.slice(0, 10))
+      setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setRomance(deduplicateById(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setRecommended(deduplicateById(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
       const combinedAnimes = deduplicateById([...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity)).slice(0, 20)
       setAnimes(combinedAnimes)
 
@@ -1019,84 +941,22 @@ export default function Home() {
       setTrendingLogos(trendingLogosMap)
       setAnimeLogos(animeLogosMap)
 
-      if (latestRelease) {
-        const cert = await fetchCertification(latestRelease)
-        setFeatured({ ...latestRelease, certification: cert })
-      } else {
-        setFeatured(null)
-      }
-
-      const animeResults = await Promise.allSettled([
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`)
-        ]),
-        Promise.all([
-          fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`),
-          fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
-        ])
-      ])
-
-      const animeTrendingRaw = getValue(animeResults[0])
-      const animeOnAirRaw = getValue(animeResults[1])
-      const animeRecentRaw = getValue(animeResults[2])
-      const [animeAdventureMovies, animeAdventureTV] = getValue(animeResults[3])
-      const [animeComedyMovies, animeComedyTV] = getValue(animeResults[4])
-      const [animeRomanceMovies, animeRomanceTV] = getValue(animeResults[5])
-      const [animeRecommendedMovies, animeRecommendedTV] = getValue(animeResults[6])
-
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
 
       const animeRecentClean = deduplicateById(animeRecentRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })))
       const latestAnimeRelease = animeRecentClean.sort((a, b) => new Date(b.release_date) - new Date(a.release_date))[0] || null
-
-      const animeRecentMovies = animeRecentClean.slice(0, 10)
-      const animeRecentTV = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
-      const combinedAnimeRecent = [...animeRecentMovies, ...animeRecentTV].sort((a, b) => b.popularity - a.popularity).slice(0, 10)
-      setAnimeRecentlyAdded(combinedAnimeRecent)
+      setAnimeFeatured(latestAnimeRelease)
+      setAnimeRecentlyAdded(animeRecentClean.slice(0, 10))
 
       const animeOnAirClean = deduplicateById(animeOnAirRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))).slice(0, 10)
       const enrichedAnimeSeries = await enrichSeriesWithLastEpisode(animeOnAirClean)
       setAnimeNewEpisodes(enrichedAnimeSeries)
 
-      setAnimeAdventure(deduplicateById([
-        ...animeAdventureMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...animeAdventureTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10))
-
-      setAnimeComedy(deduplicateById([
-        ...animeComedyMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...animeComedyTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10))
-
-      setAnimeRomance(deduplicateById([
-        ...animeRomanceMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...animeRomanceTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.popularity - a.popularity).slice(0, 10))
-
-      setAnimeRecommended(deduplicateById([
-        ...animeRecommendedMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
-        ...animeRecommendedTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
-      ]).sort((a, b) => b.vote_average - a.vote_average).slice(0, 10))
-
-      if (latestAnimeRelease) {
-        const cert = await fetchCertification(latestAnimeRelease)
-        setAnimeFeatured({ ...latestAnimeRelease, certification: cert })
-      } else {
-        setAnimeFeatured(null)
-      }
+      setAnimeAdventure(deduplicateById(animeAdventureRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeComedy(deduplicateById(animeComedyRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeRomance(deduplicateById(animeRomanceRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      setAnimeRecommended(deduplicateById(animeRecommendedRaw.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
 
       const animeTrendingHighlights = animeTrendingClean.slice(0, 5)
       const animeTrendingLogosArr = await Promise.all(animeTrendingHighlights.map(item => fetchLogoForItem(item)))
@@ -1107,23 +967,23 @@ export default function Home() {
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
-  }, [deduplicateById])
+  }
 
-  const fetchTMDB = useCallback(async (url) => { try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] } }, [])
-  const fetchTMDBPages = useCallback(async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }, [fetchTMDB])
-  const loadFavorites = useCallback(() => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }, [])
+  const fetchTMDB = async (url) => { try { const r = await fetch(url); if (!r.ok) throw new Error(); const d = await r.json(); return d.results || [] } catch { return [] } }
+  const fetchTMDBPages = async (endpoint) => { try { const [r1, r2] = await Promise.all([fetchTMDB(`${endpoint}&page=1`), fetchTMDB(`${endpoint}&page=2`)]); return [...r1, ...r2] } catch { return [] } }
+  const loadFavorites = () => { try { const s = localStorage.getItem('yoshikawaFavorites'); setFavorites(s ? JSON.parse(s) : []) } catch { setFavorites([]) } }
 
-  const handlePlay = useCallback((item) => window.location.href = `/${getRouteType(item)}/${item.id}`, [])
-  const handleInfo = useCallback((item) => window.location.href = `/${getRouteType(item)}/${item.id}`, [])
+  const handlePlay = (item) => window.location.href = `/${getRouteType(item)}/${item.id}`
+  const handleInfo = (item) => window.location.href = `/${getRouteType(item)}/${item.id}`
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
     setUserProfile(null)
     setFavorites([])
     try { localStorage.removeItem('yoshikawaProfile'); localStorage.removeItem('yoshikawaFavorites') } catch {}
     setShowProfile(false)
-  }, [])
+  }
 
-  const handleSaveProfile = useCallback((profileData) => {
+  const handleSaveProfile = (profileData) => {
     const now = new Date().toISOString()
     const updatedProfile = {
       ...userProfile,
@@ -1140,44 +1000,27 @@ export default function Home() {
     setShowProfile(false)
     setProfileMode('view')
     navigateTo('home')
-  }, [userProfile, navigateTo])
+  }
 
-  const openProfile = useCallback((mode = 'view') => {
+  const openProfile = (mode = 'view') => {
     setProfileMode(mode)
-    if (!showProfile) {
-      window.history.pushState({ profile: true }, '')
-    }
     setShowProfile(true)
-  }, [showProfile])
+  }
 
-  const handleProfileClick = useCallback(() => {
+  const handleProfileClick = () => {
     if (userProfile) openProfile('view')
     else openProfile('create')
-  }, [userProfile, openProfile])
+  }
 
-  const handleLogoClick = useCallback(() => {
+  const handleLogoClick = () => {
     navigateTo('home')
     setShowSearch(false)
     setSearchQuery('')
     setSearchResults([])
     setActiveSearchFilter('Tudo')
-  }, [navigateTo])
+  }
 
-  const openSearch = useCallback(() => {
-    if (!showSearch) {
-      window.history.pushState({ search: true }, '')
-    }
-    setShowSearch(true)
-  }, [showSearch])
-
-  const closeSearch = useCallback(() => {
-    setShowSearch(false)
-    setSearchQuery('')
-    setSearchResults([])
-    setActiveSearchFilter('Tudo')
-  }, [])
-
-  const fetchSearchResults = useCallback(async (query) => {
+  const fetchSearchResults = async (query) => {
     if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
     setSearchLoading(true)
 
@@ -1211,35 +1054,30 @@ export default function Home() {
     } finally {
       setSearchLoading(false)
     }
-  }, [activeSearchFilter, fetchTMDB])
+  }
 
   const debouncedSearch = useDebounce(fetchSearchResults, 300)
-  const handleSearchChange = useCallback((q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }, [debouncedSearch])
+  const handleSearchChange = (q) => { setSearchQuery(q); if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return }; setSearchLoading(true); debouncedSearch(q) }
   useEffect(() => { if (searchQuery.trim()) fetchSearchResults(searchQuery) }, [activeSearchFilter])
 
-  const filteredFavorites = useMemo(() => {
-    if (activeFilter === 'Tudo') return favorites
-    if (activeFilter === 'Filmes') return favorites.filter(f => f.media_type === 'movie')
-    if (activeFilter === 'Séries') return favorites.filter(f => f.media_type === 'tv')
-    return favorites
-  }, [favorites, activeFilter])
+  const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
-  const handleCategoryClick = useCallback((categoryName) => {
+  const handleCategoryClick = (categoryName) => {
     navigateTo('search')
-    openSearch()
+    setShowSearch(true)
     setSearchQuery(categoryName)
     setActiveSearchFilter('Tudo')
     setSearchLoading(true)
     fetchSearchResults(categoryName)
-  }, [navigateTo, openSearch, fetchSearchResults])
+  }
 
-  const removeFavorite = useCallback((fav) => {
+  const removeFavorite = (fav) => {
     setFavorites(prev => {
       const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type))
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
       return updated
     })
-  }, [])
+  }
 
   const LandingScreen = ({ onEnter }) => {
     const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
@@ -1400,10 +1238,10 @@ export default function Home() {
   const renderSearchPage = () => (
     <div className="search-page-container">
       <div className="search-fixed-header">
-        <button className="search-back-btn" onClick={() => { closeSearch(); window.history.back() }}><i className="fas fa-arrow-left" /></button>
+        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder={t('buscar')} className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
-      <div className="search-content" style={{ paddingTop: '70px', paddingBottom: '0' }}>
+      <div className="search-content" style={{ paddingTop: '70px' }}>
         {searchQuery.trim() ? (
           <>
             <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
@@ -1465,17 +1303,9 @@ export default function Home() {
         <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
-      <div className="version-info"><p>{t('releaseBuild')} - 1.0.95 beta</p></div>
+      <div className="version-info"><p>{t('releaseBuild')} - 1.0.93 beta</p></div>
     </section>
   )
-
-  if (landingVisible === null) {
-    return (
-      <div style={{ background: '#101010', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      </div>
-    )
-  }
 
   if (landingVisible) {
     return (
@@ -1511,10 +1341,7 @@ export default function Home() {
             .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
           `}</style>
         </Head>
-        <LandingScreen onEnter={() => {
-          sessionStorage.setItem('landingDismissed', 'true')
-          setLandingVisible(false)
-        }} />
+        <LandingScreen onEnter={() => setLandingVisible(false)} />
       </>
     )
   }
@@ -1588,7 +1415,7 @@ export default function Home() {
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
-          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:0 clamp(10px,2.6vw,22px) clamp(16px,3vw,24px);background:#1B1B1B}
+          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(10px,2.6vw,22px);background:#1B1B1B}
           .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
           .featured-img{width:100%;height:100%;object-fit:cover}
           .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
@@ -1596,7 +1423,7 @@ export default function Home() {
           .featured-title{font-size:clamp(13px,2.4vw,19px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
           .featured-meta{display:flex;gap:clamp(8px,2vw,16px);margin-bottom:clamp(12px,2vw,16px);align-items:center;flex-wrap:wrap}
           .featured-rating{padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(10px,1.5vw,11px);font-weight:600;color:#fff}
-          .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FF9800}.rating-14{background:#FF5722}.rating-16{background:#f44336}.rating-18{background:#000000}
+          .rating-L{background:#4CAF50}.rating-18{background:#f44336}
           .featured-genre{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
           .featured-year{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
           .featured-synopsis{color:#808080;font-size:clamp(10px,1.5vw,11px);line-height:1.6}
@@ -1635,7 +1462,7 @@ export default function Home() {
           .search-icon{color:#A5A5A5;font-size:clamp(14px,2vw,18px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,16px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
-          .search-content{flex:1;overflow-y:auto;padding-bottom:0}
+          .search-content{flex:1;overflow-y:auto;padding-bottom:clamp(70px,9vw,96px)}
 
           .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
@@ -1737,9 +1564,9 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); openSearch() }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-      <main className="container" style={showSearch || showProfile ? { paddingTop: '0', paddingBottom: '0' } : {}}>
+      <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
         {showSearch ? renderSearchPage() :
           showProfile ? null :
           activeSection === 'home' ? renderHomePage() :
@@ -1764,7 +1591,7 @@ export default function Home() {
           onPlay={handlePlay}
           onSave={handleSaveProfile}
           onLogout={handleLogout}
-          onClose={() => { setShowProfile(false); window.history.back() }}
+          onClose={() => setShowProfile(false)}
           mode={profileMode}
           onRemoveFavorite={removeFavorite}
         />
@@ -1774,4 +1601,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-  }
+    }
