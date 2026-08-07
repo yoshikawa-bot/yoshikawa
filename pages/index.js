@@ -821,12 +821,24 @@ export default function Home() {
 
   useEffect(() => {
     const handlePopState = (event) => {
+      if (showLanguage) {
+        setShowLanguage(false)
+        return
+      }
+      if (showPrivacy) {
+        setShowPrivacy(false)
+        return
+      }
+      if (showAbout) {
+        setShowAbout(false)
+        return
+      }
       if (showProfile) {
         setShowProfile(false)
         return
       }
       if (showSearch) {
-        setShowSearch(false)
+        closeSearch()
         return
       }
       if (navIndex > 0) {
@@ -837,7 +849,7 @@ export default function Home() {
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [showProfile, showSearch, navHistory, navIndex])
+  }, [showLanguage, showPrivacy, showAbout, showProfile, showSearch, navHistory, navIndex])
 
   const navigateTo = useCallback((section) => {
     const newHistory = navHistory.slice(0, navIndex + 1)
@@ -1457,7 +1469,13 @@ export default function Home() {
     </section>
   )
 
-  if (landingVisible === null) return null
+  if (landingVisible === null) {
+    return (
+      <div style={{ background: '#101010', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    )
+  }
 
   if (landingVisible) {
     return (
@@ -1570,7 +1588,7 @@ export default function Home() {
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
-          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(10px,2.6vw,22px);background:#1B1B1B}
+          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:0 clamp(10px,2.6vw,22px) clamp(16px,3vw,24px);background:#1B1B1B}
           .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
           .featured-img{width:100%;height:100%;object-fit:cover}
           .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
@@ -1721,7 +1739,7 @@ export default function Home() {
 
       {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); openSearch() }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
 
-      <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
+      <main className="container" style={showSearch || showProfile ? { paddingTop: '0', paddingBottom: '0' } : {}}>
         {showSearch ? renderSearchPage() :
           showProfile ? null :
           activeSection === 'home' ? renderHomePage() :
@@ -1756,4 +1774,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
     </>
   )
-      }
+  }
