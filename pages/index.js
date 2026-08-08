@@ -43,7 +43,6 @@ const CATEGORY_GENRE_MAP = {
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
-// Global image cache to avoid flicker on re-render
 const loadedImageCache = new Set()
 
 const ImageWithCache = ({ src, alt, className, ...props }) => {
@@ -61,9 +60,7 @@ const ImageWithCache = ({ src, alt, className, ...props }) => {
       loadedImageCache.add(src)
       setLoaded(true)
     }
-    img.onerror = () => {
-      // keep as not loaded, will show fallback color
-    }
+    img.onerror = () => {}
   }, [src])
 
   return (
@@ -237,8 +234,10 @@ export const ContentLoader = () => <div className="content-loader"><div classNam
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick, showFavoritesTitle }) => {
   return (
     <header className="header">
-      <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
-      {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
+      <div className="header-left">
+        <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
+        {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
+      </div>
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
@@ -782,6 +781,7 @@ export default function Home() {
   const [showAbout, setShowAbout] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showLanguage, setShowLanguage] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [contentLoading, setContentLoading] = useState(true)
   const [trending, setTrending] = useState([])
   const [trendingLogos, setTrendingLogos] = useState({})
@@ -861,6 +861,7 @@ export default function Home() {
     setShowAbout(false)
     setShowPrivacy(false)
     setShowLanguage(false)
+    setShowLogoutConfirm(false)
     setActiveCategoryGenreId(null)
     setActiveCategoryName(null)
     setCategoryResults([])
@@ -1148,6 +1149,7 @@ export default function Home() {
     setFavorites([])
     try { localStorage.removeItem('yoshikawaProfile'); localStorage.removeItem('yoshikawaFavorites') } catch {}
     setShowProfile(false)
+    setShowLogoutConfirm(false)
   }
 
   const handleSaveProfile = (profileData) => {
@@ -1164,9 +1166,8 @@ export default function Home() {
     }
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
-    setShowProfile(false)
     setProfileMode('view')
-    navigateTo('home')
+    // permanece na página de perfil
   }
 
   const openProfile = (mode = 'view') => {
@@ -1245,6 +1246,11 @@ export default function Home() {
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
       return updated
     })
+  }
+
+  const handleLogoutClick = (e) => {
+    e.stopPropagation()
+    setShowLogoutConfirm(true)
   }
 
   const LandingScreen = ({ onEnter }) => {
@@ -1408,10 +1414,12 @@ export default function Home() {
         <button className="search-back-btn" onClick={() => window.history.back()}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder={t('buscar')} className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
-      <div className="search-content" style={{ paddingTop: '70px' }}>
+      <div className="search-content">
         {activeCategoryGenreId && !searchQuery.trim() ? (
           <>
-            <h2 className="section-title" style={{ marginTop: 'clamp(20px,3vw,30px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{activeCategoryName}</h2>
+            <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>
+              <button className="filter-btn active" style={{ cursor: 'default', pointerEvents: 'none' }}>{activeCategoryName}</button>
+            </div>
             <div className="search-results-list">
               {categoryLoading ? <ContentLoader /> : categoryResults.length > 0 ? categoryResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < categoryResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-film" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumResultado')}</p></div>}
             </div>
@@ -1463,7 +1471,7 @@ export default function Home() {
           {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : t('userPadrao')}</h3>{!userProfile && <p className="user-email">{t('criarPerfil')}</p>}</div>
-        {userProfile && <button className="logout-btn" onClick={(e) => { e.stopPropagation(); openProfile('view') }}><i className="fas fa-sign-out-alt" /></button>}
+        {userProfile && <button className="logout-btn" onClick={handleLogoutClick}><i className="fas fa-sign-out-alt" /></button>}
       </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? t('editarPerfil') : t('criarPerfil')} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
@@ -1544,10 +1552,11 @@ export default function Home() {
           .content-loader{display:flex;align-items:center;justify-content:center;padding:clamp(60px,10vw,100px) 0}
           @keyframes spin{to{transform:rotate(360deg)}}
 
-          .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
+          .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;align-items:center;justify-content:space-between;height:clamp(60px,8vw,90px)}
+          .header-left{display:flex;align-items:center;gap:clamp(6px,1.5vw,12px)}
           .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
-          .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;margin-left:clamp(4px,1vw,8px);white-space:nowrap}
-          .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
+          .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;white-space:nowrap}
+          .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px);margin-left:auto}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
           .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -1637,7 +1646,7 @@ export default function Home() {
           .search-icon{color:#A5A5A5;font-size:clamp(14px,2vw,18px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,16px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
-          .search-content{flex:1;overflow-y:auto;padding-bottom:clamp(70px,9vw,96px)}
+          .search-content{flex:1;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px))}
 
           .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
@@ -1709,10 +1718,10 @@ export default function Home() {
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
           .edit-input{width:100%;background:transparent;border:none;color:#fff;font-size:18px;font-weight:600;outline:none;padding:4px 0}
 
-          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;text-align:center}
-          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin-bottom:12px}
+          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
+          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin-bottom:12px;text-align:left}
           .logout-confirm-text{font-size:clamp(13px,2vw,15px);color:#888;line-height:1.5;margin-bottom:24px}
-          .logout-confirm-actions{display:flex;gap:12px;justify-content:center}
+          .logout-confirm-actions{display:flex;gap:12px}
           .logout-cancel-btn{flex:1;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
           .logout-confirm-btn{flex:1;padding:12px;border-radius:12px;background:#E04E4E;color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
 
@@ -1785,6 +1794,7 @@ export default function Home() {
       {showPrivacy && <PrivacyModal onClose={() => window.history.back()} />}
       {showAbout && <AboutModal onClose={() => window.history.back()} />}
       {showLanguage && <LanguageModal onClose={() => window.history.back()} />}
+      {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
   }
