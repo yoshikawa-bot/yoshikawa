@@ -18,7 +18,6 @@ const MAX_MESSAGE_LENGTH = 500
 const CONTINUE_COLOR = '#F05454'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
-// Cache de imagens já carregadas
 const loadedImageCache = new Set()
 
 const ImageWithCache = ({ src, alt, className, ...props }) => {
@@ -63,6 +62,29 @@ const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
 }
 
+const fetchBRCertification = async (item) => {
+  if (!item?.id) return null
+  try {
+    const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie')
+    const type = mediaType === 'tv' ? 'tv' : 'movie'
+    if (type === 'movie') {
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${item.id}/release_dates?api_key=${TMDB_API_KEY}`)
+      const data = await res.json()
+      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
+      if (br) {
+        const cert = br.release_dates?.find(d => d.certification && d.certification !== '')
+        return cert?.certification || null
+      }
+    } else {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${item.id}/content_ratings?api_key=${TMDB_API_KEY}`)
+      const data = await res.json()
+      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
+      return br?.rating || null
+    }
+  } catch {}
+  return null
+}
+
 export default function WatchPage() {
   const router = useRouter()
   const { type, id, room: roomQuery, s: querySeason, e: queryEpisode } = router.query
@@ -80,6 +102,7 @@ export default function WatchPage() {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
+  const [certification, setCertification] = useState(null)
 
   const [roomId, setRoomId] = useState(null)
   const [messages, setMessages] = useState([])
@@ -567,6 +590,7 @@ export default function WatchPage() {
     setSeasonData(null)
     setAllSeasonsData({})
     setWatchedEps(new Set())
+    setCertification(null)
 
     const load = async () => {
       try {
@@ -583,6 +607,8 @@ export default function WatchPage() {
         }
         checkFavorite(data)
         try { const liked = localStorage.getItem(`yoshikawaLiked_${id}`); setIsLiked(liked === 'true') } catch (e) {}
+        const cert = await fetchBRCertification(data)
+        if (cert) setCertification(cert)
         setIsLoading(false)
       } catch (error) { setHasError(true); setIsLoading(false) }
     }
@@ -660,7 +686,6 @@ export default function WatchPage() {
     return `https://superflixapi.pro/serie/${id}/${season}/${episode}#${hashes}`
   }
 
-  // Voltar com histórico
   const handleBack = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back()
@@ -934,7 +959,20 @@ export default function WatchPage() {
 
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
   const genres = content?.genres?.map(g => g.name).join(', ') || 'Gênero desconhecido'
-  const ratingClass = content?.adult ? 'rating-18' : 'rating-L'
+
+  // Obter classe CSS baseada na certificação real
+  const getRatingClass = (cert) => {
+    if (!cert) return 'rating-L'
+    if (cert.includes('18')) return 'rating-18'
+    if (cert.includes('16')) return 'rating-16'
+    if (cert.includes('14')) return 'rating-14'
+    if (cert.includes('12')) return 'rating-12'
+    if (cert.includes('10')) return 'rating-10'
+    return 'rating-L'
+  }
+  const ratingText = certification || (content?.adult ? '18+' : 'L')
+  const ratingClass = getRatingClass(certification || (content?.adult ? '18' : 'L'))
+
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const hasLongSynopsis = content?.overview && content.overview.length > 200
   const showContent = content && !hasError
@@ -965,7 +1003,7 @@ export default function WatchPage() {
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-rating{padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff}
-          .rating-L{background:#4CAF50}.rating-18{background:#f44336}
+          .rating-L{background:#4CAF50}.rating-10{background:#4CAF50}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#E04E4E}.rating-18{background:#f44336}
           .social-bar{display:flex;justify-content:space-around;padding:16px clamp(16px,4vw,34px)}
           .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s;background:none;border:none;font-family:inherit}
           .social-item i{font-size:clamp(18px,3vw,22px)}
@@ -994,8 +1032,8 @@ export default function WatchPage() {
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
-          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;white-space:nowrap;text-decoration:none}
-          .glass-btn:hover{background:rgba(255,255,255,0.25);transform:scale(1.02)}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;text-decoration:none}
+          .glass-btn:hover{background:rgba(180,180,180,0.4);transform:scale(1.02)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
@@ -1055,7 +1093,7 @@ export default function WatchPage() {
               <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}</button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
-                <span className={`hero-rating ${ratingClass}`}>{content.adult ? '18+' : 'L'}</span>
+                <span className={`hero-rating ${ratingClass}`}>{ratingText}</span>
                 <span>{genres}</span>
                 <span>• {new Date(releaseDate).getFullYear()}</span>
               </div>
@@ -1376,4 +1414,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+  }
