@@ -89,6 +89,29 @@ const fetchLogoForItem = async (item) => {
   return null
 }
 
+const fetchBRCertification = async (item) => {
+  if (!item?.id) return null
+  try {
+    const mediaType = item.media_type || getMediaType(item)
+    const type = mediaType === 'tv' ? 'tv' : 'movie'
+    if (type === 'movie') {
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${item.id}/release_dates?api_key=${TMDB_API_KEY}`)
+      const data = await res.json()
+      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
+      if (br) {
+        const cert = br.release_dates?.find(d => d.certification && d.certification !== '')
+        return cert?.certification || null
+      }
+    } else {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${item.id}/content_ratings?api_key=${TMDB_API_KEY}`)
+      const data = await res.json()
+      const br = data.results?.find(r => r.iso_3166_1 === 'BR')
+      return br?.rating || null
+    }
+  } catch {}
+  return null
+}
+
 const enrichSeriesWithLastEpisode = async (seriesList) => {
   const enriched = await Promise.all(seriesList.map(async (series) => {
     try {
@@ -176,10 +199,11 @@ export const LoadingScreen = ({ onComplete }) => {
 
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
-export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick }) => {
+export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick, showFavoritesTitle }) => {
   return (
     <header className="header">
       <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
+      {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
       <div className="header-actions">
         <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
         <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
@@ -285,9 +309,20 @@ export const EpisodeCard = ({ item, onPlay }) => {
 
 export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   const year = getItemYear(item)
-  const ratingClass = item.adult ? 'rating-18' : 'rating-L'
+  const [certification, setCertification] = useState(null)
+  const ratingClass = certification ? (certification.includes('18') ? 'rating-18' : certification.includes('16') ? 'rating-16' : certification.includes('14') ? 'rating-14' : certification.includes('12') ? 'rating-12' : certification.includes('10') ? 'rating-10' : 'rating-L') : 'rating-L'
+  const ratingText = certification || 'L'
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : (item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : DEFAULT_POSTER)
   const { t } = useLanguage()
+
+  useEffect(() => {
+    let mounted = true
+    fetchBRCertification(item).then(cert => {
+      if (mounted && cert) setCertification(cert)
+    })
+    return () => { mounted = false }
+  }, [item.id])
+
   return (
     <div className="featured-card">
       <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
@@ -295,7 +330,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
         <div className="featured-text">
           <h2 className="featured-title">{item.title || item.name}</h2>
           <div className="featured-meta">
-            <span className={`featured-rating ${ratingClass}`}>{item.adult ? '18+' : 'L'}</span>
+            <span className={`featured-rating ${ratingClass}`}>{ratingText}</span>
             <span className="featured-genre">{item.genre || 'Ação'}</span>
             {year && <span className="featured-year">{year}</span>}
           </div>
@@ -693,9 +728,11 @@ const LANGUAGES = [
   { code: 'ja', label: '日本語' }
 ]
 
+const LANDING_SHOWN_KEY = 'yoshikawa_landing_shown'
+
 export default function Home() {
   const router = useRouter()
-  const [landingVisible, setLandingVisible] = useState(true)
+  const [landingVisible, setLandingVisible] = useState(false)
   const [userProfile, setUserProfile] = useState(null)
   const [showProfile, setShowProfile] = useState(false)
   const [profileMode, setProfileMode] = useState('view')
@@ -723,6 +760,10 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [categoryImages, setCategoryImages] = useState({})
+  const [activeCategoryGenreId, setActiveCategoryGenreId] = useState(null)
+  const [activeCategoryName, setActiveCategoryName] = useState(null)
+  const [categoryResults, setCategoryResults] = useState([])
+  const [categoryLoading, setCategoryLoading] = useState(false)
 
   const [animeTrending, setAnimeTrending] = useState([])
   const [animeTrendingLogos, setAnimeTrendingLogos] = useState({})
@@ -734,10 +775,16 @@ export default function Home() {
   const [animeRomance, setAnimeRomance] = useState([])
   const [animeRecommended, setAnimeRecommended] = useState([])
 
-  const [navHistory, setNavHistory] = useState(['home'])
-  const [navIndex, setNavIndex] = useState(0)
+  const favoritesTitleRef = useRef(null)
+  const [favoritesTitleVisible, setFavoritesTitleVisible] = useState(true)
 
   const { t } = useLanguage()
+
+  useEffect(() => {
+    if (!localStorage.getItem(LANDING_SHOWN_KEY)) {
+      setLandingVisible(true)
+    }
+  }, [])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -755,66 +802,96 @@ export default function Home() {
   }, [activeSection])
 
   useEffect(() => {
-    const savedSearch = sessionStorage.getItem('yoshikawaShowSearch') === 'true'
-    const savedProfile = sessionStorage.getItem('yoshikawaShowProfile') === 'true'
-    const savedProfileMode = sessionStorage.getItem('yoshikawaProfileMode') || 'view'
-    if (savedSearch) {
-      setShowSearch(true)
-      setShowProfile(false)
-    } else if (savedProfile) {
-      setShowProfile(true)
-      setProfileMode(savedProfileMode)
-      setShowSearch(false)
+    if (activeSection === 'favorites' && favoritesTitleRef.current) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setFavoritesTitleVisible(entry.isIntersecting),
+        { threshold: 0 }
+      )
+      observer.observe(favoritesTitleRef.current)
+      return () => observer.disconnect()
     }
+  }, [activeSection])
+
+  const closeAllModals = useCallback(() => {
+    setShowSearch(false)
+    setShowProfile(false)
+    setShowAbout(false)
+    setShowPrivacy(false)
+    setShowLanguage(false)
+    setActiveCategoryGenreId(null)
+    setActiveCategoryName(null)
+    setCategoryResults([])
+    setSearchResults([])
+    setSearchQuery('')
+    setActiveSearchFilter('Tudo')
   }, [])
 
-  useEffect(() => {
-    sessionStorage.setItem('yoshikawaShowSearch', showSearch)
-    if (!showSearch) sessionStorage.removeItem('yoshikawaShowSearch')
-  }, [showSearch])
+  const openModal = useCallback((type) => {
+    window.history.pushState({ modal: type }, '')
+    closeAllModals()
+    switch (type) {
+      case 'search':
+        setShowSearch(true)
+        break
+      case 'profile':
+        setShowProfile(true)
+        break
+      case 'about':
+        setShowAbout(true)
+        break
+      case 'privacy':
+        setShowPrivacy(true)
+        break
+      case 'language':
+        setShowLanguage(true)
+        break
+      default:
+        break
+    }
+  }, [closeAllModals])
+
+  const navigateTo = useCallback((section) => {
+    window.history.pushState({ section }, '')
+    setActiveSection(section)
+    closeAllModals()
+  }, [closeAllModals])
 
   useEffect(() => {
-    sessionStorage.setItem('yoshikawaShowProfile', showProfile)
-    if (!showProfile) sessionStorage.removeItem('yoshikawaShowProfile')
-    else sessionStorage.setItem('yoshikawaProfileMode', profileMode)
-  }, [showProfile, profileMode])
-
-  useEffect(() => {
-    const handlePopState = () => {
-      if (navIndex > 0) {
-        const newIndex = navIndex - 1
-        setNavIndex(newIndex)
-        setActiveSection(navHistory[newIndex])
-        setShowSearch(false)
+    const handlePopState = (event) => {
+      if (event.state && event.state.modal) {
+        closeAllModals()
+        const modal = event.state.modal
+        if (modal === 'search') setShowSearch(true)
+        else if (modal === 'profile') setShowProfile(true)
+        else if (modal === 'about') setShowAbout(true)
+        else if (modal === 'privacy') setShowPrivacy(true)
+        else if (modal === 'language') setShowLanguage(true)
+      } else if (event.state && event.state.section) {
+        setActiveSection(event.state.section)
+        closeAllModals()
+      } else {
+        setActiveSection('home')
+        closeAllModals()
       }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [navHistory, navIndex])
-
-  const navigateTo = (section) => {
-    const newHistory = navHistory.slice(0, navIndex + 1)
-    newHistory.push(section)
-    setNavHistory(newHistory)
-    setNavIndex(newHistory.length - 1)
-    setActiveSection(section)
-    window.history.pushState(null, '', window.location.pathname)
-  }
+  }, [closeAllModals])
 
   useEffect(() => {
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
     if (router.query.section) navigateTo(router.query.section)
-  }, [router.query.section])
+  }, [router.query.section, navigateTo])
 
   useEffect(() => {
     loadAllContent()
   }, [])
 
   useEffect(() => {
-    if (showSearch && !searchQuery.trim()) {
+    if (showSearch && !searchQuery.trim() && !activeCategoryGenreId) {
       fetchCategoryImages()
     }
-  }, [showSearch, searchQuery])
+  }, [showSearch, searchQuery, activeCategoryGenreId])
 
   const deduplicateById = (items) => {
     const seen = new Set()
@@ -852,6 +929,25 @@ export default function Home() {
     setCategoryImages(newImages)
   }
 
+  const fetchCategoryResults = async (genreId) => {
+    setCategoryLoading(true)
+    try {
+      const baseParams = `api_key=${TMDB_API_KEY}&language=pt-BR&region=BR`
+      const watchParams = `watch_region=BR&with_watch_monetization_types=flatrate|free|ads`
+      const movies = await fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=${genreId}&${watchParams}&sort_by=popularity.desc`)
+      const tv = await fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=${genreId}&${watchParams}&sort_by=popularity.desc`)
+      const combined = deduplicateById([
+        ...movies.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'movie' })),
+        ...tv.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'tv' }))
+      ]).slice(0, 30)
+      setCategoryResults(combined)
+    } catch (e) {
+      setCategoryResults([])
+    } finally {
+      setCategoryLoading(false)
+    }
+  }
+
   const loadAllContent = async () => {
     setContentLoading(true)
     try {
@@ -863,49 +959,36 @@ export default function Home() {
       const [
         trendingMovies,
         nowPlaying,
-        onAirSeries,
         upcoming,
-        popular,
-        adventureShows,
-        comedyShows,
-        romanceShows,
-        topRated,
+        onAirSeries,
+        adventureMovies,
+        adventureTV,
+        comedyMovies,
+        comedyTV,
+        romanceMovies,
+        romanceTV,
+        topRatedMovies,
+        topRatedTV,
         animeMovies,
         animeTV
       ] = await Promise.all([
         fetchTMDB(`https://api.themoviedb.org/3/trending/all/week?${baseParams}`),
         fetchTMDBPages(`https://api.themoviedb.org/3/movie/now_playing?${baseParams}`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/upcoming?${baseParams}`),
-        fetchTMDBPages(`https://api.themoviedb.org/3/discover/movie?${baseParams}&${watchParams}&sort_by=popularity.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}`),
+        fetchTMDBPages(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=12&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=35&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&with_genres=10749&${watchParams}&sort_by=popularity.desc`),
         fetchTMDB(`https://api.themoviedb.org/3/movie/top_rated?${baseParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/tv/top_rated?${baseParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}`),
         fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}`)
       ])
 
-      const [
-        animeTrendingRaw,
-        animeOnAirRaw,
-        animeRecentRaw,
-        animeAdventureRaw,
-        animeComedyRaw,
-        animeRomanceRaw,
-        animeRecommendedRaw
-      ] = await Promise.all([
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
-        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
-      ])
-
       const filterQuality = (items) => items.filter(i => i.poster_path && i.vote_count > 50 && i.popularity > 10)
-
       const trendingClean = deduplicateById(filterQuality(trendingMovies)).slice(0, 10)
       setTrending(trendingClean)
 
@@ -917,11 +1000,34 @@ export default function Home() {
       const enrichedSeries = await enrichSeriesWithLastEpisode(seriesOnAir)
       setNewEpisodes(enrichedSeries)
 
-      setRecentlyAdded(nowPlayingClean.slice(0, 10))
-      setAdventure(deduplicateById(adventureShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setComedy(deduplicateById(comedyShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setRomance(deduplicateById(romanceShows.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
-      setRecommended(deduplicateById(topRated.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' }))).slice(0, 10))
+      const recentMovies = nowPlayingClean.slice(0, 10)
+      const recentTV = deduplicateById(await fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc&page=1`)).filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).slice(0, 10)
+      setRecentlyAdded(deduplicateById([...recentMovies, ...recentTV]).slice(0, 10))
+
+      const combinedAdventure = deduplicateById([
+        ...adventureMovies.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'movie' })),
+        ...adventureTV.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'tv' }))
+      ]).slice(0, 10)
+      setAdventure(combinedAdventure)
+
+      const combinedComedy = deduplicateById([
+        ...comedyMovies.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'movie' })),
+        ...comedyTV.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'tv' }))
+      ]).slice(0, 10)
+      setComedy(combinedComedy)
+
+      const combinedRomance = deduplicateById([
+        ...romanceMovies.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'movie' })),
+        ...romanceTV.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'tv' }))
+      ]).slice(0, 10)
+      setRomance(combinedRomance)
+
+      const combinedRecommended = deduplicateById([
+        ...topRatedMovies.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'movie' })),
+        ...topRatedTV.filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' }))
+      ]).slice(0, 10)
+      setRecommended(combinedRecommended)
+
       const combinedAnimes = deduplicateById([...animeMovies.map(i => ({ ...i, media_type: 'movie' })), ...animeTV.map(i => ({ ...i, media_type: 'tv' }))].filter(i => i.poster_path).sort((a, b) => b.popularity - a.popularity)).slice(0, 20)
       setAnimes(combinedAnimes)
 
@@ -940,6 +1046,24 @@ export default function Home() {
 
       setTrendingLogos(trendingLogosMap)
       setAnimeLogos(animeLogosMap)
+
+      const [
+        animeTrendingRaw,
+        animeOnAirRaw,
+        animeRecentRaw,
+        animeAdventureRaw,
+        animeComedyRaw,
+        animeRomanceRaw,
+        animeRecommendedRaw
+      ] = await Promise.all([
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=popularity.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}${animeTVParams}&${watchParams}&sort_by=first_air_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=release_date.desc`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=12,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=35,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}&with_genres=10749,16&with_original_language=ja&${watchParams}`),
+        fetchTMDB(`https://api.themoviedb.org/3/discover/movie?${baseParams}${animeMovieParams}&${watchParams}&sort_by=vote_average.desc&vote_count.gte=100`)
+      ])
 
       const animeTrendingClean = deduplicateById(filterQuality(animeTrendingRaw)).slice(0, 10)
       setAnimeTrending(animeTrendingClean)
@@ -1004,7 +1128,7 @@ export default function Home() {
 
   const openProfile = (mode = 'view') => {
     setProfileMode(mode)
-    setShowProfile(true)
+    openModal('profile')
   }
 
   const handleProfileClick = () => {
@@ -1018,16 +1142,17 @@ export default function Home() {
     setSearchQuery('')
     setSearchResults([])
     setActiveSearchFilter('Tudo')
+    setActiveCategoryGenreId(null)
+    setActiveCategoryName(null)
+    setCategoryResults([])
   }
 
   const fetchSearchResults = async (query) => {
     if (!query.trim()) { setSearchResults([]); setSearchLoading(false); return }
     setSearchLoading(true)
-
     try {
       let results = []
       const baseSearch = `api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&region=BR`
-
       if (activeSearchFilter === 'Filmes') {
         results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
         results = results.map(i => ({ ...i, media_type: 'movie' }))
@@ -1041,15 +1166,12 @@ export default function Home() {
         ])
         results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
       }
-
       if (activeSearchFilter === 'Animes') {
         results = results.filter(i => i.genre_ids?.includes(16))
       }
-
       results = results.sort((a, b) => b.popularity - a.popularity).slice(0, 30)
       setSearchResults(results)
     } catch (e) {
-      console.error('Erro na busca', e)
       setSearchResults([])
     } finally {
       setSearchLoading(false)
@@ -1063,12 +1185,14 @@ export default function Home() {
   const filteredFavorites = activeFilter === 'Tudo' ? favorites : activeFilter === 'Filmes' ? favorites.filter(f => f.media_type === 'movie') : activeFilter === 'Séries' ? favorites.filter(f => f.media_type === 'tv') : favorites
 
   const handleCategoryClick = (categoryName) => {
-    navigateTo('search')
-    setShowSearch(true)
-    setSearchQuery(categoryName)
+    const genreId = CATEGORY_GENRE_MAP[categoryName]
+    setActiveCategoryGenreId(genreId)
+    setActiveCategoryName(categoryName)
+    setSearchQuery('')
+    setSearchResults([])
     setActiveSearchFilter('Tudo')
-    setSearchLoading(true)
-    fetchSearchResults(categoryName)
+    openModal('search')
+    fetchCategoryResults(genreId)
   }
 
   const removeFavorite = (fav) => {
@@ -1082,7 +1206,6 @@ export default function Home() {
   const LandingScreen = ({ onEnter }) => {
     const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
     const text = 'Obrigado por utilizar os serviços Yoshikawa. Considere apoiar o desenvolvimento com uma doação anônima via PixGG. Clique no botão de coração para doar ou no ícone do Instagram para seguir o desenvolvedor <3'
-
     const handlePixGG = () => window.open('https://pixgg.com/kawalyansky', '_blank')
     const handleInstagram = () => window.open('https://instagram.com/kawalyansky', '_blank')
 
@@ -1227,7 +1350,7 @@ export default function Home() {
 
   const renderFavoritesPage = () => (
     <section className="section">
-      <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }}>{t('favoritos')}</h2>
+      <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }} ref={favoritesTitleRef}>{t('favoritos')}</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
         {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumFavorito')}</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay} />)}
@@ -1238,11 +1361,18 @@ export default function Home() {
   const renderSearchPage = () => (
     <div className="search-page-container">
       <div className="search-fixed-header">
-        <button className="search-back-btn" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); setActiveSearchFilter('Tudo'); window.history.back() }}><i className="fas fa-arrow-left" /></button>
+        <button className="search-back-btn" onClick={() => window.history.back()}><i className="fas fa-arrow-left" /></button>
         <div className="search-bar"><i className="fas fa-search search-icon" /><input type="text" placeholder={t('buscar')} className="search-input" value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus /></div>
       </div>
       <div className="search-content" style={{ paddingTop: '70px' }}>
-        {searchQuery.trim() ? (
+        {activeCategoryGenreId && !searchQuery.trim() ? (
+          <>
+            <h2 className="section-title" style={{ marginTop: 'clamp(20px,3vw,30px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{activeCategoryName}</h2>
+            <div className="search-results-list">
+              {categoryLoading ? <ContentLoader /> : categoryResults.length > 0 ? categoryResults.map((item, index) => <div key={`${item.media_type || getMediaType(item)}-${item.id}`}><SearchResultItem item={item} onClick={handlePlay} />{index < categoryResults.length - 1 && <div className="search-divider" />}</div>) : <div className="empty-favorites"><i className="fas fa-film" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumResultado')}</p></div>}
+            </div>
+          </>
+        ) : searchQuery.trim() ? (
           <>
             <div className="filters-container" style={{ marginTop: 'clamp(20px,3vw,26px)', marginLeft: 'clamp(10px,2.6vw,22px)' }}>{SEARCH_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeSearchFilter === filter ? 'active' : ''}`} onClick={() => setActiveSearchFilter(filter)}>{filter}</button>)}</div>
             <div className="search-results-list">
@@ -1293,14 +1423,14 @@ export default function Home() {
       </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? t('editarPerfil') : t('criarPerfil')} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
-        <SettingsItem icon="language" title={t('linguagem')} description={t('selecioneIdioma')} onClick={() => setShowLanguage(true)} />
-        <SettingsItem icon="shield-alt" title={t('privacidade')} description={t('politicaPrivacidade')} onClick={() => setShowPrivacy(true)} />
+        <SettingsItem icon="language" title={t('linguagem')} description={t('selecioneIdioma')} onClick={() => openModal('language')} />
+        <SettingsItem icon="shield-alt" title={t('privacidade')} description={t('politicaPrivacidade')} onClick={() => openModal('privacy')} />
         <SettingsItem icon="question-circle" title={t('ajuda')} description={t('faleConosco')} onClick={() => window.location.href = 'mailto:yoshikawa_bot@proton.me'} />
-        <SettingsItem icon="info-circle" title={t('sobre')} description={t('versaoApp')} onClick={() => setShowAbout(true)} />
+        <SettingsItem icon="info-circle" title={t('sobre')} description={t('versaoApp')} onClick={() => openModal('about')} />
       </div>
       <div className="social-links">
         <button className="social-btn" onClick={() => window.open('https://yoshikawa.vercel.app', '_blank')}><i className="fas fa-link" /></button>
-        <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbBfav37z4kWNMkFPb1G', '_blank')}><i className="fab fa-whatsapp" /></button>
+        <button className="social-btn" onClick={() => window.open('https://whatsapp.com/channel/0029VbDCNZC0rGiOgmHwVf3K', '_blank')}><i className="fab fa-whatsapp" /></button>
         <button className="social-btn" onClick={() => window.open('https://github.com/kawa-lyansky', '_blank')}><i className="fab fa-github" /></button>
       </div>
       <div className="version-info"><p>{t('releaseBuild')} - 1.0.93 beta</p></div>
@@ -1341,7 +1471,7 @@ export default function Home() {
             .info-btn{background:rgba(255,255,255,0.2);color:#ffffff}
           `}</style>
         </Head>
-        <LandingScreen onEnter={() => setLandingVisible(false)} />
+        <LandingScreen onEnter={() => { setLandingVisible(false); localStorage.setItem(LANDING_SHOWN_KEY, 'true') }} />
       </>
     )
   }
@@ -1372,6 +1502,7 @@ export default function Home() {
 
           .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
           .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
+          .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;margin-left:clamp(8px,1.5vw,16px);white-space:nowrap}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
@@ -1415,7 +1546,7 @@ export default function Home() {
           .card-poster-frame{position:relative;border-radius:clamp(12px,2vw,16px);overflow:hidden;aspect-ratio:2/3;background:#1B1B1B}
           .content-poster{width:100%;height:100%;object-fit:cover}
 
-          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:clamp(16px,3vw,24px) clamp(10px,2.6vw,22px);background:#1B1B1B}
+          .featured-card{border-radius:clamp(14px,2vw,20px);overflow:hidden;margin:0 clamp(10px,2.6vw,22px);background:#1B1B1B}
           .featured-poster{width:100%;aspect-ratio:16/9;overflow:hidden}
           .featured-img{width:100%;height:100%;object-fit:cover}
           .featured-details{padding:clamp(16px,3vw,24px);background:#1B1B1B;display:flex;flex-direction:column;gap:clamp(12px,2vw,16px)}
@@ -1423,7 +1554,7 @@ export default function Home() {
           .featured-title{font-size:clamp(13px,2.4vw,19px);font-weight:700;color:#ffffff;margin-bottom:clamp(8px,1.5vw,12px)}
           .featured-meta{display:flex;gap:clamp(8px,2vw,16px);margin-bottom:clamp(12px,2vw,16px);align-items:center;flex-wrap:wrap}
           .featured-rating{padding:clamp(2px,0.5vw,4px) clamp(8px,1.5vw,12px);border-radius:8px;font-size:clamp(10px,1.5vw,11px);font-weight:600;color:#fff}
-          .rating-L{background:#4CAF50}.rating-18{background:#f44336}
+          .rating-L{background:#4CAF50}.rating-10{background:#4CAF50}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#E04E4E}.rating-18{background:#f44336}
           .featured-genre{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
           .featured-year{color:#B5B5B5;font-size:clamp(10px,1.5vw,11px);font-weight:500}
           .featured-synopsis{color:#808080;font-size:clamp(10px,1.5vw,11px);line-height:1.6}
@@ -1564,7 +1695,15 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!showSearch && !showProfile && <Header onSearchClick={() => { navigateTo('search'); setShowSearch(true) }} userProfile={userProfile} onProfileClick={handleProfileClick} onLogoClick={handleLogoClick} />}
+      {!showSearch && !showProfile && (
+        <Header
+          onSearchClick={() => { openModal('search'); setActiveCategoryGenreId(null); setActiveCategoryName(null); setCategoryResults([]) }}
+          userProfile={userProfile}
+          onProfileClick={handleProfileClick}
+          onLogoClick={handleLogoClick}
+          showFavoritesTitle={activeSection === 'favorites' && !favoritesTitleVisible}
+        />
+      )}
 
       <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
         {showSearch ? renderSearchPage() :
@@ -1582,6 +1721,9 @@ export default function Home() {
         setSearchQuery('')
         setSearchResults([])
         setActiveSearchFilter('Tudo')
+        setActiveCategoryGenreId(null)
+        setActiveCategoryName(null)
+        setCategoryResults([])
       }} />}
 
       {showProfile && (
@@ -1591,14 +1733,14 @@ export default function Home() {
           onPlay={handlePlay}
           onSave={handleSaveProfile}
           onLogout={handleLogout}
-          onClose={() => setShowProfile(false)}
+          onClose={() => window.history.back()}
           mode={profileMode}
           onRemoveFavorite={removeFavorite}
         />
       )}
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-      {showLanguage && <LanguageModal onClose={() => setShowLanguage(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => window.history.back()} />}
+      {showAbout && <AboutModal onClose={() => window.history.back()} />}
+      {showLanguage && <LanguageModal onClose={() => window.history.back()} />}
     </>
   )
     }
