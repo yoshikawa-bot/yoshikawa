@@ -43,6 +43,41 @@ const CATEGORY_GENRE_MAP = {
 const FAVORITE_FILTERS = ['Tudo', 'Filmes', 'Séries']
 const SEARCH_FILTERS = ['Tudo', 'Animes', 'Filmes', 'Séries']
 
+// Global image cache to avoid flicker on re-render
+const loadedImageCache = new Set()
+
+const ImageWithCache = ({ src, alt, className, ...props }) => {
+  const [loaded, setLoaded] = useState(loadedImageCache.has(src))
+  const imgRef = useRef(null)
+
+  useEffect(() => {
+    if (loadedImageCache.has(src)) {
+      setLoaded(true)
+      return
+    }
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      loadedImageCache.add(src)
+      setLoaded(true)
+    }
+    img.onerror = () => {
+      // keep as not loaded, will show fallback color
+    }
+  }, [src])
+
+  return (
+    <img
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      className={`${className} ${loaded ? 'img-loaded' : ''}`}
+      style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s' }}
+      {...props}
+    />
+  )
+}
+
 const useDebounce = (callback, delay) => {
   const timeoutRef = useRef(null)
   return useCallback((...args) => {
@@ -250,11 +285,11 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
     <HorizontalFade>
       <div className="highlight-banner" onClick={() => onPlay?.(item)}>
         <div className="highlight-poster-half">
-          <img src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
+          <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
         </div>
         <div className="highlight-backdrop-half">
           <div className="highlight-blur-bg">
-            <img src={backdropUrl} alt="" className="highlight-blur-img" />
+            <ImageWithCache src={backdropUrl} alt="" className="highlight-blur-img" />
             <div className="highlight-blur-overlay" />
           </div>
           <div className="highlight-logo-container">
@@ -275,7 +310,7 @@ export const TrendingCard = ({ item, onPlay }) => {
   return (
     <HorizontalFade>
       <div className="trending-card" onClick={() => onPlay?.(item)}>
-        <img src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
+        <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
         <div className="trending-title">
           <span className="trending-title-text">{item.title || item.name}</span>
         </div>
@@ -298,7 +333,7 @@ export const EpisodeCard = ({ item, onPlay }) => {
     <HorizontalFade>
       <div className="episode-card" onClick={() => onPlay?.(item)}>
         <div className="episode-thumbnail episode-thumbnail-horizontal">
-          <img src={imageUrl} alt={item.name || item.title} className="episode-img" />
+          <ImageWithCache src={imageUrl} alt={item.name || item.title} className="episode-img" />
         </div>
         <h4 className="episode-title">{item.title || item.name}</h4>
         <p className="episode-info">{item.episode_number ? `${t('episodio')} ${item.episode_number}` : `${t('emExibicao')} • ${year || 'N/A'}`}</p>
@@ -325,7 +360,9 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
 
   return (
     <div className="featured-card">
-      <div className="featured-poster"><img src={backdropUrl} alt={item.title || item.name} className="featured-img" /></div>
+      <div className="featured-poster">
+        <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="featured-img" />
+      </div>
       <div className="featured-details">
         <div className="featured-text">
           <h2 className="featured-title">{item.title || item.name}</h2>
@@ -352,7 +389,12 @@ export const MovieCard = ({ item }) => {
     <HorizontalFade>
       <div className="card-wrapper" onClick={() => router.push(`/${routeType}/${item.id}`)}>
         <div className="card-poster-frame">
-          <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title || item.name} className="content-poster" loading="lazy" />
+          <ImageWithCache 
+            src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} 
+            alt={item.title || item.name} 
+            className="content-poster" 
+            loading="lazy" 
+          />
         </div>
       </div>
     </HorizontalFade>
@@ -367,7 +409,11 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
   const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
   return (
     <div className="favorite-item" onClick={() => onClick?.(item)}>
-      <img src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} alt={item.title} className="favorite-poster" />
+      <ImageWithCache 
+        src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} 
+        alt={item.title} 
+        className="favorite-poster" 
+      />
       <div className="favorite-content">
         <h3 className="favorite-title">{item.title}</h3>
         {year && <p className="favorite-year">{year}</p>}
@@ -403,7 +449,7 @@ export const SearchResultItem = ({ item, onClick }) => {
 
   return (
     <div className="search-result-item" onClick={() => onClick?.(item)}>
-      <img src={imageSrc} alt={item.title || item.name} className="search-result-poster" loading="lazy" />
+      <ImageWithCache src={imageSrc} alt={item.title || item.name} className="search-result-poster" loading="lazy" />
       <div className="search-result-content">
         <h3 className="search-result-title">{item.title || item.name}</h3>
         {year && <p className="search-result-year">{year}</p>}
@@ -435,10 +481,7 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => {
   return (
     <div className="profile-creation-overlay" onClick={onCancel}>
       <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="logout-confirm-title">{t('sairDoPerfil')}</h3>
-          <button className="modal-close-btn" onClick={onCancel}><i className="fas fa-times" /></button>
-        </div>
+        <h3 className="logout-confirm-title">{t('sairDoPerfil')}</h3>
         <p className="logout-confirm-text">{t('aoSalvar')}</p>
         <div className="logout-confirm-actions">
           <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
@@ -1191,7 +1234,8 @@ export default function Home() {
     setSearchQuery('')
     setSearchResults([])
     setActiveSearchFilter('Tudo')
-    openModal('search')
+    setShowSearch(true)
+    window.history.pushState({ modal: 'search' }, '')
     fetchCategoryResults(genreId)
   }
 
@@ -1502,7 +1546,7 @@ export default function Home() {
 
           .header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,24px) clamp(16px,3vw,32px);display:flex;justify-content:space-between;align-items:center;height:clamp(60px,8vw,90px)}
           .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
-          .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;margin-left:clamp(8px,1.5vw,16px);white-space:nowrap}
+          .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;margin-left:clamp(4px,1vw,8px);white-space:nowrap}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px)}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s}
           .header-btn:hover{opacity:0.8}
@@ -1639,11 +1683,11 @@ export default function Home() {
 
           .profile-fullpage-overlay{position:fixed;inset:0;z-index:10000;background:#101010;display:flex;flex-direction:column;overflow-y:auto}
           .profile-top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;min-height:60px;background:transparent;position:absolute;top:0;left:0;right:0;z-index:10}
-          .profile-top-btn{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+          .profile-top-btn{width:40px;height:40px;border-radius:50%;backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
           .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
-          .cover-edit-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px}
+          .cover-edit-icon{width:48px;height:48px;border-radius:50%;backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px}
           .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-50px;position:relative;z-index:2}
           .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#505050}
           .avatar-editable{cursor:pointer}
@@ -1665,10 +1709,10 @@ export default function Home() {
           .edit-label{font-size:15px;color:#888;margin-bottom:8px;display:block}
           .edit-input{width:100%;background:transparent;border:none;color:#fff;font-size:18px;font-weight:600;outline:none;padding:4px 0}
 
-          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px}
-          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin:0}
+          .logout-confirm-modal{background:#1B1B1B;border-radius:24px;padding:clamp(24px,4vw,40px);width:100%;max-width:380px;text-align:center}
+          .logout-confirm-title{font-size:clamp(18px,3vw,22px);font-weight:700;color:#ffffff;margin-bottom:12px}
           .logout-confirm-text{font-size:clamp(13px,2vw,15px);color:#888;line-height:1.5;margin-bottom:24px}
-          .logout-confirm-actions{display:flex;gap:12px}
+          .logout-confirm-actions{display:flex;gap:12px;justify-content:center}
           .logout-cancel-btn{flex:1;padding:12px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
           .logout-confirm-btn{flex:1;padding:12px;border-radius:12px;background:#E04E4E;color:#ffffff;font-size:14px;font-weight:600;cursor:pointer}
 
@@ -1743,4 +1787,4 @@ export default function Home() {
       {showLanguage && <LanguageModal onClose={() => window.history.back()} />}
     </>
   )
-    }
+  }
