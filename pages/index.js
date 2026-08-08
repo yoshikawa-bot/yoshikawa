@@ -491,7 +491,7 @@ export const LogoutConfirm = ({ onConfirm, onCancel }) => {
   )
 }
 
-export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode, onRemoveFavorite, onImportFavorites }) => {
+export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, onClose, mode, onRemoveFavorite }) => {
   const { t } = useLanguage()
   const isNew = mode === 'create'
   const startInEdit = mode === 'edit' || mode === 'create'
@@ -502,12 +502,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
   const [showLogout, setShowLogout] = useState(false)
-
-  useEffect(() => {
-    if (mode === 'edit' || mode === 'create') {
-      window.history.pushState({ modal: 'profile', editing: true }, '')
-    }
-  }, [mode])
 
   const handleFileRead = (file, setPreview) => {
     if (file.size > 1048576) {
@@ -545,39 +539,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       bannerUrl: bannerPreview
     })
     setEditing(false)
-  }
-
-  const handleExport = () => {
-    const data = JSON.stringify(favorites, null, 2)
-    const blob = new Blob([data], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'yoshikawa_favoritos.json'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImport = () => {
-    document.getElementById('importFileInput').click()
-  }
-
-  const processImport = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const imported = JSON.parse(event.target.result)
-        if (Array.isArray(imported)) {
-          onImportFavorites(imported)
-        }
-      } catch {}
-    }
-    reader.readAsText(file)
-    e.target.value = ''
   }
 
   const bannerStyle = (bannerPreview || userProfile?.bannerUrl)
@@ -623,17 +584,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
             </div>
           )}
         </div>
-
-        {!editing && (
-          <div className="profile-data-actions">
-            <button className="profile-data-btn" onClick={handleExport} title="Exportar favoritos">
-              <i className="fas fa-download" />
-            </button>
-            <button className="profile-data-btn" onClick={handleImport} title="Importar favoritos">
-              <i className="fas fa-upload" />
-            </button>
-          </div>
-        )}
 
         <div className="profile-avatar-wrapper">
           <div
@@ -729,7 +679,6 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
 
       <input type="file" id="avatarFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
       <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
-      <input type="file" id="importFileInput" accept=".json" style={{ display: 'none' }} onChange={processImport} />
 
       {showLogout && <LogoutConfirm onConfirm={() => { setShowLogout(false); onLogout() }} onCancel={() => setShowLogout(false)} />}
     </div>
@@ -849,12 +798,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
-  const [activeSection, setActiveSection] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('yoshikawaActiveSection') || 'home'
-    }
-    return 'home'
-  })
+  const [activeSection, setActiveSection] = useState('home')
   const [activeFilter, setActiveFilter] = useState('Tudo')
   const [activeSearchFilter, setActiveSearchFilter] = useState('Tudo')
   const [showSearch, setShowSearch] = useState(false)
@@ -889,6 +833,13 @@ export default function Home() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [activeSection])
+
+  useEffect(() => {
+    const savedSection = sessionStorage.getItem('yoshikawaActiveSection')
+    if (savedSection && savedSection !== 'home') {
+      setActiveSection(savedSection)
+    }
+  }, [])
 
   useEffect(() => {
     sessionStorage.setItem('yoshikawaActiveSection', activeSection)
@@ -952,11 +903,6 @@ export default function Home() {
 
   useEffect(() => {
     const handlePopState = (event) => {
-      if (event.state && event.state.modal === 'profile' && event.state.editing) {
-        setShowProfile(true)
-        setProfileMode('view')
-        return
-      }
       if (event.state && event.state.modal) {
         closeAllModals()
         const modal = event.state.modal
@@ -1002,27 +948,6 @@ export default function Home() {
     })
   }
 
-  const preloadImages = (items) => {
-    items.forEach(item => {
-      if (item.poster_path) {
-        const url = `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}`
-        if (!loadedImageCache.has(url)) {
-          const img = new Image()
-          img.src = url
-          img.onload = () => loadedImageCache.add(url)
-        }
-      }
-      if (item.backdrop_path) {
-        const url = `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
-        if (!loadedImageCache.has(url)) {
-          const img = new Image()
-          img.src = url
-          img.onload = () => loadedImageCache.add(url)
-        }
-      }
-    })
-  }
-
   const fetchCategoryImages = async () => {
     const newImages = {}
     const usedImageUrls = new Set()
@@ -1061,7 +986,6 @@ export default function Home() {
         ...tv.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'tv' }))
       ]).slice(0, 30)
       setCategoryResults(combined)
-      preloadImages(combined)
     } catch (e) {
       setCategoryResults([])
     } finally {
@@ -1123,8 +1047,7 @@ export default function Home() {
 
       const recentMovies = nowPlayingClean.slice(0, 10)
       const recentTV = deduplicateById(await fetchTMDB(`https://api.themoviedb.org/3/discover/tv?${baseParams}&${watchParams}&sort_by=first_air_date.desc&page=1`)).filter(i => i.poster_path).map(i => ({ ...i, media_type: 'tv' })).slice(0, 10)
-      const recentlyAddedData = deduplicateById([...recentMovies, ...recentTV]).slice(0, 10)
-      setRecentlyAdded(recentlyAddedData)
+      setRecentlyAdded(deduplicateById([...recentMovies, ...recentTV]).slice(0, 10))
 
       const combinedAdventure = deduplicateById([
         ...adventureMovies.filter(i => i.poster_path && i.popularity > 5).map(i => ({ ...i, media_type: 'movie' })),
@@ -1210,18 +1133,6 @@ export default function Home() {
       animeTrendingHighlights.forEach((item, idx) => { animeTrendingLogosMap[item.id] = animeTrendingLogosArr[idx] })
       setAnimeTrendingLogos(animeTrendingLogosMap)
 
-      preloadImages(trendingClean)
-      preloadImages(enrichedSeries)
-      preloadImages(recentlyAddedData)
-      preloadImages(combinedAdventure)
-      preloadImages(combinedComedy)
-      preloadImages(combinedRomance)
-      preloadImages(combinedRecommended)
-      preloadImages(combinedAnimes)
-      preloadImages(animeTrendingClean)
-      preloadImages(animeRecentClean)
-      preloadImages(enrichedAnimeSeries)
-
       loadFavorites()
     } catch (e) { console.error(e) }
     setContentLoading(false)
@@ -1304,7 +1215,6 @@ export default function Home() {
       }
       results = results.sort((a, b) => b.popularity - a.popularity).slice(0, 30)
       setSearchResults(results)
-      preloadImages(results)
     } catch (e) {
       setSearchResults([])
     } finally {
@@ -1335,19 +1245,6 @@ export default function Home() {
       const updated = prev.filter(f => !(f.id === fav.id && f.media_type === fav.media_type))
       try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(updated)) } catch {}
       return updated
-    })
-  }
-
-  const handleImportFavorites = (importedFavorites) => {
-    setFavorites(prev => {
-      const merged = [...prev]
-      importedFavorites.forEach(fav => {
-        if (!merged.some(f => f.id === fav.id && f.media_type === fav.media_type)) {
-          merged.push(fav)
-        }
-      })
-      try { localStorage.setItem('yoshikawaFavorites', JSON.stringify(merged)) } catch {}
-      return merged
     })
   }
 
@@ -1799,8 +1696,6 @@ export default function Home() {
           .profile-save-btn{background:#fff;color:#000;font-size:16px;font-weight:700;padding:8px 20px;border-radius:20px}
           .profile-body{flex:1}
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
-          .profile-data-actions{display:flex;justify-content:flex-end;gap:12px;padding:0 20px;margin-top:-36px;position:relative;z-index:5}
-          .profile-data-btn{width:40px;height:40px;border-radius:50%;backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
           .cover-edit-icon{width:48px;height:48px;border-radius:50%;backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px}
           .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-50px;position:relative;z-index:2}
           .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#505050}
@@ -1894,7 +1789,6 @@ export default function Home() {
           onClose={() => window.history.back()}
           mode={profileMode}
           onRemoveFavorite={removeFavorite}
-          onImportFavorites={handleImportFavorites}
         />
       )}
       {showPrivacy && <PrivacyModal onClose={() => window.history.back()} />}
@@ -1903,4 +1797,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-        }
+  }
