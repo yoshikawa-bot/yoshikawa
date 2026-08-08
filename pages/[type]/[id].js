@@ -18,9 +18,37 @@ const MAX_MESSAGE_LENGTH = 500
 const CONTINUE_COLOR = '#F05454'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
-const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
-  const bg = color.replace('#', '')
-  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
+// Cache de imagens já carregadas
+const loadedImageCache = new Set()
+
+const ImageWithCache = ({ src, alt, className, ...props }) => {
+  const [loaded, setLoaded] = useState(loadedImageCache.has(src))
+  const imgRef = useRef(null)
+
+  useEffect(() => {
+    if (loadedImageCache.has(src)) {
+      setLoaded(true)
+      return
+    }
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      loadedImageCache.add(src)
+      setLoaded(true)
+    }
+    img.onerror = () => {}
+  }, [src])
+
+  return (
+    <img
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      className={`${className} ${loaded ? 'img-loaded' : ''}`}
+      style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s' }}
+      {...props}
+    />
+  )
 }
 
 const ContentLoader = () => (
@@ -29,6 +57,11 @@ const ContentLoader = () => (
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
   </div>
 )
+
+const getAvatarUrl = (name, color = DEFAULT_AVATAR_BG) => {
+  const bg = color.replace('#', '')
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${bg}`
+}
 
 export default function WatchPage() {
   const router = useRouter()
@@ -627,6 +660,15 @@ export default function WatchPage() {
     return `https://superflixapi.pro/serie/${id}/${season}/${episode}#${hashes}`
   }
 
+  // Voltar com histórico
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/')
+    }
+  }
+
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath()
     ctx.moveTo(x + r, y)
@@ -869,7 +911,6 @@ export default function WatchPage() {
   }
 
   const shareImage = async () => {
-    // Copiar link automaticamente ao compartilhar a imagem
     if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href).catch(() => {})
     }
@@ -996,10 +1037,10 @@ export default function WatchPage() {
       {showContent ? (
         <>
           <div className="hero">
-            <img className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
+            <ImageWithCache className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
             <div className="hero-gradient" />
             <div className="top-bar">
-              <button className="glass-btn circle" onClick={() => router.push('/')}>
+              <button className="glass-btn circle" onClick={handleBack}>
                 <i className="fas fa-arrow-left" />
               </button>
               <button
@@ -1057,7 +1098,7 @@ export default function WatchPage() {
                   return (
                     <div key={ep.id} className={`ep-card ${isCurrent ? 'active' : ''}`} onClick={() => handleEpisodeClick(ep.episode_number)}>
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
-                        {ep.still_path ? <img src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
+                        {ep.still_path ? <ImageWithCache src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a1a', color: '#888', fontSize: 11, fontWeight: 500, gap: 6 }}>
                             <i className="fas fa-clock" style={{ fontSize: 12 }} /> Em breve
                           </div>
@@ -1076,7 +1117,7 @@ export default function WatchPage() {
           ) : (
             <div className="episodes-list">
               <div className="ep-card" onClick={handleContinue}>
-                <div className="ep-thumb"><img src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" /></div>
+                <div className="ep-thumb"><ImageWithCache src={content.poster_path ? `https://image.tmdb.org/t/p/w300${content.poster_path}` : DEFAULT_BACKDROP} alt="" /></div>
                 <div className="ep-info"><h4>{content.title || content.name}</h4><span>{content.runtime ? `${content.runtime} min` : 'Duração indisponível'}</span></div>
               </div>
             </div>
@@ -1335,4 +1376,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
