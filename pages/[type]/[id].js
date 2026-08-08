@@ -960,7 +960,6 @@ export default function WatchPage() {
   const releaseDate = content?.release_date || content?.first_air_date || 'Desconhecido'
   const genres = content?.genres?.map(g => g.name).join(', ') || 'Gênero desconhecido'
 
-  // Obter classe CSS baseada na certificação real
   const getRatingClass = (cert) => {
     if (!cert) return 'rating-L'
     if (cert.includes('18')) return 'rating-18'
@@ -1060,7 +1059,7 @@ export default function WatchPage() {
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
-          .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:20px}
+          .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:20px}
           .share-modal{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
           .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:transparent}
           .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
