@@ -538,6 +538,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       avatarUrl: avatarPreview,
       bannerUrl: bannerPreview
     })
+    setEditing(false)
   }
 
   const bannerStyle = (bannerPreview || userProfile?.bannerUrl)
@@ -1167,7 +1168,6 @@ export default function Home() {
     setUserProfile(updatedProfile)
     try { localStorage.setItem('yoshikawaProfile', JSON.stringify(updatedProfile)) } catch {}
     setProfileMode('view')
-    // permanece na página de perfil
   }
 
   const openProfile = (mode = 'view') => {
@@ -1639,14 +1639,14 @@ export default function Home() {
           .favorite-remove{position:absolute;top:clamp(12px,2vw,18px);right:clamp(12px,2.5vw,20px);color:#D0D0D0;font-size:clamp(22px,3.5vw,34px);width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
           .empty-favorites{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,8vw,80px) clamp(16px,4vw,20px)}
 
-          .search-page-container{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+          .search-page-container{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden}
           .search-fixed-header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#101010;padding:clamp(12px,2vw,20px) clamp(16px,3vw,24px);display:flex;align-items:center;gap:clamp(10px,2vw,18px);height:clamp(60px,8vw,90px)}
           .search-back-btn{color:#ffffff;font-size:clamp(24px,4vw,38px);width:clamp(24px,4vw,38px);height:clamp(24px,4vw,38px);display:flex;align-items:center;justify-content:center;flex-shrink:0}
           .search-bar{flex:1;height:clamp(40px,6vw,52px);background:#1B1B1B;border-radius:clamp(20px,4vw,26px);display:flex;align-items:center;padding:0 clamp(12px,2vw,18px);gap:clamp(6px,1vw,10px)}
           .search-icon{color:#A5A5A5;font-size:clamp(14px,2vw,18px);flex-shrink:0}
           .search-input{flex:1;background:transparent;border:none;color:#DCDCDC;font-size:clamp(14px,2vw,16px);font-weight:500;outline:none;min-width:0}
           .search-input::placeholder{color:#888888}
-          .search-content{flex:1;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px))}
+          .search-content{flex:1;overflow-y:auto;padding-top:clamp(60px,8vw,90px);padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px))}
 
           .search-results-list{padding:0 clamp(8px,1.6vw,16px);margin-top:clamp(20px,3.5vw,30px)}
           .search-result-item{display:flex;padding:clamp(10px,2vw,18px) 0;cursor:pointer;gap:clamp(10px,1.5vw,18px)}
@@ -1797,4 +1797,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-  }
+            }
