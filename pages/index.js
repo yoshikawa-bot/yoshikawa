@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useLanguage } from '../contexts/LanguageContext'
-import { motion } from 'motion/react'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
 const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
@@ -93,7 +92,7 @@ const ImageWithCache = ({ src, alt, className, style, ...props }) => {
   }, [src, inView])
 
   return (
-    <motion.div
+    <div
       ref={imgRef}
       className={`img-container ${className || ''} ${!loaded && inView ? 'shimmer' : ''}`}
       style={{
@@ -102,9 +101,6 @@ const ImageWithCache = ({ src, alt, className, style, ...props }) => {
         background: '#1B1B1B',
         ...style
       }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
     >
       {inView && (
         <img
@@ -123,7 +119,7 @@ const ImageWithCache = ({ src, alt, className, style, ...props }) => {
           {...props}
         />
       )}
-    </motion.div>
+    </div>
   )
 }
 
@@ -266,15 +262,9 @@ const HorizontalFade = ({ children }) => {
     return () => observer.disconnect()
   }, [ref, root])
   return (
-    <motion.div
-      ref={ref}
-      style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)', willChange: 'opacity' }}
-      initial={false}
-      animate={{ opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.35 }}
-    >
+    <div ref={ref} style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)', willChange: 'opacity' }}>
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -293,33 +283,12 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
   return (
     <header className="header">
       <div className="header-left">
-        <motion.img
-          src={LOGO_URL}
-          alt="Yoshikawa"
-          className="header-logo"
-          onClick={onLogoClick}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        />
+        <img src={LOGO_URL} alt="Yoshikawa" className="header-logo" onClick={onLogoClick} />
         {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
       </div>
       <div className="header-actions">
-        <motion.button
-          className="header-btn"
-          onClick={onSearchClick}
-          style={{ width: '40px', height: '40px', background: 'transparent' }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <i className="fas fa-search" style={{ fontSize: '20px' }} />
-        </motion.button>
-        <motion.button
-          className="header-btn profile-btn"
-          style={{ width: '40px', height: '40px', background: DEFAULT_AVATAR_BG }}
-          onClick={onProfileClick}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
+        <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
+        <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
           {userProfile ? (
             <img
               src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)}
@@ -327,9 +296,9 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
               className="profile-avatar-img"
             />
           ) : (
-            <i className="fas fa-user" style={{ fontSize: '20px', color: '#fff', display: 'block', lineHeight: 1 }} />
+            <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#fff', display: 'block', lineHeight: 1 }} />
           )}
-        </motion.button>
+        </button>
       </div>
     </header>
   )
@@ -361,7 +330,7 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
 
   return (
     <HorizontalFade>
-      <motion.div className="highlight-banner" onClick={() => onPlay?.(item)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+      <div className="highlight-banner" onClick={() => onPlay?.(item)}>
         <div className="highlight-poster-half">
           <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="highlight-poster-img" />
         </div>
@@ -378,7 +347,7 @@ export const HighlightBanner = ({ item, onPlay, logoPath }) => {
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
     </HorizontalFade>
   )
 }
@@ -387,12 +356,12 @@ export const TrendingCard = ({ item, onPlay }) => {
   const backdropUrl = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : DEFAULT_POSTER
   return (
     <HorizontalFade>
-      <motion.div className="trending-card" onClick={() => onPlay?.(item)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+      <div className="trending-card" onClick={() => onPlay?.(item)}>
         <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="trending-bg-img" />
         <div className="trending-title">
           <span className="trending-title-text">{item.title || item.name}</span>
         </div>
-      </motion.div>
+      </div>
     </HorizontalFade>
   )
 }
@@ -409,13 +378,13 @@ export const EpisodeCard = ({ item, onPlay }) => {
   const { t } = useLanguage()
   return (
     <HorizontalFade>
-      <motion.div className="episode-card" onClick={() => onPlay?.(item)} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 300 }}>
+      <div className="episode-card" onClick={() => onPlay?.(item)}>
         <div className="episode-thumbnail episode-thumbnail-horizontal">
           <ImageWithCache src={imageUrl} alt={item.name || item.title} className="episode-img" />
         </div>
         <h4 className="episode-title">{item.title || item.name}</h4>
         <p className="episode-info">{item.episode_number ? `${t('episodio')} ${item.episode_number}` : `${t('emExibicao')} • ${year || 'N/A'}`}</p>
-      </motion.div>
+      </div>
     </HorizontalFade>
   )
 }
@@ -437,7 +406,7 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
   }, [item.id])
 
   return (
-    <motion.div className="featured-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <div className="featured-card">
       <div className="featured-poster">
         <ImageWithCache src={backdropUrl} alt={item.title || item.name} className="featured-img" />
       </div>
@@ -452,11 +421,11 @@ export const FeaturedCard = ({ item, onPlay, onInfo }) => {
           <p className="featured-synopsis">{item.overview || t('sinopseIndisponivel')}</p>
         </div>
         <div className="featured-actions">
-          <motion.button className="featured-btn play-btn" onClick={() => onPlay?.(item)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><i className="fas fa-play" /></motion.button>
-          <motion.button className="featured-btn info-btn" onClick={() => onInfo?.(item)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><i className="fas fa-info" /></motion.button>
+          <button className="featured-btn play-btn" onClick={() => onPlay?.(item)}><i className="fas fa-play" /></button>
+          <button className="featured-btn info-btn" onClick={() => onInfo?.(item)}><i className="fas fa-info" /></button>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -465,7 +434,7 @@ export const MovieCard = ({ item }) => {
   const routeType = getRouteType(item)
   return (
     <HorizontalFade>
-      <motion.div className="card-wrapper" onClick={() => router.push(`/${routeType}/${item.id}`)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+      <div className="card-wrapper" onClick={() => router.push(`/${routeType}/${item.id}`)}>
         <div className="card-poster-frame">
           <ImageWithCache 
             src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} 
@@ -473,7 +442,7 @@ export const MovieCard = ({ item }) => {
             className="content-poster" 
           />
         </div>
-      </motion.div>
+      </div>
     </HorizontalFade>
   )
 }
@@ -485,7 +454,7 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
   const { t } = useLanguage()
   const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
   return (
-    <motion.div className="favorite-item" onClick={() => onClick?.(item)} whileHover={{ scale: 1.01 }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
+    <div className="favorite-item" onClick={() => onClick?.(item)}>
       <ImageWithCache 
         src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} 
         alt={item.title} 
@@ -499,8 +468,8 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
           {badgeText}
         </div>
       </div>
-      <motion.button className="favorite-remove" onClick={(e) => { e.stopPropagation(); onRemove?.(item) }} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.8 }}><i className="fas fa-times" /></motion.button>
-    </motion.div>
+      <button className="favorite-remove" onClick={(e) => { e.stopPropagation(); onRemove?.(item) }}><i className="fas fa-times" /></button>
+    </div>
   )
 }
 
@@ -525,7 +494,7 @@ export const SearchResultItem = ({ item, onClick }) => {
   const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
 
   return (
-    <motion.div className="search-result-item" onClick={() => onClick?.(item)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+    <div className="search-result-item" onClick={() => onClick?.(item)}>
       <ImageWithCache src={imageSrc} alt={item.title || item.name} className="search-result-poster" />
       <div className="search-result-content">
         <h3 className="search-result-title">{item.title || item.name}</h3>
@@ -535,36 +504,36 @@ export const SearchResultItem = ({ item, onClick }) => {
           {badgeText}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 export const CategoryCard = ({ category, onClick }) => (
-  <motion.div className="category-card" style={{ background: category.color }} onClick={onClick} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+  <div className="category-card" style={{ background: category.color }} onClick={onClick}>
     <h3 className="category-title">{category.name}</h3>
     <img src={category.image || DEFAULT_POSTER} className="category-thumbnail" alt={category.name} onError={e => { e.target.src = DEFAULT_POSTER }} />
-  </motion.div>
+  </div>
 )
 
 export const SettingsItem = ({ icon, title, description, onClick }) => (
-  <motion.div className="settings-item" onClick={onClick} whileHover={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+  <div className="settings-item" onClick={onClick}>
     <div className="settings-icon"><i className={`fas fa-${icon}`} /></div>
     <div className="settings-content"><h4 className="settings-title">{title}</h4><p className="settings-desc">{description}</p></div>
-  </motion.div>
+  </div>
 )
 
 export const LogoutConfirm = ({ onConfirm, onCancel }) => {
   const { t } = useLanguage()
   return (
     <div className="profile-creation-overlay" onClick={onCancel}>
-      <motion.div className="logout-confirm-modal" onClick={e => e.stopPropagation()} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+      <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
         <h3 className="logout-confirm-title">{t('sairDoPerfil')}</h3>
         <p className="logout-confirm-text">{t('aoSalvar')}</p>
         <div className="logout-confirm-actions">
           <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
           <button className="logout-confirm-btn" onClick={onConfirm}>{t('sairLimpar')}</button>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -628,7 +597,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
 
   return (
-    <motion.div className="profile-fullpage-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+    <div className="profile-fullpage-overlay">
       <div className="profile-top-bar">
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
@@ -651,25 +620,22 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       </div>
 
       <div className="profile-body">
-        <motion.div
+        <div
           className="profile-cover"
           style={bannerStyle}
           onClick={editing ? () => document.getElementById('bannerFileInput').click() : undefined}
-          whileHover={editing ? { opacity: 0.9 } : {}}
         >
           {editing && (
             <div className="cover-edit-icon">
               <i className="fas fa-camera" />
             </div>
           )}
-        </motion.div>
+        </div>
 
         <div className="profile-avatar-wrapper">
-          <motion.div
+          <div
             className={`profile-avatar-circle ${editing ? 'avatar-editable' : ''}`}
             onClick={editing ? () => document.getElementById('avatarFileInput').click() : undefined}
-            whileHover={editing ? { scale: 1.05 } : {}}
-            whileTap={editing ? { scale: 0.95 } : {}}
           >
             {(avatarPreview || userProfile?.avatarUrl) ? (
               <img src={avatarPreview || userProfile?.avatarUrl} alt="" className="profile-avatar-img" />
@@ -681,7 +647,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
                 <i className="fas fa-camera" />
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
 
         <div className="profile-info">
@@ -762,7 +728,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
 
       {showLogout && <LogoutConfirm onConfirm={() => { setShowLogout(false); onLogout() }} onCancel={() => setShowLogout(false)} />}
-    </motion.div>
+    </div>
   )
 }
 
@@ -770,7 +736,7 @@ export const PrivacyModal = ({ onClose }) => {
   const { t } = useLanguage()
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
-      <motion.div className="about-modal" onClick={e => e.stopPropagation()} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="about-title">{t('privacidadeTitulo')}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
@@ -781,7 +747,7 @@ export const PrivacyModal = ({ onClose }) => {
           <p>Utilizamos a API do TMDB para indexação de conteúdo, nenhum dado é enviado a servidores próprios.</p>
           <p>Para dúvidas, entre em contato pelo e-mail yoshikawa_bot@proton.me.</p>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -790,7 +756,7 @@ export const AboutModal = ({ onClose }) => {
   const { t } = useLanguage()
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
-      <motion.div className="about-modal" onClick={e => e.stopPropagation()} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="about-title">{t('sobreTitulo')}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
@@ -805,7 +771,7 @@ export const AboutModal = ({ onClose }) => {
           <p>{t('isencaoTexto')}</p>
           <p><strong>{t('versao')}:</strong> 1.0.93 beta</p>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -814,14 +780,14 @@ export const LanguageModal = ({ onClose }) => {
   const { t, setLanguage, language: currentLang } = useLanguage()
   return (
     <div className="profile-creation-overlay" onClick={onClose}>
-      <motion.div className="about-modal" onClick={e => e.stopPropagation()} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+      <div className="about-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="about-title">{t('linguagemTitulo')}</h2>
           <button className="modal-close-btn" onClick={onClose}><i className="fas fa-times" /></button>
         </div>
         <div className="about-content" style={{ padding: '12px 0' }}>
           {LANGUAGES.map(lang => (
-            <motion.div
+            <div
               key={lang.code}
               style={{
                 padding: '12px 16px',
@@ -835,15 +801,13 @@ export const LanguageModal = ({ onClose }) => {
                 transition: 'background 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
               onClick={() => { setLanguage(lang.code); onClose() }}
-              whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-              whileTap={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
             >
               <span style={{ fontSize: '16px', fontWeight: 600 }}>{lang.label}</span>
               {currentLang === lang.code && <i className="fas fa-check" style={{ color: '#E04E4E' }} />}
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -1348,7 +1312,7 @@ export default function Home() {
 
     return (
       <div className="landing-overlay">
-        <motion.div className="landing-card" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div className="landing-card">
           <div className="featured-poster">
             <img src={imageUrl} alt="Landing" className="featured-img" />
           </div>
@@ -1357,18 +1321,18 @@ export default function Home() {
               <p className="featured-synopsis">{text}</p>
             </div>
             <div className="featured-actions">
-              <motion.button className="featured-btn play-btn" onClick={handlePixGG} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <button className="featured-btn play-btn" onClick={handlePixGG}>
                 <i className="fas fa-hand-holding-heart" />
-              </motion.button>
-              <motion.button className="featured-btn info-btn" onClick={handleInstagram} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              </button>
+              <button className="featured-btn info-btn" onClick={handleInstagram}>
                 <i className="fab fa-instagram" />
-              </motion.button>
+              </button>
             </div>
           </div>
-        </motion.div>
-        <motion.button className="landing-enter-btn" onClick={onEnter} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+        </div>
+        <button className="landing-enter-btn" onClick={onEnter}>
           Entrar
-        </motion.button>
+        </button>
       </div>
     )
   }
@@ -1547,19 +1511,19 @@ export default function Home() {
     <section className="section" style={{ paddingTop: 'clamp(40px,8vw,80px)' }}>
       {!userProfile && (
         <div className="menu-banner-container">
-          <motion.div className="verify-banner" onClick={() => openProfile('create')} style={{ cursor: 'pointer' }} whileHover={{ scale: 1.02 }}>
+          <div className="verify-banner" onClick={() => openProfile('create')} style={{ cursor: 'pointer' }}>
             <span>{t('criePerfilBanner')}</span>
             <i className="fas fa-chevron-right" />
-          </motion.div>
+          </div>
         </div>
       )}
-      <motion.div className="user-card" onClick={() => !userProfile ? openProfile('create') : openProfile('view')} whileHover={{ backgroundColor: '#252525' }}>
+      <div className="user-card" onClick={() => !userProfile ? openProfile('create') : openProfile('view')}>
         <div className="user-avatar" style={{ background: DEFAULT_AVATAR_BG }}>
           {userProfile ? <img src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)} alt={userProfile.name} className="profile-avatar-img" /> : <i className="fas fa-user" style={{ fontSize: 'clamp(18px,3.2vw,27px)', color: '#fff', display: 'block', lineHeight: 1 }} />}
         </div>
         <div className="user-info"><h3 className="user-name">{userProfile ? userProfile.name : t('userPadrao')}</h3>{!userProfile && <p className="user-email">{t('criarPerfil')}</p>}</div>
         {userProfile && <button className="logout-btn" onClick={handleLogoutClick}><i className="fas fa-sign-out-alt" /></button>}
-      </motion.div>
+      </div>
       <div className="settings-card">
         <SettingsItem icon="user-edit" title={userProfile ? t('editarPerfil') : t('criarPerfil')} description={userProfile ? 'Alterar nome, foto e banner' : 'Personalize sua experiência'} onClick={() => openProfile(userProfile ? 'edit' : 'create')} />
         <SettingsItem icon="language" title={t('linguagem')} description={t('selecioneIdioma')} onClick={() => openModal('language')} />
@@ -1903,4 +1867,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-    }
+          }
