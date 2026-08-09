@@ -879,11 +879,16 @@ export default function WatchPage() {
             <ImageWithCache className="hero-bg" src={content.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : DEFAULT_BACKDROP} alt="" />
             <div className="hero-gradient" />
             <div className="top-bar">
-              <button className="glass-btn circle" onClick={handleBack}>
+              <button
+                className="glass-btn"
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
+                onClick={handleBack}
+              >
                 <i className="fas fa-arrow-left" />
               </button>
               <button
-                className="glass-btn circle"
+                className="glass-btn"
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
                 title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
               >
@@ -1195,4 +1200,4 @@ export default function WatchPage() {
       )}
     </>
   )
-  }
+    }
