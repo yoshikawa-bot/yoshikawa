@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { createClient } from '@supabase/supabase-js'
 import {
-  ArrowLeft, UserX, Users, Play, CalendarDays, ThumbsUp, Heart, Share2,
-  Check, ChevronUp, ChevronDown, Lock, Clock, ArrowUpDown, AlertTriangle,
-  X, SkipBack, SkipForward, DoorClosed, Copy, MessagesSquare, Send,
-  Link2Off, Ban
+  ArrowLeft, UserX, Users, Play, CalendarDays,
+  ThumbsUp, Heart, Share2, Check,
+  ChevronUp, ChevronDown, ArrowUpDown,
+  Clock, X, SkipBack, SkipForward,
+  MessageSquare, DoorClosed, Unlink, Lock, Copy, Send,
+  TriangleAlert, UserRoundX
 } from 'lucide-react'
 
 const supabase = createClient(
@@ -760,6 +762,11 @@ export default function WatchPage() {
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
   const showContent = content && !hasError
 
+  // Tamanhos padrão de ícone
+  const IC = 20   // geral
+  const IC_SM = 16 // pequeno (badges, botões compactos)
+  const IC_LG = 28 // social bar
+
   return (
     <>
       <Head>
@@ -798,32 +805,31 @@ export default function WatchPage() {
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,2.6vw,22px);display:flex;flex-direction:column;gap:8px}
           .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,2.6vw,22px);z-index:10;display:flex;justify-content:space-between;align-items:center}
-          .continue-btn{display:flex;align-items:center;gap:4px;padding:4px 10px;background:${CONTINUE_COLOR};border-radius:16px;color:#fff;font-weight:600;font-size:clamp(10px,1.6vw,12px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .continue-btn{display:flex;align-items:center;gap:6px;padding:4px 12px;background:${CONTINUE_COLOR};border-radius:16px;color:#fff;font-weight:600;font-size:clamp(10px,1.6vw,12px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
           .continue-btn:active{transform:scale(0.97)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
           .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#f44336}
-          .hero-airing-badge{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
-          .hero-airing-badge svg{width:9px;height:9px;flex-shrink:0}
+          .hero-airing-badge{display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
           .hero-year-badge{background:#7E57C2;color:#fff;flex-shrink:0}
           .hero-genres{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
           .social-bar{display:flex;justify-content:space-around;padding:clamp(12px,2vw,16px) clamp(16px,2.6vw,22px)}
-          .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
-          .social-item svg{width:clamp(18px,3vw,22px);height:clamp(18px,3vw,22px);transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .social-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
+          .social-item svg{transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
           .social-item:active svg{transform:scale(0.9)}
-          .social-item.liked svg{color:#2196F3}
-          .social-item.favorited svg{color:#FF5B5B}
-          .social-item.copied svg{color:#4CAF50}
+          .social-item.liked{color:#2196F3}
+          .social-item.favorited{color:#FF5B5B}
+          .social-item.copied{color:#4CAF50}
           .synopsis{padding:0 clamp(16px,2.6vw,22px) 16px}
           .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;color:#C0C0C0}
           .synopsis p.expanded{-webkit-line-clamp:unset}
-          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
-          .synopsis-toggle svg{width:13px;height:13px}
+          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
           .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
           .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s;outline:none;-webkit-appearance:none;-moz-appearance:none;appearance:none}
           .episodes-toolbar select:focus,.episodes-toolbar button:focus{outline:none;border:none;box-shadow:none}
           .episodes-toolbar select{padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
+          .episodes-toolbar button{display:flex;align-items:center;gap:6px}
           .episodes-list{padding:0 clamp(16px,2.6vw,22px) 80px;display:flex;flex-direction:column;gap:4px}
           .ep-card{display:flex;gap:10px;padding:6px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
           .ep-card:hover{background:rgba(255,255,255,0.03)}
@@ -851,6 +857,7 @@ export default function WatchPage() {
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
           .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(20,20,20,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:clamp(14px,2vw,20px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
           .chat-header{display:flex;justify-content:space-between;align-items:center;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-size:clamp(12px,1.8vw,14px);font-weight:600;color:#fff}
+          .chat-header-title{display:flex;align-items:center;gap:6px}
           .chat-header-btns{display:flex;gap:6px}
           .chat-header-btns button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s}
           .chat-header-btns button:active{background:rgba(255,255,255,0.2)}
@@ -865,7 +872,7 @@ export default function WatchPage() {
           .chat-input-bar{display:flex;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);gap:8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
           .chat-input-bar input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none;transition:border-color 0.2s}
           .chat-input-bar input:focus{border-color:rgba(255,255,255,0.2)}
-          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
           .chat-send-btn:active{transform:scale(0.92)}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
           .room-closed-message,.room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
@@ -889,30 +896,34 @@ export default function WatchPage() {
             <div className="top-bar">
               <button
                 className="glass-btn"
-                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
                 onClick={handleBack}
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={IC} strokeWidth={2} />
               </button>
               <button
                 className="glass-btn"
-                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
                 title={disableFriendMode ? 'Ativar modo amigos' : 'Desativar modo amigos'}
               >
-                {disableFriendMode ? <UserX size={18} /> : <Users size={18} />}
+                {disableFriendMode
+                  ? <UserX size={IC} strokeWidth={2} />
+                  : <Users size={IC} strokeWidth={2} />
+                }
               </button>
             </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}>
-                <Play size={10} /> {type === 'tv' ? (watchedEps.size > 0 ? 'Continuar' : 'Assistir') : 'Assistir'}
+                <Play size={10} fill="#fff" strokeWidth={0} />
+                {type === 'tv' ? (watchedEps.size > 0 ? 'Continuar' : 'Assistir') : 'Assistir'}
               </button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
                 <span className={`hero-badge ${ratingClass}`}>{ratingText}</span>
                 {airingDay && (
                   <span className="hero-airing-badge">
-                    <CalendarDays size={9} /> {airingDay}
+                    <CalendarDays size={11} strokeWidth={2} /> {airingDay}
                   </span>
                 )}
                 <span className="hero-badge hero-year-badge">{new Date(releaseDate).getFullYear()}</span>
@@ -920,42 +931,61 @@ export default function WatchPage() {
               </div>
             </div>
           </div>
+
+          {/* Social bar */}
           <div className="social-bar">
             <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}>
-              <ThumbsUp size={22} color="currentColor" />
+              <ThumbsUp
+                size={IC_LG}
+                strokeWidth={1.8}
+                fill={isLiked ? 'currentColor' : 'none'}
+              />
               <span>{isLiked ? 'Curtiu' : 'Curtir'}</span>
             </button>
             <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}>
-              <Heart size={22} fill={isFavorite ? 'currentColor' : 'none'} color="currentColor" />
+              <Heart
+                size={IC_LG}
+                strokeWidth={1.8}
+                fill={isFavorite ? 'currentColor' : 'none'}
+              />
               <span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span>
             </button>
             <button className={`social-item ${linkCopied ? 'copied' : ''}`} onClick={copyPageLink}>
-              {linkCopied ? <Check size={22} color="currentColor" /> : <Share2 size={22} color="currentColor" />}
+              {linkCopied
+                ? <Check size={IC_LG} strokeWidth={2} />
+                : <Share2 size={IC_LG} strokeWidth={1.8} />
+              }
               <span>{linkCopied ? 'Link copiado' : 'Compartilhar'}</span>
             </button>
           </div>
+
           <div className="synopsis">
             <p ref={synopsisRef} className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {synopsisOverflow && (
               <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
-                {synopsisExpanded ? 'Ver menos' : 'Ver mais'}{' '}
-                {synopsisExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {synopsisExpanded ? 'Ver menos' : 'Ver mais'}
+                {synopsisExpanded
+                  ? <ChevronUp size={IC_SM} strokeWidth={2} />
+                  : <ChevronDown size={IC_SM} strokeWidth={2} />
+                }
               </button>
             )}
           </div>
+
           {!disableFriendMode && (
             <div style={{ padding: '0 clamp(16px,2.6vw,22px) 16px' }}>
               {isLoggedIn ? (
                 <button className="room-btn" onClick={createRoomAndRedirect}>
-                  <Users size={16} /> Assistir com amigos
+                  <Users size={IC_SM} strokeWidth={2} /> Assistir com amigos
                 </button>
               ) : (
                 <button className="room-btn" disabled>
-                  <Lock size={16} /> Faça login para criar salas
+                  <Lock size={IC_SM} strokeWidth={2} /> Faça login para criar salas
                 </button>
               )}
             </div>
           )}
+
           {type === 'tv' ? (
             <>
               <div className="episodes-toolbar">
@@ -963,7 +993,8 @@ export default function WatchPage() {
                   {Array.from({ length: content.number_of_seasons || 1 }, (_, i) => i + 1).map(n => <option key={n} value={n}>Temporada {n}</option>)}
                 </select>
                 <button onClick={() => setEpisodeOrder(o => o === 'asc' ? 'desc' : 'asc')}>
-                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'} <ArrowUpDown size={14} />
+                  {episodeOrder === 'asc' ? 'Antigos' : 'Recentes'}
+                  <ArrowUpDown size={IC_SM} strokeWidth={2} />
                 </button>
               </div>
               <div className="episodes-list">
@@ -975,7 +1006,7 @@ export default function WatchPage() {
                       <div className={`ep-thumb ${watched ? 'watched' : ''}`}>
                         {ep.still_path ? <ImageWithCache src={`https://image.tmdb.org/t/p/w300${ep.still_path}`} alt="" /> : (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#1a1a1a', color: '#888', fontSize: 11, fontWeight: 500, gap: 6 }}>
-                            <Clock size={12} /> Em breve
+                            <Clock size={12} strokeWidth={2} /> Em breve
                           </div>
                         )}
                         {watched && <div className="watched-label">Assistido</div>}
@@ -1000,7 +1031,7 @@ export default function WatchPage() {
         </>
       ) : hasError ? (
         <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', flexDirection: 'column', gap: 16, padding: 20 }}>
-          <AlertTriangle size={48} color="#F05454" />
+          <TriangleAlert size={48} color="#F05454" strokeWidth={1.5} />
           <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Erro ao carregar conteúdo</p>
           <Link href="/" style={{ color: '#2196F3', textDecoration: 'none', fontSize: 14 }}>Voltar ao início</Link>
         </div>
@@ -1020,10 +1051,13 @@ export default function WatchPage() {
                     onClick={() => setDisableFriendMode(!disableFriendMode)}
                     title={disableFriendMode ? 'Ativar modo amigos' : 'Desativar modo amigos'}
                   >
-                    {disableFriendMode ? <UserX size={18} /> : <Users size={18} />}
+                    {disableFriendMode
+                      ? <UserX size={IC} strokeWidth={2} />
+                      : <Users size={IC} strokeWidth={2} />
+                    }
                   </button>
                   <button className="glass-btn circle" onClick={() => setIsPlaying(false)}>
-                    <X size={18} />
+                    <X size={IC} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -1049,7 +1083,7 @@ export default function WatchPage() {
                     }}
                     disabled={episode === 1}
                   >
-                    <SkipBack size={14} /> Anterior
+                    <SkipBack size={IC_SM} strokeWidth={2} /> Anterior
                   </button>
                   <button
                     className="glass-btn"
@@ -1062,7 +1096,7 @@ export default function WatchPage() {
                     }}
                     disabled={!seasonData || episode >= seasonData.episodes.length}
                   >
-                    Próximo <SkipForward size={14} />
+                    Próximo <SkipForward size={IC_SM} strokeWidth={2} />
                   </button>
                 </div>
               )}
@@ -1074,17 +1108,17 @@ export default function WatchPage() {
                   roomClosed ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span><MessagesSquare size={14} /> Chat</span>
+                        <span className="chat-header-title"><MessageSquare size={14} strokeWidth={2} /> Chat</span>
                       </div>
                       <div className="room-closed-message">
-                        <DoorClosed size={32} color="#FF6B6B" />
+                        <DoorClosed size={32} color="#FF6B6B" strokeWidth={1.5} />
                         <span>O chat foi encerrado e não está mais disponível.</span>
                       </div>
                     </div>
                   ) : roomLink && !showChat ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span><Share2 size={14} /> Compartilhar sala</span>
+                        <span className="chat-header-title"><Share2 size={14} strokeWidth={2} /> Compartilhar sala</span>
                         {isRoomCreator && (
                           <div className="chat-header-btns">
                             <button className="danger-btn" onClick={endRoom}>Encerrar</button>
@@ -1094,14 +1128,17 @@ export default function WatchPage() {
                       <div className="share-link-area">
                         <p>Envie o link para assistir junto:</p>
                         <button className="copy-btn" onClick={handleCopyRoomLink}>
-                          {copiedRoomLink ? <><Check size={14} /> Copiado</> : <><Copy size={14} /> Copiar link</>}
+                          {copiedRoomLink
+                            ? <><Check size={14} strokeWidth={2} /> Copiado</>
+                            : <><Copy size={14} strokeWidth={2} /> Copiar link</>
+                          }
                         </button>
                       </div>
                     </div>
                   ) : showChat ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span><MessagesSquare size={14} /> Chat</span>
+                        <span className="chat-header-title"><MessageSquare size={14} strokeWidth={2} /> Chat</span>
                         <div className="chat-header-btns">
                           {isRoomCreator && (
                             <button className="danger-btn" onClick={endRoom}>Encerrar</button>
@@ -1145,7 +1182,7 @@ export default function WatchPage() {
                                 onClick={confirmName}
                                 disabled={!chatDisplayName.trim()}
                               >
-                                <Check size={16} />
+                                <Check size={16} strokeWidth={2.5} />
                               </button>
                             </>
                           ) : (
@@ -1159,7 +1196,7 @@ export default function WatchPage() {
                                 maxLength={MAX_MESSAGE_LENGTH}
                               />
                               <button className="chat-send-btn" onClick={sendMessage}>
-                                <Send size={16} />
+                                <Send size={16} strokeWidth={2} />
                               </button>
                             </>
                           )}
@@ -1168,32 +1205,32 @@ export default function WatchPage() {
                       {roomClosed && (
                         <div className="chat-input-bar" style={{ opacity: 0.5, pointerEvents: 'none' }}>
                           <input type="text" placeholder="Chat encerrado" disabled />
-                          <button className="chat-send-btn" disabled><Lock size={16} /></button>
+                          <button className="chat-send-btn" disabled><Lock size={16} strokeWidth={2} /></button>
                         </div>
                       )}
                     </div>
                   ) : (
                     <button className="room-btn" onClick={() => setShowChat(true)}>
-                      <MessagesSquare size={16} /> Abrir chat
+                      <MessageSquare size={IC_SM} strokeWidth={2} /> Abrir chat
                     </button>
                   )
                 ) : roomInvalid ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span><MessagesSquare size={14} /> Chat</span>
+                      <span className="chat-header-title"><MessageSquare size={14} strokeWidth={2} /> Chat</span>
                     </div>
                     <div className="room-closed-message">
-                      <Link2Off size={32} color="#FF6B6B" />
+                      <Unlink size={32} color="#FF6B6B" strokeWidth={1.5} />
                       <span>Este link é inválido ou o chat foi encerrado.</span>
                     </div>
                   </div>
                 ) : roomFull ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span><MessagesSquare size={14} /> Chat</span>
+                      <span className="chat-header-title"><MessageSquare size={14} strokeWidth={2} /> Chat</span>
                     </div>
                     <div className="room-full-message">
-                      <Ban size={32} color="#FF6B6B" />
+                      <UserRoundX size={32} color="#FF6B6B" strokeWidth={1.5} />
                       <span>Chat cheio (máximo {MAX_ROOM_USERS} pessoas).</span>
                     </div>
                   </div>
@@ -1203,7 +1240,7 @@ export default function WatchPage() {
                     onClick={createRoomAndRedirect}
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <Users size={16} /> Assistir com amigos
+                    <Users size={IC_SM} strokeWidth={2} /> Assistir com amigos
                   </button>
                 ) : (
                   <button
@@ -1211,7 +1248,7 @@ export default function WatchPage() {
                     disabled
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <Lock size={16} /> Faça login para criar salas
+                    <Lock size={IC_SM} strokeWidth={2} /> Faça login para criar salas
                   </button>
                 )}
               </div>
@@ -1221,4 +1258,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
