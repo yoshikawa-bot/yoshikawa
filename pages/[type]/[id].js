@@ -760,6 +760,7 @@ export default function WatchPage() {
         <title>{content ? (content.title || content.name) : 'Yoshikawa'} - Reproduzindo</title>
         <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="color-scheme" content="dark" />
         <meta property="og:title" content={content ? (content.title || content.name) : 'Yoshikawa Streaming'} />
         <meta property="og:description" content={content?.overview?.slice(0, 200) || 'Assista no Yoshikawa Streaming'} />
         <meta property="og:image" content={content?.backdrop_path ? `https://image.tmdb.org/t/p/w780${content.backdrop_path}` : DEFAULT_BACKDROP} />
@@ -768,8 +769,9 @@ export default function WatchPage() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-y:auto}
+          *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;forced-color-adjust:none}
+          html{color-scheme:dark}
+          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-y:auto;forced-color-adjust:none}
           a{color:inherit;text-decoration:none}
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
           img{max-width:100%;height:auto;display:block}
@@ -833,7 +835,7 @@ export default function WatchPage() {
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
-          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),background 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;white-space:nowrap;text-decoration:none}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),background 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;white-space:nowrap;text-decoration:none;forced-color-adjust:none}
           .glass-btn:active{transform:scale(0.97);background:rgba(180,180,180,0.4)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
@@ -881,14 +883,14 @@ export default function WatchPage() {
             <div className="top-bar">
               <button
                 className="glass-btn"
-                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
                 onClick={handleBack}
               >
                 <i className="fas fa-arrow-left" />
               </button>
               <button
                 className="glass-btn"
-                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center' }}
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
                 title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
               >
