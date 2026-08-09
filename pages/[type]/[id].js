@@ -809,7 +809,7 @@ export default function WatchPage() {
           .social-item.favorited i{color:#FF5B5B}
           .social-item.copied i{color:#4CAF50}
           .synopsis{padding:0 clamp(16px,2.6vw,22px) 16px}
-          .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0;color:#C0C0C0}
+          .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;color:#C0C0C0}
           .synopsis p.expanded{-webkit-line-clamp:unset}
           .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
           .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
@@ -891,7 +891,9 @@ export default function WatchPage() {
               </button>
             </div>
             <div className="hero-content">
-              <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" style={{fontSize:'10px'}} /> {type === 'tv' ? 'Continuar' : 'Assistir'}</button>
+              <button className="continue-btn" onClick={handleContinue}>
+                <i className="fas fa-play" style={{fontSize:'10px'}} /> {type === 'tv' ? (watchedEps.size > 0 ? 'Continuar' : 'Assistir') : 'Assistir'}
+              </button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
                 <span className={`hero-badge ${ratingClass}`}>{ratingText}</span>
@@ -1193,4 +1195,4 @@ export default function WatchPage() {
       )}
     </>
   )
-      }
+    }
