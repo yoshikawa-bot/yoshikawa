@@ -280,6 +280,23 @@ export const LoadingScreen = ({ onComplete }) => {
 export const ContentLoader = () => <div className="content-loader"><div className="loading-spinner" /></div>
 
 export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick, showFavoritesTitle }) => {
+  const circleBtnStyle = {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    background: 'rgba(128,128,128,0.3)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontSize: '18px',
+    transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    cursor: 'pointer'
+  }
+
   return (
     <header className="header">
       <div className="header-left">
@@ -287,18 +304,18 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
         {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
       </div>
       <div className="header-actions">
-        <button className="header-btn" onClick={onSearchClick} style={{ width: '40px', height: '40px' }}>
-          <i className="fas fa-search" style={{ fontSize: '40px' }} />
+        <button onClick={onSearchClick} style={circleBtnStyle}>
+          <i className="fas fa-search" />
         </button>
-        <button className="header-btn profile-btn" style={{ width: '40px', height: '40px', background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
+        <button onClick={onProfileClick} style={circleBtnStyle}>
           {userProfile ? (
             <img
               src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)}
               alt={userProfile.name}
-              className="profile-avatar-img"
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
             />
           ) : (
-            <i className="fas fa-user" style={{ fontSize: '40px', color: '#fff', display: 'block', lineHeight: 1 }} />
+            <i className="fas fa-user" />
           )}
         </button>
       </div>
@@ -1623,10 +1640,6 @@ export default function Home() {
           .header-logo{object-fit:contain;width:clamp(42px,6.3vw,63px);height:clamp(42px,6.3vw,63px);cursor:pointer}
           .header-favorites-text{font-size:clamp(14px,2.2vw,18px);font-weight:700;color:#ffffff;white-space:nowrap}
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px);margin-left:auto}
-          .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
-          .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
-          .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
 
@@ -1869,4 +1882,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-            }
+}
