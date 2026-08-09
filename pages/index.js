@@ -94,7 +94,7 @@ const ImageWithCache = ({ src, alt, className, style, ...props }) => {
   return (
     <div
       ref={imgRef}
-      className={`img-container ${className || ''}`}
+      className={`img-container ${className || ''} ${!loaded && inView ? 'shimmer' : ''}`}
       style={{
         position: 'relative',
         overflow: 'hidden',
@@ -982,9 +982,11 @@ export default function Home() {
 
   useEffect(() => {
     if (showSearch && !searchQuery.trim() && !activeCategoryGenreId) {
-      fetchCategoryImages()
+      if (Object.keys(categoryImages).length === 0) {
+        fetchCategoryImages()
+      }
     }
-  }, [showSearch, searchQuery, activeCategoryGenreId])
+  }, [showSearch, searchQuery, activeCategoryGenreId, categoryImages])
 
   const deduplicateById = (items) => {
     const seen = new Set()
@@ -997,6 +999,7 @@ export default function Home() {
   }
 
   const fetchCategoryImages = async () => {
+    if (Object.keys(categoryImages).length > 0) return
     const newImages = {}
     const usedImageUrls = new Set()
     await Promise.all(CATEGORIES.map(async (cat) => {
@@ -1600,6 +1603,16 @@ export default function Home() {
           .content-loader{display:flex;align-items:center;justify-content:center;padding:clamp(60px,10vw,100px) 0}
           @keyframes spin{to{transform:rotate(360deg)}}
 
+          .shimmer {
+            background: linear-gradient(90deg, #1B1B1B 25%, #2a2a2a 50%, #1B1B1B 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+          }
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+
           .img-container{background:#1B1B1B}
           .img-visible{opacity:1!important}
 
@@ -1711,7 +1724,7 @@ export default function Home() {
 
           .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(8px,1.3vw,13px);padding:0 clamp(16px,2.6vw,22px);margin-top:clamp(20px,3vw,30px)}
           .category-card{height:clamp(120px,18vw,180px);border-radius:clamp(18px,3vw,26px);position:relative;overflow:hidden;cursor:pointer}
-          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1}
+          .category-title{position:absolute;left:clamp(16px,3vw,24px);bottom:clamp(30px,5vw,48px);font-size:clamp(14px,2.5vw,20px);font-weight:700;color:#ffffff;z-index:1;text-shadow:0 2px 8px rgba(0,0,0,0.6)}
           .category-thumbnail{position:absolute;right:-5px;top:10px;width:clamp(80px,15vw,130px);height:clamp(110px,20vw,180px);border-radius:clamp(12px,2vw,18px);transform:rotate(18deg);object-fit:cover;background:#1B1B1B}
 
           .menu-banner-container{padding:0 clamp(16px,3vw,28px);margin-top:clamp(16px,3vw,24px)}
@@ -1854,4 +1867,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-        }
+  }
