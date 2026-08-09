@@ -791,8 +791,8 @@ export default function WatchPage() {
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,2.6vw,22px);display:flex;flex-direction:column;gap:8px}
           .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,2.6vw,22px);z-index:10;display:flex;justify-content:space-between;align-items:center}
-          .play-circle-btn{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);border-radius:50%;background:${CONTINUE_COLOR};color:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,2.5vw,20px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
-          .play-circle-btn:active{transform:scale(0.92)}
+          .continue-btn{display:flex;align-items:center;gap:4px;padding:4px 10px;background:${CONTINUE_COLOR};border-radius:16px;color:#fff;font-weight:600;font-size:clamp(10px,1.6vw,12px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .continue-btn:active{transform:scale(0.97)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-badge{padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
@@ -891,7 +891,7 @@ export default function WatchPage() {
               </button>
             </div>
             <div className="hero-content">
-              <button className="play-circle-btn" onClick={handleContinue}><i className="fas fa-play" /></button>
+              <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" style={{fontSize:'10px'}} /> {type === 'tv' ? 'Continuar' : 'Assistir'}</button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
                 <span className={`hero-badge ${ratingClass}`}>{ratingText}</span>
@@ -1193,4 +1193,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+    }
