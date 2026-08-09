@@ -8,6 +8,7 @@ const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jp
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 const DEFAULT_PROFILE_COLOR = '#FF6B6B'
 const DEFAULT_AVATAR_BG = '#505050'
+const DEFAULT_BANNER_IMAGE = 'https://yoshikawa-bot.github.io/cache/images/af150ea9.jpg'
 
 const GENRE_IMAGES = {
   12: 'https://image.tmdb.org/t/p/w500/8Y43POKjjKDGI9MH89NW0NAzzp8.jpg',
@@ -588,9 +589,19 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
     setEditing(false)
   }
 
+  const handleRemoveAvatar = (e) => {
+    e.stopPropagation()
+    setAvatarPreview(null)
+  }
+
+  const handleRemoveBanner = (e) => {
+    e.stopPropagation()
+    setBannerPreview(null)
+  }
+
   const bannerStyle = (bannerPreview || userProfile?.bannerUrl)
-    ? { backgroundImage: `url(${bannerPreview || userProfile?.bannerUrl})` }
-    : { background: DEFAULT_PROFILE_COLOR }
+    ? { backgroundImage: `url(${bannerPreview || userProfile?.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { backgroundImage: `url(${DEFAULT_BANNER_IMAGE})`, backgroundSize: 'cover', backgroundPosition: 'center' }
 
   const displayUsername = userProfile?.username || username || (userProfile?.name ? userProfile.name.toLowerCase().replace(/\s/g, '') : 'user')
   const moviesCount = favorites?.filter(f => f.media_type === 'movie' || getMediaType(f) === 'movie').length || 0
@@ -626,9 +637,16 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
           onClick={editing ? () => document.getElementById('bannerFileInput').click() : undefined}
         >
           {editing && (
-            <div className="cover-edit-icon">
-              <i className="fas fa-camera" />
-            </div>
+            <>
+              <div className="cover-edit-icon">
+                <i className="fas fa-camera" />
+              </div>
+              {(bannerPreview || userProfile?.bannerUrl) && (
+                <button className="cover-remove-icon" onClick={handleRemoveBanner}>
+                  <i className="fas fa-trash" />
+                </button>
+              )}
+            </>
           )}
         </div>
 
@@ -643,9 +661,16 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               <img src={getAvatarUrl(name || '?')} alt="" className="profile-avatar-img" />
             )}
             {editing && (
-              <div className="avatar-edit-overlay">
-                <i className="fas fa-camera" />
-              </div>
+              <>
+                <div className="avatar-edit-overlay">
+                  <i className="fas fa-camera" />
+                </div>
+                {(avatarPreview || userProfile?.avatarUrl) && (
+                  <button className="avatar-remove-icon" onClick={handleRemoveAvatar}>
+                    <i className="fas fa-trash" />
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1547,11 +1572,12 @@ export default function Home() {
           <title>Yoshikawa Streaming</title>
           <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <meta name="color-scheme" content="only light" />
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
           <style>{`
-            *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-            html{scroll-behavior:smooth}
+            *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;forced-color-adjust:none;-webkit-forced-color-adjust:none}
+            html{scroll-behavior:smooth;color-scheme:only light}
             body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
             a{color:inherit;text-decoration:none}
             button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
@@ -1585,11 +1611,12 @@ export default function Home() {
         <title>Yoshikawa Streaming</title>
         <link rel="icon" href="https://yoshikawa-bot.github.io/cache/images/a72f60f7.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="color-scheme" content="only light" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
-          *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-          html{scroll-behavior:smooth}
+          *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;forced-color-adjust:none;-webkit-forced-color-adjust:none}
+          html{scroll-behavior:smooth;color-scheme:only light}
           body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;font-size:16px;min-height:100vh;overflow-y:auto;overflow-x:hidden}
           a{color:inherit;text-decoration:none}
           button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
@@ -1623,7 +1650,7 @@ export default function Home() {
           .header-actions{display:flex;align-items:center;gap:clamp(16px,3vw,28px);margin-left:auto}
           .header-btn{width:clamp(28px,4vw,34px);height:clamp(28px,4vw,34px);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:clamp(18px,3vw,24px);transition:opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
           .header-btn:hover{opacity:0.8}
-          .profile-btn{width:clamp(32px,4.5vw,42px);height:clamp(32px,4.5vw,42px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
+          .profile-btn{width:clamp(36px,5vw,48px);height:clamp(36px,5vw,48px);border-radius:50%;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
           .profile-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
           .container{padding-top:clamp(60px,8vw,90px);padding-bottom:clamp(70px,9vw,96px)}
@@ -1765,10 +1792,14 @@ export default function Home() {
           .profile-cover{width:100%;height:160px;background-size:cover;background-position:center;position:relative;display:flex;align-items:center;justify-content:center}
           .cover-edit-icon{width:48px;height:48px;border-radius:50%;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);font-size:22px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
           .cover-edit-icon:active{transform:scale(0.95)}
+          .cover-remove-icon{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;z-index:5;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .cover-remove-icon:active{transform:scale(0.9)}
           .profile-avatar-wrapper{display:flex;justify-content:flex-start;padding-left:20px;margin-top:-50px;position:relative;z-index:2}
           .profile-avatar-circle{width:100px;height:100px;border-radius:50%;border:4px solid #101010;overflow:hidden;position:relative;background:#505050}
           .avatar-editable{cursor:pointer}
           .avatar-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px}
+          .avatar-remove-icon{position:absolute;bottom:4px;right:4px;width:28px;height:28px;border-radius:50%;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;cursor:pointer;z-index:5;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .avatar-remove-icon:active{transform:scale(0.9)}
           .profile-info{padding:8px 24px 0}
           .profile-create-hint{font-size:14px;color:#888;text-align:center;margin:12px 0 0;padding:0 8px}
           .profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px}
@@ -1867,4 +1898,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-  }
+          }
