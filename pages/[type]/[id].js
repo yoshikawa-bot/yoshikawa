@@ -18,6 +18,8 @@ const MAX_MESSAGE_LENGTH = 500
 const CONTINUE_COLOR = '#F05454'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
+const DAYS_OF_WEEK = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+
 const loadedImageCache = new Set()
 const observedElements = new Map()
 
@@ -148,10 +150,12 @@ export default function WatchPage() {
   const [isFavorite, setIsFavorite] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [synopsisExpanded, setSynopsisExpanded] = useState(false)
+  const [synopsisOverflow, setSynopsisOverflow] = useState(false)
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
   const [certification, setCertification] = useState(null)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [airingDay, setAiringDay] = useState(null)
 
   const [roomId, setRoomId] = useState(null)
   const [messages, setMessages] = useState([])
@@ -181,6 +185,7 @@ export default function WatchPage() {
   const roomCreatorRef = useRef(false)
   const lastMessageTimeRef = useRef(0)
   const roomCloseTimeoutRef = useRef(null)
+  const synopsisRef = useRef(null)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
@@ -384,6 +389,13 @@ export default function WatchPage() {
     }
   }, [isPlaying])
 
+  useEffect(() => {
+    if (!synopsisExpanded && synopsisRef.current) {
+      const el = synopsisRef.current
+      setSynopsisOverflow(el.scrollHeight > el.clientHeight)
+    }
+  }, [content?.overview, synopsisExpanded])
+
   const announceEntry = async (name) => {
     if (!roomId || !name) return
     await supabase.from('messages').insert({
@@ -538,7 +550,7 @@ export default function WatchPage() {
     const link = `${window.location.origin}/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
     setRoomId(newRoomId)
-    setShowChat(true)
+    setShowChat(false) // show share link first
     setIsRoomCreator(true)
     roomCreatorRef.current = true
     setIsPlaying(true)
@@ -550,6 +562,11 @@ export default function WatchPage() {
       setCopiedRoomLink(true)
       setTimeout(() => setCopiedRoomLink(false), 2000)
     }
+  }
+
+  const goToChat = () => {
+    setShowChat(true)
+    setRoomLink('')
   }
 
   const confirmName = () => {
@@ -619,19 +636,29 @@ export default function WatchPage() {
     setAllSeasonsData({})
     setWatchedEps(new Set())
     setCertification(null)
+    setAiringDay(null)
 
     const load = async () => {
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=external_ids`)
+        const append = type === 'tv' ? 'external_ids,next_episode_to_air' : 'external_ids'
+        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=pt-BR&append_to_response=${append}`)
         if (!res.ok) throw new Error('Erro na API')
         const data = await res.json()
         setContent(data)
+
         if (type === 'tv') {
           try { const w = localStorage.getItem(`yoshikawaWatched_${id}`); if (w) setWatchedEps(new Set(JSON.parse(w))) } catch (e) {}
           const last = getLastWatchedEpisode()
           setSeason(last.season)
           setEpisode(last.episode)
           await fetchSeasonData(id, last.season)
+
+          // Próximo episódio a ser exibido
+          if (data.next_episode_to_air?.air_date) {
+            const airDate = new Date(data.next_episode_to_air.air_date + 'T00:00:00')
+            const dayIndex = airDate.getDay()
+            setAiringDay(DAYS_OF_WEEK[dayIndex])
+          }
         }
         checkFavorite(data)
         try { const liked = localStorage.getItem(`yoshikawaLiked_${id}`); setIsLiked(liked === 'true') } catch (e) {}
@@ -746,7 +773,6 @@ export default function WatchPage() {
   const ratingClass = getRatingClass(certification || (content?.adult ? '18' : 'L'))
 
   const orderedEps = seasonData?.episodes ? (episodeOrder === 'asc' ? seasonData.episodes : [...seasonData.episodes].reverse()) : []
-  const hasLongSynopsis = content?.overview && content.overview.length > 200
   const showContent = content && !hasError
 
   return (
@@ -791,7 +817,10 @@ export default function WatchPage() {
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-rating{padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff}
-          .rating-L{background:#4CAF50}.rating-10{background:#4CAF50}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#E04E4E}.rating-18{background:#f44336}
+          .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#000000}
+          .hero-airing{display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;background:#64B5F6}
+          .hero-airing i{font-size:10px}
+          .hero-genres{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;display:inline-block;vertical-align:middle}
           .social-bar{display:flex;justify-content:space-around;padding:clamp(12px,2vw,16px) clamp(16px,2.6vw,22px)}
           .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
           .social-item i{font-size:clamp(18px,3vw,22px);transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
@@ -802,9 +831,9 @@ export default function WatchPage() {
           .synopsis{padding:0 clamp(16px,2.6vw,22px) 16px}
           .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0;color:#C0C0C0}
           .synopsis p.expanded{-webkit-line-clamp:unset}
-          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;transition:color 0.2s}
+          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
           .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
-          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s}
+          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer}
           .episodes-toolbar select{appearance:none;padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
           .episodes-list{padding:0 clamp(16px,2.6vw,22px) 80px;display:flex;flex-direction:column;gap:4px}
           .ep-card{display:flex;gap:10px;padding:6px 4px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
@@ -855,6 +884,8 @@ export default function WatchPage() {
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
           .copy-btn:active{transform:scale(0.97)}
+          .open-chat-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:background 0.2s}
+          .open-chat-btn:active{background:rgba(255,255,255,0.2)}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -885,7 +916,12 @@ export default function WatchPage() {
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
                 <span className={`hero-rating ${ratingClass}`}>{ratingText}</span>
-                <span>{genres}</span>
+                {airingDay && (
+                  <span className="hero-airing">
+                    <i className="fas fa-calendar-alt" /> {airingDay}
+                  </span>
+                )}
+                <span className="hero-genres" title={genres}>{genres}</span>
                 <span>• {new Date(releaseDate).getFullYear()}</span>
               </div>
             </div>
@@ -899,8 +935,12 @@ export default function WatchPage() {
             </button>
           </div>
           <div className="synopsis">
-            <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
-            {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
+            <p ref={synopsisRef} className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
+            {synopsisOverflow && (
+              <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>
+                {synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} />
+              </button>
+            )}
           </div>
           {!disableFriendMode && (
             <div style={{ padding: '0 clamp(16px,2.6vw,22px) 16px' }}>
@@ -1036,18 +1076,23 @@ export default function WatchPage() {
                         <span>O chat foi encerrado e não está mais disponível.</span>
                       </div>
                     </div>
-                  ) : roomLink && isRoomCreator ? (
+                  ) : roomLink && !showChat ? (
                     <div className="chat-container">
                       <div className="chat-header">
                         <span><i className="fas fa-share-alt" /> Compartilhar sala</span>
-                        <div className="chat-header-btns">
-                          <button className="danger-btn" onClick={endRoom}>Encerrar</button>
-                        </div>
+                        {isRoomCreator && (
+                          <div className="chat-header-btns">
+                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
+                          </div>
+                        )}
                       </div>
                       <div className="share-link-area">
                         <p>Envie o link para assistir junto:</p>
                         <button className="copy-btn" onClick={handleCopyRoomLink}>
                           {copiedRoomLink ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
+                        </button>
+                        <button className="open-chat-btn" onClick={goToChat}>
+                          <i className="fas fa-comments" /> Abrir chat
                         </button>
                       </div>
                     </div>
@@ -1172,4 +1217,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+            }
