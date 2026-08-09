@@ -888,6 +888,14 @@ export default function WatchPage() {
               >
                 <i className="fas fa-arrow-left" />
               </button>
+              <button
+                className="glass-btn"
+                style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
+                onClick={() => setDisableFriendMode(!disableFriendMode)}
+                title={disableFriendMode ? 'Ativar modo amigos' : 'Desativar modo amigos'}
+              >
+                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-user-friends'}`} />
+              </button>
             </div>
             <div className="hero-content">
               <button className="continue-btn" onClick={handleContinue}>
@@ -1194,4 +1202,4 @@ export default function WatchPage() {
       )}
     </>
   )
-         }
+  }
