@@ -484,29 +484,9 @@ export default function WatchPage() {
     }
   }
 
-  const leaveRoom = async () => {
-    if (!roomId || !effectiveUserName) return
-    const displayName = chatDisplayName || effectiveUserName
-    await supabase.from('messages').insert({
-      room_id: roomId,
-      user_name: 'Sistema',
-      user_avatar: '',
-      content: `${displayName} saiu do chat`,
-      is_system: true,
-      created_at: new Date().toISOString()
-    })
-    await supabase.from('room_users').delete().eq('room_id', roomId).eq('user_name', effectiveUserName)
-    setRoomId(null)
-    setMessages([])
-    setRoomUsers([])
+  const leaveRoom = () => {
+    // Apenas oculta o chat, não remove o usuário da sala
     setShowChat(false)
-    setIsRoomCreator(false)
-    roomCreatorRef.current = false
-    setRoomClosed(false)
-    setRoomFull(false)
-    setRoomInvalid(false)
-    setIsNameSet(false)
-    setChatDisplayName('')
   }
 
   const endRoom = async () => {
@@ -550,7 +530,7 @@ export default function WatchPage() {
     const link = `${window.location.origin}/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
     setRoomId(newRoomId)
-    setShowChat(false) // show share link first
+    setShowChat(false) // mostra tela de compartilhar primeiro
     setIsRoomCreator(true)
     roomCreatorRef.current = true
     setIsPlaying(true)
@@ -562,6 +542,8 @@ export default function WatchPage() {
       setCopiedRoomLink(true)
       setTimeout(() => setCopiedRoomLink(false), 2000)
     }
+    // Automaticamente abre o chat após copiar
+    goToChat()
   }
 
   const goToChat = () => {
@@ -653,7 +635,6 @@ export default function WatchPage() {
           setEpisode(last.episode)
           await fetchSeasonData(id, last.season)
 
-          // Próximo episódio a ser exibido
           if (data.next_episode_to_air?.air_date) {
             const airDate = new Date(data.next_episode_to_air.air_date + 'T00:00:00')
             const dayIndex = airDate.getDay()
@@ -815,12 +796,13 @@ export default function WatchPage() {
           .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
           .continue-btn:active{transform:scale(0.97)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
-          .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
-          .hero-rating{padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff}
+          .hero-meta{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
+          .hero-rating{padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
           .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#000000}
-          .hero-airing{display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;background:#64B5F6}
-          .hero-airing i{font-size:10px}
-          .hero-genres{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;display:inline-block;vertical-align:middle}
+          .hero-airing{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
+          .hero-airing i{font-size:9px}
+          .hero-genres{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+          .hero-year{flex-shrink:0;color:#AFAFAF;font-size:clamp(10px,1.5vw,12px)}
           .social-bar{display:flex;justify-content:space-around;padding:clamp(12px,2vw,16px) clamp(16px,2.6vw,22px)}
           .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
           .social-item i{font-size:clamp(18px,3vw,22px);transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
@@ -833,10 +815,10 @@ export default function WatchPage() {
           .synopsis p.expanded{-webkit-line-clamp:unset}
           .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
           .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
-          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer}
+          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s}
           .episodes-toolbar select{appearance:none;padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
           .episodes-list{padding:0 clamp(16px,2.6vw,22px) 80px;display:flex;flex-direction:column;gap:4px}
-          .ep-card{display:flex;gap:10px;padding:6px 4px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
+          .ep-card{display:flex;gap:10px;padding:6px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
           .ep-card:hover{background:rgba(255,255,255,0.03)}
           .ep-card.active{background:rgba(255,255,255,0.05)}
           .ep-thumb{width:clamp(120px,20vw,160px);height:clamp(68px,12vw,90px);border-radius:10px;overflow:hidden;background:#2a2a2a;flex-shrink:0;position:relative}
@@ -922,7 +904,7 @@ export default function WatchPage() {
                   </span>
                 )}
                 <span className="hero-genres" title={genres}>{genres}</span>
-                <span>• {new Date(releaseDate).getFullYear()}</span>
+                <span className="hero-year">• {new Date(releaseDate).getFullYear()}</span>
               </div>
             </div>
           </div>
@@ -1217,4 +1199,4 @@ export default function WatchPage() {
       )}
     </>
   )
-            }
+    }
