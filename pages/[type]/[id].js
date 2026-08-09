@@ -485,7 +485,6 @@ export default function WatchPage() {
   }
 
   const leaveRoom = () => {
-    // Apenas oculta o chat, não remove o usuário da sala
     setShowChat(false)
   }
 
@@ -530,7 +529,7 @@ export default function WatchPage() {
     const link = `${window.location.origin}/${type}/${id}?room=${newRoomId}${type === 'tv' ? `&s=${currentSeasonRef.current}&e=${currentEpisodeRef.current}` : ''}`
     setRoomLink(link)
     setRoomId(newRoomId)
-    setShowChat(false) // mostra tela de compartilhar primeiro
+    setShowChat(false)
     setIsRoomCreator(true)
     roomCreatorRef.current = true
     setIsPlaying(true)
@@ -542,7 +541,6 @@ export default function WatchPage() {
       setCopiedRoomLink(true)
       setTimeout(() => setCopiedRoomLink(false), 2000)
     }
-    // Automaticamente abre o chat após copiar
     goToChat()
   }
 
@@ -793,16 +791,16 @@ export default function WatchPage() {
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
           .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,2.6vw,22px);display:flex;flex-direction:column;gap:8px}
           .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,2.6vw,22px);z-index:10;display:flex;justify-content:space-between;align-items:center}
-          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
-          .continue-btn:active{transform:scale(0.97)}
+          .play-circle-btn{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);border-radius:50%;background:${CONTINUE_COLOR};color:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,2.5vw,20px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .play-circle-btn:active{transform:scale(0.92)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
-          .hero-rating{padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
+          .hero-badge{padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
           .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#000000}
-          .hero-airing{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
-          .hero-airing i{font-size:9px}
+          .hero-airing-badge{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
+          .hero-airing-badge i{font-size:9px}
+          .hero-year-badge{background:#7E57C2;color:#fff;flex-shrink:0}
           .hero-genres{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-          .hero-year{flex-shrink:0;color:#AFAFAF;font-size:clamp(10px,1.5vw,12px)}
           .social-bar{display:flex;justify-content:space-around;padding:clamp(12px,2vw,16px) clamp(16px,2.6vw,22px)}
           .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
           .social-item i{font-size:clamp(18px,3vw,22px);transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
@@ -815,8 +813,9 @@ export default function WatchPage() {
           .synopsis p.expanded{-webkit-line-clamp:unset}
           .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:#fff;cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;font-weight:600}
           .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
-          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s}
-          .episodes-toolbar select{appearance:none;padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
+          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s;outline:none;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+          .episodes-toolbar select:focus,.episodes-toolbar button:focus{outline:none;border:none;box-shadow:none}
+          .episodes-toolbar select{padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
           .episodes-list{padding:0 clamp(16px,2.6vw,22px) 80px;display:flex;flex-direction:column;gap:4px}
           .ep-card{display:flex;gap:10px;padding:6px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
           .ep-card:hover{background:rgba(255,255,255,0.03)}
@@ -839,7 +838,7 @@ export default function WatchPage() {
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-          .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;width:100%;justify-content:center}
           .room-btn:active{transform:scale(0.97)}
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
           .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(20,20,20,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:clamp(14px,2vw,20px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
@@ -864,10 +863,8 @@ export default function WatchPage() {
           .room-closed-message,.room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
-          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);width:100%;justify-content:center}
           .copy-btn:active{transform:scale(0.97)}
-          .open-chat-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:background 0.2s}
-          .open-chat-btn:active{background:rgba(255,255,255,0.2)}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -894,17 +891,17 @@ export default function WatchPage() {
               </button>
             </div>
             <div className="hero-content">
-              <button className="continue-btn" onClick={handleContinue}><i className="fas fa-play" /> {type === 'tv' ? `Continuar S${season}:E${episode}` : 'Assistir'}</button>
+              <button className="play-circle-btn" onClick={handleContinue}><i className="fas fa-play" /></button>
               <h1 className="hero-title">{content.title || content.name}</h1>
               <div className="hero-meta">
-                <span className={`hero-rating ${ratingClass}`}>{ratingText}</span>
+                <span className={`hero-badge ${ratingClass}`}>{ratingText}</span>
                 {airingDay && (
-                  <span className="hero-airing">
+                  <span className="hero-airing-badge">
                     <i className="fas fa-calendar-alt" /> {airingDay}
                   </span>
                 )}
+                <span className="hero-badge hero-year-badge">{new Date(releaseDate).getFullYear()}</span>
                 <span className="hero-genres" title={genres}>{genres}</span>
-                <span className="hero-year">• {new Date(releaseDate).getFullYear()}</span>
               </div>
             </div>
           </div>
@@ -927,11 +924,11 @@ export default function WatchPage() {
           {!disableFriendMode && (
             <div style={{ padding: '0 clamp(16px,2.6vw,22px) 16px' }}>
               {isLoggedIn ? (
-                <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
+                <button className="room-btn" onClick={createRoomAndRedirect}>
                   <i className="fas fa-users" /> Assistir com amigo
                 </button>
               ) : (
-                <button className="room-btn" disabled style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
+                <button className="room-btn" disabled>
                   <i className="fas fa-lock" /> Faça login para criar salas
                 </button>
               )}
@@ -1073,9 +1070,6 @@ export default function WatchPage() {
                         <button className="copy-btn" onClick={handleCopyRoomLink}>
                           {copiedRoomLink ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
                         </button>
-                        <button className="open-chat-btn" onClick={goToChat}>
-                          <i className="fas fa-comments" /> Abrir chat
-                        </button>
                       </div>
                     </div>
                   ) : showChat ? (
@@ -1199,4 +1193,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
