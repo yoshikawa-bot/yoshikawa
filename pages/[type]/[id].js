@@ -19,34 +19,82 @@ const CONTINUE_COLOR = '#F05454'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 
 const loadedImageCache = new Set()
+const observedElements = new Map()
 
-const ImageWithCache = ({ src, alt, className, ...props }) => {
+const ImageWithCache = ({ src, alt, className, style, ...props }) => {
   const [loaded, setLoaded] = useState(loadedImageCache.has(src))
+  const [inView, setInView] = useState(false)
   const imgRef = useRef(null)
 
   useEffect(() => {
-    if (loadedImageCache.has(src)) {
-      setLoaded(true)
+    const el = imgRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.unobserve(el)
+          observedElements.delete(el)
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(el)
+    observedElements.set(el, observer)
+
+    return () => {
+      observer.disconnect()
+      observedElements.delete(el)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!inView || loadedImageCache.has(src)) {
+      if (loadedImageCache.has(src)) setLoaded(true)
       return
     }
+
     const img = new Image()
     img.src = src
     img.onload = () => {
       loadedImageCache.add(src)
       setLoaded(true)
     }
-    img.onerror = () => {}
-  }, [src])
+    img.onerror = () => {
+      setLoaded(true)
+    }
+  }, [src, inView])
 
   return (
-    <img
+    <div
       ref={imgRef}
-      src={src}
-      alt={alt}
-      className={`${className} ${loaded ? 'img-loaded' : ''}`}
-      style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s' }}
-      {...props}
-    />
+      className={`img-container ${className || ''} ${!loaded && inView ? 'shimmer' : ''}`}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#1B1B1B',
+        ...style
+      }}
+    >
+      {inView && (
+        <img
+          src={src}
+          alt={alt}
+          className={`img-loaded ${loaded ? 'img-visible' : ''}`}
+          style={{
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+          loading="lazy"
+          {...props}
+        />
+      )}
+    </div>
   )
 }
 
@@ -103,6 +151,7 @@ export default function WatchPage() {
   const [episodeOrder, setEpisodeOrder] = useState('asc')
   const [watchedEps, setWatchedEps] = useState(new Set())
   const [certification, setCertification] = useState(null)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const [roomId, setRoomId] = useState(null)
   const [messages, setMessages] = useState([])
@@ -117,16 +166,11 @@ export default function WatchPage() {
   const [roomFull, setRoomFull] = useState(false)
   const [roomInvalid, setRoomInvalid] = useState(false)
 
-  const [showShareLink, setShowShareLink] = useState(false)
   const [roomLink, setRoomLink] = useState('')
-  const [copied, setCopied] = useState(false)
+  const [copiedRoomLink, setCopiedRoomLink] = useState(false)
 
   const [effectiveUserName, setEffectiveUserName] = useState('')
   const [profile, setProfile] = useState(null)
-
-  const [showShareModal, setShowShareModal] = useState(false)
-  const [shareImageUrl, setShareImageUrl] = useState(null)
-  const [shareImageLoading, setShareImageLoading] = useState(false)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -219,7 +263,6 @@ export default function WatchPage() {
       setShowChat(true)
       setIsRoomCreator(false)
       roomCreatorRef.current = false
-      setShowShareLink(false)
       setRoomClosed(false)
       setRoomFull(false)
       setRoomInvalid(false)
@@ -341,17 +384,6 @@ export default function WatchPage() {
     }
   }, [isPlaying])
 
-  useEffect(() => {
-    if (showShareModal) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [showShareModal])
-
   const announceEntry = async (name) => {
     if (!roomId || !name) return
     await supabase.from('messages').insert({
@@ -458,7 +490,6 @@ export default function WatchPage() {
     setShowChat(false)
     setIsRoomCreator(false)
     roomCreatorRef.current = false
-    setShowShareLink(false)
     setRoomClosed(false)
     setRoomFull(false)
     setRoomInvalid(false)
@@ -479,7 +510,6 @@ export default function WatchPage() {
     await supabase.from('room_users').delete().eq('room_id', roomId).eq('user_name', effectiveUserName)
     closeRoom()
     setRoomClosed(true)
-    setShowShareLink(false)
     setIsRoomCreator(false)
     roomCreatorRef.current = false
     setIsNameSet(false)
@@ -511,17 +541,15 @@ export default function WatchPage() {
     setShowChat(true)
     setIsRoomCreator(true)
     roomCreatorRef.current = true
-    setShowShareLink(true)
     setIsPlaying(true)
   }
 
-  const handleCopyLink = () => {
+  const handleCopyRoomLink = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(roomLink)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopiedRoomLink(true)
+      setTimeout(() => setCopiedRoomLink(false), 2000)
     }
-    setShowShareLink(false)
   }
 
   const confirmName = () => {
@@ -694,266 +722,11 @@ export default function WatchPage() {
     }
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath()
-    ctx.moveTo(x + r, y)
-    ctx.lineTo(x + w - r, y)
-    ctx.arcTo(x + w, y, x + w, y + r, r)
-    ctx.lineTo(x + w, y + h - r)
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
-    ctx.lineTo(x + r, y + h)
-    ctx.arcTo(x, y + h, x, y + h - r, r)
-    ctx.lineTo(x, y + r)
-    ctx.arcTo(x, y, x + r, y, r)
-    ctx.closePath()
-  }
-
-  const generateShareImage = useCallback(async () => {
-    if (!content) return
-    setShareImageLoading(true)
-    setShowShareModal(true)
-
-    const canvas = document.createElement('canvas')
-    const SIZE = 1080
-    canvas.width = SIZE
-    canvas.height = SIZE
-    const ctx = canvas.getContext('2d')
-    const CARD_RADIUS = 140
-    const PAD = 64
-
-    ctx.clearRect(0, 0, SIZE, SIZE)
-
-    roundRect(ctx, 0, 0, SIZE, SIZE, CARD_RADIUS)
-    ctx.clip()
-
-    ctx.fillStyle = '#0d0d0f'
-    ctx.fillRect(0, 0, SIZE, SIZE)
-
-    const posterUrl = content.backdrop_path
-      ? `https://image.tmdb.org/t/p/w1280${content.backdrop_path}`
-      : content.poster_path
-        ? `https://image.tmdb.org/t/p/w780${content.poster_path}`
-        : null
-
-    let posterImg = null
-    if (posterUrl) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = posterUrl
-      try {
-        await new Promise((resolve, reject) => {
-          img.onload = resolve
-          img.onerror = reject
-        })
-        posterImg = img
-      } catch (e) {}
-    }
-
-    const drawOverlay = () => {
-      const INFO_Y = SIZE - 320
-      const grad = ctx.createLinearGradient(0, INFO_Y - 280, 0, SIZE)
-      grad.addColorStop(0, 'rgba(0,0,0,0)')
-      grad.addColorStop(0.25, 'rgba(0,0,0,0.45)')
-      grad.addColorStop(0.6, 'rgba(0,0,0,0.72)')
-      grad.addColorStop(1, 'rgba(0,0,0,0.88)')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, SIZE, SIZE)
-
-      const badgeText = type === 'movie' ? 'FILME' : type === 'tv' ? 'SÉRIE' : 'ANIME'
-      ctx.font = 'bold 24px Inter, sans-serif'
-      const badgeW = ctx.measureText(badgeText).width + 56
-      const badgeH = 40
-      const badgeX = PAD
-      const badgeY = INFO_Y - 60
-
-      if (posterImg) {
-        ctx.save()
-        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
-        ctx.clip()
-        ctx.filter = 'blur(20px)'
-        ctx.drawImage(posterImg, 0, 0, SIZE, SIZE)
-        ctx.filter = 'none'
-        ctx.fillStyle = 'rgba(0,0,0,0.4)'
-        ctx.fillRect(badgeX, badgeY, badgeW, badgeH)
-        ctx.restore()
-      } else {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'
-        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
-        ctx.fill()
-      }
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-      ctx.lineWidth = 1
-      roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2)
-      ctx.stroke()
-
-      ctx.fillStyle = 'rgba(255,255,255,0.90)'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(badgeText, badgeX + 28, badgeY + badgeH / 2)
-
-      const brandText = 'YOSHIKAWA STREAMING'
-      ctx.font = 'bold 24px Inter, sans-serif'
-      const brandW = ctx.measureText(brandText).width + 56
-      const brandX = badgeX + badgeW + 16
-
-      if (posterImg) {
-        ctx.save()
-        roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
-        ctx.clip()
-        ctx.filter = 'blur(20px)'
-        ctx.drawImage(posterImg, 0, 0, SIZE, SIZE)
-        ctx.filter = 'none'
-        ctx.fillStyle = 'rgba(0,0,0,0.4)'
-        ctx.fillRect(brandX, badgeY, brandW, badgeH)
-        ctx.restore()
-      } else {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'
-        roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
-        ctx.fill()
-      }
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-      roundRect(ctx, brandX, badgeY, brandW, badgeH, badgeH / 2)
-      ctx.stroke()
-
-      ctx.fillStyle = 'rgba(255,255,255,0.70)'
-      ctx.fillText(brandText, brandX + 28, badgeY + badgeH / 2)
-
-      const title = content.title || content.name
-      let titleFontSize = 72
-      ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
-      while (ctx.measureText(title).width > SIZE - PAD * 2 && titleFontSize > 36) {
-        titleFontSize -= 2
-        ctx.font = `bold ${titleFontSize}px Inter, sans-serif`
-      }
-      ctx.fillStyle = '#ffffff'
-      ctx.textBaseline = 'top'
-      const words = title.split(' ')
-      const lines = []
-      let current = ''
-      for (const word of words) {
-        const test = current ? `${current} ${word}` : word
-        if (ctx.measureText(test).width <= SIZE - PAD * 2) {
-          current = test
-        } else {
-          if (current) lines.push(current)
-          current = word
-        }
-      }
-      if (current) lines.push(current)
-      const lineH = titleFontSize * 1.15
-      lines.slice(0, 2).forEach((line, i) => {
-        ctx.fillText(line, PAD, INFO_Y + i * lineH)
-      })
-      const afterTitle = INFO_Y + Math.min(lines.length, 2) * lineH + 16
-
-      const year = new Date(content.release_date || content.first_air_date).getFullYear()
-      const meta = content.runtime ? `${content.runtime} min` : (content.number_of_seasons ? `${content.number_of_seasons} temporadas` : '')
-      const yearMeta = [year, meta].filter(Boolean).join('  •  ')
-      if (yearMeta) {
-        ctx.font = '500 34px Inter, sans-serif'
-        ctx.fillStyle = 'rgba(255,255,255,0.65)'
-        ctx.fillText(yearMeta, PAD, afterTitle)
-      }
-
-      const afterMeta = afterTitle + 52
-      const genres = content.genres?.map(g => g.name).join(', ') || ''
-      if (genres) {
-        ctx.font = '500 30px Inter, sans-serif'
-        ctx.fillStyle = 'rgba(255,255,255,0.45)'
-        const genreWords = genres.split(' ')
-        const genreLines = []
-        let gCurrent = ''
-        for (const word of genreWords) {
-          const test = gCurrent ? `${gCurrent} ${word}` : word
-          if (ctx.measureText(test).width <= SIZE - PAD * 2) {
-            gCurrent = test
-          } else {
-            if (gCurrent) genreLines.push(gCurrent)
-            gCurrent = word
-          }
-        }
-        if (gCurrent) genreLines.push(gCurrent)
-        genreLines.slice(0, 1).forEach((line, i) => {
-          ctx.fillText(line, PAD, afterMeta + i * 40)
-        })
-      }
-
-      const logoImg = new Image()
-      logoImg.crossOrigin = 'anonymous'
-      logoImg.src = LOGO_URL
-      logoImg.onload = () => {
-        const logoSize = 80
-        const logoX = SIZE - PAD - logoSize
-        const logoY = PAD
-        ctx.save()
-        ctx.shadowColor = 'rgba(0,0,0,0.5)'
-        ctx.shadowBlur = 10
-        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize)
-        ctx.restore()
-
-        canvas.toBlob(blob => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            setShareImageUrl(url)
-          }
-          setShareImageLoading(false)
-        }, 'image/webp')
-      }
-      logoImg.onerror = () => {
-        canvas.toBlob(blob => {
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            setShareImageUrl(url)
-          }
-          setShareImageLoading(false)
-        }, 'image/webp')
-      }
-    }
-
-    if (posterImg) {
-      const scale = Math.max(SIZE / posterImg.width, SIZE / posterImg.height)
-      const pw = posterImg.width * scale
-      const ph = posterImg.height * scale
-      const px = (SIZE - pw) / 2
-      const py = (SIZE - ph) / 2
-      ctx.drawImage(posterImg, px, py, pw, ph)
-    }
-
-    drawOverlay()
-  }, [content, type])
-
-  const handleShare = () => {
-    if (!content) return
-    generateShareImage()
-  }
-
   const copyPageLink = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href).catch(() => {})
-    }
-  }
-
-  const shareImage = async () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).catch(() => {})
-    }
-    if (!shareImageUrl) return
-    try {
-      const response = await fetch(shareImageUrl)
-      const blob = await response.blob()
-      const file = new File([blob], `${content.title || content.name}.webp`, { type: 'image/webp' })
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: content.title || content.name,
-        })
-      }
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error(error)
-      }
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
     }
   }
 
@@ -991,33 +764,52 @@ export default function WatchPage() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <style>{`
           *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-          body{font-family:'Inter',sans-serif;background:#101010;color:#fff;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+          body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#101010;color:#f5f5f7;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-y:auto}
+          a{color:inherit;text-decoration:none}
+          button{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;user-select:none}
+          img{max-width:100%;height:auto;display:block}
+
+          .shimmer {
+            background: linear-gradient(90deg, #1B1B1B 25%, #2a2a2a 50%, #1B1B1B 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+          }
+          @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+          .img-container{background:#1B1B1B}
+          .img-visible{opacity:1!important}
+
           .hero{position:relative;width:100%;height:clamp(450px,60vw,620px);overflow:hidden;background:#0a0a0a}
           .hero-bg{width:100%;height:100%;object-fit:cover}
           .hero-gradient{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.45) 50%,#101010 100%)}
-          .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:8px}
-          .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,4vw,34px);z-index:10;display:flex;justify-content:space-between;align-items:center}
-          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s}
-          .continue-btn:hover{transform:scale(1.03)}
+          .hero-content{position:absolute;bottom:0;left:0;right:0;padding:clamp(16px,2.6vw,22px);display:flex;flex-direction:column;gap:8px}
+          .top-bar{position:absolute;top:max(16px,env(safe-area-inset-top,16px));left:0;right:0;padding:0 clamp(16px,2.6vw,22px);z-index:10;display:flex;justify-content:space-between;align-items:center}
+          .continue-btn{display:flex;align-items:center;gap:4px;padding:6px 14px;background:${CONTINUE_COLOR};border-radius:20px;color:#fff;font-weight:700;font-size:clamp(11px,1.8vw,13px);cursor:pointer;border:none;width:fit-content;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .continue-btn:active{transform:scale(0.97)}
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-rating{padding:2px 8px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff}
           .rating-L{background:#4CAF50}.rating-10{background:#4CAF50}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#E04E4E}.rating-18{background:#f44336}
-          .social-bar{display:flex;justify-content:space-around;padding:16px clamp(16px,4vw,34px)}
-          .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s;background:none;border:none;font-family:inherit}
-          .social-item i{font-size:clamp(18px,3vw,22px)}
+          .social-bar{display:flex;justify-content:space-around;padding:clamp(12px,2vw,16px) clamp(16px,2.6vw,22px)}
+          .social-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:clamp(11px,1.6vw,13px);transition:color 0.2s cubic-bezier(0.4, 0, 0.2, 1);background:none;border:none;font-family:inherit}
+          .social-item i{font-size:clamp(18px,3vw,22px);transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .social-item:active i{transform:scale(0.9)}
           .social-item.liked i{color:#2196F3}
           .social-item.favorited i{color:#FF5B5B}
-          .synopsis{padding:0 clamp(16px,4vw,34px) 16px}
-          .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+          .social-item.copied i{color:#4CAF50}
+          .synopsis{padding:0 clamp(16px,2.6vw,22px) 16px}
+          .synopsis p{font-size:clamp(12px,1.8vw,14px);line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0;color:#C0C0C0}
           .synopsis p.expanded{-webkit-line-clamp:unset}
-          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%}
-          .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,4vw,34px) 12px;gap:8px}
-          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:none;color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer}
+          .synopsis-toggle{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:10px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:clamp(11px,1.5vw,13px);background:none;border:none;font-family:inherit;width:100%;transition:color 0.2s}
+          .episodes-toolbar{display:flex;justify-content:space-between;align-items:center;padding:0 clamp(16px,2.6vw,22px) 12px;gap:8px}
+          .episodes-toolbar select,.episodes-toolbar button{background:#1B1B1B;border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 14px;border-radius:10px;font-family:inherit;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:background 0.2s}
           .episodes-toolbar select{appearance:none;padding-right:28px;background-image:url('data:image/svg+xml;utf8,<svg fill="white" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');background-repeat:no-repeat;background-position:right 8px center}
-          .episodes-list{padding:0 clamp(12px,2.5vw,24px) 80px;display:flex;flex-direction:column;gap:4px}
-          .ep-card{display:flex;gap:10px;padding:6px 4px;cursor:pointer;transition:background 0.2s;border-radius:8px;margin:0 -4px}
+          .episodes-list{padding:0 clamp(16px,2.6vw,22px) 80px;display:flex;flex-direction:column;gap:4px}
+          .ep-card{display:flex;gap:10px;padding:6px 4px;cursor:pointer;transition:background 0.2s cubic-bezier(0.4, 0, 0.2, 1);border-radius:8px;margin:0 -4px}
           .ep-card:hover{background:rgba(255,255,255,0.03)}
+          .ep-card.active{background:rgba(255,255,255,0.05)}
           .ep-thumb{width:clamp(120px,20vw,160px);height:clamp(68px,12vw,90px);border-radius:10px;overflow:hidden;background:#2a2a2a;flex-shrink:0;position:relative}
           .ep-thumb img{width:100%;height:100%;object-fit:cover}
           .ep-thumb.watched::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.45)}
@@ -1031,38 +823,38 @@ export default function WatchPage() {
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
           .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
-          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;text-decoration:none}
-          .glass-btn:hover{background:rgba(180,180,180,0.4);transform:scale(1.02)}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),background 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;white-space:nowrap;text-decoration:none}
+          .glass-btn:active{transform:scale(0.97);background:rgba(180,180,180,0.4)}
           .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
           .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
           .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-          .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+          .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform}
+          .room-btn:active{transform:scale(0.97)}
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
-          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:#1B1B1B;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
-          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
-          .chat-header-btns{display:flex;gap:8px}
-          .chat-header-btns button{background:rgba(255,255,255,0.1);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
-          .chat-header-btns .danger-btn{background:${CONTINUE_COLOR};color:#fff}
-          .chat-messages{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;min-height:0}
+          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(20,20,20,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:clamp(14px,2vw,20px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-size:clamp(12px,1.8vw,14px);font-weight:600;color:#fff}
+          .chat-header-btns{display:flex;gap:6px}
+          .chat-header-btns button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s}
+          .chat-header-btns button:active{background:rgba(255,255,255,0.2)}
+          .chat-header-btns .danger-btn{background:${CONTINUE_COLOR};border-color:${CONTINUE_COLOR};color:#fff}
+          .chat-messages{flex:1;overflow-y:auto;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);display:flex;flex-direction:column;gap:8px;min-height:0}
           .chat-msg{display:flex;gap:8px;align-items:flex-start}
-          .chat-msg.system{justify-content:center;text-align:center;color:rgba(255,255,255,0.5);font-size:12px;padding:4px 0}
-          .chat-msg-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
-          .chat-msg-bubble{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:12px;max-width:80%;font-size:13px}
-          .chat-msg-name{font-weight:700;font-size:12px;margin-bottom:2px}
+          .chat-msg.system{justify-content:center;text-align:center;color:rgba(255,255,255,0.5);font-size:11px;padding:4px 0}
+          .chat-msg-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
+          .chat-msg-bubble{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:12px;max-width:80%;font-size:13px;line-height:1.4}
+          .chat-msg-name{font-weight:700;font-size:11px;margin-bottom:2px;color:#ccc}
           .chat-msg-text{color:#ddd}
-          .chat-input-bar{display:flex;padding:8px 14px;gap:8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
-          .chat-input-bar input{flex:1;background:rgba(255,255,255,0.05);border:none;color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none}
-          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+          .chat-input-bar{display:flex;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);gap:8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+          .chat-input-bar input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none;transition:border-color 0.2s}
+          .chat-input-bar input:focus{border-color:rgba(255,255,255,0.2)}
+          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .chat-send-btn:active{transform:scale(0.92)}
           .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
-          .room-closed-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
-          .room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
+          .room-closed-message,.room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
           .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
-          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px}
-          .share-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:20px}
-          .share-modal{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px}
-          .share-modal-image{width:100%;aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:transparent}
-          .share-modal-image img{width:100%;height:100%;object-fit:cover;display:block}
+          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .copy-btn:active{transform:scale(0.97)}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -1101,14 +893,17 @@ export default function WatchPage() {
           <div className="social-bar">
             <button className={`social-item ${isLiked ? 'liked' : ''}`} onClick={toggleLike}><i className="fas fa-thumbs-up" /><span>{isLiked ? 'Curtiu' : 'Curtir'}</span></button>
             <button className={`social-item ${isFavorite ? 'favorited' : ''}`} onClick={toggleFavorite}><i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'} /><span>{isFavorite ? 'Favoritado' : 'Favoritar'}</span></button>
-            <button className="social-item" onClick={handleShare}><i className="fas fa-share-alt" /><span>Compartilhar</span></button>
+            <button className={`social-item ${linkCopied ? 'copied' : ''}`} onClick={copyPageLink}>
+              <i className={`fas ${linkCopied ? 'fa-check' : 'fa-share-alt'}`} />
+              <span>{linkCopied ? 'Link copiado' : 'Compartilhar'}</span>
+            </button>
           </div>
           <div className="synopsis">
             <p className={synopsisExpanded ? 'expanded' : ''}>{content.overview || 'Sinopse indisponível.'}</p>
             {hasLongSynopsis && <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(!synopsisExpanded)}>{synopsisExpanded ? 'Ver menos' : 'Ver mais'} <i className={`fas fa-chevron-${synopsisExpanded ? 'up' : 'down'}`} /></button>}
           </div>
           {!disableFriendMode && (
-            <div style={{ padding: '0 clamp(16px,4vw,34px) 16px' }}>
+            <div style={{ padding: '0 clamp(16px,2.6vw,22px) 16px' }}>
               {isLoggedIn ? (
                 <button className="room-btn" onClick={createRoomAndRedirect} style={{ margin: 0, width: '100%', justifyContent: 'center' }}>
                   <i className="fas fa-users" /> Assistir com amigo
@@ -1234,34 +1029,32 @@ export default function WatchPage() {
                   roomClosed ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /></span>
+                        <span><i className="fas fa-comments" /> Chat</span>
                       </div>
                       <div className="room-closed-message">
                         <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
                         <span>O chat foi encerrado e não está mais disponível.</span>
                       </div>
                     </div>
-                  ) : showShareLink ? (
+                  ) : roomLink && isRoomCreator ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-share-alt" /></span>
-                        {isRoomCreator && (
-                          <div className="chat-header-btns">
-                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
-                          </div>
-                        )}
+                        <span><i className="fas fa-share-alt" /> Compartilhar sala</span>
+                        <div className="chat-header-btns">
+                          <button className="danger-btn" onClick={endRoom}>Encerrar</button>
+                        </div>
                       </div>
                       <div className="share-link-area">
                         <p>Envie o link para assistir junto:</p>
-                        <button className="copy-btn" onClick={handleCopyLink}>
-                          {copied ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
+                        <button className="copy-btn" onClick={handleCopyRoomLink}>
+                          {copiedRoomLink ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
                         </button>
                       </div>
                     </div>
                   ) : showChat ? (
                     <div className="chat-container">
                       <div className="chat-header">
-                        <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /></span>
+                        <span><i className="fas fa-comments" /> Chat</span>
                         <div className="chat-header-btns">
                           {isRoomCreator && (
                             <button className="danger-btn" onClick={endRoom}>Encerrar</button>
@@ -1338,7 +1131,7 @@ export default function WatchPage() {
                 ) : roomInvalid ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /></span>
+                      <span><i className="fas fa-comments" /> Chat</span>
                     </div>
                     <div className="room-closed-message">
                       <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
@@ -1348,7 +1141,7 @@ export default function WatchPage() {
                 ) : roomFull ? (
                   <div className="chat-container">
                     <div className="chat-header">
-                      <span style={{ fontWeight: 600, fontSize: 14 }}><i className="fas fa-comments" /></span>
+                      <span><i className="fas fa-comments" /> Chat</span>
                     </div>
                     <div className="room-full-message">
                       <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
@@ -1377,40 +1170,6 @@ export default function WatchPage() {
           </div>
         </div>
       )}
-
-      {showShareModal && (
-        <div className="share-modal-overlay" onClick={() => setShowShareModal(false)}>
-          <div className="share-modal" onClick={e => e.stopPropagation()}>
-            <div className="player-controls" style={{ width: '100%' }}>
-              <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
-                @kawalyansky &lt;3
-              </div>
-              <button className="glass-btn circle" onClick={() => setShowShareModal(false)}>
-                <i className="fas fa-times" />
-              </button>
-            </div>
-            <div className="share-modal-image">
-              {shareImageLoading ? (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div className="loading-spinner" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                </div>
-              ) : shareImageUrl ? (
-                <img src={shareImageUrl} alt="Compartilhar" />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>Pré-visualização</div>
-              )}
-            </div>
-            <div className="nav-ep-btns" style={{ width: '100%' }}>
-              <button className="glass-btn" onClick={shareImage}>
-                <i className="fas fa-share-alt" /> Compartilhar
-              </button>
-              <button className="glass-btn" onClick={copyPageLink}>
-                <i className="fas fa-copy" /> Copiar link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
-  }
+    }
