@@ -189,7 +189,6 @@ export default function WatchPage() {
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
-  const [playerTab, setPlayerTab] = useState(type === 'tv' ? 'episodes' : 'chat')
 
   useEffect(() => {
     try {
@@ -797,7 +796,7 @@ export default function WatchPage() {
           .hero-title{font-size:clamp(18px,3.2vw,24px);font-weight:800;line-height:1.2}
           .hero-meta{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;font-size:clamp(10px,1.5vw,12px);color:#AFAFAF}
           .hero-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.5vw,11px);color:#fff;flex-shrink:0}
-          .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#C62828}
+          .rating-L{background:#4CAF50}.rating-10{background:#2196F3}.rating-12{background:#FFC107}.rating-14{background:#FF9800}.rating-16{background:#f44336}.rating-18{background:#000000}
           .hero-airing-badge{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-weight:700;font-size:clamp(10px,1.4vw,11px);color:#fff;background:#64B5F6;flex-shrink:0}
           .hero-airing-badge i{font-size:9px}
           .hero-year-badge{background:#7E57C2;color:#fff;flex-shrink:0}
@@ -828,206 +827,47 @@ export default function WatchPage() {
           .ep-info{flex:1;display:flex;flex-direction:column;gap:3px;justify-content:center}
           .ep-info h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
+          .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
+          .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
+          @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh;aspect-ratio:16/9}.chat-sidebar{width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;max-height:75vh}}
+          .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
+          .player-frame iframe{width:100%;height:100%;border:none}
+          .player-controls{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding:0 4px}
+          .glass-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(128,128,128,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:50px;color:#fff;font-weight:600;font-size:clamp(12px,1.8vw,14px);cursor:pointer;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),background 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;white-space:nowrap;text-decoration:none}
+          .glass-btn:active{transform:scale(0.97);background:rgba(180,180,180,0.4)}
+          .glass-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+          .glass-btn.circle{width:clamp(36px,5.5vw,44px);height:clamp(36px,5.5vw,44px);padding:0;border-radius:50%;justify-content:center}
+          .nav-ep-btns{display:flex;justify-content:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
           .room-btn{background:${CONTINUE_COLOR};color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;margin:0;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);will-change:transform;width:100%;justify-content:center}
           .room-btn:active{transform:scale(0.97)}
           .room-btn:disabled{opacity:0.5;cursor:not-allowed}
-
-          /* Player page */
-          .player-page {
-            position: fixed;
-            inset: 0;
-            z-index: 2000;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-          }
-          .player-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: #000;
-            z-index: 10;
-            flex-shrink: 0;
-          }
-          .player-header .back-btn,
-          .player-header .friend-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            cursor: pointer;
-          }
-          .player-frame {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            background: #000;
-            flex-shrink: 0;
-            position: relative;
-            max-height: 50vh;
-          }
-          .player-frame iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-          }
-          .player-tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            background: #000;
-            flex-shrink: 0;
-          }
-          .player-tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 14px;
-            color: rgba(255,255,255,0.6);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.2s;
-          }
-          .player-tab.active {
-            color: #fff;
-            border-bottom-color: #fff;
-          }
-          .player-content {
-            flex: 1;
-            overflow-y: auto;
-            background: #000;
-            padding: 0 16px 24px;
-            min-height: 0;
-          }
-          .player-chat {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 300px;
-          }
-          .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          .chat-msg {
-            display: flex;
-            gap: 8px;
-            align-items: flex-start;
-          }
-          .chat-msg.system {
-            justify-content: center;
-            color: rgba(255,255,255,0.4);
-            font-size: 11px;
-            padding: 4px 0;
-          }
-          .chat-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid rgba(255,255,255,0.1);
-          }
-          .chat-bubble {
-            background: rgba(255,255,255,0.08);
-            padding: 8px 12px;
-            border-radius: 12px;
-            max-width: 75%;
-            font-size: 13px;
-            line-height: 1.4;
-          }
-          .chat-name {
-            font-weight: 700;
-            font-size: 11px;
-            margin-bottom: 2px;
-            color: #ccc;
-          }
-          .chat-text { color: #ddd; }
-          .chat-input-area {
-            display: flex;
-            padding: 12px 0;
-            gap: 8px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            flex-shrink: 0;
-          }
-          .chat-input-area input {
-            flex: 1;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            outline: none;
-          }
-          .send-btn {
-            background: ${CONTINUE_COLOR};
-            border: none;
-            color: #fff;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-            flex-shrink: 0;
-          }
-          .ep-nav-inline {
-            display: flex;
-            gap: 8px;
-            margin: 16px 0;
-          }
-          .ep-nav-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: 0.2s;
-            border: 1px solid rgba(255,255,255,0.05);
-          }
-          .ep-nav-btn:disabled { opacity: 0.4; }
-          .ep-nav-btn:active { background: rgba(255,255,255,0.15); }
-          .share-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 24px 0;
-          }
-          .copy-link-btn {
-            background: ${CONTINUE_COLOR};
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            width: 100%;
-            justify-content: center;
-          }
+          .chat-container{height:200px;max-height:200px;flex-shrink:0;background:rgba(20,20,20,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:clamp(14px,2vw,20px);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+          .chat-header{display:flex;justify-content:space-between;align-items:center;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;font-size:clamp(12px,1.8vw,14px);font-weight:600;color:#fff}
+          .chat-header-btns{display:flex;gap:6px}
+          .chat-header-btns button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background 0.2s}
+          .chat-header-btns button:active{background:rgba(255,255,255,0.2)}
+          .chat-header-btns .danger-btn{background:${CONTINUE_COLOR};border-color:${CONTINUE_COLOR};color:#fff}
+          .chat-messages{flex:1;overflow-y:auto;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);display:flex;flex-direction:column;gap:8px;min-height:0}
+          .chat-msg{display:flex;gap:8px;align-items:flex-start}
+          .chat-msg.system{justify-content:center;text-align:center;color:rgba(255,255,255,0.5);font-size:11px;padding:4px 0}
+          .chat-msg-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
+          .chat-msg-bubble{background:rgba(255,255,255,0.08);padding:8px 12px;border-radius:12px;max-width:80%;font-size:13px;line-height:1.4}
+          .chat-msg-name{font-weight:700;font-size:11px;margin-bottom:2px;color:#ccc}
+          .chat-msg-text{color:#ddd}
+          .chat-input-bar{display:flex;padding:clamp(8px,1.5vw,12px) clamp(12px,2vw,16px);gap:8px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+          .chat-input-bar input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#fff;padding:8px 12px;border-radius:20px;font-size:13px;outline:none;transition:border-color 0.2s}
+          .chat-input-bar input:focus{border-color:rgba(255,255,255,0.2)}
+          .chat-send-btn{background:${CONTINUE_COLOR};border:none;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+          .chat-send-btn:active{transform:scale(0.92)}
+          .chat-waiting{text-align:center;padding:20px;color:#888;font-size:13px}
+          .room-closed-message,.room-full-message{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px;text-align:center;color:#aaa;font-size:14px}
+          .share-link-area{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;gap:12px}
+          .share-link-area p{font-size:14px;color:#ccc;text-align:center}
+          .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);width:100%;justify-content:center}
+          .copy-btn:active{transform:scale(0.97)}
+          @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
+          @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
+          @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
         `}</style>
       </Head>
 
@@ -1143,51 +983,37 @@ export default function WatchPage() {
       ) : <div className="hero" />}
 
       {isPlaying && (
-        <div className="player-page">
-          <div className="player-header">
-            <button className="back-btn" onClick={() => setIsPlaying(false)}>
-              <i className="fas fa-arrow-left" />
-            </button>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button className="friend-btn" onClick={() => setDisableFriendMode(!disableFriendMode)} title="Modo amigo">
-                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
-              </button>
-            </div>
-          </div>
-
-          <div className="player-frame">
-            <iframe
-              key={`${season}-${episode}`}
-              src={getEmbedUrl()}
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              referrerPolicy="origin"
-            />
-          </div>
-
-          <div className="player-tabs">
-            {type === 'tv' && (
-              <button
-                className={`player-tab ${playerTab === 'episodes' ? 'active' : ''}`}
-                onClick={() => setPlayerTab('episodes')}
-              >
-                Episódios
-              </button>
-            )}
-            <button
-              className={`player-tab ${playerTab === 'chat' ? 'active' : ''}`}
-              onClick={() => setPlayerTab('chat')}
-            >
-              Chat
-            </button>
-          </div>
-
-          <div className="player-content">
-            {playerTab === 'episodes' && type === 'tv' && (
-              <div>
-                <div className="ep-nav-inline">
+        <div className="player-overlay">
+          <div className="player-box">
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 10 }}>
+              <div className="player-controls">
+                <div className="glass-btn" style={{ cursor: 'default', pointerEvents: 'none' }}>
+                  {type === 'tv' ? `S${season}:E${episode}` : 'FILME'}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <button
-                    className="ep-nav-btn"
+                    className="glass-btn circle"
+                    onClick={() => setDisableFriendMode(!disableFriendMode)}
+                    title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                  >
+                    <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
+                  </button>
+                  <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
+                </div>
+              </div>
+              <div className="player-frame">
+                <iframe
+                  key={`${season}-${episode}`}
+                  src={getEmbedUrl()}
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  referrerPolicy="origin"
+                />
+              </div>
+              {type === 'tv' && (
+                <div className="nav-ep-btns">
+                  <button
+                    className="glass-btn"
                     onClick={() => {
                       if (episode > 1) {
                         const prevEp = episode - 1
@@ -1200,7 +1026,7 @@ export default function WatchPage() {
                     <i className="fas fa-backward" /> Anterior
                   </button>
                   <button
-                    className="ep-nav-btn"
+                    className="glass-btn"
                     onClick={() => {
                       if (seasonData && episode < seasonData.episodes.length) {
                         const nextEp = episode + 1
@@ -1213,113 +1039,152 @@ export default function WatchPage() {
                     Próximo <i className="fas fa-forward" />
                   </button>
                 </div>
-                <div style={{ fontSize: 13, color: '#aaa', marginBottom: 8 }}>
-                  S{season}:E{episode} • Temporada {season}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {playerTab === 'chat' && (
-              <div className="player-chat">
-                {!disableFriendMode ? (
-                  roomId ? (
-                    roomClosed ? (
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', flexDirection: 'column', gap: 8 }}>
-                        <i className="fas fa-door-closed" style={{ fontSize: 32 }} />
-                        Chat encerrado.
+            {!disableFriendMode && (
+              <div className="chat-sidebar">
+                {roomId ? (
+                  roomClosed ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span><i className="fas fa-comments" /> Chat</span>
                       </div>
-                    ) : roomLink && !showChat ? (
-                      <div className="share-area">
-                        <p style={{ color: '#ccc', fontSize: 14 }}>Envie o link para assistir junto:</p>
-                        <button className="copy-link-btn" onClick={handleCopyRoomLink}>
+                      <div className="room-closed-message">
+                        <i className="fas fa-door-closed" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                        <span>O chat foi encerrado e não está mais disponível.</span>
+                      </div>
+                    </div>
+                  ) : roomLink && !showChat ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span><i className="fas fa-share-alt" /> Compartilhar sala</span>
+                        {isRoomCreator && (
+                          <div className="chat-header-btns">
+                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="share-link-area">
+                        <p>Envie o link para assistir junto:</p>
+                        <button className="copy-btn" onClick={handleCopyRoomLink}>
                           {copiedRoomLink ? <><i className="fas fa-check" /> Copiado</> : <><i className="fas fa-copy" /> Copiar link</>}
                         </button>
                       </div>
-                    ) : showChat ? (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 4 }}>
+                    </div>
+                  ) : showChat ? (
+                    <div className="chat-container">
+                      <div className="chat-header">
+                        <span><i className="fas fa-comments" /> Chat</span>
+                        <div className="chat-header-btns">
                           {isRoomCreator && (
-                            <button className="ep-nav-btn" style={{ padding: '6px 12px', fontSize: 12 }} onClick={endRoom}>Encerrar</button>
+                            <button className="danger-btn" onClick={endRoom}>Encerrar</button>
                           )}
-                          <button className="ep-nav-btn" style={{ padding: '6px 12px', fontSize: 12 }} onClick={leaveRoom}>Sair</button>
+                          <button onClick={leaveRoom}>Sair</button>
                         </div>
-                        <div className="chat-messages">
-                          {messages.length === 0 && roomWaiting && (
-                            <div className="chat-msg system">Aguardando alguém entrar...</div>
-                          )}
-                          {messages.map(msg => (
-                            msg.is_system ? (
-                              <div key={msg.id} className="chat-msg system">{msg.content}</div>
-                            ) : (
-                              <div key={msg.id} className="chat-msg">
-                                <img className="chat-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
-                                <div className="chat-bubble">
-                                  <div className="chat-name">{msg.user_name}</div>
-                                  <div className="chat-text">{msg.content}</div>
-                                </div>
+                      </div>
+                      <div className="chat-messages">
+                        {messages.length === 0 && roomWaiting && <div className="chat-waiting">Aguardando alguém entrar...</div>}
+                        {messages.map(msg => (
+                          msg.is_system ? (
+                            <div key={msg.id} className="chat-msg system">
+                              <span>{msg.content}</span>
+                            </div>
+                          ) : (
+                            <div key={msg.id} className="chat-msg">
+                              <img className="chat-msg-avatar" src={msg.user_avatar || getAvatarUrl(msg.user_name)} alt="" />
+                              <div className="chat-msg-bubble">
+                                <div className="chat-msg-name">{msg.user_name}</div>
+                                <div className="chat-msg-text">{msg.content}</div>
                               </div>
-                            )
-                          ))}
-                          <div ref={chatEndRef} />
+                            </div>
+                          )
+                        ))}
+                        <div ref={chatEndRef} />
+                      </div>
+                      {!roomClosed && (
+                        <div className="chat-input-bar">
+                          {!isNameSet ? (
+                            <>
+                              <input
+                                type="text"
+                                placeholder="Seu nome para o chat"
+                                value={chatDisplayName}
+                                onChange={(e) => setChatDisplayName(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') confirmName() }}
+                                maxLength={20}
+                              />
+                              <button
+                                className="chat-send-btn"
+                                onClick={confirmName}
+                                disabled={!chatDisplayName.trim()}
+                              >
+                                <i className="fas fa-check" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="text"
+                                placeholder="Digite sua mensagem..."
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') sendMessage() }}
+                                maxLength={MAX_MESSAGE_LENGTH}
+                              />
+                              <button className="chat-send-btn" onClick={sendMessage}><i className="fas fa-paper-plane" /></button>
+                            </>
+                          )}
                         </div>
-                        {!roomClosed && (
-                          <div className="chat-input-area">
-                            {!isNameSet ? (
-                              <>
-                                <input
-                                  placeholder="Seu nome"
-                                  value={chatDisplayName}
-                                  onChange={(e) => setChatDisplayName(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && confirmName()}
-                                  maxLength={20}
-                                />
-                                <button className="send-btn" onClick={confirmName} disabled={!chatDisplayName.trim()}>
-                                  <i className="fas fa-check" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <input
-                                  placeholder="Mensagem..."
-                                  value={chatInput}
-                                  onChange={(e) => setChatInput(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                                  maxLength={MAX_MESSAGE_LENGTH}
-                                />
-                                <button className="send-btn" onClick={sendMessage}>
-                                  <i className="fas fa-paper-plane" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <button className="room-btn" onClick={() => setShowChat(true)} style={{ marginTop: 12 }}>
-                        <i className="fas fa-comments" /> Abrir chat
-                      </button>
-                    )
-                  ) : roomInvalid ? (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
-                      Link inválido ou chat encerrado.
+                      )}
+                      {roomClosed && (
+                        <div className="chat-input-bar" style={{ opacity: 0.5, pointerEvents: 'none' }}>
+                          <input type="text" placeholder="Chat encerrado" disabled />
+                          <button className="chat-send-btn" disabled><i className="fas fa-lock" /></button>
+                        </div>
+                      )}
                     </div>
-                  ) : roomFull ? (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
-                      Chat cheio (máx. {MAX_ROOM_USERS}).
-                    </div>
-                  ) : isLoggedIn ? (
-                    <button className="room-btn" onClick={createRoomAndRedirect} style={{ marginTop: 12 }}>
-                      <i className="fas fa-users" /> Assistir com amigo
-                    </button>
                   ) : (
-                    <button className="room-btn" disabled style={{ marginTop: 12 }}>
-                      <i className="fas fa-lock" /> Faça login para criar salas
+                    <button className="room-btn" onClick={() => setShowChat(true)}>
+                      <i className="fas fa-comments" /> Abrir chat
                     </button>
                   )
-                ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
-                    Modo amigo desativado.
+                ) : roomInvalid ? (
+                  <div className="chat-container">
+                    <div className="chat-header">
+                      <span><i className="fas fa-comments" /> Chat</span>
+                    </div>
+                    <div className="room-closed-message">
+                      <i className="fas fa-link-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                      <span>Este link é inválido ou o chat foi encerrado.</span>
+                    </div>
                   </div>
+                ) : roomFull ? (
+                  <div className="chat-container">
+                    <div className="chat-header">
+                      <span><i className="fas fa-comments" /> Chat</span>
+                    </div>
+                    <div className="room-full-message">
+                      <i className="fas fa-users-slash" style={{ fontSize: 32, color: '#FF6B6B' }} />
+                      <span>Chat cheio (máximo {MAX_ROOM_USERS} pessoas).</span>
+                    </div>
+                  </div>
+                ) : isLoggedIn ? (
+                  <button
+                    className="room-btn"
+                    onClick={createRoomAndRedirect}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    <i className="fas fa-users" /> Assistir com amigo
+                  </button>
+                ) : (
+                  <button
+                    className="room-btn"
+                    disabled
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    <i className="fas fa-lock" /> Faça login para criar salas
+                  </button>
                 )}
               </div>
             )}
@@ -1328,4 +1193,4 @@ export default function WatchPage() {
       )}
     </>
   )
-}
+      }
