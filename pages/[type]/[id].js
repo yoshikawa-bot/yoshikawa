@@ -17,6 +17,7 @@ const MESSAGE_COOLDOWN_MS = 2000
 const MAX_MESSAGE_LENGTH = 500
 const CONTINUE_COLOR = '#F05454'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
+const BRAVE_ICON = 'https://yoshikawa-bot.github.io/cache/images/8bb468f8.png'
 
 const DAYS_OF_WEEK = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
 
@@ -176,6 +177,10 @@ export default function WatchPage() {
   const [effectiveUserName, setEffectiveUserName] = useState('')
   const [profile, setProfile] = useState(null)
 
+  const [braveNotifVisible, setBraveNotifVisible] = useState(false)
+  const [nextEpAvailable, setNextEpAvailable] = useState(false)
+  const [nextEpCountdown, setNextEpCountdown] = useState(10)
+
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
   const heartbeatRef = useRef(null)
@@ -186,6 +191,8 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const roomCloseTimeoutRef = useRef(null)
   const synopsisRef = useRef(null)
+  const nextEpTimerRef = useRef(null)
+  const nextEpCountdownIntervalRef = useRef(null)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
@@ -381,13 +388,44 @@ export default function WatchPage() {
   useEffect(() => {
     if (isPlaying) {
       document.body.style.overflow = 'hidden'
+      setBraveNotifVisible(true)
+      const timeout = setTimeout(() => setBraveNotifVisible(false), 5000)
+      return () => clearTimeout(timeout)
     } else {
       document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
+      setBraveNotifVisible(false)
     }
   }, [isPlaying])
+
+  useEffect(() => {
+    if (isPlaying && type === 'tv' && seasonData) {
+      const currentEp = seasonData.episodes?.find(ep => ep.episode_number === episode)
+      const runtime = currentEp?.runtime || 0
+      if (runtime > 0) {
+        if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
+        if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
+        setNextEpAvailable(false)
+        setNextEpCountdown(10)
+        nextEpTimerRef.current = setTimeout(() => {
+          setNextEpAvailable(true)
+          let countdown = 10
+          setNextEpCountdown(countdown)
+          nextEpCountdownIntervalRef.current = setInterval(() => {
+            countdown--
+            setNextEpCountdown(countdown)
+            if (countdown <= 0) {
+              clearInterval(nextEpCountdownIntervalRef.current)
+              goToNextEpisode()
+            }
+          }, 1000)
+        }, runtime * 60 * 1000)
+      }
+    }
+    return () => {
+      if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
+      if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
+    }
+  }, [isPlaying, episode, season, seasonData, type])
 
   useEffect(() => {
     if (!synopsisExpanded && synopsisRef.current) {
@@ -395,6 +433,16 @@ export default function WatchPage() {
       setSynopsisOverflow(el.scrollHeight > el.clientHeight)
     }
   }, [content?.overview, synopsisExpanded])
+
+  const goToNextEpisode = () => {
+    if (!seasonData || episode >= seasonData.episodes.length) return
+    const nextEp = episode + 1
+    setEpisode(nextEp)
+    markWatched(season, nextEp)
+    setNextEpAvailable(false)
+    if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
+    if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
+  }
 
   const announceEntry = async (name) => {
     if (!roomId || !name) return
@@ -828,7 +876,7 @@ export default function WatchPage() {
           .ep-info h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
           .ep-info span{font-size:clamp(11px,1.5vw,13px);color:#9A9A9A}
           .player-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.1);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow-y:auto}
-          .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto}
+          .player-box{width:100%;max-width:90vw;display:flex;flex-direction:column;gap:10px;max-height:100%;margin:auto;position:relative}
           @media(min-width:1024px){.player-box{flex-direction:row;max-width:95vw;align-items:stretch;gap:16px}.player-frame{flex:1;max-height:75vh;aspect-ratio:16/9}.chat-sidebar{width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;max-height:75vh}}
           .player-frame{width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;max-height:60vh;flex-shrink:0}
           .player-frame iframe{width:100%;height:100%;border:none}
@@ -865,6 +913,11 @@ export default function WatchPage() {
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);width:100%;justify-content:center}
           .copy-btn:active{transform:scale(0.97)}
+          .brave-notification{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:10px 20px;display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;z-index:2100;transition:opacity 0.5s ease;opacity:1;max-width:90vw;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+          .brave-notification img{width:20px;height:20px;border-radius:50%}
+          .next-ep-button{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:2100;background:${CONTINUE_COLOR};color:#fff;padding:12px 28px;border-radius:50px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);animation:pulse 1.5s infinite;transition:transform 0.2s}
+          .next-ep-button:active{transform:translateX(-50%) scale(0.96)}
+          @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(240,84,84,0.7)}70%{box-shadow:0 0 0 15px rgba(240,84,84,0)}100%{box-shadow:0 0 0 0 rgba(240,84,84,0)}}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -1191,6 +1244,19 @@ export default function WatchPage() {
               </div>
             )}
           </div>
+
+          {braveNotifVisible && (
+            <div className="brave-notification" style={{ opacity: braveNotifVisible ? 1 : 0 }}>
+              <img src={BRAVE_ICON} alt="Brave" />
+              <span>Olá {effectiveUserName || 'usuário'}, para uma melhor experiência, recomendamos o uso do navegador Brave, divirta-se &lt;3</span>
+            </div>
+          )}
+
+          {type === 'tv' && nextEpAvailable && (
+            <button className="next-ep-button" onClick={goToNextEpisode}>
+              <i className="fas fa-forward" /> Próximo episódio {nextEpCountdown > 0 ? `(${nextEpCountdown}s)` : ''}
+            </button>
+          )}
         </div>
       )}
     </>
