@@ -892,9 +892,9 @@ export default function WatchPage() {
                 className="glass-btn"
                 style={{ width: '40px', height: '40px', borderRadius: '50%', padding: 0, justifyContent: 'center', fontSize: '18px' }}
                 onClick={() => setDisableFriendMode(!disableFriendMode)}
-                title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                title={disableFriendMode ? 'Ativar modo amigos' : 'Desativar modo amigos'}
               >
-                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
+                <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-user-friends'}`} />
               </button>
             </div>
             <div className="hero-content">
@@ -934,7 +934,7 @@ export default function WatchPage() {
             <div style={{ padding: '0 clamp(16px,2.6vw,22px) 16px' }}>
               {isLoggedIn ? (
                 <button className="room-btn" onClick={createRoomAndRedirect}>
-                  <i className="fas fa-users" /> Assistir com amigo
+                  <i className="fas fa-user-friends" /> Assistir com amigos
                 </button>
               ) : (
                 <button className="room-btn" disabled>
@@ -1003,9 +1003,9 @@ export default function WatchPage() {
                   <button
                     className="glass-btn circle"
                     onClick={() => setDisableFriendMode(!disableFriendMode)}
-                    title={disableFriendMode ? 'Ativar modo amigo' : 'Desativar modo amigo'}
+                    title={disableFriendMode ? 'Ativar modo amigos' : 'Desativar modo amigos'}
                   >
-                    <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-users'}`} />
+                    <i className={`fas ${disableFriendMode ? 'fa-user-slash' : 'fa-user-friends'}`} />
                   </button>
                   <button className="glass-btn circle" onClick={() => setIsPlaying(false)}><i className="fas fa-times" /></button>
                 </div>
@@ -1184,7 +1184,7 @@ export default function WatchPage() {
                     onClick={createRoomAndRedirect}
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <i className="fas fa-users" /> Assistir com amigo
+                    <i className="fas fa-user-friends" /> Assistir com amigos
                   </button>
                 ) : (
                   <button
@@ -1202,4 +1202,4 @@ export default function WatchPage() {
       )}
     </>
   )
-    }
+}
