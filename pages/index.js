@@ -287,8 +287,10 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
         {showFavoritesTitle && <span className="header-favorites-text">Favoritos</span>}
       </div>
       <div className="header-actions">
-        <button className="header-btn" onClick={onSearchClick}><i className="fas fa-search" /></button>
-        <button className="header-btn profile-btn" style={{ background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
+        <button className="header-btn" onClick={onSearchClick} style={{ width: '40px', height: '40px' }}>
+          <i className="fas fa-search" style={{ fontSize: '40px' }} />
+        </button>
+        <button className="header-btn profile-btn" style={{ width: '40px', height: '40px', background: DEFAULT_AVATAR_BG }} onClick={onProfileClick}>
           {userProfile ? (
             <img
               src={userProfile.avatarUrl || getAvatarUrl(userProfile.name)}
@@ -296,7 +298,7 @@ export const Header = ({ onSearchClick, userProfile, onProfileClick, onLogoClick
               className="profile-avatar-img"
             />
           ) : (
-            <i className="fas fa-user" style={{ fontSize: 'clamp(14px,2.2vw,20px)', color: '#fff', display: 'block', lineHeight: 1 }} />
+            <i className="fas fa-user" style={{ fontSize: '40px', color: '#fff', display: 'block', lineHeight: 1 }} />
           )}
         </button>
       </div>
@@ -1867,4 +1869,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-          }
+            }
