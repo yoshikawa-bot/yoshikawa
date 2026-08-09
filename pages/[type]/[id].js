@@ -178,8 +178,6 @@ export default function WatchPage() {
   const [profile, setProfile] = useState(null)
 
   const [braveNotifVisible, setBraveNotifVisible] = useState(false)
-  const [nextEpAvailable, setNextEpAvailable] = useState(false)
-  const [nextEpCountdown, setNextEpCountdown] = useState(10)
 
   const chatEndRef = useRef(null)
   const roomTimerRef = useRef(null)
@@ -191,8 +189,6 @@ export default function WatchPage() {
   const lastMessageTimeRef = useRef(0)
   const roomCloseTimeoutRef = useRef(null)
   const synopsisRef = useRef(null)
-  const nextEpTimerRef = useRef(null)
-  const nextEpCountdownIntervalRef = useRef(null)
   const isLoggedIn = profile && profile.name && !effectiveUserName.startsWith('Convidado')
 
   const [disableFriendMode, setDisableFriendMode] = useState(false)
@@ -398,51 +394,11 @@ export default function WatchPage() {
   }, [isPlaying])
 
   useEffect(() => {
-    if (isPlaying && type === 'tv' && seasonData) {
-      const currentEp = seasonData.episodes?.find(ep => ep.episode_number === episode)
-      const runtime = currentEp?.runtime || 0
-      if (runtime > 0) {
-        if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
-        if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
-        setNextEpAvailable(false)
-        setNextEpCountdown(10)
-        nextEpTimerRef.current = setTimeout(() => {
-          setNextEpAvailable(true)
-          let countdown = 10
-          setNextEpCountdown(countdown)
-          nextEpCountdownIntervalRef.current = setInterval(() => {
-            countdown--
-            setNextEpCountdown(countdown)
-            if (countdown <= 0) {
-              clearInterval(nextEpCountdownIntervalRef.current)
-              goToNextEpisode()
-            }
-          }, 1000)
-        }, runtime * 60 * 1000)
-      }
-    }
-    return () => {
-      if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
-      if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
-    }
-  }, [isPlaying, episode, season, seasonData, type])
-
-  useEffect(() => {
     if (!synopsisExpanded && synopsisRef.current) {
       const el = synopsisRef.current
       setSynopsisOverflow(el.scrollHeight > el.clientHeight)
     }
   }, [content?.overview, synopsisExpanded])
-
-  const goToNextEpisode = () => {
-    if (!seasonData || episode >= seasonData.episodes.length) return
-    const nextEp = episode + 1
-    setEpisode(nextEp)
-    markWatched(season, nextEp)
-    setNextEpAvailable(false)
-    if (nextEpTimerRef.current) clearTimeout(nextEpTimerRef.current)
-    if (nextEpCountdownIntervalRef.current) clearInterval(nextEpCountdownIntervalRef.current)
-  }
 
   const announceEntry = async (name) => {
     if (!roomId || !name) return
@@ -913,11 +869,13 @@ export default function WatchPage() {
           .share-link-area p{font-size:14px;color:#ccc;text-align:center}
           .copy-btn{background:${CONTINUE_COLOR};border:none;color:#fff;padding:10px 20px;border-radius:12px;font-weight:600;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:8px;transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);width:100%;justify-content:center}
           .copy-btn:active{transform:scale(0.97)}
-          .brave-notification{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:10px 20px;display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;z-index:2100;transition:opacity 0.5s ease;opacity:1;max-width:90vw;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
-          .brave-notification img{width:20px;height:20px;border-radius:50%}
-          .next-ep-button{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:2100;background:${CONTINUE_COLOR};color:#fff;padding:12px 28px;border-radius:50px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);animation:pulse 1.5s infinite;transition:transform 0.2s}
-          .next-ep-button:active{transform:translateX(-50%) scale(0.96)}
-          @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(240,84,84,0.7)}70%{box-shadow:0 0 0 15px rgba(240,84,84,0)}100%{box-shadow:0 0 0 0 rgba(240,84,84,0)}}
+          .brave-notification{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:${CONTINUE_COLOR};border-radius:16px;padding:10px 16px;display:flex;align-items:center;gap:10px;color:#fff;font-size:13px;z-index:2100;max-width:90vw;box-shadow:0 4px 12px rgba(0,0,0,0.5);animation:notif-in 0.4s ease forwards;transition:opacity 0.3s ease, transform 0.3s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .brave-notification.exit{animation:notif-out 0.3s ease forwards}
+          .brave-notification img{width:28px;height:28px;border-radius:8px;flex-shrink:0}
+          .brave-notification span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          @media(max-width:480px){.brave-notification{font-size:12px;padding:8px 12px;gap:8px}.brave-notification img{width:24px;height:24px}}
+          @keyframes notif-in{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+          @keyframes notif-out{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
           @media(min-width:768px){.ep-thumb{width:clamp(140px,18vw,170px);height:clamp(78px,10vw,95px)}}
           @media(max-height:600px){.player-frame{max-height:50vh}.player-box{gap:8px}.chat-container{height:160px;max-height:160px}}
           @media(max-width:400px){.glass-btn{padding:6px 12px;font-size:12px;gap:4px}}
@@ -1246,16 +1204,10 @@ export default function WatchPage() {
           </div>
 
           {braveNotifVisible && (
-            <div className="brave-notification" style={{ opacity: braveNotifVisible ? 1 : 0 }}>
+            <div className="brave-notification">
               <img src={BRAVE_ICON} alt="Brave" />
               <span>Olá {effectiveUserName || 'usuário'}, para uma melhor experiência, recomendamos o uso do navegador Brave, divirta-se &lt;3</span>
             </div>
-          )}
-
-          {type === 'tv' && nextEpAvailable && (
-            <button className="next-ep-button" onClick={goToNextEpisode}>
-              <i className="fas fa-forward" /> Próximo episódio {nextEpCountdown > 0 ? `(${nextEpCountdown}s)` : ''}
-            </button>
           )}
         </div>
       )}
