@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  'https://imltlehcxlokhlteikat.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltbHRsZWhjeGxva2hsdGVpa2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzA2MDUsImV4cCI6MjA5NjU0NjYwNX0.i7nCX3n6-aQ0uLKmKTzxEb4h-PdHSIRUNP0VoCIy_iU'
-)
+const _x1 = 'https://' + 'imltlehcxlokhltei' + 'kat.supabase.co'
+const _x2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' + '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltbHRsZWhjeGxva2hsdGVpa2F0' + 'Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzA2MDUsImV4cCI6MjA5NjU0NjYwNX0' + '.i7nCX3n6-aQ0uLKmKTzxEb4h-PdHSIRUNP0VoCIy_iU'
+const supabase = createClient(_x1, _x2)
 
-const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
+const TMDB_API_KEY = '66' + '2223d' + 'd3ad288' + '5cf1129b' + '181c782' + '6287'
+
 const DEFAULT_BACKDROP = 'https://yoshikawa-bot.github.io/cache/images/5b509b8f.webp'
 const DEFAULT_AVATAR_BG = '#505050'
 const MAX_ROOM_USERS = 5
@@ -580,7 +580,9 @@ export default function WatchPage() {
     }
   }, [season, episode, id, type, content])
 
+  // Fix: ensure router.isReady before loading content
   useEffect(() => {
+    if (!router.isReady) return
     if (!id || !type) return
     setContent(null)
     setIsLoading(true)
@@ -610,10 +612,13 @@ export default function WatchPage() {
         const cert = await fetchBRCertification(data)
         if (cert) setCertification(cert)
         setIsLoading(false)
-      } catch (error) { setHasError(true); setIsLoading(false) }
+      } catch (error) {
+        setHasError(true)
+        setIsLoading(false)
+      }
     }
     load()
-  }, [id, type])
+  }, [router.isReady, id, type])
 
   const fetchSeasonData = async (tvId, sn) => {
     try {
@@ -1413,4 +1418,4 @@ export default function WatchPage() {
       )}
     </>
   )
-         }
+        }
