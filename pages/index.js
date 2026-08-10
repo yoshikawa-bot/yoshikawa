@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-const DEFAULT_POSTER = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22450%22%3E%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%232a2a2a%22%2F%3E%3Cpath%20d%3D%22M70%20150l110%2060-110%2060z%22%20fill%3D%22%23666%22%2F%3E%3C%2Fsvg%3E'
+const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 const DEFAULT_PROFILE_COLOR = '#FF6B6B'
 const DEFAULT_AVATAR_BG = '#505050'
@@ -452,8 +452,8 @@ const ConfirmRemoveModal = ({ title, message, onConfirm, onCancel }) => {
   return (
     <div className="profile-creation-overlay" onClick={onCancel}>
       <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
-        <h3 className="logout-confirm-title">{title || t('removerFavorito')}</h3>
-        <p className="logout-confirm-text">{message || t('confirmarRemover')}</p>
+        <h3 className="logout-confirm-title">{title || 'Remover dos favoritos'}</h3>
+        <p className="logout-confirm-text">{message || 'Tem certeza que deseja remover este item?'}</p>
         <div className="logout-confirm-actions">
           <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
           <button className="logout-confirm-btn" onClick={onConfirm}>{t('remover')}</button>
@@ -758,8 +758,8 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       {showLogout && <LogoutConfirm onConfirm={() => { setShowLogout(false); onLogout() }} onCancel={() => setShowLogout(false)} />}
       {removeConfirmItem && (
         <ConfirmRemoveModal
-          title={t('removerFavorito')}
-          message={t('confirmarRemover')}
+          title="Remover dos favoritos"
+          message="Tem certeza que deseja remover este item?"
           onConfirm={handleConfirmRemove}
           onCancel={() => setRemoveConfirmItem(null)}
         />
@@ -1441,16 +1441,19 @@ export default function Home() {
       const baseSearch = `api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&region=BR`
       if (activeSearchFilter === 'Filmes') {
         results = await fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`)
-        results = results.map(i => ({ ...i, media_type: 'movie' }))
+        results = results.filter(i => i.poster_path && i.popularity > 3 && i.vote_count > 10).map(i => ({ ...i, media_type: 'movie' }))
       } else if (activeSearchFilter === 'Séries') {
         results = await fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
-        results = results.map(i => ({ ...i, media_type: 'tv' }))
+        results = results.filter(i => i.poster_path && i.popularity > 3 && i.vote_count > 10).map(i => ({ ...i, media_type: 'tv' }))
       } else {
         const [movies, tv] = await Promise.all([
           fetchTMDB(`https://api.themoviedb.org/3/search/movie?${baseSearch}`),
           fetchTMDB(`https://api.themoviedb.org/3/search/tv?${baseSearch}`)
         ])
-        results = [...movies.map(i => ({ ...i, media_type: 'movie' })), ...tv.map(i => ({ ...i, media_type: 'tv' }))]
+        results = [
+          ...movies.filter(i => i.poster_path && i.popularity > 3 && i.vote_count > 10).map(i => ({ ...i, media_type: 'movie' })),
+          ...tv.filter(i => i.poster_path && i.popularity > 3 && i.vote_count > 10).map(i => ({ ...i, media_type: 'tv' }))
+        ]
       }
       if (activeSearchFilter === 'Animes') {
         results = results.filter(i => i.genre_ids?.includes(16))
@@ -2077,8 +2080,8 @@ export default function Home() {
       )}
       {favoriteRemoveTarget && (
         <ConfirmRemoveModal
-          title={t('removerFavorito')}
-          message={t('confirmarRemover')}
+          title="Remover dos favoritos"
+          message="Tem certeza que deseja remover este item?"
           onConfirm={confirmRemoveFavorite}
           onCancel={() => setFavoriteRemoveTarget(null)}
         />
@@ -2089,4 +2092,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-    }
+            }
