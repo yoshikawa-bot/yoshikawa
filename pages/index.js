@@ -456,7 +456,7 @@ const ConfirmRemoveModal = ({ title, message, onConfirm, onCancel }) => {
         <p className="logout-confirm-text">{message || 'Tem certeza que deseja remover este item?'}</p>
         <div className="logout-confirm-actions">
           <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
-          <button className="logout-confirm-btn" onClick={onConfirm}>{t('remover')}</button>
+          <button className="logout-confirm-btn" onClick={onConfirm}>{t('Remover')}</button>
         </div>
       </div>
     </div>
