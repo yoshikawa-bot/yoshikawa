@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const TMDB_API_KEY = '66223dd3ad2885cf1129b181c7826287'
-const DEFAULT_POSTER = 'https://yoshikawa-bot.github.io/cache/images/1c17bcf7.jpg'
+const DEFAULT_POSTER = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22450%22%3E%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%232a2a2a%22%2F%3E%3Cpath%20d%3D%22M70%20150l110%2060-110%2060z%22%20fill%3D%22%23666%22%2F%3E%3C%2Fsvg%3E'
 const LOGO_URL = 'https://yoshikawa-bot.github.io/cache/images/ca96aff2.webp'
 const DEFAULT_PROFILE_COLOR = '#FF6B6B'
 const DEFAULT_AVATAR_BG = '#505050'
@@ -447,6 +447,22 @@ export const MovieCard = ({ item }) => {
   )
 }
 
+const ConfirmRemoveModal = ({ title, message, onConfirm, onCancel }) => {
+  const { t } = useLanguage()
+  return (
+    <div className="profile-creation-overlay" onClick={onCancel}>
+      <div className="logout-confirm-modal" onClick={e => e.stopPropagation()}>
+        <h3 className="logout-confirm-title">{title || t('removerFavorito')}</h3>
+        <p className="logout-confirm-text">{message || t('confirmarRemover')}</p>
+        <div className="logout-confirm-actions">
+          <button className="logout-cancel-btn" onClick={onCancel}>{t('cancelar')}</button>
+          <button className="logout-confirm-btn" onClick={onConfirm}>{t('remover')}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const FavoriteItem = ({ item, onRemove, onClick }) => {
   const mediaType = getMediaType(item)
   const year = getItemYear(item)
@@ -549,6 +565,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const [bannerPreview, setBannerPreview] = useState(userProfile?.bannerUrl || null)
   const [error, setError] = useState('')
   const [showLogout, setShowLogout] = useState(false)
+  const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
 
   const handleFileRead = (file, setPreview) => {
     if (file.size > 1048576) {
@@ -595,6 +612,17 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
   const displayUsername = userProfile?.username || username || (userProfile?.name ? userProfile.name.toLowerCase().replace(/\s/g, '') : 'user')
   const moviesCount = favorites?.filter(f => f.media_type === 'movie' || getMediaType(f) === 'movie').length || 0
   const seriesCount = favorites?.filter(f => f.media_type === 'tv' || getMediaType(f) === 'tv').length || 0
+
+  const handleRequestRemove = (item) => {
+    setRemoveConfirmItem(item)
+  }
+
+  const handleConfirmRemove = () => {
+    if (removeConfirmItem) {
+      onRemoveFavorite(removeConfirmItem)
+      setRemoveConfirmItem(null)
+    }
+  }
 
   return (
     <div className="profile-fullpage-overlay">
@@ -715,7 +743,7 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
               ) : (
                 <div className="favorites-list">
                   {favorites.map(item => (
-                    <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={onRemoveFavorite} onClick={onPlay} />
+                    <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={handleRequestRemove} onClick={onPlay} />
                   ))}
                 </div>
               )}
@@ -728,6 +756,14 @@ export const ProfilePage = ({ userProfile, favorites, onPlay, onSave, onLogout, 
       <input type="file" id="bannerFileInput" accept="image/*" style={{ display: 'none' }} onChange={handleBannerChange} />
 
       {showLogout && <LogoutConfirm onConfirm={() => { setShowLogout(false); onLogout() }} onCancel={() => setShowLogout(false)} />}
+      {removeConfirmItem && (
+        <ConfirmRemoveModal
+          title={t('removerFavorito')}
+          message={t('confirmarRemover')}
+          onConfirm={handleConfirmRemove}
+          onCancel={() => setRemoveConfirmItem(null)}
+        />
+      )}
     </div>
   )
 }
@@ -1018,6 +1054,7 @@ export default function Home() {
   const [animeRecommended, setAnimeRecommended] = useState([])
 
   const [showDebug, setShowDebug] = useState(false)
+  const [favoriteRemoveTarget, setFavoriteRemoveTarget] = useState(null)
 
   const favoritesTitleRef = useRef(null)
   const [favoritesTitleVisible, setFavoritesTitleVisible] = useState(true)
@@ -1463,6 +1500,17 @@ export default function Home() {
     try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
   }
 
+  const requestRemoveFavorite = (item) => {
+    setFavoriteRemoveTarget(item)
+  }
+
+  const confirmRemoveFavorite = () => {
+    if (favoriteRemoveTarget) {
+      removeFavorite(favoriteRemoveTarget)
+      setFavoriteRemoveTarget(null)
+    }
+  }
+
   const LandingScreen = ({ onEnter }) => {
     const imageUrl = 'https://yoshikawa-bot.github.io/cache/images/3f891358.jpg'
     const text = 'Obrigado por utilizar os serviços Yoshikawa. Considere apoiar o desenvolvimento com uma doação anônima via PixGG. Clique no botão de coração para doar ou no ícone do Instagram para seguir o desenvolvedor <3'
@@ -1613,7 +1661,7 @@ export default function Home() {
       <h2 className="section-title" style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: '800' }} ref={favoritesTitleRef}>{t('favoritos')}</h2>
       <div className="filters-container">{FAVORITE_FILTERS.map(filter => <button key={filter} className={`filter-btn ${activeFilter === filter ? 'active' : ''}`} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>
       <div className="favorites-list">
-        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumFavorito')}</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={removeFavorite} onClick={handlePlay} />)}
+        {filteredFavorites.length === 0 ? <div className="empty-favorites"><i className="fas fa-heart" style={{ fontSize: 'clamp(32px,5vw,48px)', color: '#333', marginBottom: 'clamp(12px,2vw,16px)' }} /><p style={{ color: '#666', fontSize: 'clamp(14px,2.5vw,18px)' }}>{t('nenhumFavorito')}</p></div> : filteredFavorites.map(item => <FavoriteItem key={`${item.media_type}-${item.id}`} item={item} onRemove={requestRemoveFavorite} onClick={handlePlay} />)}
       </div>
     </section>
   )
@@ -2027,10 +2075,18 @@ export default function Home() {
           onImportDone={handleImportDone}
         />
       )}
+      {favoriteRemoveTarget && (
+        <ConfirmRemoveModal
+          title={t('removerFavorito')}
+          message={t('confirmarRemover')}
+          onConfirm={confirmRemoveFavorite}
+          onCancel={() => setFavoriteRemoveTarget(null)}
+        />
+      )}
       {showPrivacy && <PrivacyModal onClose={() => window.history.back()} />}
       {showAbout && <AboutModal onClose={() => window.history.back()} />}
       {showLanguage && <LanguageModal onClose={() => window.history.back()} />}
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-                          }
+    }
