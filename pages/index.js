@@ -469,9 +469,7 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
   const badgeColor = mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#E97820'
   const { t } = useLanguage()
   const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
-  const isTV = item.media_type === 'tv' || item.first_air_date
-  const episodeCount = item.number_of_episodes || item.episodes
-  const showEpisodeInfo = isTV && episodeCount
+  const popularity = item.popularity ? Math.round(item.popularity) : null
   return (
     <div className="favorite-item" onClick={() => onClick?.(item)}>
       <ImageWithCache 
@@ -482,7 +480,7 @@ export const FavoriteItem = ({ item, onRemove, onClick }) => {
       <div className="favorite-content">
         <h3 className="favorite-title">{item.title}</h3>
         {year && <p className="favorite-year">{year}</p>}
-        {showEpisodeInfo && <p className="favorite-episodes">{episodeCount} Episódios</p>}
+        {popularity && <p className="favorite-episodes">Popularidade: {popularity}</p>}
         <div className="favorite-badge" style={{ background: badgeColor }}>
           {badgeText}
         </div>
@@ -2095,4 +2093,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-      }
+    }
