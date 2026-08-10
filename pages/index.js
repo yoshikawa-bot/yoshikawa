@@ -898,7 +898,7 @@ const DebugPage = ({ onClose, onImportDone }) => {
 
   return (
     <div className="profile-fullpage-overlay" style={{ zIndex: 10001 }}>
-      <div className="profile-top-bar">
+      <div className="profile-top-bar" style={{ background: '#101010' }}>
         <button className="profile-top-btn" onClick={onClose}>
           <i className="fas fa-arrow-left" />
         </button>
@@ -908,6 +908,17 @@ const DebugPage = ({ onClose, onImportDone }) => {
         <div style={{ width: 40 }} />
       </div>
       <div className="profile-body" style={{ padding: '80px 20px 40px', overflowY: 'auto' }}>
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Projeto</h3>
+          <div style={{ background: '#1B1B1B', borderRadius: 12, padding: 16, fontSize: 14, color: '#ccc', lineHeight: 1.8 }}>
+            <p><strong>Nome:</strong> Yoshikawa Streaming</p>
+            <p><strong>Versão:</strong> 1.0.93 beta</p>
+            <p><strong>Desenvolvedor:</strong> @kawalyansky</p>
+            <p><strong>Repositório:</strong> github.com/kawa-lyansky</p>
+            <p><strong>API:</strong> TMDB</p>
+            <p><strong>Contato:</strong> yoshikawa_bot@proton.me</p>
+          </div>
+        </div>
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Dispositivo</h3>
           <div style={{ background: '#1B1B1B', borderRadius: 12, padding: 16, fontSize: 14, color: '#ccc', lineHeight: 1.8 }}>
@@ -1094,18 +1105,22 @@ export default function Home() {
     const handlePopState = (event) => {
       if (event.state && event.state.modal) {
         closeAllModals()
+        setShowDebug(false)
         const modal = event.state.modal
         if (modal === 'search') setShowSearch(true)
         else if (modal === 'profile') setShowProfile(true)
         else if (modal === 'about') setShowAbout(true)
         else if (modal === 'privacy') setShowPrivacy(true)
         else if (modal === 'language') setShowLanguage(true)
+        else if (modal === 'debug') setShowDebug(true)
       } else if (event.state && event.state.section) {
         setActiveSection(event.state.section)
         closeAllModals()
+        setShowDebug(false)
       } else {
         setActiveSection('home')
         closeAllModals()
+        setShowDebug(false)
       }
     }
     window.addEventListener('popstate', handlePopState)
@@ -1373,7 +1388,12 @@ export default function Home() {
   }
 
   const handleLogoClick = () => {
+    window.history.pushState({ modal: 'debug' }, '')
     setShowDebug(true)
+  }
+
+  const handleCloseDebug = () => {
+    window.history.back()
   }
 
   const fetchSearchResults = async (query) => {
@@ -2003,7 +2023,7 @@ export default function Home() {
       )}
       {showDebug && (
         <DebugPage
-          onClose={() => setShowDebug(false)}
+          onClose={handleCloseDebug}
           onImportDone={handleImportDone}
         />
       )}
@@ -2013,4 +2033,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-        }
+                          }
