@@ -821,6 +821,145 @@ const LANGUAGES = [
 
 const LANDING_SHOWN_KEY = 'yoshikawa_landing_shown'
 
+const DebugPage = ({ onClose, onImportDone }) => {
+  const fileInputRef = useRef(null)
+  const [debugInfo, setDebugInfo] = useState({})
+
+  useEffect(() => {
+    const info = {}
+    info.userAgent = navigator.userAgent
+    info.platform = navigator.platform
+    info.language = navigator.language
+    info.hardwareConcurrency = navigator.hardwareConcurrency
+    info.devicePixelRatio = window.devicePixelRatio
+    info.memory = navigator.deviceMemory || 'N/A'
+    info.screen = `${screen.width}x${screen.height}`
+    info.innerSize = `${window.innerWidth}x${window.innerHeight}`
+    info.colorDepth = screen.colorDepth
+    info.touchPoints = navigator.maxTouchPoints
+    info.onLine = navigator.onLine
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+    if (conn) {
+      info.effectiveType = conn.effectiveType
+      info.downlink = conn.downlink
+      info.rtt = conn.rtt
+      info.saveData = conn.saveData
+    }
+    info.time = new Date().toLocaleString()
+    info.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    info.url = window.location.href
+    info.referrer = document.referrer
+    info.cookieEnabled = navigator.cookieEnabled
+    info.localStorage = typeof localStorage !== 'undefined'
+    info.sessionStorage = typeof sessionStorage !== 'undefined'
+    setDebugInfo(info)
+  }, [])
+
+  const handleExport = () => {
+    const data = {
+      profile: JSON.parse(localStorage.getItem('yoshikawaProfile') || 'null'),
+      favorites: JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]'),
+      exportedAt: new Date().toISOString()
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'yoshikawa_backup.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = () => {
+    fileInputRef.current.click()
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result)
+        if (data.profile) {
+          localStorage.setItem('yoshikawaProfile', JSON.stringify(data.profile))
+        }
+        if (data.favorites) {
+          localStorage.setItem('yoshikawaFavorites', JSON.stringify(data.favorites))
+        }
+        onImportDone()
+        alert('Dados importados com sucesso!')
+      } catch (err) {
+        alert('Erro ao importar arquivo.')
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  return (
+    <div className="profile-fullpage-overlay" style={{ zIndex: 10001 }}>
+      <div className="profile-top-bar">
+        <button className="profile-top-btn" onClick={onClose}>
+          <i className="fas fa-arrow-left" />
+        </button>
+        <div style={{ flex: 1 }} />
+        <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>Depuração</h2>
+        <div style={{ flex: 1 }} />
+        <div style={{ width: 40 }} />
+      </div>
+      <div className="profile-body" style={{ padding: '80px 20px 40px', overflowY: 'auto' }}>
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Dispositivo</h3>
+          <div style={{ background: '#1B1B1B', borderRadius: 12, padding: 16, fontSize: 14, color: '#ccc', lineHeight: 1.8 }}>
+            <p><strong>User Agent:</strong> {debugInfo.userAgent}</p>
+            <p><strong>Plataforma:</strong> {debugInfo.platform}</p>
+            <p><strong>Idioma:</strong> {debugInfo.language}</p>
+            <p><strong>Núcleos:</strong> {debugInfo.hardwareConcurrency}</p>
+            <p><strong>Pixel Ratio:</strong> {debugInfo.devicePixelRatio}</p>
+            <p><strong>Memória:</strong> {debugInfo.memory} GB</p>
+            <p><strong>Resolução Tela:</strong> {debugInfo.screen}</p>
+            <p><strong>Resolução Interna:</strong> {debugInfo.innerSize}</p>
+            <p><strong>Profundidade Cor:</strong> {debugInfo.colorDepth}</p>
+            <p><strong>Touch Points:</strong> {debugInfo.touchPoints}</p>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Rede</h3>
+          <div style={{ background: '#1B1B1B', borderRadius: 12, padding: 16, fontSize: 14, color: '#ccc', lineHeight: 1.8 }}>
+            <p><strong>Online:</strong> {debugInfo.onLine ? 'Sim' : 'Não'}</p>
+            {debugInfo.effectiveType && <p><strong>Tipo Efetivo:</strong> {debugInfo.effectiveType}</p>}
+            {debugInfo.downlink && <p><strong>Downlink:</strong> {debugInfo.downlink} Mbps</p>}
+            {debugInfo.rtt && <p><strong>RTT:</strong> {debugInfo.rtt} ms</p>}
+            {debugInfo.saveData !== undefined && <p><strong>Economia Dados:</strong> {debugInfo.saveData ? 'Sim' : 'Não'}</p>}
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Sistema</h3>
+          <div style={{ background: '#1B1B1B', borderRadius: 12, padding: 16, fontSize: 14, color: '#ccc', lineHeight: 1.8 }}>
+            <p><strong>Data/Hora:</strong> {debugInfo.time}</p>
+            <p><strong>Fuso Horário:</strong> {debugInfo.timezone}</p>
+            <p><strong>URL:</strong> {debugInfo.url}</p>
+            <p><strong>Referrer:</strong> {debugInfo.referrer || 'N/A'}</p>
+            <p><strong>Cookies Habilitados:</strong> {debugInfo.cookieEnabled ? 'Sim' : 'Não'}</p>
+            <p><strong>LocalStorage:</strong> {debugInfo.localStorage ? 'Sim' : 'Não'}</p>
+            <p><strong>SessionStorage:</strong> {debugInfo.sessionStorage ? 'Sim' : 'Não'}</p>
+            <p><strong>Versão App:</strong> 1.0.93 beta</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+          <button onClick={handleExport} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#fff', color: '#000', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
+            <i className="fas fa-download" style={{ marginRight: 8 }} /> Exportar Dados
+          </button>
+          <button onClick={handleImport} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#E04E4E', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
+            <i className="fas fa-upload" style={{ marginRight: 8 }} /> Importar Dados
+          </button>
+          <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".json" onChange={handleFileChange} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const router = useRouter()
   const [landingVisible, setLandingVisible] = useState(false)
@@ -866,6 +1005,8 @@ export default function Home() {
   const [animeComedy, setAnimeComedy] = useState([])
   const [animeRomance, setAnimeRomance] = useState([])
   const [animeRecommended, setAnimeRecommended] = useState([])
+
+  const [showDebug, setShowDebug] = useState(false)
 
   const favoritesTitleRef = useRef(null)
   const [favoritesTitleVisible, setFavoritesTitleVisible] = useState(true)
@@ -1232,14 +1373,7 @@ export default function Home() {
   }
 
   const handleLogoClick = () => {
-    navigateTo('home')
-    setShowSearch(false)
-    setSearchQuery('')
-    setSearchResults([])
-    setActiveSearchFilter('Tudo')
-    setActiveCategoryGenreId(null)
-    setActiveCategoryName(null)
-    setCategoryResults([])
+    setShowDebug(true)
   }
 
   const fetchSearchResults = async (query) => {
@@ -1302,6 +1436,11 @@ export default function Home() {
   const handleLogoutClick = (e) => {
     e.stopPropagation()
     setShowLogoutConfirm(true)
+  }
+
+  const handleImportDone = () => {
+    loadFavorites()
+    try { const saved = localStorage.getItem('yoshikawaProfile'); if (saved) { const p = JSON.parse(saved); p.favoritesCount = JSON.parse(localStorage.getItem('yoshikawaFavorites') || '[]').length; setUserProfile(p) } } catch {}
   }
 
   const LandingScreen = ({ onEnter }) => {
@@ -1818,7 +1957,7 @@ export default function Home() {
         `}</style>
       </Head>
 
-      {!showSearch && !showProfile && (
+      {!showSearch && !showProfile && !showDebug && (
         <Header
           onSearchClick={() => { openModal('search'); setActiveCategoryGenreId(null); setActiveCategoryName(null); setCategoryResults([]) }}
           userProfile={userProfile}
@@ -1828,9 +1967,10 @@ export default function Home() {
         />
       )}
 
-      <main className="container" style={showSearch || showProfile ? { paddingTop: '0' } : {}}>
+      <main className="container" style={showSearch || showProfile || showDebug ? { paddingTop: '0' } : {}}>
         {showSearch ? renderSearchPage() :
           showProfile ? null :
+          showDebug ? null :
           activeSection === 'home' ? renderHomePage() :
           activeSection === 'animes' ? renderAnimesPage() :
           activeSection === 'favorites' ? renderFavoritesPage() :
@@ -1838,7 +1978,7 @@ export default function Home() {
           renderHomePage()}
       </main>
 
-      {!showSearch && !showProfile && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
+      {!showSearch && !showProfile && !showDebug && <BottomNav activeSection={activeSection} setActiveSection={(section) => {
         navigateTo(section)
         setShowSearch(false)
         setSearchQuery('')
@@ -1861,10 +2001,16 @@ export default function Home() {
           onRemoveFavorite={removeFavorite}
         />
       )}
+      {showDebug && (
+        <DebugPage
+          onClose={() => setShowDebug(false)}
+          onImportDone={handleImportDone}
+        />
+      )}
       {showPrivacy && <PrivacyModal onClose={() => window.history.back()} />}
       {showAbout && <AboutModal onClose={() => window.history.back()} />}
       {showLanguage && <LanguageModal onClose={() => window.history.back()} />}
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-          }
+        }
