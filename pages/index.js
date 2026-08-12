@@ -464,21 +464,56 @@ const ConfirmRemoveModal = ({ title, message, onConfirm, onCancel }) => {
 }
 
 export const FavoriteItem = ({ item, onRemove, onClick }) => {
+  const [enrichedItem, setEnrichedItem] = useState(item)
   const mediaType = getMediaType(item)
-  const year = getItemYear(item)
+  
+  useEffect(() => {
+    let cancelled = false
+    const hasAllData = item.popularity !== undefined && (item.release_date || item.first_air_date)
+    if (hasAllData) {
+      setEnrichedItem(item)
+      return
+    }
+    const fetchDetails = async () => {
+      try {
+        const type = getRouteType(item)
+        const res = await fetch(`https://api.themoviedb.org/3/${type}/${item.id}?api_key=${TMDB_API_KEY}&language=pt-BR`)
+        const data = await res.json()
+        if (!cancelled) {
+          setEnrichedItem(prev => ({
+            ...prev,
+            popularity: data.popularity ?? prev.popularity,
+            release_date: data.release_date ?? prev.release_date,
+            first_air_date: data.first_air_date ?? prev.first_air_date,
+            title: data.title || data.name || prev.title,
+            name: data.name || data.title || prev.name,
+            poster_path: data.poster_path || prev.poster_path,
+            backdrop_path: data.backdrop_path || prev.backdrop_path,
+            overview: data.overview || prev.overview,
+            genre_ids: data.genres?.map(g => g.id) || prev.genre_ids,
+          }))
+        }
+      } catch {}
+    }
+    fetchDetails()
+    return () => { cancelled = true }
+  }, [item.id])
+
+  const year = getItemYear(enrichedItem)
   const badgeColor = mediaType === 'anime' ? '#4D4BAF' : mediaType === 'tv' ? '#4A8B4A' : '#E97820'
   const { t } = useLanguage()
   const badgeText = mediaType === 'anime' ? t('anime') : mediaType === 'tv' ? t('serie') : t('filme')
-  const popularityValue = item.popularity ? Math.round(item.popularity) : null
+  const popularityValue = enrichedItem.popularity !== undefined ? Math.round(enrichedItem.popularity) : null
+
   return (
-    <div className="favorite-item" onClick={() => onClick?.(item)}>
+    <div className="favorite-item" onClick={() => onClick?.(enrichedItem)}>
       <ImageWithCache 
-        src={item.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${item.poster_path}` : DEFAULT_POSTER} 
-        alt={item.title} 
+        src={enrichedItem.poster_path ? `https://image.tmdb.org/t/p/${POSTER_SIZE}${enrichedItem.poster_path}` : DEFAULT_POSTER} 
+        alt={enrichedItem.title || enrichedItem.name} 
         className="favorite-poster" 
       />
       <div className="favorite-content">
-        <h3 className="favorite-title">{item.title}</h3>
+        <h3 className="favorite-title">{enrichedItem.title || enrichedItem.name}</h3>
         {year && <p className="favorite-year">{year}</p>}
         <p className="favorite-episodes">Popularidade: {popularityValue ?? 'N/A'}</p>
         <div className="favorite-badge" style={{ background: badgeColor }}>
@@ -2093,4 +2128,4 @@ export default function Home() {
       {showLogoutConfirm && <LogoutConfirm onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} />}
     </>
   )
-        }
+          }
